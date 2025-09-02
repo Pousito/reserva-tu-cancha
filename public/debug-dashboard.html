@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug del Dashboard - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-info text-white text-center">
+                        <h3>🔍 DEBUG DEL DASHBOARD</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-4">Verificar qué está pasando con el dashboard</h5>
+                        
+                        <button class="btn btn-info btn-lg" onclick="debugDashboard()" id="debugButton">
+                            🔍 DEBUG DEL DASHBOARD
+                        </button>
+                        
+                        <div id="result" class="mt-4"></div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6>🔍 También puedes probar:</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <a href="/test-reservas.html" class="btn btn-primary w-100">📋 Reservas</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/test-db.html" class="btn btn-secondary w-100">🧪 Base de Datos</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/test-login.html" class="btn btn-warning w-100">🔐 Login</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="/admin-login.html" class="btn btn-success w-100">👑 Panel Admin</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function debugDashboard() {
+            const button = document.getElementById('debugButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.innerHTML = '🔍 DEBUGGEANDO...';
+            result.innerHTML = '<div class="alert alert-info">Analizando el dashboard...</div>';
+            
+            fetch('/api/debug/dashboard')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const debug = data.debug;
+                        
+                        result.innerHTML = `
+                            <div class="alert alert-success">
+                                <h6>✅ Debug del dashboard completado</h6>
+                                <p><strong>Mensaje:</strong> ${debug.message}</p>
+                                <hr>
+                                <h6>📊 Estadísticas del Dashboard:</h6>
+                                <ul class="text-start">
+                                    <li><strong>Total de reservas:</strong> ${debug.totalReservas}</li>
+                                    <li><strong>Ingresos totales:</strong> $${(debug.ingresosTotales || 0).toLocaleString()}</li>
+                                    <li><strong>Reservas recientes obtenidas:</strong> ${debug.reservasRecientes.length}</li>
+                                </ul>
+                                <hr>
+                                <h6>📋 Reservas Recientes:</h6>
+                                ${debug.reservasRecientes.length > 0 ? `
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Cliente</th>
+                                                    <th>Complejo</th>
+                                                    <th>Cancha</th>
+                                                    <th>Fecha</th>
+                                                    <th>Hora</th>
+                                                    <th>Precio</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${debug.reservasRecientes.map(r => `
+                                                    <tr>
+                                                        <td><code>${r.codigo_reserva}</code></td>
+                                                        <td>${r.nombre_cliente}</td>
+                                                        <td>${r.complejo_nombre}</td>
+                                                        <td>${r.cancha_nombre}</td>
+                                                        <td>${r.fecha}</td>
+                                                        <td>${r.hora_inicio}</td>
+                                                        <td>$${r.precio_total.toLocaleString()}</td>
+                                                        <td><span class="badge bg-${r.estado === 'pendiente' ? 'warning' : 'success'}">${r.estado}</span></td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ` : '<p class="text-muted">No hay reservas recientes</p>'}
+                                <hr>
+                                <p>✅ El servidor está funcionando y devolviendo datos.</p>
+                                <p>🔍 Si el dashboard no los muestra, el problema está en el frontend.</p>
+                            </div>
+                        `;
+                        
+                        button.innerHTML = '✅ DEBUG COMPLETADO';
+                        button.classList.remove('btn-info');
+                        button.classList.add('btn-success');
+                        
+                    } else {
+                        result.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>❌ Error en el debug</h6>
+                                <p><strong>Error:</strong> ${data.error}</p>
+                                <p>El problema está en el servidor o en la base de datos.</p>
+                            </div>
+                        `;
+                        
+                        button.innerHTML = '❌ ERROR';
+                        button.classList.remove('btn-info');
+                        button.classList.add('btn-danger');
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>❌ Error de conexión</h6>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>No se pudo conectar con el servidor.</p>
+                        </div>
+                    `;
+                    
+                    button.innerHTML = '❌ ERROR DE CONEXIÓN';
+                    button.classList.remove('btn-info');
+                    button.classList.add('btn-danger');
+                    button.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>

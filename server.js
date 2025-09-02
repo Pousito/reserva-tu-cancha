@@ -269,6 +269,67 @@ app.get('/api/test/database', (req, res) => {
   });
 });
 
+// Endpoint de debug para el dashboard
+app.get('/api/debug/dashboard', (req, res) => {
+  console.log('🔍 DEBUG DEL DASHBOARD');
+  
+  // Verificar reservas
+  db.get("SELECT COUNT(*) as count FROM reservas", (err, countRow) => {
+    if (err) {
+      console.error('❌ Error contando reservas:', err);
+      res.json({ success: false, error: err.message });
+      return;
+    }
+    
+    console.log(`📊 Total reservas: ${countRow.count}`);
+    
+    // Obtener algunas reservas recientes
+    db.all(`
+      SELECT 
+        r.codigo_reserva,
+        r.nombre_cliente,
+        r.fecha,
+        r.hora_inicio,
+        r.precio_total,
+        r.estado,
+        c.nombre as complejo_nombre,
+        ca.nombre as cancha_nombre
+      FROM reservas r
+      JOIN canchas ca ON r.cancha_id = ca.id
+      JOIN complejos c ON ca.complejo_id = c.id
+      ORDER BY r.fecha_creacion DESC
+      LIMIT 5
+    `, (err, reservas) => {
+      if (err) {
+        console.error('❌ Error obteniendo reservas:', err);
+        res.json({ success: false, error: err.message });
+        return;
+      }
+      
+      console.log(`📋 Reservas obtenidas: ${reservas.length}`);
+      
+      // Obtener estadísticas básicas
+      db.get("SELECT SUM(precio_total) as ingresos FROM reservas", (err, ingresosRow) => {
+        if (err) {
+          console.error('❌ Error obteniendo ingresos:', err);
+          res.json({ success: false, error: err.message });
+          return;
+        }
+        
+        res.json({
+          success: true,
+          debug: {
+            totalReservas: countRow.count,
+            ingresosTotales: ingresosRow.ingresos || 0,
+            reservasRecientes: reservas,
+            message: 'Debug del dashboard completado'
+          }
+        });
+      });
+    });
+  });
+});
+
 // Endpoint de emergencia para insertar reservas de prueba
 app.get('/api/emergency/insert-reservas', (req, res) => {
   console.log('🚨 INSERTANDO RESERVAS DE EMERGENCIA');
