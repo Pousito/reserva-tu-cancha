@@ -933,7 +933,40 @@ function authenticateAdmin(req, res, next) {
     return res.status(401).json({ error: 'Token de acceso requerido' });
   }
   
-  // Verificación simple del token (en producción usar JWT)
+  // Verificar si es un token dinámico del login (admin-token-{id}-{timestamp})
+  if (token.startsWith('admin-token-')) {
+    // Extraer el ID del usuario del token
+    const tokenParts = token.split('-');
+    if (tokenParts.length >= 3) {
+      const userId = parseInt(tokenParts[2]);
+      
+      // Buscar el usuario en la base de datos para obtener su información
+      db.get("SELECT id, email, nombre, rol, complejo_id FROM usuarios WHERE id = ? AND activo = 1", [userId], (err, usuario) => {
+        if (err) {
+          console.error('Error verificando usuario:', err);
+          return res.status(500).json({ error: 'Error de conexión' });
+        }
+        
+        if (!usuario) {
+          return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
+        }
+        
+        // Establecer la información del admin en req.admin
+        req.admin = {
+          id: usuario.id,
+          email: usuario.email,
+          nombre: usuario.nombre,
+          rol: usuario.rol,
+          complejo_id: usuario.complejo_id
+        };
+        
+        next();
+      });
+      return;
+    }
+  }
+  
+  // Verificación de tokens hardcodeados (para compatibilidad)
   if (token === 'super-admin-token-123') {
     req.admin = { 
       id: 1, 
