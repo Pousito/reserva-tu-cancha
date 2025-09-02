@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Prueba de Reservas - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-info text-white text-center">
+                        <h3>📋 PRUEBA DE RESERVAS</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-4">Verificar reservas en la base de datos</h5>
+                        
+                        <button class="btn btn-info btn-lg" onclick="testReservas()" id="testButton">
+                            📋 PROBAR RESERVAS
+                        </button>
+                        
+                        <div id="result" class="mt-4"></div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6>🔍 También puedes probar:</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <a href="/test-db.html" class="btn btn-primary w-100">🧪 Base de Datos</a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="/test-login.html" class="btn btn-warning w-100">🔐 Login</a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="/admin-login.html" class="btn btn-success w-100">👑 Panel Admin</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testReservas() {
+            const button = document.getElementById('testButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.innerHTML = '📋 PROBANDO...';
+            result.innerHTML = '<div class="alert alert-info">Verificando reservas en la base de datos...</div>';
+            
+            fetch('/api/test/reservas')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.reservasCount === 0) {
+                            result.innerHTML = `
+                                <div class="alert alert-warning">
+                                    <h6>⚠️ No hay reservas</h6>
+                                    <p><strong>Mensaje:</strong> ${data.message}</p>
+                                    <hr>
+                                    <p>La base de datos está funcionando pero no contiene reservas.</p>
+                                    <p>Esto explica por qué el panel de administración no muestra datos.</p>
+                                </div>
+                            `;
+                        } else {
+                            result.innerHTML = `
+                                <div class="alert alert-success">
+                                    <h6>✅ Reservas encontradas</h6>
+                                    <p><strong>Mensaje:</strong> ${data.message}</p>
+                                    <p><strong>Total de reservas:</strong> ${data.reservasCount}</p>
+                                    <hr>
+                                    <h6>📋 Ejemplos de reservas:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Cliente</th>
+                                                    <th>Fecha</th>
+                                                    <th>Hora</th>
+                                                    <th>Precio</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${data.reservas.map(r => `
+                                                    <tr>
+                                                        <td><code>${r.codigo_reserva}</code></td>
+                                                        <td>${r.nombre_cliente}</td>
+                                                        <td>${r.fecha}</td>
+                                                        <td>${r.hora_inicio}</td>
+                                                        <td>$${r.precio_total.toLocaleString()}</td>
+                                                        <td><span class="badge bg-${r.estado === 'pendiente' ? 'warning' : 'success'}">${r.estado}</span></td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <hr>
+                                    <p>✅ Las reservas existen en la base de datos. El problema debe estar en el frontend o en la API.</p>
+                                </div>
+                            `;
+                        }
+                        
+                        button.innerHTML = '✅ PRUEBA COMPLETADA';
+                        button.classList.remove('btn-info');
+                        button.classList.add('btn-success');
+                        
+                    } else {
+                        result.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>❌ Error verificando reservas</h6>
+                                <p><strong>Error:</strong> ${data.error}</p>
+                                <p><strong>Mensaje:</strong> ${data.message}</p>
+                            </div>
+                        `;
+                        button.innerHTML = '❌ ERROR';
+                        button.classList.remove('btn-info');
+                        button.classList.add('btn-danger');
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>❌ Error de conexión</h6>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>No se pudo conectar con el servidor.</p>
+                        </div>
+                    `;
+                    button.innerHTML = '❌ ERROR DE CONEXIÓN';
+                    button.classList.remove('btn-info');
+                    button.classList.add('btn-danger');
+                    button.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>

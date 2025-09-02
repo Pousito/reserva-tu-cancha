@@ -269,6 +269,55 @@ app.get('/api/test/database', (req, res) => {
   });
 });
 
+// Endpoint para verificar reservas en la base de datos
+app.get('/api/test/reservas', (req, res) => {
+  console.log('📋 PRUEBA DE RESERVAS');
+  
+  // Contar reservas
+  db.get("SELECT COUNT(*) as count FROM reservas", (err, countRow) => {
+    if (err) {
+      console.error('❌ Error contando reservas:', err);
+      res.json({ 
+        success: false, 
+        error: err.message,
+        message: 'Error contando reservas'
+      });
+      return;
+    }
+    
+    console.log(`📊 Total de reservas: ${countRow.count}`);
+    
+    if (countRow.count === 0) {
+      res.json({ 
+        success: true, 
+        message: 'No hay reservas en la base de datos',
+        reservasCount: 0,
+        reservas: []
+      });
+      return;
+    }
+    
+    // Obtener algunas reservas de ejemplo
+    db.all("SELECT r.codigo_reserva, r.nombre_cliente, r.fecha, r.hora_inicio, r.precio_total, r.estado FROM reservas r LIMIT 5", (err, reservas) => {
+      if (err) {
+        res.json({ 
+          success: false, 
+          error: err.message,
+          message: 'Error obteniendo reservas'
+        });
+        return;
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Reservas encontradas',
+        reservasCount: countRow.count,
+        reservas: reservas
+      });
+    });
+  });
+});
+
 // Endpoint para probar login directamente
 app.get('/api/test/login', (req, res) => {
   console.log('🔐 PRUEBA DE LOGIN DIRECTO');
