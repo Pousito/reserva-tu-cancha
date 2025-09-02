@@ -83,19 +83,97 @@ function initDatabaseIfEmpty() {
   }
 
   function populateWithSampleData() {
-    // Datos de ejemplo
-    const ciudades = ['Santiago', 'Valparaíso', 'Concepción', 'La Serena', 'Antofagasta'];
-    
-    ciudades.forEach(ciudad => {
-      db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad]);
+  console.log('🌱 Insertando ciudades de ejemplo...');
+  
+  // Datos de ejemplo
+  const ciudades = ['Santiago', 'Valparaíso', 'Concepción', 'Los Ángeles', 'La Serena', 'Antofagasta'];
+  
+  ciudades.forEach(ciudad => {
+    db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad], (err) => {
+      if (err) {
+        console.error(`❌ Error insertando ciudad ${ciudad}:`, err.message);
+      } else {
+        console.log(`✅ Ciudad insertada: ${ciudad}`);
+      }
     });
+  });
 
-    // Agregar complejos y canchas de ejemplo
+  // Agregar complejos y canchas de ejemplo después de un delay
+  setTimeout(() => {
+    console.log('🏢 Insertando complejos de ejemplo...');
+    insertSampleComplexes();
+  }, 1000);
+}
+
+function insertSampleComplexes() {
+  const complejos = [
+    { nombre: 'Complejo Deportivo Central', ciudad: 'Santiago', direccion: 'Av. Providencia 123', telefono: '+56912345678', email: 'info@complejocentral.cl' },
+    { nombre: 'Padel Club Premium', ciudad: 'Santiago', direccion: 'Las Condes 456', telefono: '+56987654321', email: 'reservas@padelclub.cl' },
+    { nombre: 'MagnaSports', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@magnasports.cl' },
+    { nombre: 'Centro Deportivo Costero', ciudad: 'Valparaíso', direccion: 'Av. Argentina 9012', telefono: '+56 32 2345 6791', email: 'info@costero.cl' },
+    { nombre: 'Club Deportivo Norte', ciudad: 'Santiago', direccion: 'Av. Las Condes 5678', telefono: '+56 2 2345 6790', email: 'info@norte.cl' }
+  ];
+  
+  const insertComplejo = db.prepare(`
+    INSERT OR IGNORE INTO complejos (nombre, ciudad_id, direccion, telefono, email) 
+    SELECT ?, id, ?, ?, ? FROM ciudades WHERE nombre = ?
+  `);
+  
+  complejos.forEach(complejo => {
+    insertComplejo.run(complejo.nombre, complejo.direccion, complejo.telefono, complejo.email, complejo.ciudad, (err) => {
+      if (err) {
+        console.error(`❌ Error insertando complejo ${complejo.nombre}:`, err.message);
+      } else {
+        console.log(`✅ Complejo insertado: ${complejo.nombre}`);
+      }
+    });
+  });
+  
+  insertComplejo.finalize(() => {
+    console.log('✅ Complejos insertados, agregando canchas...');
+    
+    // Insertar canchas después de un delay
     setTimeout(() => {
-      console.log('✅ Base de datos inicializada con datos de ejemplo');
-      db.close();
+      insertSampleCourts();
     }, 1000);
-  }
+  });
+}
+
+function insertSampleCourts() {
+  console.log('⚽ Insertando canchas de ejemplo...');
+  
+  const canchas = [
+    { nombre: 'Cancha Futbol 1', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
+    { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
+    { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
+    { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
+    { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+    { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+    { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
+    { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
+  ];
+  
+  const insertCancha = db.prepare(`
+    INSERT OR IGNORE INTO canchas (complejo_id, nombre, tipo, precio_hora) 
+    SELECT id, ?, ?, ? FROM complejos WHERE nombre = ?
+  `);
+  
+  canchas.forEach(cancha => {
+    insertCancha.run(cancha.nombre, cancha.tipo, cancha.precio, cancha.complejo, (err) => {
+      if (err) {
+        console.error(`❌ Error insertando cancha ${cancha.nombre}:`, err.message);
+      } else {
+        console.log(`✅ Cancha insertada: ${cancha.nombre}`);
+      }
+    });
+  });
+  
+  insertCancha.finalize(() => {
+    console.log('✅ Canchas insertadas');
+    console.log('🎉 Base de datos completamente inicializada con datos de ejemplo');
+    db.close();
+  });
+}
 }
 
 // Exportar función para uso en server.js

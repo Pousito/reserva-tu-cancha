@@ -24,7 +24,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Ruta intentada:', dbPath);
   } else {
     console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
-    initDatabase();
+    
+    // En producción, usar init-db.js para inicialización inteligente
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🚀 Modo producción: Usando inicialización inteligente');
+      initDatabaseIfEmpty();
+    } else {
+      console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
+      initDatabase();
+    }
   }
 });
 
