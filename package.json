@@ -10,7 +10,12 @@
     "build": "cd client && npm run build",
     "install-client": "cd client && npm install",
     "deploy": "node auto-deploy.js",
-    "quick-deploy": "git add . && git commit -m \"Quick update\" && git push origin main"
+    "quick-deploy": "git add . && git commit -m \"Quick update\" && git push origin main",
+    "deploy-full": "node deploy_and_populate.js deploy",
+    "populate-db": "node deploy_and_populate.js populate",
+    "check-db": "node deploy_and_populate.js check",
+    "check-render": "node check_render_status.js",
+    "populate-reservas": "node populate_reservas.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
