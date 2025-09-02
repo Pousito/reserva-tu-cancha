@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Insertar Reservas de Emergencia - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark text-center">
+                        <h3>🚨 INSERTAR RESERVAS DE EMERGENCIA</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-4">Poblar la base de datos con reservas de prueba</h5>
+                        
+                        <div class="alert alert-info">
+                            <strong>Reservas que se insertarán:</strong><br>
+                            • Juan Pérez - 27/08/2025 16:00 - $28,000<br>
+                            • María González - 27/08/2025 18:00 - $28,000<br>
+                            • Ignacio Araya - 28/08/2025 16:00 - $28,000<br>
+                            • Daniel Orellana - 29/08/2025 23:00 - $28,000
+                        </div>
+                        
+                        <button class="btn btn-warning btn-lg" onclick="insertarReservas()" id="insertButton">
+                            🚨 INSERTAR RESERVAS DE PRUEBA
+                        </button>
+                        
+                        <div id="result" class="mt-4"></div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6>🔍 Después de insertar, verifica:</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <a href="/test-reservas.html" class="btn btn-info w-100">📋 Ver Reservas</a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="/admin-login.html" class="btn btn-success w-100">👑 Panel Admin</a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="/emergency-fix.html" class="btn btn-primary w-100">🔧 Arreglo Usuarios</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function insertarReservas() {
+            const button = document.getElementById('insertButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.innerHTML = '🚨 INSERTANDO...';
+            result.innerHTML = '<div class="alert alert-info">Insertando reservas de prueba...</div>';
+            
+            fetch('/api/emergency/insert-reservas')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        result.innerHTML = `
+                            <div class="alert alert-success">
+                                <h6>✅ Reservas insertadas exitosamente</h6>
+                                <p><strong>Mensaje:</strong> ${data.message}</p>
+                                <hr>
+                                <h6>📊 Resumen:</h6>
+                                <ul class="text-start">
+                                    <li><strong>Total:</strong> ${data.total} reservas</li>
+                                    <li><strong>Insertadas:</strong> ${data.insertadas} reservas</li>
+                                    <li><strong>Errores:</strong> ${data.errores} reservas</li>
+                                </ul>
+                                <hr>
+                                <p>✅ Ahora puedes:</p>
+                                <ol class="text-start">
+                                    <li>Verificar las reservas en <strong>📋 Ver Reservas</strong></li>
+                                    <li>Probar el panel de administración</li>
+                                    <li>Ver el dashboard con datos reales</li>
+                                </ol>
+                            </div>
+                        `;
+                        
+                        button.innerHTML = '✅ RESERVAS INSERTADAS';
+                        button.classList.remove('btn-warning');
+                        button.classList.add('btn-success');
+                        
+                    } else {
+                        result.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>❌ Error insertando reservas</h6>
+                                <p><strong>Error:</strong> ${data.error || 'Error desconocido'}</p>
+                                <p><strong>Mensaje:</strong> ${data.message || 'No se pudo insertar las reservas'}</p>
+                            </div>
+                        `;
+                        
+                        button.innerHTML = '❌ ERROR';
+                        button.classList.remove('btn-warning');
+                        button.classList.add('btn-danger');
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>❌ Error de conexión</h6>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>No se pudo conectar con el servidor.</p>
+                        </div>
+                    `;
+                    
+                    button.innerHTML = '❌ ERROR DE CONEXIÓN';
+                    button.classList.remove('btn-warning');
+                    button.classList.add('btn-danger');
+                    button.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>
