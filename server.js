@@ -943,7 +943,7 @@ function authenticateAdmin(req, res, next) {
       console.log('🔍 Verificando usuario con ID:', userId);
       
       // Buscar el usuario en la base de datos para obtener su información
-      db.get("SELECT id, email, nombre, rol, complejo_id FROM usuarios WHERE id = ? AND activo = 1", [userId], (err, usuario) => {
+      db.get("SELECT id, email, nombre, rol FROM usuarios WHERE id = ? AND activo = 1", [userId], (err, usuario) => {
         if (err) {
           console.error('❌ Error verificando usuario:', err);
           console.error('❌ Token:', token);
@@ -968,8 +968,7 @@ function authenticateAdmin(req, res, next) {
           id: usuario.id,
           email: usuario.email,
           nombre: usuario.nombre,
-          rol: usuario.rol,
-          complejo_id: usuario.complejo_id
+          rol: usuario.rol
         };
         
         next();
