@@ -221,6 +221,40 @@ function createAdminUsers() {
 
 // Rutas API
 
+// Endpoint de emergencia para crear tabla usuarios
+app.get('/api/emergency/fix-users', (req, res) => {
+  console.log('🚨 SOLICITUD DE ARREGLO DE EMERGENCIA RECIBIDA');
+  
+  // Ejecutar el script de emergencia
+  const { exec } = require('child_process');
+  const scriptPath = path.join(__dirname, 'emergency_fix.js');
+  
+  exec(`node "${scriptPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('❌ Error ejecutando script de emergencia:', error);
+      res.json({ 
+        success: false, 
+        error: error.message,
+        message: 'Error ejecutando script de emergencia'
+      });
+      return;
+    }
+    
+    if (stderr) {
+      console.error('⚠️ Advertencias del script:', stderr);
+    }
+    
+    console.log('✅ Script de emergencia ejecutado exitosamente');
+    console.log('📋 Salida:', stdout);
+    
+    res.json({ 
+      success: true, 
+      message: 'Tabla usuarios creada exitosamente',
+      output: stdout
+    });
+  });
+});
+
 // Endpoint de diagnóstico para verificar el estado de la base de datos
 app.get('/api/debug/database', (req, res) => {
   console.log('🔍 SOLICITUD DE DIAGNÓSTICO RECIBIDA');
