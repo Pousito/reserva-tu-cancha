@@ -1832,6 +1832,74 @@ function getCustomersAnalysis(dateFrom, dateTo, complexId) {
   });
 }
 
+// Endpoint temporal para poblar base de datos (SOLO PARA DESARROLLO)
+app.post('/admin/populate-db', async (req, res) => {
+  try {
+    console.log('🌱 Endpoint de población de BD llamado');
+    
+    // Verificar que estemos en producción (Render)
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ 
+        error: 'Este endpoint solo está disponible en producción',
+        environment: process.env.NODE_ENV 
+      });
+    }
+    
+    // Importar y ejecutar la función de población
+    const { populateWithSampleReservations } = require('./populate_reservas');
+    
+    // Ejecutar población
+    await populateWithSampleReservations();
+    
+    res.json({ 
+      success: true, 
+      message: 'Base de datos poblada exitosamente',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error poblando BD:', error);
+    res.status(500).json({ 
+      error: 'Error poblando base de datos',
+      message: error.message 
+    });
+  }
+});
+
+// Endpoint para verificar estado de la BD
+app.get('/admin/check-db', async (req, res) => {
+  try {
+    console.log('🔍 Endpoint de verificación de BD llamado');
+    
+    // Verificar que estemos en producción (Render)
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ 
+        error: 'Este endpoint solo está disponible en producción',
+        environment: process.env.NODE_ENV 
+      });
+    }
+    
+    // Importar y ejecutar la función de verificación
+    const { checkRenderDatabaseStatus } = require('./check_render_status');
+    
+    // Ejecutar verificación
+    await checkRenderDatabaseStatus();
+    
+    res.json({ 
+      success: true, 
+      message: 'Verificación de BD completada',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando BD:', error);
+    res.status(500).json({ 
+      error: 'Error verificando base de datos',
+      message: error.message 
+    });
+  }
+});
+
 // Health check para Render
 app.get('/health', (req, res) => {
   res.status(200).json({

@@ -2,24 +2,26 @@ const sqlite3 = require('sqlite3').verbose();
 
 // Función para verificar el estado de la base de datos en Render
 function checkRenderDatabaseStatus() {
-  console.log('🔍 VERIFICANDO ESTADO DE LA BASE DE DATOS EN RENDER');
-  console.log('==================================================');
-  
-  const dbPath = '/opt/render/project/src/database.sqlite';
-  
-  console.log(`📁 Ruta de BD: ${dbPath}`);
-  console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
-  
-  const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      console.error('❌ Error conectando a la base de datos:', err.message);
-      console.error('📍 Ruta intentada:', dbPath);
-      return;
-    }
+  return new Promise((resolve, reject) => {
+    console.log('🔍 VERIFICANDO ESTADO DE LA BASE DE DATOS EN RENDER');
+    console.log('==================================================');
     
-    console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
-    checkDatabaseContent();
-  });
+    const dbPath = '/opt/render/project/src/database.sqlite';
+    
+    console.log(`📁 Ruta de BD: ${dbPath}`);
+    console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+    
+    const db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('❌ Error conectando a la base de datos:', err.message);
+        console.error('📍 Ruta intentada:', dbPath);
+        reject(err);
+        return;
+      }
+      
+      console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
+      checkDatabaseContent();
+    });
 
   function checkDatabaseContent() {
     console.log('\n📊 VERIFICANDO CONTENIDO DE LA BASE DE DATOS:');
@@ -110,6 +112,7 @@ function checkRenderDatabaseStatus() {
       setTimeout(() => {
         console.log('\n✅ Verificación completada');
         db.close();
+        resolve('Verificación completada exitosamente');
       }, 1000);
     });
   }

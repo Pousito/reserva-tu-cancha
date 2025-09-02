@@ -8,24 +8,26 @@ function generateReservationCode() {
 
 // Función para poblar la base de datos con reservas de ejemplo
 function populateWithSampleReservations() {
-  console.log('🌱 POBLANDO BASE DE DATOS CON RESERVAS DE EJEMPLO');
-  console.log('==================================================');
-  
-  const dbPath = process.env.DB_PATH || '/opt/render/project/src/database.sqlite';
-  
-  console.log(`📁 Ruta de BD: ${dbPath}`);
-  console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
-  
-  const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      console.error('❌ Error conectando a la base de datos:', err.message);
-      console.error('📍 Ruta intentada:', dbPath);
-      return;
-    }
+  return new Promise((resolve, reject) => {
+    console.log('🌱 POBLANDO BASE DE DATOS CON RESERVAS DE EJEMPLO');
+    console.log('==================================================');
     
-    console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
-    checkAndPopulate();
-  });
+    const dbPath = process.env.DB_PATH || '/opt/render/project/src/database.sqlite';
+    
+    console.log(`📁 Ruta de BD: ${dbPath}`);
+    console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+    
+    const db = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        console.error('❌ Error conectando a la base de datos:', err.message);
+        console.error('📍 Ruta intentada:', dbPath);
+        reject(err);
+        return;
+      }
+      
+      console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
+      checkAndPopulate();
+    });
 
   function checkAndPopulate() {
     console.log('🔍 Verificando estado actual de reservas...');
@@ -133,13 +135,14 @@ function populateWithSampleReservations() {
               console.log(`📅 Fechas cubiertas: ${reservations.length} días`);
               console.log(`⚽ Canchas utilizadas: ${canchas.length}`);
               
-              // Verificar el resultado final
-              db.get('SELECT COUNT(*) as count FROM reservas', (err, row) => {
-                if (!err) {
-                  console.log(`📋 Total de reservas en BD: ${row.count}`);
-                }
-                db.close();
-              });
+                             // Verificar el resultado final
+               db.get('SELECT COUNT(*) as count FROM reservas', (err, row) => {
+                 if (!err) {
+                   console.log(`📋 Total de reservas en BD: ${row.count}`);
+                 }
+                 db.close();
+                 resolve(`Proceso completado. Total de reservas: ${row?.count || 0}`);
+               });
             }, 1000);
           }
         });
