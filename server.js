@@ -940,16 +940,28 @@ function authenticateAdmin(req, res, next) {
     if (tokenParts.length >= 3) {
       const userId = parseInt(tokenParts[2]);
       
+      console.log('🔍 Verificando usuario con ID:', userId);
+      
       // Buscar el usuario en la base de datos para obtener su información
       db.get("SELECT id, email, nombre, rol, complejo_id FROM usuarios WHERE id = ? AND activo = 1", [userId], (err, usuario) => {
         if (err) {
-          console.error('Error verificando usuario:', err);
-          return res.status(500).json({ error: 'Error de conexión' });
+          console.error('❌ Error verificando usuario:', err);
+          console.error('❌ Token:', token);
+          console.error('❌ UserId extraído:', userId);
+          return res.status(500).json({ 
+            error: 'Error de conexión', 
+            details: err.message,
+            token: token.substring(0, 20) + '...',
+            userId: userId
+          });
         }
         
         if (!usuario) {
+          console.log('❌ Usuario no encontrado o inactivo para ID:', userId);
           return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
         }
+        
+        console.log('✅ Usuario encontrado:', usuario);
         
         // Establecer la información del admin en req.admin
         req.admin = {
