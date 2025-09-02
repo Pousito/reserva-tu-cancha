@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Estructura BD - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white text-center">
+                        <h3>🔍 DEBUG DE ESTRUCTURA DE BASE DE DATOS</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-4">Verificar la estructura completa de la base de datos</h5>
+                        
+                        <button class="btn btn-secondary btn-lg" onclick="debugDatabaseStructure()" id="debugButton">
+                            🔍 ANALIZAR ESTRUCTURA DE BD
+                        </button>
+                        
+                        <div id="result" class="mt-4"></div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6>🔍 También puedes probar:</h6>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <a href="/debug-dashboard.html" class="btn btn-info w-100">📊 Dashboard</a>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/test-reservas.html" class="btn btn-primary w-100">📋 Reservas</a>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/test-db.html" class="btn btn-secondary w-100">🧪 Base de Datos</a>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/test-login.html" class="btn btn-warning w-100">🔐 Login</a>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/emergency-insert-reservas.html" class="btn btn-danger w-100">🚨 Insertar</a>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/admin-login.html" class="btn btn-success w-100">👑 Panel Admin</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function debugDatabaseStructure() {
+            const button = document.getElementById('debugButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.innerHTML = '🔍 ANALIZANDO...';
+            result.innerHTML = '<div class="alert alert-info">Analizando estructura de la base de datos...</div>';
+            
+            fetch('/api/debug/database-structure')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const debug = data.debug;
+                        
+                        result.innerHTML = `
+                            <div class="alert alert-success">
+                                <h6>✅ Análisis de estructura completado</h6>
+                                <p><strong>Mensaje:</strong> ${debug.message}</p>
+                                <hr>
+                                <h6>📋 Tablas en la Base de Datos:</h6>
+                                <div class="row">
+                                    ${debug.tablas.map(tabla => `
+                                        <div class="col-md-3 mb-2">
+                                            <span class="badge bg-primary">${tabla}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <hr>
+                                <h6>🔧 Estructura de la Tabla RESERVAS:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Columna</th>
+                                                <th>Tipo</th>
+                                                <th>Not Null</th>
+                                                <th>Default</th>
+                                                <th>Primary Key</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${debug.estructuraReservas.map(col => `
+                                                <tr>
+                                                    <td><code>${col.name}</code></td>
+                                                    <td>${col.type}</td>
+                                                    <td>${col.notnull ? 'Sí' : 'No'}</td>
+                                                    <td>${col.dflt_value || '-'}</td>
+                                                    <td>${col.pk ? 'Sí' : 'No'}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <hr>
+                                <h6>🏟️ Estructura de la Tabla CANCHAS:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Columna</th>
+                                                <th>Tipo</th>
+                                                <th>Not Null</th>
+                                                <th>Default</th>
+                                                <th>Primary Key</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${debug.estructuraCanchas.map(col => `
+                                                <tr>
+                                                    <td><code>${col.name}</code></td>
+                                                    <td>${col.type}</td>
+                                                    <td>${col.notnull ? 'Sí' : 'No'}</td>
+                                                    <td>${col.dflt_value || '-'}</td>
+                                                    <td>${col.pk ? 'Sí' : 'No'}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <hr>
+                                <h6>🏢 Estructura de la Tabla COMPLEJOS:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Columna</th>
+                                                <th>Tipo</th>
+                                                <th>Not Null</th>
+                                                <th>Default</th>
+                                                <th>Primary Key</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${debug.estructuraComplejos.map(col => `
+                                                <tr>
+                                                    <td><code>${col.name}</code></td>
+                                                    <td>${col.type}</td>
+                                                    <td>${col.notnull ? 'Sí' : 'No'}</td>
+                                                    <td>${col.dflt_value || '-'}</td>
+                                                    <td>${col.pk ? 'Sí' : 'No'}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <hr>
+                                <p>✅ La estructura de la base de datos está disponible.</p>
+                                <p>🔍 Revisa si las columnas coinciden con lo que espera el dashboard.</p>
+                            </div>
+                        `;
+                        
+                        button.innerHTML = '✅ ESTRUCTURA ANALIZADA';
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-success');
+                        
+                    } else {
+                        result.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>❌ Error analizando estructura</h6>
+                                <p><strong>Error:</strong> ${data.error}</p>
+                                <p>No se pudo analizar la estructura de la base de datos.</p>
+                            </div>
+                        `;
+                        
+                        button.innerHTML = '❌ ERROR';
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-danger');
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>❌ Error de conexión</h6>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>No se pudo conectar con el servidor.</p>
+                        </div>
+                    `;
+                    
+                    button.innerHTML = '❌ ERROR DE CONEXIÓN';
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('btn-danger');
+                    button.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>

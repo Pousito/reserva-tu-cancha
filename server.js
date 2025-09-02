@@ -330,103 +330,181 @@ app.get('/api/debug/dashboard', (req, res) => {
   });
 });
 
+// Endpoint de debug específico para verificar la estructura de la BD
+app.get('/api/debug/database-structure', (req, res) => {
+  console.log('🔍 DEBUG DE ESTRUCTURA DE BASE DE DATOS');
+  
+  // Verificar todas las tablas
+  db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, tables) => {
+    if (err) {
+      console.error('❌ Error obteniendo tablas:', err);
+      res.json({ success: false, error: err.message });
+      return;
+    }
+    
+    console.log(`📋 Tablas encontradas: ${tables.length}`);
+    
+    // Verificar estructura de la tabla reservas
+    db.all("PRAGMA table_info(reservas)", (err, columns) => {
+      if (err) {
+        console.error('❌ Error obteniendo estructura de reservas:', err);
+        res.json({ success: false, error: err.message });
+        return;
+      }
+      
+      console.log(`🔧 Columnas en tabla reservas: ${columns.length}`);
+      
+      // Verificar estructura de la tabla canchas
+      db.all("PRAGMA table_info(canchas)", (err, canchasColumns) => {
+        if (err) {
+          console.error('❌ Error obteniendo estructura de canchas:', err);
+          res.json({ success: false, error: err.message });
+          return;
+        }
+        
+        // Verificar estructura de la tabla complejos
+        db.all("PRAGMA table_info(complejos)", (err, complejosColumns) => {
+          if (err) {
+            console.error('❌ Error obteniendo estructura de complejos:', err);
+            res.json({ success: false, error: err.message });
+            return;
+          }
+          
+          res.json({
+            success: true,
+            debug: {
+              tablas: tables.map(t => t.name),
+              estructuraReservas: columns,
+              estructuraCanchas: canchasColumns,
+              estructuraComplejos: complejosColumns,
+              message: 'Estructura de BD analizada'
+            }
+          });
+        });
+      });
+    });
+  });
+});
+
 // Endpoint de emergencia para insertar reservas de prueba
 app.get('/api/emergency/insert-reservas', (req, res) => {
   console.log('🚨 INSERTANDO RESERVAS DE EMERGENCIA');
   
-  const reservasPrueba = [
-    {
-      codigo_reserva: 'RTC1756346441728A',
-      nombre_cliente: 'Juan Pérez',
-      rut_cliente: '12345678-9',
-      email_cliente: 'juan.perez@email.com',
-      fecha: '2025-08-27',
-      hora_inicio: '16:00',
-      hora_fin: '18:00',
-      precio_total: 28000,
-      estado: 'pendiente',
-      fecha_creacion: '2025-08-27 15:30:00',
-      cancha_id: 1
-    },
-    {
-      codigo_reserva: 'RTC1756346441729B',
-      nombre_cliente: 'María González',
-      rut_cliente: '98765432-1',
-      email_cliente: 'maria.gonzalez@email.com',
-      fecha: '2025-08-27',
-      hora_inicio: '18:00',
-      hora_fin: '20:00',
-      precio_total: 28000,
-      estado: 'confirmada',
-      fecha_creacion: '2025-08-27 15:35:00',
-      cancha_id: 2
-    },
-    {
-      codigo_reserva: 'RTC1756346753025IZSCY',
-      nombre_cliente: 'Ignacio Alejandro Araya Lillo',
-      rut_cliente: '11223344-5',
-      email_cliente: 'ignacio.araya@email.com',
-      fecha: '2025-08-28',
-      hora_inicio: '16:00',
-      hora_fin: '18:00',
-      precio_total: 28000,
-      estado: 'pendiente',
-      fecha_creacion: '2025-08-28 10:00:00',
-      cancha_id: 3
-    },
-    {
-      codigo_reserva: 'RTC1756348222489XLXZ7',
-      nombre_cliente: 'Daniel Orellana Peña',
-      rut_cliente: '55667788-9',
-      email_cliente: 'daniel.orellana@email.com',
-      fecha: '2025-08-29',
-      hora_inicio: '23:00',
-      hora_fin: '01:00',
-      precio_total: 28000,
-      estado: 'pendiente',
-      fecha_creacion: '2025-08-29 14:00:00',
-      cancha_id: 4
+  // Primero verificar si ya existen reservas
+  db.get("SELECT COUNT(*) as count FROM reservas", (err, countRow) => {
+    if (err) {
+      console.error('❌ Error verificando reservas existentes:', err);
+      res.json({ success: false, error: err.message });
+      return;
     }
-  ];
-  
-  let insertadas = 0;
-  let errores = 0;
-  
-  reservasPrueba.forEach((reserva, index) => {
-    const sql = `
-      INSERT OR REPLACE INTO reservas (
-        codigo_reserva, nombre_cliente, rut_cliente, email_cliente,
-        fecha, hora_inicio, hora_fin, precio_total, estado,
-        fecha_creacion, cancha_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
     
-    const params = [
-      reserva.codigo_reserva, reserva.nombre_cliente, reserva.rut_cliente,
-      reserva.email_cliente, reserva.fecha, reserva.hora_inicio,
-      reserva.hora_fin, reserva.precio_total, reserva.estado,
-      reserva.fecha_creacion, reserva.cancha_id
+    console.log(`📊 Reservas existentes antes de insertar: ${countRow.count}`);
+    
+    const reservasPrueba = [
+      {
+        codigo_reserva: 'RTC1756346441728A',
+        nombre_cliente: 'Juan Pérez',
+        rut_cliente: '12345678-9',
+        email_cliente: 'juan.perez@email.com',
+        fecha: '2025-08-27',
+        hora_inicio: '16:00',
+        hora_fin: '18:00',
+        precio_total: 28000,
+        estado: 'pendiente',
+        fecha_creacion: '2025-08-27 15:30:00',
+        cancha_id: 1
+      },
+      {
+        codigo_reserva: 'RTC1756346441729B',
+        nombre_cliente: 'María González',
+        rut_cliente: '98765432-1',
+        email_cliente: 'maria.gonzalez@email.com',
+        fecha: '2025-08-27',
+        hora_inicio: '18:00',
+        hora_fin: '20:00',
+        precio_total: 28000,
+        estado: 'confirmada',
+        fecha_creacion: '2025-08-27 15:35:00',
+        cancha_id: 2
+      },
+      {
+        codigo_reserva: 'RTC1756346753025IZSCY',
+        nombre_cliente: 'Ignacio Alejandro Araya Lillo',
+        rut_cliente: '11223344-5',
+        email_cliente: 'ignacio.araya@email.com',
+        fecha: '2025-08-28',
+        hora_inicio: '16:00',
+        hora_fin: '18:00',
+        precio_total: 28000,
+        estado: 'pendiente',
+        fecha_creacion: '2025-08-28 10:00:00',
+        cancha_id: 3
+      },
+      {
+        codigo_reserva: 'RTC1756348222489XLXZ7',
+        nombre_cliente: 'Daniel Orellana Peña',
+        rut_cliente: '55667788-9',
+        email_cliente: 'daniel.orellana@email.com',
+        fecha: '2025-08-29',
+        hora_inicio: '23:00',
+        hora_fin: '01:00',
+        precio_total: 28000,
+        estado: 'pendiente',
+        fecha_creacion: '2025-08-29 14:00:00',
+        cancha_id: 4
+      }
     ];
     
-    db.run(sql, params, function(err) {
-      if (err) {
-        console.error(`❌ Error insertando reserva ${index + 1}:`, err.message);
-        errores++;
-      } else {
-        console.log(`✅ Reserva ${index + 1} insertada: ${reserva.codigo_reserva}`);
-        insertadas++;
-      }
+    let insertadas = 0;
+    let errores = 0;
+    
+    reservasPrueba.forEach((reserva, index) => {
+      const sql = `
+        INSERT OR REPLACE INTO reservas (
+          codigo_reserva, nombre_cliente, rut_cliente, email_cliente,
+          fecha, hora_inicio, hora_fin, precio_total, estado,
+          fecha_creacion, cancha_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
       
-      // Si es la última reserva, enviar respuesta
-      if (insertadas + errores === reservasPrueba.length) {
-        res.json({
-          success: true,
-          message: `Reservas insertadas: ${insertadas}, Errores: ${errores}`,
-          total: reservasPrueba.length,
-          insertadas,
-          errores
-        });
-      }
+      const params = [
+        reserva.codigo_reserva, reserva.nombre_cliente, reserva.rut_cliente,
+        reserva.email_cliente, reserva.fecha, reserva.hora_inicio,
+        reserva.hora_fin, reserva.precio_total, reserva.estado,
+        reserva.fecha_creacion, reserva.cancha_id
+      ];
+      
+      db.run(sql, params, function(err) {
+        if (err) {
+          console.error(`❌ Error insertando reserva ${index + 1}:`, err.message);
+          errores++;
+        } else {
+          console.log(`✅ Reserva ${index + 1} insertada: ${reserva.codigo_reserva}`);
+          insertadas++;
+        }
+        
+        // Si es la última reserva, verificar y enviar respuesta
+        if (insertadas + errores === reservasPrueba.length) {
+          // Verificar cuántas reservas quedaron después de insertar
+          db.get("SELECT COUNT(*) as count FROM reservas", (err, finalCountRow) => {
+            if (err) {
+              console.error('❌ Error verificando reservas finales:', err);
+            } else {
+              console.log(`📊 Reservas después de insertar: ${finalCountRow.count}`);
+            }
+            
+            res.json({
+              success: true,
+              message: `Reservas insertadas: ${insertadas}, Errores: ${errores}`,
+              total: reservasPrueba.length,
+              insertadas,
+              errores,
+              reservasAntes: countRow.count,
+              reservasDespues: finalCountRow ? finalCountRow.count : 'Error'
+            });
+          });
+        }
+      });
     });
   });
 });
