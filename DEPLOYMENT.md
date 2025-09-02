@@ -16,7 +16,7 @@
    git add .
    git commit -m "Initial commit - Sistema de reservas"
    git branch -M main
-   git remote add origin https://github.com/TU_USUARIO/reserva-tu-cancha.git
+   git remote add origin https://github.com/Pousito/reserva-tu-cancha.git
    git push -u origin main
    ```
 

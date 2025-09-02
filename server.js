@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { initDatabaseIfEmpty } = require('./init-db');
 require('dotenv').config();
 
 const app = express();
@@ -12,12 +13,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Base de datos
-const db = new sqlite3.Database('./database.sqlite', (err) => {
+// Base de datos con ruta persistente para Render
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/opt/render/project/src/database.sqlite'  // Ruta persistente en Render
+  : './database.sqlite';                       // Ruta local
+
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error conectando a la base de datos:', err);
+    console.error('Ruta intentada:', dbPath);
   } else {
-    console.log('Conectado a la base de datos SQLite');
+    console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
     initDatabase();
   }
 });

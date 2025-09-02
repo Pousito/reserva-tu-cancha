@@ -14,6 +14,13 @@ services:
         generateValue: true
       - key: CORS_ORIGIN
         value: https://reserva-tu-cancha.onrender.com
+      - key: DB_PATH
+        value: /opt/render/project/src/database.sqlite
     healthCheckPath: /health
     autoDeploy: true
     branch: main
+    # Configuración para base de datos persistente
+    disk:
+      name: reserva-tu-cancha-db
+      mountPath: /opt/render/project/src
+      sizeGB: 1

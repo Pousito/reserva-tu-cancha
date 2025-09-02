@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
-    "install-client": "cd client && npm install"
+    "install-client": "cd client && npm install",
+    "deploy": "node auto-deploy.js",
+    "quick-deploy": "git add . && git commit -m \"Quick update\" && git push origin main"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
