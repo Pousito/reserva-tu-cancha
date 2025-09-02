@@ -386,6 +386,50 @@ app.get('/api/debug/database-structure', (req, res) => {
   });
 });
 
+// Endpoint para verificar datos en las tablas
+app.get('/api/debug/table-data', (req, res) => {
+  console.log('🔍 VERIFICANDO DATOS EN TABLAS');
+  
+  // Verificar datos en cada tabla
+  const checks = [
+    { table: 'reservas', query: 'SELECT COUNT(*) as count FROM reservas' },
+    { table: 'canchas', query: 'SELECT COUNT(*) as count FROM canchas' },
+    { table: 'complejos', query: 'SELECT COUNT(*) as count FROM complejos' },
+    { table: 'usuarios', query: 'SELECT COUNT(*) as count FROM usuarios' }
+  ];
+  
+  let results = {};
+  let completed = 0;
+  
+  checks.forEach(check => {
+    db.get(check.query, (err, row) => {
+      if (err) {
+        console.error(`❌ Error verificando ${check.table}:`, err);
+        results[check.table] = { count: 'Error', error: err.message };
+      } else {
+        console.log(`📊 ${check.table}: ${row.count} registros`);
+        results[check.table] = { count: row.count };
+      }
+      
+      completed++;
+      
+      if (completed === checks.length) {
+        // Si hay canchas, mostrar algunas
+        if (results.canchas.count > 0) {
+          db.all('SELECT id, nombre, complejo_id FROM canchas LIMIT 5', (err, canchas) => {
+            if (!err) {
+              results.canchas.ejemplos = canchas;
+            }
+            res.json({ success: true, data: results });
+          });
+        } else {
+          res.json({ success: true, data: results });
+        }
+      }
+    });
+  });
+});
+
 // Endpoint de emergencia para insertar reservas de prueba
 app.get('/api/emergency/insert-reservas', (req, res) => {
   console.log('🚨 INSERTANDO RESERVAS DE EMERGENCIA');
