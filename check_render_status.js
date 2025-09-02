@@ -68,7 +68,7 @@ function checkRenderDatabaseStatus() {
         if (row.count > 0) {
           db.all('SELECT nombre, tipo, precio_hora FROM canchas LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
-              console.log('   Ejemplos:', rows.map(r => `${r.nombre} (${r.tipo}) - $${r.precio_hora}`).join(', '));
+              console.log('   Ejemplos:', rows.map(r => r.nombre + ' (' + r.tipo + ') - $' + r.precio_hora).join(', '));
             }
           });
         }
@@ -84,7 +84,7 @@ function checkRenderDatabaseStatus() {
         if (row.count > 0) {
           db.all('SELECT fecha, hora_inicio, nombre_cliente, estado FROM reservas LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
-              console.log('   Ejemplos:', rows.map(r => `${r.fecha} ${r.hora_inicio} - ${r.nombre_cliente} (${r.estado})`).join(', '));
+              console.log('   Ejemplos:', rows.map(r => r.fecha + ' ' + r.hora_inicio + ' - ' + r.nombre_cliente + ' (' + r.estado + ')').join(', '));
             }
           });
         } else {
