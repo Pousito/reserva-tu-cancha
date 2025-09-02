@@ -6,13 +6,17 @@ let complejoSeleccionado = null;
 let tipoCanchaSeleccionado = null;
 let canchaSeleccionada = null;
 
-// API Base URL
-const API_BASE = 'http://localhost:3000/api';
+// API Base URL - Detecta automáticamente el entorno
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000/api'  // Desarrollo local
+  : `${window.location.protocol}//${window.location.host}/api`;  // Producción (Render)
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== INICIALIZACIÓN DE LA APLICACIÓN ===');
     console.log('DOM cargado, inicializando aplicación');
+    console.log('🌍 Hostname:', window.location.hostname);
+    console.log('🔗 API_BASE configurado como:', API_BASE);
     
     cargarCiudades();
     configurarEventListeners();
@@ -691,18 +695,57 @@ function mostrarSeccionDisponibilidad() {
 // Funciones de carga de datos
 async function cargarCiudades() {
     try {
+        console.log('🔄 Intentando cargar ciudades desde:', `${API_BASE}/ciudades`);
+        
         const response = await fetch(`${API_BASE}/ciudades`);
-        ciudades = await response.json();
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const ciudadesData = await response.json();
+        console.log('🏙️ Ciudades recibidas:', ciudadesData);
+        
+        if (!Array.isArray(ciudadesData)) {
+            throw new Error('Los datos recibidos no son un array de ciudades');
+        }
+        
+        ciudades = ciudadesData;
         
         const select = document.getElementById('ciudadSelect');
+        if (!select) {
+            throw new Error('No se encontró el elemento select de ciudades');
+        }
+        
+        // Limpiar opciones existentes
+        select.innerHTML = '<option value="">Selecciona una ciudad...</option>';
+        
         ciudades.forEach(ciudad => {
             const option = document.createElement('option');
             option.value = ciudad.id;
             option.textContent = ciudad.nombre;
             select.appendChild(option);
         });
+        
+        console.log(`✅ ${ciudades.length} ciudades cargadas exitosamente`);
+        
     } catch (error) {
-        mostrarNotificacion('Error al cargar las ciudades', 'danger');
+        console.error('❌ Error cargando ciudades:', error);
+        console.error('🔗 URL intentada:', `${API_BASE}/ciudades`);
+        console.error('🌍 Hostname actual:', window.location.hostname);
+        console.error('🔗 API_BASE configurado:', API_BASE);
+        
+        // Mostrar error más específico
+        let mensajeError = 'Error al cargar las ciudades';
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            mensajeError = 'Error de conexión: No se pudo conectar al servidor';
+        } else if (error.message.includes('HTTP error')) {
+            mensajeError = `Error del servidor: ${error.message}`;
+        }
+        
+        mostrarNotificacion(mensajeError, 'danger');
     }
 }
 
