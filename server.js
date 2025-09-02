@@ -863,6 +863,23 @@ app.post('/api/reservas', (req, res) => {
   });
 });
 
+// Obtener todas las reservas (para el dashboard)
+app.get('/api/reservas', (req, res) => {
+  db.all(`
+    SELECT r.*, c.nombre as nombre_cancha, c.tipo, comp.nombre as nombre_complejo
+    FROM reservas r
+    JOIN canchas c ON r.cancha_id = c.id
+    JOIN complejos comp ON c.complejo_id = comp.id
+    ORDER BY r.fecha_creacion DESC
+  `, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows || []);
+  });
+});
+
 // Obtener reserva por código
 app.get('/api/reservas/:codigo', (req, res) => {
   const { codigo } = req.params;
@@ -1832,7 +1849,7 @@ function getCustomersAnalysis(dateFrom, dateTo, complexId) {
   });
 }
 
-// Endpoint temporal para poblar base de datos (SOLO PARA DESARROLLO)
+// Endpoint temporal para poblar base de datos con reservas de ejemplo
 app.post('/admin/populate-db', async (req, res) => {
   try {
     console.log('🌱 Endpoint de población de BD llamado');
