@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes y Analytics - ReservaTuCancha Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        .navbar-admin {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Métricas Cards */
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        .metric-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .metric-icon.revenue {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        .metric-icon.reservations {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
+        .metric-icon.occupancy {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        .metric-icon.customers {
+            background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+        }
+        .metric-icon i {
+            font-size: 1.5rem;
+            color: white;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .metric-change {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .metric-change.positive {
+            color: #28a745;
+        }
+        .metric-change.negative {
+            color: #dc3545;
+        }
+
+        /* Filtros */
+        .filters-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        .filter-item {
+            min-width: 150px;
+        }
+        .filter-item label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Gráficos */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 1rem 0;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        .chart-title i {
+            margin-right: 0.5rem;
+            color: #667eea;
+        }
+
+        /* Tablas de reportes */
+        .report-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .report-table .table {
+            margin-bottom: 0;
+        }
+        .report-table .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 1rem;
+        }
+        .report-table .table tbody td {
+            padding: 1rem;
+            border-color: #e9ecef;
+            vertical-align: middle;
+        }
+        .report-table .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Botones de exportación */
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-export {
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+            color: white;
+        }
+        .btn-excel {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-item {
+                min-width: auto;
+            }
+            .metric-value {
+                font-size: 1.5rem;
+            }
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h4 class="text-center mb-4">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Admin Panel
+                        </h4>
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="admin-dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="nav-link" href="admin-reservations.html">
+                                <i class="fas fa-calendar-check me-2"></i>Reservas
+                            </a>
+                            <a class="nav-link" href="admin-complexes.html">
+                                <i class="fas fa-building me-2"></i>Complejos
+                            </a>
+                            <a class="nav-link" href="admin-courts.html">
+                                <i class="fas fa-futbol me-2"></i>Canchas
+                            </a>
+                            <a class="nav-link active" href="admin-reports.html">
+                                <i class="fas fa-chart-bar me-2"></i>Reportes
+                            </a>
+                            <hr class="my-3">
+                            <a class="nav-link" href="index.html">
+                                <i class="fas fa-globe me-2"></i>Sitio Principal
+                            </a>
+                            <a class="nav-link" href="#" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-0">
+                <div class="main-content">
+                    <!-- Top Navbar -->
+                    <nav class="navbar navbar-admin">
+                        <div class="container-fluid">
+                            <h5 class="mb-0">Reportes y Analytics</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="me-3" id="adminWelcome">Bienvenido, Admin</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Content -->
+                    <div class="p-4">
+                        <!-- Filtros -->
+                        <div class="filters-card">
+                            <h6 class="mb-3">
+                                <i class="fas fa-filter me-2"></i>Filtros de Reporte
+                            </h6>
+                            <div class="filter-group">
+                                <div class="filter-item">
+                                    <label for="dateFrom">Desde</label>
+                                    <input type="date" class="form-control" id="dateFrom">
+                                </div>
+                                <div class="filter-item">
+                                    <label for="dateTo">Hasta</label>
+                                    <input type="date" class="form-control" id="dateTo">
+                                </div>
+                                <div class="filter-item">
+                                    <label for="complexFilter">Complejo</label>
+                                    <select class="form-select" id="complexFilter">
+                                        <option value="">Todos los complejos</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <label for="periodFilter">Período</label>
+                                    <select class="form-select" id="periodFilter">
+                                        <option value="today">Hoy</option>
+                                        <option value="week">Esta semana</option>
+                                        <option value="month" selected>Este mes</option>
+                                        <option value="quarter">Este trimestre</option>
+                                        <option value="year">Este año</option>
+                                        <option value="custom">Personalizado</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <button class="btn btn-primary" onclick="generateReports()">
+                                        <i class="fas fa-sync-alt me-2"></i>Generar Reportes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métricas Principales -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card">
+                                    <div class="metric-icon revenue">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                    <div class="metric-value" id="totalRevenue">$0</div>
+                                    <div class="metric-label">Ingresos Totales</div>
+                                    <div class="metric-change positive" id="revenueChange">
+                                        <i class="fas fa-arrow-up me-1"></i>+0%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card">
+                                    <div class="metric-icon reservations">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div class="metric-value" id="totalReservations">0</div>
+                                    <div class="metric-label">Reservas Totales</div>
+                                    <div class="metric-change positive" id="reservationsChange">
+                                        <i class="fas fa-arrow-up me-1"></i>+0%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card">
+                                    <div class="metric-icon occupancy">
+                                        <i class="fas fa-chart-pie"></i>
+                                    </div>
+                                    <div class="metric-value" id="occupancyRate">0%</div>
+                                    <div class="metric-label">Ocupación Promedio</div>
+                                    <div class="metric-change positive" id="occupancyChange">
+                                        <i class="fas fa-arrow-up me-1"></i>+0%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card">
+                                    <div class="metric-icon customers">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="metric-value" id="uniqueCustomers">0</div>
+                                    <div class="metric-label">Clientes Únicos</div>
+                                    <div class="metric-change positive" id="customersChange">
+                                        <i class="fas fa-arrow-up me-1"></i>+0%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráficos -->
+                        <div class="row">
+                            <div class="col-lg-8 mb-4">
+                                <div class="chart-card">
+                                    <div class="chart-title">
+                                        <i class="fas fa-chart-line"></i>
+                                        Ingresos por Día
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="revenueChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-4">
+                                <div class="chart-card">
+                                    <div class="chart-title">
+                                        <i class="fas fa-chart-pie"></i>
+                                        Reservas por Tipo
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="typeChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <div class="chart-card">
+                                    <div class="chart-title">
+                                        <i class="fas fa-chart-bar"></i>
+                                        Ocupación por Complejo
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="occupancyChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <div class="chart-card">
+                                    <div class="chart-title">
+                                        <i class="fas fa-clock"></i>
+                                        Horarios Más Populares
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="hoursChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tablas de Reportes -->
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <div class="content-card">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-trophy me-2"></i>Top Complejos
+                                        </h6>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-export btn-pdf" onclick="exportToPDF('topComplexes')">
+                                                <i class="fas fa-file-pdf me-1"></i>PDF
+                                            </button>
+                                            <button class="btn btn-export btn-excel" onclick="exportToExcel('topComplexes')">
+                                                <i class="fas fa-file-excel me-1"></i>Excel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="report-table">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Complejo</th>
+                                                    <th>Reservas</th>
+                                                    <th>Ingresos</th>
+                                                    <th>Ocupación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="topComplexesTable">
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-muted">
+                                                        <i class="fas fa-spinner fa-spin"></i> Cargando datos...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <div class="content-card">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-star me-2"></i>Top Canchas
+                                        </h6>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-export btn-pdf" onclick="exportToPDF('topCourts')">
+                                                <i class="fas fa-file-pdf me-1"></i>PDF
+                                            </button>
+                                            <button class="btn btn-export btn-excel" onclick="exportToExcel('topCourts')">
+                                                <i class="fas fa-file-excel me-1"></i>Excel
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="report-table">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Cancha</th>
+                                                    <th>Complejo</th>
+                                                    <th>Reservas</th>
+                                                    <th>Ingresos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="topCourtsTable">
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-muted">
+                                                        <i class="fas fa-spinner fa-spin"></i> Cargando datos...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reporte de Clientes -->
+                        <div class="content-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-users me-2"></i>Análisis de Clientes
+                                </h6>
+                                <div class="export-buttons">
+                                    <button class="btn btn-export btn-pdf" onclick="exportToPDF('customers')">
+                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                    </button>
+                                    <button class="btn btn-export btn-excel" onclick="exportToExcel('customers')">
+                                        <i class="fas fa-file-excel me-1"></i>Excel
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="report-table">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Cliente</th>
+                                            <th>Email</th>
+                                            <th>Reservas</th>
+                                            <th>Total Gastado</th>
+                                            <th>Última Reserva</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="customersTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin"></i> Cargando datos...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="admin-reports.js?v=1.0"></script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: reserva-tu-cancha
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://reserva-tu-cancha.onrender.com
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main

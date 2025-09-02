@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ReservaTuCancha Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-icon.success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
+        .stat-icon.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-icon.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .chart-container canvas {
+            max-height: 300px !important;
+        }
+        .recent-reservations {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .reservation-item {
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .navbar-admin {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h4 class="text-center mb-4">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Admin Panel
+                        </h4>
+                        <nav class="nav flex-column">
+                            <a class="nav-link active" href="admin-dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="nav-link" href="admin-reservations.html">
+                                <i class="fas fa-calendar-check me-2"></i>Reservas
+                            </a>
+                            <a class="nav-link" href="admin-complexes.html">
+                                <i class="fas fa-building me-2"></i>Complejos
+                            </a>
+                            <a class="nav-link" href="admin-courts.html">
+                                <i class="fas fa-futbol me-2"></i>Canchas
+                            </a>
+                            <a class="nav-link" href="admin-reports.html">
+                                <i class="fas fa-chart-bar me-2"></i>Reportes
+                            </a>
+                            <hr class="my-3">
+                            <a class="nav-link" href="index.html">
+                                <i class="fas fa-globe me-2"></i>Sitio Principal
+                            </a>
+                            <a class="nav-link" href="#" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-0">
+                <div class="main-content">
+                    <!-- Top Navbar -->
+                    <nav class="navbar navbar-admin">
+                        <div class="container-fluid">
+                            <h5 class="mb-0">Dashboard</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="me-3" id="adminWelcome">Bienvenido, Admin</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Dashboard Content -->
+                    <div class="p-4">
+                        <!-- Statistics Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon primary me-3">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalReservations">0</h3>
+                                            <p class="text-muted mb-0">Reservas Totales</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon success me-3">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalRevenue">$0</h3>
+                                            <p class="text-muted mb-0">Ingresos Totales</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon warning me-3">
+                                            <i class="fas fa-futbol"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalCourts">0</h3>
+                                            <p class="text-muted mb-0">Canchas Activas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon info me-3">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalComplexes">0</h3>
+                                            <p class="text-muted mb-0">Complejos</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts and Recent Reservations -->
+                        <div class="row">
+                            <div class="col-md-8 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">
+                                        <i class="fas fa-chart-line me-2"></i>Reservas por Día (Últimos 7 días)
+                                    </h5>
+                                    <div style="position: relative; height: 300px;">
+                                        <canvas id="reservationsChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="recent-reservations">
+                                    <h5 class="mb-3">
+                                        <i class="fas fa-clock me-2"></i>Reservas Recientes
+                                    </h5>
+                                    <div id="recentReservationsList">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Reservations -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">
+                                        <i class="fas fa-calendar-day me-2"></i>Reservas de Hoy
+                                    </h5>
+                                    <div id="todayReservationsList">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="admin-dashboard.js?v=1.4"></script>
+</body>
+</html>
