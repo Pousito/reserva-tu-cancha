@@ -1,5 +1,7 @@
-// API Base URL
-const API_BASE = 'http://localhost:3000/api';
+// API Base URL - Dinámico para desarrollo y producción
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000/api' 
+    : '/api';
 
 // Variables globales
 let reservas = [];

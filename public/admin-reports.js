@@ -1,5 +1,7 @@
-// Configuración de la API
-const API_BASE = 'http://localhost:3000/api';
+// Configuración de la API - Dinámico para desarrollo y producción
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000/api' 
+    : '/api';
 
 // Variables globales
 let currentUser = null;
