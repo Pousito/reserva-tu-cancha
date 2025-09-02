@@ -221,6 +221,70 @@ function createAdminUsers() {
 
 // Rutas API
 
+// Endpoint de diagnóstico para verificar el estado de la base de datos
+app.get('/api/debug/database', (req, res) => {
+  console.log('🔍 SOLICITUD DE DIAGNÓSTICO RECIBIDA');
+  
+  const diagnosticInfo = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'undefined',
+    dbPath: process.env.NODE_ENV === 'production' ? '/opt/render/project/src/database.sqlite' : './database.sqlite',
+    serverStatus: 'running',
+    databaseConnection: 'unknown'
+  };
+  
+  // Verificar conexión a la base de datos
+  db.get("SELECT name FROM sqlite_master WHERE type='table'", (err, row) => {
+    if (err) {
+      diagnosticInfo.databaseConnection = 'error';
+      diagnosticInfo.databaseError = err.message;
+      diagnosticInfo.tables = [];
+      diagnosticInfo.usersTable = false;
+      diagnosticInfo.usersCount = 0;
+      
+      console.log('❌ Error en diagnóstico de BD:', err.message);
+      res.json(diagnosticInfo);
+      return;
+    }
+    
+    // Obtener todas las tablas
+    db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, tables) => {
+      if (err) {
+        diagnosticInfo.databaseConnection = 'error';
+        diagnosticInfo.databaseError = err.message;
+        res.json(diagnosticInfo);
+        return;
+      }
+      
+      diagnosticInfo.databaseConnection = 'connected';
+      diagnosticInfo.tables = tables.map(t => t.name);
+      diagnosticInfo.usersTable = tables.some(t => t.name === 'usuarios');
+      
+      // Si existe la tabla usuarios, contar usuarios
+      if (diagnosticInfo.usersTable) {
+        db.get("SELECT COUNT(*) as count FROM usuarios", (err, row) => {
+          diagnosticInfo.usersCount = err ? 'error' : row.count;
+          
+          // Obtener detalles de usuarios si existen
+          if (row && row.count > 0) {
+            db.all("SELECT email, rol, activo FROM usuarios", (err, usuarios) => {
+              diagnosticInfo.users = err ? [] : usuarios;
+              console.log('✅ Diagnóstico completado:', diagnosticInfo);
+              res.json(diagnosticInfo);
+            });
+          } else {
+            console.log('✅ Diagnóstico completado:', diagnosticInfo);
+            res.json(diagnosticInfo);
+          }
+        });
+      } else {
+        console.log('✅ Diagnóstico completado:', diagnosticInfo);
+        res.json(diagnosticInfo);
+      }
+    });
+  });
+});
+
 // Obtener todas las ciudades
 app.get('/api/ciudades', (req, res) => {
   db.all("SELECT * FROM ciudades ORDER BY nombre", (err, rows) => {
