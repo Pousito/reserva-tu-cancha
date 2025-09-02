@@ -269,6 +269,72 @@ app.get('/api/test/database', (req, res) => {
   });
 });
 
+// Endpoint para probar login directamente
+app.get('/api/test/login', (req, res) => {
+  console.log('🔐 PRUEBA DE LOGIN DIRECTO');
+  
+  const testEmail = 'admin@reservatucancha.com';
+  const testPassword = 'admin123';
+  
+  console.log(`🧪 Probando login con: ${testEmail} / ${testPassword}`);
+  
+  // Buscar usuario específico
+  db.get("SELECT * FROM usuarios WHERE email = ?", [testEmail], (err, usuario) => {
+    if (err) {
+      console.error('❌ Error buscando usuario:', err);
+      res.json({ 
+        success: false, 
+        error: err.message,
+        message: 'Error buscando usuario en la base de datos'
+      });
+      return;
+    }
+    
+    if (!usuario) {
+      console.log('❌ Usuario NO encontrado');
+      res.json({ 
+        success: false, 
+        error: 'Usuario no encontrado',
+        message: `No se encontró usuario con email: ${testEmail}`,
+        debug: {
+          emailBuscado: testEmail,
+          passwordBuscado: testPassword
+        }
+      });
+      return;
+    }
+    
+    console.log('✅ Usuario encontrado:', usuario);
+    
+    // Verificar password
+    if (usuario.password === testPassword) {
+      console.log('✅ Password correcto');
+      res.json({ 
+        success: true, 
+        message: 'Login exitoso',
+        usuario: {
+          id: usuario.id,
+          email: usuario.email,
+          nombre: usuario.nombre,
+          rol: usuario.rol,
+          activo: usuario.activo
+        }
+      });
+    } else {
+      console.log('❌ Password incorrecto');
+      res.json({ 
+        success: false, 
+        error: 'Password incorrecto',
+        message: 'El password no coincide',
+        debug: {
+          passwordEnBD: usuario.password,
+          passwordBuscado: testPassword
+        }
+      });
+    }
+  });
+});
+
 // Endpoint de emergencia para crear tabla usuarios
 app.get('/api/emergency/fix-users', (req, res) => {
   console.log('🚨 SOLICITUD DE ARREGLO DE EMERGENCIA RECIBIDA');

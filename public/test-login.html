@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Prueba de Login - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark text-center">
+                        <h3>🔐 PRUEBA DE LOGIN DIRECTO</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-4">Probar login con credenciales hardcodeadas</h5>
+                        
+                        <div class="alert alert-info">
+                            <strong>Credenciales de prueba:</strong><br>
+                            Email: admin@reservatucancha.com<br>
+                            Password: admin123
+                        </div>
+                        
+                        <button class="btn btn-warning btn-lg" onclick="testLogin()" id="testButton">
+                            🔐 PROBAR LOGIN DIRECTO
+                        </button>
+                        
+                        <div id="result" class="mt-4"></div>
+                        
+                        <hr class="my-4">
+                        
+                        <h6>🔍 También puedes probar el login normal:</h6>
+                        <a href="/admin-login.html" class="btn btn-primary">Ir al Login Normal</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testLogin() {
+            const button = document.getElementById('testButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.innerHTML = '🔐 PROBANDO...';
+            result.innerHTML = '<div class="alert alert-info">Probando login directo...</div>';
+            
+            fetch('/api/test/login')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        result.innerHTML = `
+                            <div class="alert alert-success">
+                                <h6>✅ Login exitoso</h6>
+                                <p><strong>Mensaje:</strong> ${data.message}</p>
+                                <hr>
+                                <h6>👤 Usuario encontrado:</h6>
+                                <ul class="text-start">
+                                    <li><strong>ID:</strong> ${data.usuario.id}</li>
+                                    <li><strong>Email:</strong> ${data.usuario.email}</li>
+                                    <li><strong>Nombre:</strong> ${data.usuario.nombre}</li>
+                                    <li><strong>Rol:</strong> ${data.usuario.rol}</li>
+                                    <li><strong>Activo:</strong> ${data.usuario.activo ? 'Sí' : 'No'}</li>
+                                </ul>
+                                <hr>
+                                <p>✅ El problema NO está en la base de datos. El usuario existe y las credenciales son correctas.</p>
+                                <p>🔍 El problema debe estar en el frontend o en la API de login.</p>
+                            </div>
+                        `;
+                        button.innerHTML = '✅ LOGIN EXITOSO';
+                        button.classList.remove('btn-warning');
+                        button.classList.add('btn-success');
+                    } else {
+                        result.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>❌ Login fallido</h6>
+                                <p><strong>Error:</strong> ${data.error}</p>
+                                <p><strong>Mensaje:</strong> ${data.message}</p>
+                                <hr>
+                                <h6>🐛 Información de debug:</h6>
+                                <pre class="bg-dark text-light p-3 rounded">${JSON.stringify(data.debug, null, 2)}</pre>
+                                <hr>
+                                <p>❌ El problema SÍ está en la base de datos o en las credenciales.</p>
+                            </div>
+                        `;
+                        button.innerHTML = '❌ LOGIN FALLIDO';
+                        button.classList.remove('btn-warning');
+                        button.classList.add('btn-danger');
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>❌ Error de conexión</h6>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>No se pudo conectar con el servidor.</p>
+                        </div>
+                    `;
+                    button.innerHTML = '❌ ERROR DE CONEXIÓN';
+                    button.classList.remove('btn-warning');
+                    button.classList.add('btn-danger');
+                    button.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>
