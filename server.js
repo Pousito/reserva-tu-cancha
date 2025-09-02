@@ -221,6 +221,54 @@ function createAdminUsers() {
 
 // Rutas API
 
+// Endpoint de prueba para verificar la base de datos
+app.get('/api/test/database', (req, res) => {
+  console.log('🧪 PRUEBA DE BASE DE DATOS');
+  
+  // Verificar si la tabla usuarios existe
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'", (err, row) => {
+    if (err) {
+      console.error('❌ Error verificando tabla usuarios:', err);
+      res.json({ 
+        success: false, 
+        error: err.message,
+        message: 'Error verificando tabla usuarios'
+      });
+      return;
+    }
+    
+    if (!row) {
+      console.log('❌ Tabla usuarios NO existe');
+      res.json({ 
+        success: false, 
+        error: 'Tabla usuarios no existe',
+        message: 'La tabla usuarios no existe en la base de datos'
+      });
+      return;
+    }
+    
+    console.log('✅ Tabla usuarios existe');
+    
+    // Contar usuarios
+    db.get("SELECT COUNT(*) as count FROM usuarios", (err, countRow) => {
+      if (err) {
+        res.json({ 
+          success: false, 
+          error: err.message,
+          message: 'Error contando usuarios'
+        });
+        return;
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Tabla usuarios existe y funciona',
+        usersCount: countRow.count
+      });
+    });
+  });
+});
+
 // Endpoint de emergencia para crear tabla usuarios
 app.get('/api/emergency/fix-users', (req, res) => {
   console.log('🚨 SOLICITUD DE ARREGLO DE EMERGENCIA RECIBIDA');

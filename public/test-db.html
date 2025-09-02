@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Prueba de Base de Datos - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3>🧪 PRUEBA DE BASE DE DATOS</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-4">Verificar estado de la base de datos</h5>
+                        
+                        <button class="btn btn-primary btn-lg" onclick="testDatabase()" id="testButton">
+                            🧪 PROBAR BASE DE DATOS
+                        </button>
+                        
+                        <div id="result" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testDatabase() {
+            const button = document.getElementById('testButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.innerHTML = '🧪 PROBANDO...';
+            result.innerHTML = '<div class="alert alert-info">Probando conexión a la base de datos...</div>';
+            
+            fetch('/api/test/database')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        result.innerHTML = `
+                            <div class="alert alert-success">
+                                <h6>✅ Base de datos funcionando</h6>
+                                <p><strong>Mensaje:</strong> ${data.message}</p>
+                                <p><strong>Usuarios encontrados:</strong> ${data.usersCount}</p>
+                                <hr>
+                                <p>La tabla usuarios existe y funciona correctamente.</p>
+                            </div>
+                        `;
+                        button.innerHTML = '✅ PRUEBA EXITOSA';
+                        button.classList.remove('btn-primary');
+                        button.classList.add('btn-success');
+                    } else {
+                        result.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h6>❌ Problema en la base de datos</h6>
+                                <p><strong>Error:</strong> ${data.error}</p>
+                                <p><strong>Mensaje:</strong> ${data.message}</p>
+                                <hr>
+                                <p>La tabla usuarios NO existe. Necesitas ejecutar el arreglo de emergencia.</p>
+                                <a href="/emergency-fix.html" class="btn btn-warning">🚨 IR AL ARREGLO DE EMERGENCIA</a>
+                            </div>
+                        `;
+                        button.innerHTML = '❌ PRUEBA FALLIDA';
+                        button.classList.remove('btn-primary');
+                        button.classList.add('btn-danger');
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h6>❌ Error de conexión</h6>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>No se pudo conectar con el servidor.</p>
+                        </div>
+                    `;
+                    button.innerHTML = '❌ ERROR DE CONEXIÓN';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-danger');
+                    button.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>
