@@ -86,6 +86,18 @@ function initDatabase() {
       FOREIGN KEY (cancha_id) REFERENCES canchas (id)
     )`);
 
+    // Tabla de usuarios administradores
+    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      nombre TEXT NOT NULL,
+      rol TEXT NOT NULL CHECK(rol IN ('super_admin', 'admin', 'usuario')),
+      activo INTEGER DEFAULT 1,
+      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+      ultimo_acceso DATETIME
+    )`);
+
     // Migración: Agregar campo descripcion a complejos si no existe
     db.run(`ALTER TABLE complejos ADD COLUMN descripcion TEXT`, (err) => {
       if (err && !err.message.includes('duplicate column name')) {
@@ -164,6 +176,46 @@ function insertSampleData() {
     db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (3, 'Cancha Techada 2', 'futbol', 28000)");
     
     console.log('Datos de ejemplo insertados correctamente.');
+    
+    // Crear usuarios administradores
+    createAdminUsers();
+  });
+}
+
+// Crear usuarios administradores
+function createAdminUsers() {
+  console.log('Creando usuarios administradores...');
+  
+  const adminUsers = [
+    {
+      email: 'admin@reservatucancha.com',
+      password: 'admin123',
+      nombre: 'Super Administrador',
+      rol: 'super_admin'
+    },
+    {
+      email: 'admin@magnasports.cl',
+      password: 'magnasports2024',
+      nombre: 'Administrador MagnaSports',
+      rol: 'admin'
+    },
+    {
+      email: 'admin@complejocentral.cl',
+      password: 'complejo2024',
+      nombre: 'Administrador Complejo Central',
+      rol: 'admin'
+    }
+  ];
+  
+  adminUsers.forEach(usuario => {
+    db.run("INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)", 
+      [usuario.email, usuario.password, usuario.nombre, usuario.rol], (err) => {
+      if (err) {
+        console.error(`Error creando usuario ${usuario.email}:`, err);
+      } else {
+        console.log(`Usuario administrador creado: ${usuario.email}`);
+      }
+    });
   });
 }
 
@@ -371,42 +423,37 @@ function requireComplexOwner(req, res, next) {
 app.post('/api/admin/login', (req, res) => {
   const { email, password } = req.body;
   
-  // Credenciales hardcodeadas (en producción usar base de datos)
-  if (email === 'admin@reservatucancha.com' && password === 'admin123') {
-    res.json({
-      token: 'super-admin-token-123',
-      user: {
-        id: 1,
-        email: 'admin@reservatucancha.com',
-        nombre: 'Super Administrador',
-        rol: 'super_admin'
-      }
-    });
-  } else if (email === 'magnasports@reservatucancha.com' && password === 'magnasports123') {
-    res.json({
-      token: 'complex-owner-token-456',
-      user: {
-        id: 2,
-        email: 'magnasports@reservatucancha.com',
-        nombre: 'Dueño MagnaSports',
-        rol: 'complex_owner',
-        complejo_id: 3 // ID del complejo MagnaSports
-      }
-    });
-  } else if (email === 'deportivo@reservatucancha.com' && password === 'deportivo123') {
-    res.json({
-      token: 'complex-owner-token-789',
-      user: {
-        id: 3,
-        email: 'deportivo@reservatucancha.com',
-        nombre: 'Dueño Deportivo Central',
-        rol: 'complex_owner',
-        complejo_id: 1 // ID del complejo Deportivo Central
-      }
-    });
-  } else {
-    res.status(401).json({ error: 'Credenciales inválidas' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y password son requeridos' });
   }
+  
+  // Buscar usuario en la base de datos
+  db.get("SELECT * FROM usuarios WHERE email = ? AND password = ? AND activo = 1", [email, password], (err, usuario) => {
+    if (err) {
+      console.error('Error en login:', err);
+      return res.status(500).json({ error: 'Error de conexión. Intenta nuevamente.' });
+    }
+    
+    if (!usuario) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+    
+    // Generar token simple (en producción usar JWT)
+    const token = `admin-token-${usuario.id}-${Date.now()}`;
+    
+    // Actualizar último acceso
+    db.run("UPDATE usuarios SET ultimo_acceso = CURRENT_TIMESTAMP WHERE id = ?", [usuario.id]);
+    
+    res.json({
+      token: token,
+      user: {
+        id: usuario.id,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        rol: usuario.rol
+      }
+    });
+  });
 });
 
 // Estadísticas del dashboard
