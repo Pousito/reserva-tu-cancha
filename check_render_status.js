@@ -8,8 +8,8 @@ function checkRenderDatabaseStatus() {
     
     const dbPath = '/opt/render/project/src/database.sqlite';
     
-    console.log(`📁 Ruta de BD: ${dbPath}`);
-    console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+    console.log('📁 Ruta de BD: ' + dbPath);
+    console.log('🌍 NODE_ENV: ' + (process.env.NODE_ENV || 'undefined'));
     
     const db = new sqlite3.Database(dbPath, (err) => {
       if (err) {
@@ -19,7 +19,7 @@ function checkRenderDatabaseStatus() {
         return;
       }
       
-      console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
+      console.log('✅ Conectado a la base de datos SQLite en: ' + dbPath);
       checkDatabaseContent();
     });
 
@@ -32,7 +32,7 @@ function checkRenderDatabaseStatus() {
       if (err) {
         console.log('❌ Tabla ciudades no existe o hay error:', err.message);
       } else {
-        console.log(`🏙️  Ciudades: ${row.count}`);
+        console.log('🏙️  Ciudades: ' + row.count);
         if (row.count > 0) {
           db.all('SELECT nombre FROM ciudades LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
@@ -48,7 +48,7 @@ function checkRenderDatabaseStatus() {
       if (err) {
         console.log('❌ Tabla complejos no existe o hay error:', err.message);
       } else {
-        console.log(`🏢 Complejos: ${row.count}`);
+        console.log('🏢 Complejos: ' + row.count);
         if (row.count > 0) {
           db.all('SELECT nombre FROM complejos LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
@@ -64,7 +64,7 @@ function checkRenderDatabaseStatus() {
       if (err) {
         console.log('❌ Tabla canchas no existe o hay error:', err.message);
       } else {
-        console.log(`⚽ Canchas: ${row.count}`);
+        console.log('⚽ Canchas: ' + row.count);
         if (row.count > 0) {
           db.all('SELECT nombre, tipo, precio_hora FROM canchas LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
@@ -80,7 +80,7 @@ function checkRenderDatabaseStatus() {
       if (err) {
         console.log('❌ Tabla reservas no existe o hay error:', err.message);
       } else {
-        console.log(`📅 Reservas: ${row.count}`);
+        console.log('📅 Reservas: ' + row.count);
         if (row.count > 0) {
           db.all('SELECT fecha, hora_inicio, nombre_cliente, estado FROM reservas LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
@@ -98,11 +98,11 @@ function checkRenderDatabaseStatus() {
       if (err) {
         console.log('❌ Tabla usuarios no existe o hay error:', err.message);
       } else {
-        console.log(`👥 Usuarios: ${row.count}`);
+        console.log('👥 Usuarios: ' + row.count);
         if (row.count > 0) {
           db.all('SELECT email, rol FROM usuarios LIMIT 5', (err, rows) => {
             if (!err && rows.length > 0) {
-              console.log('   Ejemplos:', rows.map(r => `${r.email} (${r.rol})`).join(', '));
+              console.log('   Ejemplos:', rows.map(r => r.email + ' (' + r.rol + ')').join(', '));
             }
           });
         }
