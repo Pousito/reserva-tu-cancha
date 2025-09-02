@@ -3,23 +3,34 @@ const path = require('path');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {
-  const dbPath = process.env.DB_PATH || './database.sqlite';
+  console.log('🚀 INICIANDO initDatabaseIfEmpty()');
+  console.log('================================');
+  
+  const dbPath = process.env.DB_PATH || '/opt/render/project/src/database.sqlite';
+  
+  console.log(`📁 Ruta de BD: ${dbPath}`);
+  console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+  console.log(`🔧 DB_PATH: ${process.env.DB_PATH || 'undefined'}`);
   
   const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
-      console.error('Error conectando a la base de datos:', err);
+      console.error('❌ Error conectando a la base de datos:', err.message);
+      console.error('📍 Ruta intentada:', dbPath);
       return;
     }
     
-    console.log(`✅ Conectado a la base de datos en: ${dbPath}`);
+    console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
     checkAndInitialize();
   });
 
   function checkAndInitialize() {
+    console.log('🔍 Verificando estado de la base de datos...');
+    
     // Verificar si ya hay datos
     db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
       if (err) {
         console.log('📋 Tabla ciudades no existe, creando estructura...');
+        console.log('❌ Error específico:', err.message);
         createTables();
       } else if (row.count === 0) {
         console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
