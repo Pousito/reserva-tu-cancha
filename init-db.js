@@ -77,6 +77,18 @@ function initDatabaseIfEmpty() {
         FOREIGN KEY (cancha_id) REFERENCES canchas (id)
       )`);
 
+      // Tabla de usuarios administradores
+      db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        rol TEXT NOT NULL CHECK(rol IN ('super_admin', 'admin', 'usuario')),
+        activo INTEGER DEFAULT 1,
+        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ultimo_acceso DATETIME
+      )`);
+
       console.log('✅ Tablas creadas, poblando con datos...');
       populateWithSampleData();
     });
@@ -169,10 +181,55 @@ function insertSampleCourts() {
   });
   
   insertCancha.finalize(() => {
-    console.log('✅ Canchas insertadas');
-    console.log('🎉 Base de datos completamente inicializada con datos de ejemplo');
-    db.close();
+    console.log('✅ Canchas insertadas, creando usuarios administradores...');
+    
+    // Crear usuarios administradores después de un delay
+    setTimeout(() => {
+      createAdminUsers();
+    }, 1000);
   });
+}
+
+function createAdminUsers() {
+  console.log('👑 Creando usuarios administradores...');
+  
+  const adminUsers = [
+    {
+      email: 'admin@reservatucancha.com',
+      password: 'admin123',
+      nombre: 'Super Administrador',
+      rol: 'super_admin'
+    },
+    {
+      email: 'admin@magnasports.cl',
+      password: 'magnasports2024',
+      nombre: 'Administrador MagnaSports',
+      rol: 'admin'
+    },
+    {
+      email: 'admin@complejocentral.cl',
+      password: 'complejo2024',
+      nombre: 'Administrador Complejo Central',
+      rol: 'admin'
+    }
+  ];
+  
+  adminUsers.forEach(usuario => {
+    db.run("INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)", 
+      [usuario.email, usuario.password, usuario.nombre, usuario.rol], (err) => {
+      if (err) {
+        console.error(`❌ Error creando usuario ${usuario.email}:`, err);
+      } else {
+        console.log(`✅ Usuario administrador creado: ${usuario.email}`);
+      }
+    });
+  });
+  
+  // Cerrar la base de datos después de crear usuarios
+  setTimeout(() => {
+    console.log('🎉 Base de datos completamente inicializada con datos de ejemplo y usuarios administradores');
+    db.close();
+  }, 2000);
 }
 }
 
