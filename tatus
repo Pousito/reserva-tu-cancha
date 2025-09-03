@@ -3,3 +3,8 @@
 [33mb6c742a[m CORREGIR error SQL: Eliminar columna complejo_id inexistente de la tabla usuarios en authenticateAdmin
 [33mf983ed6[m MEJORAR debugging: Agregar logs detallados al middleware authenticateAdmin para diagnosticar errores 500
 [33m8344423[m CORREGIR autenticación: Middleware authenticateAdmin ahora valida tokens dinámicos del login
+[33m8ef815a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m CORREGIR: Restaurar script.js funcional
+[33me026882[m CORREGIR ERRORES CRÍTICOS: Botón Reservar funcionando y carga de ciudades corregida
+[33m7375f2e[m IMPLEMENTAR FLUJO CORREGIDO: Botón Ver Disponibilidad y canchas solo después de seleccionar hora
+[33m9f10c05[m CORREGIR FLUJO: HTML restaurado - Las canchas solo aparecen después de seleccionar la hora
+[33mc6cdb6d[m IMPLEMENTAR MEJORAS COMPLETAS DE MAGNASPORTS: Responsividad móvil con vista en planta, canchas horizontales y calle Monte Perdido posicionada correctamente
