@@ -134,3 +134,4 @@ node check_local_db.js
 ---
 
 **¿Necesitas ayuda?** Los scripts están diseñados para ser autodocumentados y mostrar exactamente qué está pasando en cada paso.
+

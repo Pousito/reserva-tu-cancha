@@ -135,3 +135,4 @@ switch (command) {
 }
 
 module.exports = { deployAndPopulate, onlyPopulateDatabase, onlyCheckStatus };
+

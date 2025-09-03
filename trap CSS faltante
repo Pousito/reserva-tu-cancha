@@ -1,0 +1,21 @@
+[33me66310a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m AGREGAR RUTA CRÍTICA: /api/reservas para el dashboard
+server.js
+[33m8ff87ab[m Corregir todos los template strings en check_render_status.js
+check_render_status.js
+[33m04a65dd[m Corregir error de sintaxis en check_render_status.js
+check_render_status.js
+[33m0502866[m Agregar endpoints para poblar y verificar BD desde la web
+check_render_status.js
+populate_reservas.js
+server.js
+[33m5ee7252[m Auto-deploy: Población de base de datos - 2025-09-02T05-21-54-229Z
+DEPLOYMENT_GUIDE.md
+check_render_status.js
+deploy_and_populate.js
+package.json
+populate_reservas.js
+[33m495e601[m Forzar actualización en Render - dashboard versión 1.6 para evitar cache
+[33m495fab3[m Forzar actualización en Render - dashboard HTML y JS versión 1.5
+[33ma8e7859[m Forzar actualización en Render - dashboard con autenticación corregida
+[33m9cccd19[m Forzar actualización en Render - archivos JavaScript del admin completos
+[33me464c1a[m Forzar actualización en Render - archivos JavaScript del admin
