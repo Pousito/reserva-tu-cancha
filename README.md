@@ -168,3 +168,4 @@ Este proyecto está bajo la Licencia MIT. Ver archivo LICENSE para más detalles
 ---
 
 **Desarrollado con ❤️ para optimizar las reservas deportivas**
+# Webhook corregido - URL actualizada - Wed Sep  3 16:28:17 -04 2025
