@@ -1622,3 +1622,5 @@ function validarNombre(nombre) {
     // Solo verificar que no estÃ© vacÃ­o
     return nombre && nombre.trim() !== '';
 }
+/ /   Ú l t i m a   a c t u a l i z a c i ó n :   0 9 / 0 3 / 2 0 2 5   0 3 : 4 2 : 0 1  
+ 
