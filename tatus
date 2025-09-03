@@ -1,0 +1,5 @@
+[33mc6cdb6d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m IMPLEMENTAR MEJORAS COMPLETAS DE MAGNASPORTS: Responsividad móvil con vista en planta, canchas horizontales y calle Monte Perdido posicionada correctamente
+[33mf0e3415[m Mejorar responsividad móvil para visualización de canchas de MagnaSports y optimizar estilos CSS
+[33mb6c742a[m CORREGIR error SQL: Eliminar columna complejo_id inexistente de la tabla usuarios en authenticateAdmin
+[33mf983ed6[m MEJORAR debugging: Agregar logs detallados al middleware authenticateAdmin para diagnosticar errores 500
+[33m8344423[m CORREGIR autenticación: Middleware authenticateAdmin ahora valida tokens dinámicos del login
