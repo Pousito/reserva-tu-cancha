@@ -149,6 +149,7 @@ function populateWithSampleReservations() {
       });
     });
   }
+  });
 }
 
 // Si se ejecuta directamente

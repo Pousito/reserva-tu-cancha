@@ -107,15 +107,16 @@ function checkRenderDatabaseStatus() {
           });
         }
       }
-      
-      // Cerrar la conexión después de verificar usuarios
-      setTimeout(() => {
-        console.log('\n✅ Verificación completada');
-        db.close();
-        resolve('Verificación completada exitosamente');
-      }, 1000);
     });
+    
+    // Cerrar la conexión después de verificar usuarios
+    setTimeout(() => {
+      console.log('\n✅ Verificación completada');
+      db.close();
+      resolve('Verificación completada exitosamente');
+    }, 1000);
   }
+  });
 }
 
 // Si se ejecuta directamente
