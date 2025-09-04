@@ -995,7 +995,7 @@ function validarHorariosSegunFecha() {
                  <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
                  <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
                  <p class="text-info small"><i class="fas fa-info-circle me-1"></i>Techada</p>
-                 <p class="text-info small"><i class="fas fa-users me-1"></i>7 jugadores por lado</p>
+                 <p class="text-info small"><i class="fas fa-users me-1"></i>7 jugadores por equipo</p>
                  <div class="estado-disponibilidad">
                      <span class="badge bg-success">Disponible</span>
                  </div>
@@ -1622,6 +1622,8 @@ function validarNombre(nombre) {
     // Solo verificar que no estÃ© vacÃ­o
     return nombre && nombre.trim() !== '';
 }
-/ /   Ú l t i m a   a c t u a l i z a c i ó n :   0 9 / 0 3 / 2 0 2 5   0 3 : 4 2 : 0 1  
- / /   Ú l t i m a   c o r r e c c i ó n :   0 9 / 0 3 / 2 0 2 5   0 3 : 5 1 : 1 8  
+/ /   ï¿½ l t i m a   a c t u a l i z a c i ï¿½ n :   0 9 / 0 3 / 2 0 2 5   0 3 : 4 2 : 0 1 
+ 
+ / /   ï¿½ l t i m a   c o r r e c c i ï¿½ n :   0 9 / 0 3 / 2 0 2 5   0 3 : 5 1 : 1 8 
+ 
  

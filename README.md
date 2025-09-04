@@ -70,7 +70,7 @@ El sistema incluye datos de ejemplo:
   - Padel Club Premium (Santiago) - Canchas de padel ($30.000/hora)
   - **MagnaSports (Los Ángeles)** - Canchas techadas de futbolito ($28.000/hora)
     - 2 canchas techadas
-    - 7 jugadores por lado
+    - 7 jugadores por equipo
     - Horarios: Lunes a viernes 16:00-23:00, Sábados y domingos 12:00-23:00
 
 ## 🎯 Funcionalidades
