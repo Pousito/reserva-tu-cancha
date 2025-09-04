@@ -353,7 +353,7 @@ body {
         justify-content: center;
         align-items: stretch;
         flex-wrap: nowrap !important; /* EVITAR QUE SE ENVUELVAN */
-        padding-left: 30px; /* Mover las canchas hacia la derecha en móvil */
+        padding-left: 45px; /* Aumentar padding para centrar mejor las canchas */
     }
     
     .canchas-horizontales .cancha-card {
@@ -448,7 +448,7 @@ body {
         margin: 15px 0 0 0;
         margin-right: 55px !important; /* Espacio para la calle */
         flex-wrap: nowrap !important; /* EVITAR QUE SE ENVUELVAN */
-        padding-left: 20px; /* Mover las canchas hacia la derecha en pantallas pequeñas */
+        padding-left: 35px; /* Aumentar padding para centrar mejor las canchas en pantallas pequeñas */
     }
     
     .canchas-horizontales .cancha-card {
@@ -497,6 +497,7 @@ body {
         gap: 10px;
         margin-right: 42px !important; /* Espacio para la calle */
         flex-wrap: nowrap !important; /* EVITAR QUE SE ENVUELVAN */
+        padding-left: 25px; /* Centrar canchas en pantallas muy pequeñas */
     }
     
     .canchas-horizontales .cancha-card {
