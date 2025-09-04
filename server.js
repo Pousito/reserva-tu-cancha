@@ -1965,12 +1965,51 @@ app.get('/admin/check-db', async (req, res) => {
 
 // Health check para Render
 app.get('/health', (req, res) => {
-  res.status(200).json({
+  const diagnosticInfo = {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
+    version: '1.0.0',
+    dbPath: process.env.NODE_ENV === 'production' ? '/opt/render/project/src/database.sqlite' : './database.sqlite'
+  };
+  
+  // Verificar estado de la base de datos
+  db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
+    if (err) {
+      diagnosticInfo.databaseConnection = 'error';
+      diagnosticInfo.databaseError = err.message;
+    } else {
+      diagnosticInfo.databaseConnection = 'connected';
+      diagnosticInfo.citiesCount = row.count;
+    }
+    
+    // Verificar reservas
+    db.get('SELECT COUNT(*) as reservas FROM reservas', (err, reservasRow) => {
+      if (!err) {
+        diagnosticInfo.reservasCount = reservasRow.reservas;
+      }
+      
+      // Verificar archivo de BD
+      const fs = require('fs');
+      try {
+        const dbPath = process.env.NODE_ENV === 'production' ? '/opt/render/project/src/database.sqlite' : './database.sqlite';
+        if (fs.existsSync(dbPath)) {
+          const stats = fs.statSync(dbPath);
+          diagnosticInfo.databaseFile = {
+            exists: true,
+            size: stats.size,
+            lastModified: stats.mtime
+          };
+        } else {
+          diagnosticInfo.databaseFile = { exists: false };
+        }
+      } catch (error) {
+        diagnosticInfo.databaseFile = { error: error.message };
+      }
+      
+      res.status(200).json(diagnosticInfo);
+    });
   });
 });
 

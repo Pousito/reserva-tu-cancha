@@ -24,3 +24,5 @@ services:
       name: reserva-tu-cancha-db
       mountPath: /opt/render/project/src
       sizeGB: 1
+    # Asegurar que el disco se monte correctamente
+    region: oregon

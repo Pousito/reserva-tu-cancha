@@ -20,24 +20,49 @@ function initDatabaseIfEmpty() {
     }
     
     console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
+    console.log('🔍 Verificando persistencia del disco...');
+    
+    // Verificar si el archivo de base de datos existe y tiene contenido
+    const fs = require('fs');
+    try {
+      if (fs.existsSync(dbPath)) {
+        const stats = fs.statSync(dbPath);
+        console.log(`📊 Tamaño de BD: ${stats.size} bytes`);
+        console.log(`📅 Última modificación: ${stats.mtime}`);
+      } else {
+        console.log('⚠️  Archivo de BD no existe, se creará nuevo');
+      }
+    } catch (error) {
+      console.log('⚠️  No se pudo verificar el archivo de BD:', error.message);
+    }
+    
     checkAndInitialize();
   });
 
   function checkAndInitialize() {
     console.log('🔍 Verificando estado de la base de datos...');
     
-    // Verificar si ya hay datos
+    // Verificar si ya hay datos (tanto ciudades como reservas)
     db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
       if (err) {
         console.log('📋 Tabla ciudades no existe, creando estructura...');
         console.log('❌ Error específico:', err.message);
         createTables();
-      } else if (row.count === 0) {
-        console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
-        populateWithSampleData();
       } else {
-        console.log(`✅ Base de datos ya tiene ${row.count} ciudades, no se necesita inicializar`);
-        db.close();
+        // Verificar también si hay reservas existentes
+        db.get('SELECT COUNT(*) as reservas FROM reservas', (err, reservasRow) => {
+          if (err) {
+            console.log('📋 Tabla reservas no existe, creando estructura...');
+            createTables();
+          } else if (row.count === 0) {
+            console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
+            populateWithSampleData();
+          } else {
+            console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
+            console.log('✅ No se necesita inicializar - preservando datos existentes');
+            db.close();
+          }
+        });
       }
     });
   }
