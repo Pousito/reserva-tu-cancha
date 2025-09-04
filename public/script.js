@@ -255,7 +255,13 @@ function configurarEventListeners() {
     const horaSelect = document.getElementById('horaSelect');
     
     if (fechaSelect) {
-        fechaSelect.addEventListener('change', verificarDisponibilidadTiempoReal);
+        fechaSelect.addEventListener('change', function() {
+            verificarDisponibilidadTiempoReal();
+            // Cerrar el calendario después de seleccionar una fecha
+            setTimeout(() => {
+                fechaSelect.blur();
+            }, 100);
+        });
     }
     
     if (horaSelect) {
@@ -424,6 +430,10 @@ function configurarEventListeners() {
     document.getElementById('fechaSelect').addEventListener('change', function() {
         validarHorariosSegunFecha();
         actualizarDisponibilidad();
+        // Cerrar el calendario después de seleccionar una fecha
+        setTimeout(() => {
+            this.blur();
+        }, 100);
     });
     document.getElementById('horaSelect').addEventListener('change', actualizarDisponibilidad);
 
