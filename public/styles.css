@@ -837,8 +837,9 @@ html {
 .date-time-selector .modern-input {
     border: 2px solid #e9ecef;
     border-left: none;
-    padding: 12px 15px;
-    font-size: 0.95rem;
+    padding: 15px 18px;
+    font-size: 1.1rem;
+    min-height: 50px;
     transition: all 0.3s ease;
     background: white;
 }
@@ -854,8 +855,7 @@ html {
     font-size: 1.1rem !important;
     padding: 15px 18px !important;
     min-height: 50px;
-    transform: scale(1.1);
-    transform-origin: left center;
+    /* Removido transform scale para mantener simetría */
 }
 
 /* Hacer el calendario más grande cuando se abre */
@@ -888,7 +888,6 @@ html {
 
 /* Estilos adicionales para el calendario desplegable */
 .date-time-selector input[type="date"]:focus {
-    transform: scale(1.15);
     z-index: 1000;
 }
 
@@ -974,8 +973,15 @@ html {
     }
     
     .date-time-selector .modern-input {
-        padding: 10px 12px;
-        font-size: 0.9rem;
+        padding: 12px 15px;
+        font-size: 1rem;
+        min-height: 45px;
+    }
+    
+    .date-time-selector input[type="date"] {
+        padding: 12px 15px !important;
+        font-size: 1rem !important;
+        min-height: 45px;
     }
     
     .date-time-selector .input-group-text {
