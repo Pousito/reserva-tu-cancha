@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { createDatabaseBackup, restoreFromBackup, checkDatabaseHasData } = require('./backup-db');
+const { loadDataBackup, hasValidBackup } = require('./simple-persistence');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {
@@ -56,27 +56,8 @@ function initDatabaseIfEmpty() {
     checkAndInitialize();
   });
 
-  async function checkAndInitialize() {
+  function checkAndInitialize() {
     console.log('🔍 Verificando estado de la base de datos...');
-    
-    // Primero intentar restaurar desde respaldo si la BD está vacía
-    const hasData = await checkDatabaseHasData();
-    
-    if (!hasData) {
-      console.log('🔄 BD vacía, intentando restaurar desde respaldo...');
-      const restored = restoreFromBackup();
-      
-      if (restored) {
-        console.log('✅ BD restaurada desde respaldo, verificando datos...');
-        // Verificar nuevamente si ahora tiene datos
-        const hasDataAfterRestore = await checkDatabaseHasData();
-        if (hasDataAfterRestore) {
-          console.log('✅ Datos restaurados exitosamente');
-          db.close();
-          return;
-        }
-      }
-    }
     
     // Verificar si ya hay datos (tanto ciudades como reservas)
     db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
@@ -91,15 +72,23 @@ function initDatabaseIfEmpty() {
             console.log('📋 Tabla reservas no existe, creando estructura...');
             createTables();
           } else if (row.count === 0) {
-            console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
+            console.log('🌱 Base de datos vacía, verificando respaldo JSON...');
+            
+            // Intentar restaurar desde respaldo JSON
+            if (hasValidBackup()) {
+              console.log('🔄 Restaurando desde respaldo JSON...');
+              const backupData = loadDataBackup();
+              if (backupData && backupData.reservas.length > 0) {
+                restoreFromBackup(backupData);
+                return;
+              }
+            }
+            
+            console.log('🌱 Poblando con datos de ejemplo...');
             populateWithSampleData();
           } else {
             console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
             console.log('✅ No se necesita inicializar - preservando datos existentes');
-            
-            // Crear respaldo de la BD con datos
-            createDatabaseBackup();
-            
             db.close();
           }
         });
@@ -167,6 +156,47 @@ function initDatabaseIfEmpty() {
 
       console.log('✅ Tablas creadas, poblando con datos...');
       populateWithSampleData();
+    });
+  }
+
+  function restoreFromBackup(backupData) {
+    console.log('🔄 Restaurando datos desde respaldo JSON...');
+    
+    db.serialize(() => {
+      // Primero crear las tablas
+      createTables();
+      
+      // Restaurar ciudades
+      if (backupData.ciudades && backupData.ciudades.length > 0) {
+        console.log(`🏙️ Restaurando ${backupData.ciudades.length} ciudades...`);
+        const stmt = db.prepare('INSERT OR REPLACE INTO ciudades (id, nombre, region) VALUES (?, ?, ?)');
+        backupData.ciudades.forEach(ciudad => {
+          stmt.run(ciudad.id, ciudad.nombre, ciudad.region);
+        });
+        stmt.finalize();
+      }
+      
+      // Restaurar reservas
+      if (backupData.reservas && backupData.reservas.length > 0) {
+        console.log(`📅 Restaurando ${backupData.reservas.length} reservas...`);
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO reservas 
+          (id, cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, codigo_reserva, precio_total, estado, fecha_creacion)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        backupData.reservas.forEach(reserva => {
+          stmt.run(
+            reserva.id, reserva.cancha_id, reserva.fecha, reserva.hora_inicio, 
+            reserva.hora_fin, reserva.nombre_cliente, reserva.rut_cliente, 
+            reserva.email_cliente, reserva.codigo_reserva, reserva.precio_total, 
+            reserva.estado || 'confirmada', reserva.fecha_creacion || new Date().toISOString()
+          );
+        });
+        stmt.finalize();
+      }
+      
+      console.log('✅ Datos restaurados exitosamente desde respaldo JSON');
+      db.close();
     });
   }
 
