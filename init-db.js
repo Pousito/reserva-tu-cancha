@@ -1,6 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { loadDataBackup, hasValidBackup } = require('./simple-persistence');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {
@@ -72,19 +71,7 @@ function initDatabaseIfEmpty() {
             console.log('📋 Tabla reservas no existe, creando estructura...');
             createTables();
           } else if (row.count === 0) {
-            console.log('🌱 Base de datos vacía, verificando respaldo JSON...');
-            
-            // Intentar restaurar desde respaldo JSON
-            if (hasValidBackup()) {
-              console.log('🔄 Restaurando desde respaldo JSON...');
-              const backupData = loadDataBackup();
-              if (backupData && backupData.reservas.length > 0) {
-                restoreFromBackup(backupData);
-                return;
-              }
-            }
-            
-            console.log('🌱 Poblando con datos de ejemplo...');
+            console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
             populateWithSampleData();
           } else {
             console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
@@ -159,82 +146,6 @@ function initDatabaseIfEmpty() {
     });
   }
 
-  function restoreFromBackup(backupData) {
-    console.log('🔄 Restaurando datos desde respaldo JSON...');
-    
-    // Crear las tablas primero
-    db.run(`CREATE TABLE IF NOT EXISTS ciudades (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      region TEXT
-    )`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS complejos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      direccion TEXT,
-      telefono TEXT,
-      ciudad_id INTEGER,
-      FOREIGN KEY (ciudad_id) REFERENCES ciudades (id)
-    )`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS canchas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      tipo TEXT,
-      precio_hora INTEGER,
-      complejo_id INTEGER,
-      FOREIGN KEY (complejo_id) REFERENCES complejos (id)
-    )`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS reservas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      cancha_id INTEGER,
-      fecha TEXT,
-      hora_inicio TEXT,
-      hora_fin TEXT,
-      nombre_cliente TEXT,
-      rut_cliente TEXT,
-      email_cliente TEXT,
-      codigo_reserva TEXT UNIQUE,
-      precio_total INTEGER,
-      estado TEXT DEFAULT 'confirmada',
-      fecha_creacion TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (cancha_id) REFERENCES canchas (id)
-    )`);
-    
-    // Restaurar ciudades
-    if (backupData.ciudades && backupData.ciudades.length > 0) {
-      console.log(`🏙️ Restaurando ${backupData.ciudades.length} ciudades...`);
-      const stmt = db.prepare('INSERT OR REPLACE INTO ciudades (id, nombre, region) VALUES (?, ?, ?)');
-      backupData.ciudades.forEach(ciudad => {
-        stmt.run(ciudad.id, ciudad.nombre, ciudad.region);
-      });
-      stmt.finalize();
-    }
-    
-    // Restaurar reservas
-    if (backupData.reservas && backupData.reservas.length > 0) {
-      console.log(`📅 Restaurando ${backupData.reservas.length} reservas...`);
-      const stmt = db.prepare(`
-        INSERT OR REPLACE INTO reservas 
-        (id, cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, codigo_reserva, precio_total, estado, fecha_creacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      backupData.reservas.forEach(reserva => {
-        stmt.run(
-          reserva.id, reserva.cancha_id, reserva.fecha, reserva.hora_inicio, 
-          reserva.hora_fin, reserva.nombre_cliente, reserva.rut_cliente, 
-          reserva.email_cliente, reserva.codigo_reserva, reserva.precio_total, 
-          reserva.estado || 'confirmada', reserva.fecha_creacion || new Date().toISOString()
-        );
-      });
-      stmt.finalize();
-    }
-    
-    console.log('✅ Datos restaurados exitosamente desde respaldo JSON');
-    db.close();
-  }
 
   function populateWithSampleData() {
   console.log('🌱 Insertando ciudades de ejemplo...');
