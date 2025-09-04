@@ -265,7 +265,13 @@ function configurarEventListeners() {
     }
     
     if (horaSelect) {
-        horaSelect.addEventListener('change', verificarDisponibilidadTiempoReal);
+        horaSelect.addEventListener('change', function() {
+            verificarDisponibilidadTiempoReal();
+            // Cargar canchas cuando se selecciona una hora
+            if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
+                cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+            }
+        });
     }
     
     // Botón "Hoy" para establecer fecha actual
@@ -418,10 +424,9 @@ function configurarEventListeners() {
         });
     });
 
-    // Botón ver disponibilidad
+    // Botón ver disponibilidad - solo muestra la sección de fecha/hora
     document.getElementById('verDisponibilidad').addEventListener('click', function() {
         if (complejoSeleccionado && tipoCanchaSeleccionado) {
-            cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
             mostrarSeccionDisponibilidad();
         }
     });
@@ -435,7 +440,13 @@ function configurarEventListeners() {
             this.blur();
         }, 100);
     });
-    document.getElementById('horaSelect').addEventListener('change', actualizarDisponibilidad);
+    document.getElementById('horaSelect').addEventListener('change', function() {
+        actualizarDisponibilidad();
+        // Cargar canchas cuando se selecciona una hora
+        if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
+            cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+        }
+    });
 
     // Búsqueda de reserva
     document.getElementById('buscarReserva').addEventListener('click', buscarReserva);
