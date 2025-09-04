@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { createDatabaseBackup, restoreFromBackup, checkDatabaseHasData } = require('./backup-db');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {
@@ -11,6 +12,8 @@ function initDatabaseIfEmpty() {
   console.log(`📁 Ruta de BD: ${dbPath}`);
   console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
   console.log(`🔧 DB_PATH: ${process.env.DB_PATH || 'undefined'}`);
+  console.log(`💾 RENDER_DISK_PATH: ${process.env.RENDER_DISK_PATH || 'undefined'}`);
+  console.log(`🔄 DEPLOY_ID: ${process.env.RENDER_DEPLOY_ID || 'undefined'}`);
   
   const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
@@ -24,11 +27,25 @@ function initDatabaseIfEmpty() {
     
     // Verificar si el archivo de base de datos existe y tiene contenido
     const fs = require('fs');
+    const path = require('path');
     try {
+      const dbDir = path.dirname(dbPath);
+      console.log(`📂 Directorio de BD: ${dbDir}`);
+      
+      // Verificar si el directorio existe
+      if (fs.existsSync(dbDir)) {
+        console.log(`✅ Directorio existe: ${dbDir}`);
+        const dirStats = fs.statSync(dbDir);
+        console.log(`📅 Directorio modificado: ${dirStats.mtime}`);
+      } else {
+        console.log(`❌ Directorio no existe: ${dbDir}`);
+      }
+      
       if (fs.existsSync(dbPath)) {
         const stats = fs.statSync(dbPath);
         console.log(`📊 Tamaño de BD: ${stats.size} bytes`);
         console.log(`📅 Última modificación: ${stats.mtime}`);
+        console.log(`🔍 Archivo de BD existe y tiene contenido`);
       } else {
         console.log('⚠️  Archivo de BD no existe, se creará nuevo');
       }
@@ -39,8 +56,27 @@ function initDatabaseIfEmpty() {
     checkAndInitialize();
   });
 
-  function checkAndInitialize() {
+  async function checkAndInitialize() {
     console.log('🔍 Verificando estado de la base de datos...');
+    
+    // Primero intentar restaurar desde respaldo si la BD está vacía
+    const hasData = await checkDatabaseHasData();
+    
+    if (!hasData) {
+      console.log('🔄 BD vacía, intentando restaurar desde respaldo...');
+      const restored = restoreFromBackup();
+      
+      if (restored) {
+        console.log('✅ BD restaurada desde respaldo, verificando datos...');
+        // Verificar nuevamente si ahora tiene datos
+        const hasDataAfterRestore = await checkDatabaseHasData();
+        if (hasDataAfterRestore) {
+          console.log('✅ Datos restaurados exitosamente');
+          db.close();
+          return;
+        }
+      }
+    }
     
     // Verificar si ya hay datos (tanto ciudades como reservas)
     db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
@@ -60,6 +96,10 @@ function initDatabaseIfEmpty() {
           } else {
             console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
             console.log('✅ No se necesita inicializar - preservando datos existentes');
+            
+            // Crear respaldo de la BD con datos
+            createDatabaseBackup();
+            
             db.close();
           }
         });
@@ -264,6 +304,10 @@ function createAdminUsers() {
   // Cerrar la base de datos después de crear usuarios
   setTimeout(() => {
     console.log('🎉 Base de datos completamente inicializada con datos de ejemplo y usuarios administradores');
+    
+    // Crear respaldo de la BD inicializada
+    createDatabaseBackup();
+    
     db.close();
   }, 2000);
 }

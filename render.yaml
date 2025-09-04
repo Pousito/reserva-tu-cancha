@@ -26,3 +26,7 @@ services:
       sizeGB: 1
     # Asegurar que el disco se monte correctamente
     region: oregon
+    # Configuración adicional para persistencia
+    envVars:
+      - key: RENDER_DISK_PATH
+        value: /opt/render/project/src
