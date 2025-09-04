@@ -1,9 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
 
-// Función para generar código de reserva único
+// Función para generar código de reserva único (5 caracteres)
 function generateReservationCode() {
-  return 'RES-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+  return Math.random().toString(36).substr(2, 5).toUpperCase();
 }
 
 // Función para poblar la base de datos con reservas de ejemplo

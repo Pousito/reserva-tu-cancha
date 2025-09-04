@@ -839,8 +839,8 @@ app.post('/api/reservas', (req, res) => {
       return;
     }
   
-  // Generar código de reserva único
-  const codigo_reserva = 'RTC' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
+  // Generar código de reserva único (5 caracteres)
+  const codigo_reserva = Math.random().toString(36).substr(2, 5).toUpperCase();
   
   db.run(`
     INSERT INTO reservas (cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, codigo_reserva, precio_total)
@@ -880,22 +880,24 @@ app.get('/api/reservas', (req, res) => {
   });
 });
 
-// Obtener reserva por código
-app.get('/api/reservas/:codigo', (req, res) => {
-  const { codigo } = req.params;
+// Obtener reserva por código o nombre
+app.get('/api/reservas/:busqueda', (req, res) => {
+  const { busqueda } = req.params;
+  
+  // Buscar por código de reserva o nombre del cliente
   db.get(`
     SELECT r.*, c.nombre as nombre_cancha, c.tipo, comp.nombre as nombre_complejo
     FROM reservas r
     JOIN canchas c ON r.cancha_id = c.id
     JOIN complejos comp ON c.complejo_id = comp.id
-    WHERE r.codigo_reserva = ?
-  `, [codigo], (err, row) => {
+    WHERE r.codigo_reserva = ? OR LOWER(r.nombre_cliente) = LOWER(?)
+  `, [busqueda, busqueda], (err, row) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
     }
     if (!row) {
-      res.status(404).json({ error: 'Reserva no encontrada' });
+      res.status(404).json({ error: 'Reserva no encontrada. Verifica el código o nombre ingresado.' });
       return;
     }
     res.json(row);

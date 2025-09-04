@@ -1371,14 +1371,14 @@ function mostrarConfirmacionReserva(codigo, transactionId) {
 
 // Buscar reserva
 async function buscarReserva() {
-    const codigo = document.getElementById('codigoReserva').value.trim();
-    if (!codigo) {
-        mostrarNotificacion('Por favor ingresa un código de reserva', 'warning');
+    const busqueda = document.getElementById('codigoReserva').value.trim();
+    if (!busqueda) {
+        mostrarNotificacion('Por favor ingresa tu código de reserva o nombre completo', 'warning');
         return;
     }
     
     try {
-        const response = await fetch(`${API_BASE}/reservas/${codigo}`);
+        const response = await fetch(`${API_BASE}/reservas/${busqueda}`);
         const reserva = await response.json();
         
         if (response.ok) {
