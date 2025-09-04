@@ -2028,4 +2028,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`🌐 Red local: http://[TU_IP_LOCAL]:${PORT}`);
   console.log(`📱 Accesible desde otros dispositivos en la misma red`);
+  console.log(`🔄 Deploy de prueba para verificar persistencia de reservas`);
 });
