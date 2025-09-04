@@ -346,7 +346,7 @@ body {
     /* Canchas horizontales - MANTENER ORDEN HORIZONTAL EN M�VIL */
     .canchas-horizontales {
         flex-direction: row !important; /* FORZAR DIRECCI�N HORIZONTAL */
-        gap: 15px;
+        gap: 10px;
         margin: 20px 0 0 0;
         max-width: none;
         margin-right: 70px !important; /* Espacio para la calle */
@@ -357,10 +357,10 @@ body {
     }
     
     .canchas-horizontales .cancha-card {
-        flex: 0 0 200px;
-        width: 200px;
+        flex: 0 0 180px;
+        width: 180px;
         min-height: 180px;
-        padding: 15px 10px;
+        padding: 15px 8px;
         margin: 0;
         font-size: 0.9rem;
     }
@@ -444,7 +444,7 @@ body {
     /* Canchas - MANTENER ORDEN HORIZONTAL */
     .canchas-horizontales {
         flex-direction: row !important; /* FORZAR DIRECCI�N HORIZONTAL */
-        gap: 12px;
+        gap: 8px;
         margin: 15px 0 0 0;
         margin-right: 55px !important; /* Espacio para la calle */
         flex-wrap: nowrap !important; /* EVITAR QUE SE ENVUELVAN */
@@ -452,8 +452,10 @@ body {
     }
     
     .canchas-horizontales .cancha-card {
+        flex: 0 0 160px;
+        width: 160px;
         min-height: 160px;
-        padding: 12px 8px;
+        padding: 12px 6px;
         font-size: 0.8rem;
     }
     
@@ -494,15 +496,17 @@ body {
     
     .canchas-horizontales {
         flex-direction: row !important; /* FORZAR DIRECCI�N HORIZONTAL */
-        gap: 10px;
+        gap: 6px;
         margin-right: 42px !important; /* Espacio para la calle */
         flex-wrap: nowrap !important; /* EVITAR QUE SE ENVUELVAN */
         padding-left: 25px; /* Centrar canchas en pantallas muy pequeñas */
     }
     
     .canchas-horizontales .cancha-card {
+        flex: 0 0 140px;
+        width: 140px;
         min-height: 140px;
-        padding: 10px 6px;
+        padding: 10px 4px;
     }
     
     .canchas-horizontales .cancha-card h5 {
