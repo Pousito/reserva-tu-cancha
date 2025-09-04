@@ -135,14 +135,14 @@ function populateWithSampleReservations() {
               console.log(`📅 Fechas cubiertas: ${reservations.length} días`);
               console.log(`⚽ Canchas utilizadas: ${canchas.length}`);
               
-                             // Verificar el resultado final
-               db.get('SELECT COUNT(*) as count FROM reservas', (err, row) => {
-                 if (!err) {
-                   console.log(`📋 Total de reservas en BD: ${row.count}`);
-                 }
-                 db.close();
-                 resolve(`Proceso completado. Total de reservas: ${row?.count || 0}`);
-               });
+              // Verificar el resultado final
+              db.get('SELECT COUNT(*) as count FROM reservas', (err, row) => {
+                if (!err) {
+                  console.log(`📋 Total de reservas en BD: ${row.count}`);
+                }
+                db.close();
+                resolve(`Proceso completado. Total de reservas: ${row?.count || 0}`);
+              });
             }, 1000);
           }
         });
