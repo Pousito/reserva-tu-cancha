@@ -157,16 +157,43 @@
                     
                     <!-- Filtros de fecha y hora -->
                     <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="fechaSelect" class="form-label">Fecha:</label>
-                            <input type="date" class="form-control" id="fechaSelect">
+                        <div class="col-md-6 mb-3">
+                            <div class="date-time-selector">
+                                <label for="fechaSelect" class="form-label">
+                                    <i class="fas fa-calendar-alt me-2"></i>Fecha de Reserva
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-calendar-day"></i>
+                                    </span>
+                                    <input type="date" class="form-control modern-input" id="fechaSelect" aria-describedby="fechaHelp">
+                                    <button type="button" class="btn btn-outline-primary" id="hoyBtn" title="Establecer fecha de hoy" aria-label="Establecer fecha de hoy">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text" id="fechaHelp">
+                                    <i class="fas fa-info-circle me-1"></i>Selecciona la fecha para tu reserva
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label for="horaSelect" class="form-label">Hora:</label>
-                            <select class="form-select" id="horaSelect">
-                                <option value="">Selecciona una hora...</option>
-                                <!-- Las horas se cargarán dinámicamente según el complejo -->
-                            </select>
+                        <div class="col-md-6 mb-3">
+                            <div class="date-time-selector">
+                                <label for="horaSelect" class="form-label">
+                                    <i class="fas fa-clock me-2"></i>Hora de Reserva
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-clock"></i>
+                                    </span>
+                                    <select class="form-select modern-input" id="horaSelect" aria-describedby="horaHelp">
+                                        <option value="">Selecciona una hora...</option>
+                                        <!-- Las horas se cargarán dinámicamente según el complejo -->
+                                    </select>
+                                </div>
+                                <div class="form-text" id="horaHelp">
+                                    <i class="fas fa-info-circle me-1"></i>Elige el horario que prefieras
+                                </div>
+                            </div>
                         </div>
                     </div>
 

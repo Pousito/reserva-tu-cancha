@@ -262,6 +262,30 @@ function configurarEventListeners() {
         horaSelect.addEventListener('change', verificarDisponibilidadTiempoReal);
     }
     
+    // Botón "Hoy" para establecer fecha actual
+    const hoyBtn = document.getElementById('hoyBtn');
+    if (hoyBtn) {
+        hoyBtn.addEventListener('click', function() {
+            const fechaInput = document.getElementById('fechaSelect');
+            const hoy = new Date().toISOString().split('T')[0];
+            fechaInput.value = hoy;
+            
+            // Trigger change event para actualizar disponibilidad
+            fechaInput.dispatchEvent(new Event('change'));
+            
+            // Efecto visual de confirmación
+            this.innerHTML = '<i class="fas fa-check"></i>';
+            this.classList.add('btn-success');
+            this.classList.remove('btn-outline-primary');
+            
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-calendar-check"></i>';
+                this.classList.remove('btn-success');
+                this.classList.add('btn-outline-primary');
+            }, 1500);
+        });
+    }
+    
     // Selección de ciudad
     document.getElementById('ciudadSelect').addEventListener('change', function() {
         const ciudadId = this.value;
