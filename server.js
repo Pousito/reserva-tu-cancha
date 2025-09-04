@@ -3,7 +3,6 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const { initDatabaseIfEmpty } = require('./init-db');
-const { saveDataBackup, loadDataBackup, hasValidBackup } = require('./simple-persistence');
 require('dotenv').config();
 
 const app = express();
@@ -854,18 +853,6 @@ app.post('/api/reservas', (req, res) => {
     
     // Enviar email de confirmación (implementar después)
     // sendConfirmationEmail(email_cliente, codigo_reserva, fecha, hora_inicio);
-    
-    // Guardar respaldo automático después de crear la reserva
-    console.log('💾 Guardando respaldo automático después de crear reserva...');
-    db.all('SELECT * FROM reservas', (err, reservas) => {
-      if (!err && reservas) {
-        db.all('SELECT * FROM ciudades', (err, ciudades) => {
-          if (!err && ciudades) {
-            saveDataBackup({ reservas, ciudades });
-          }
-        });
-      }
-    });
     
     res.json({
       id: this.lastID,
