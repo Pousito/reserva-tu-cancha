@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { createDatabaseBackup, restoreFromBackup, checkDatabaseHasData } = require('./backup-db');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {
@@ -55,8 +56,27 @@ function initDatabaseIfEmpty() {
     checkAndInitialize();
   });
 
-  function checkAndInitialize() {
+  async function checkAndInitialize() {
     console.log('🔍 Verificando estado de la base de datos...');
+    
+    // Primero intentar restaurar desde respaldo si la BD está vacía
+    const hasData = await checkDatabaseHasData();
+    
+    if (!hasData) {
+      console.log('🔄 BD vacía, intentando restaurar desde respaldo...');
+      const restored = restoreFromBackup();
+      
+      if (restored) {
+        console.log('✅ BD restaurada desde respaldo, verificando datos...');
+        // Verificar nuevamente si ahora tiene datos
+        const hasDataAfterRestore = await checkDatabaseHasData();
+        if (hasDataAfterRestore) {
+          console.log('✅ Datos restaurados exitosamente');
+          db.close();
+          return;
+        }
+      }
+    }
     
     // Verificar si ya hay datos (tanto ciudades como reservas)
     db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
@@ -76,6 +96,10 @@ function initDatabaseIfEmpty() {
           } else {
             console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
             console.log('✅ No se necesita inicializar - preservando datos existentes');
+            
+            // Crear respaldo de la BD con datos
+            createDatabaseBackup();
+            
             db.close();
           }
         });
@@ -145,7 +169,6 @@ function initDatabaseIfEmpty() {
       populateWithSampleData();
     });
   }
-
 
   function populateWithSampleData() {
   console.log('🌱 Insertando ciudades de ejemplo...');
