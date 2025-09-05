@@ -37,8 +37,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
       initDatabase();
     }
 
-    // Inicializar sistema de respaldo
-    initializeBackupSystem();
+    // Inicializar sistema de respaldo con un pequeño delay
+    setTimeout(() => {
+      initializeBackupSystem();
+    }, 1000);
   }
 });
 
