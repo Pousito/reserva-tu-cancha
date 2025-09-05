@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { createDatabaseBackup, restoreFromBackup, checkDatabaseHasData } = require('../../backup-db');
+const { BackupSystem } = require('./backup-system');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {
@@ -59,17 +59,21 @@ function initDatabaseIfEmpty() {
   async function checkAndInitialize() {
     console.log('🔍 Verificando estado de la base de datos...');
     
+    // Crear instancia del sistema de respaldo unificado
+    const backupSystem = new BackupSystem(dbPath);
+    await backupSystem.connectDb();
+    
     // Primero intentar restaurar desde respaldo si la BD está vacía
-    const hasData = await checkDatabaseHasData();
+    const hasData = await backupSystem.checkDatabaseHasData();
     
     if (!hasData) {
       console.log('🔄 BD vacía, intentando restaurar desde respaldo...');
-      const restored = restoreFromBackup();
+      const restored = await backupSystem.restoreFromLatestBackup();
       
       if (restored) {
         console.log('✅ BD restaurada desde respaldo, verificando datos...');
         // Verificar nuevamente si ahora tiene datos
-        const hasDataAfterRestore = await checkDatabaseHasData();
+        const hasDataAfterRestore = await backupSystem.checkDatabaseHasData();
         if (hasDataAfterRestore) {
           console.log('✅ Datos restaurados exitosamente');
           db.close();
@@ -97,10 +101,14 @@ function initDatabaseIfEmpty() {
             console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
             console.log('✅ No se necesita inicializar - preservando datos existentes');
             
-            // Crear respaldo de la BD con datos
-            createDatabaseBackup();
-            
-            db.close();
+            // Crear respaldo de la BD con datos usando el sistema unificado
+            backupSystem.createBackup().then(() => {
+              console.log('✅ Respaldo creado exitosamente');
+              db.close();
+            }).catch(error => {
+              console.error('❌ Error creando respaldo:', error);
+              db.close();
+            });
           }
         });
       }
@@ -302,11 +310,18 @@ function createAdminUsers() {
   });
   
   // Cerrar la base de datos después de crear usuarios
-  setTimeout(() => {
+  setTimeout(async () => {
     console.log('🎉 Base de datos completamente inicializada con datos de ejemplo y usuarios administradores');
     
-    // Crear respaldo de la BD inicializada
-    createDatabaseBackup();
+    // Crear respaldo de la BD inicializada usando el sistema unificado
+    try {
+      const backupSystem = new BackupSystem(dbPath);
+      await backupSystem.connectDb();
+      await backupSystem.createBackup();
+      console.log('✅ Respaldo inicial creado exitosamente');
+    } catch (error) {
+      console.error('❌ Error creando respaldo inicial:', error);
+    }
     
     db.close();
   }, 2000);
