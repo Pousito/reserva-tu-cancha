@@ -30,8 +30,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     
     // En producción, usar init-db.js para inicialización inteligente
     if (process.env.NODE_ENV === 'production') {
-      console.log('🚀 Modo producción: Usando inicialización inteligente');
-      initDatabaseIfEmpty();
+      console.log('🚀 Modo producción: DESACTIVANDO inicialización automática para debug');
+      // initDatabaseIfEmpty(); // DESACTIVADO TEMPORALMENTE
     } else {
       console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
       initDatabase();
@@ -2120,5 +2120,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📱 Accesible desde otros dispositivos en la misma red`);
               console.log(`🛡️  Sistema de respaldo automático activado`);
             console.log(`💾 Respaldos automáticos cada 6 horas`);
-            console.log(`🧪 TEST: Tercer deploy - reserva creada manualmente, probando persistencia`);
+            console.log(`🧪 TEST: Deploy SIN inicialización automática - probando persistencia pura`);
 });
