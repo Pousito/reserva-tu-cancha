@@ -3,6 +3,7 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const { initDatabaseIfEmpty } = require('./scripts/database/init-db');
+const { BackupSystem } = require('./scripts/database/backup-system');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +18,8 @@ app.use(express.static('public'));
 const dbPath = process.env.NODE_ENV === 'production' 
   ? '/opt/render/project/src/database.sqlite'  // Ruta persistente en Render
   : './database.sqlite';                       // Ruta local
+
+let backupSystem; // Sistema de respaldo
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -33,6 +36,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
       console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
       initDatabase();
     }
+
+    // Inicializar sistema de respaldo
+    initializeBackupSystem();
   }
 });
 
@@ -2013,6 +2019,44 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Endpoints para gestión de respaldos
+app.get('/api/backup/status', (req, res) => {
+  if (!backupSystem) {
+    return res.status(500).json({ error: 'Sistema de respaldo no inicializado' });
+  }
+  const backups = backupSystem.listBackups();
+  res.json({
+    success: true,
+    backups: backups,
+    total: backups.length,
+    latest: backups[0] || null
+  });
+});
+
+app.post('/api/backup/create', async (req, res) => {
+  if (!backupSystem) {
+    return res.status(500).json({ error: 'Sistema de respaldo no inicializado' });
+  }
+  try {
+    const result = await backupSystem.createBackup();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/backup/restore', async (req, res) => {
+  if (!backupSystem) {
+    return res.status(500).json({ error: 'Sistema de respaldo no inicializado' });
+  }
+  try {
+    const result = await backupSystem.restoreFromLatestBackup();
+    res.json({ success: result, message: result ? 'BD restaurada exitosamente' : 'Error restaurando BD' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Manejo de rutas no encontradas (DEBE IR AL FINAL)
 app.use('*', (req, res) => {
   res.status(404).json({ 
@@ -2022,12 +2066,56 @@ app.use('*', (req, res) => {
   });
 });
 
+// Función para inicializar el sistema de respaldo
+async function initializeBackupSystem() {
+  try {
+    console.log('🛡️  Inicializando sistema de respaldo...');
+    backupSystem = new BackupSystem(dbPath);
+    await backupSystem.connectDb();
+
+    console.log('🔍 VERIFICANDO ESTADO DE LA BD');
+    console.log('==============================');
+    const hasData = await backupSystem.checkDatabaseHasData();
+    const integrityOk = await backupSystem.checkDatabaseIntegrity();
+
+    if (!integrityOk) {
+      console.error('❌ Integridad de la base de datos COMPROMETIDA. Intentando restaurar...');
+      const restored = await backupSystem.restoreFromLatestBackup();
+      if (restored) {
+        console.log('✅ BD restaurada exitosamente.');
+      } else {
+        console.error('❌ Fallo al restaurar la BD. Se recomienda intervención manual.');
+      }
+    } else if (!hasData) {
+      console.log('⚠️  BD vacía o sin reservas. Creando respaldo inicial...');
+      await backupSystem.createBackup();
+    } else {
+      console.log(`✅ BD OK - ${hasData ? 'con reservas' : 'sin reservas'} encontradas`);
+      await backupSystem.createBackup(); // Crear un respaldo al inicio si todo está bien
+    }
+
+    // Programar respaldos automáticos cada 6 horas (en producción)
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(async () => {
+        console.log('⏰ Respaldo automático programado...');
+        await backupSystem.createBackup();
+      }, 6 * 60 * 60 * 1000); // Cada 6 horas
+      console.log('⏰ Respaldos automáticos programados cada 6 horas.');
+    }
+
+    console.log('🛡️  Sistema de respaldo inicializado correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando sistema de respaldo:', error.message);
+    // No fallar el servidor si el sistema de respaldo falla
+  }
+}
+
 // Iniciar servidor
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`🌐 Red local: http://[TU_IP_LOCAL]:${PORT}`);
   console.log(`📱 Accesible desde otros dispositivos en la misma red`);
-  console.log(`🔄 Deploy de prueba para verificar persistencia de reservas`);
-  console.log(`🧪 Probando sistema de respaldo automático - reserva realizada - TEST PERSISTENCIA`);
+  console.log(`🛡️  Sistema de respaldo automático activado`);
+  console.log(`💾 Respaldos automáticos cada 6 horas`);
 });
