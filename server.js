@@ -2118,6 +2118,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`🌐 Red local: http://[TU_IP_LOCAL]:${PORT}`);
   console.log(`📱 Accesible desde otros dispositivos en la misma red`);
-  console.log(`🛡️  Sistema de respaldo automático activado`);
-  console.log(`💾 Respaldos automáticos cada 6 horas`);
+              console.log(`🛡️  Sistema de respaldo automático activado`);
+            console.log(`💾 Respaldos automáticos cada 6 horas`);
+            console.log(`🧪 TEST: Deploy para verificar persistencia de reservas`);
 });
