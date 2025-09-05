@@ -30,8 +30,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     
     // En producción, usar init-db.js para inicialización inteligente
     if (process.env.NODE_ENV === 'production') {
-      console.log('🚀 Modo producción: DESACTIVANDO inicialización automática para debug');
-      // initDatabaseIfEmpty(); // DESACTIVADO TEMPORALMENTE
+      console.log('🚀 Modo producción: Usando inicialización inteligente');
+      initDatabaseIfEmpty();
     } else {
       console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
       initDatabase();
