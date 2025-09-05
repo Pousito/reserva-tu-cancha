@@ -16,6 +16,8 @@ services:
         value: https://reserva-tu-cancha.onrender.com
       - key: DB_PATH
         value: /opt/render/project/src/database.sqlite
+      - key: RENDER_DISK_PATH
+        value: /opt/render/project/src
     healthCheckPath: /health
     autoDeploy: true
     branch: main
@@ -26,7 +28,3 @@ services:
       sizeGB: 1
     # Asegurar que el disco se monte correctamente
     region: oregon
-    # Configuración adicional para persistencia
-    envVars:
-      - key: RENDER_DISK_PATH
-        value: /opt/render/project/src
