@@ -92,8 +92,8 @@ function initDatabaseIfEmpty() {
         // Verificar también si hay reservas existentes
         db.get('SELECT COUNT(*) as reservas FROM reservas', (err, reservasRow) => {
           if (err) {
-            console.log('📋 Tabla reservas no existe, creando estructura...');
-            createTables();
+            console.log('📋 Tabla reservas no existe, creando SOLO estructura de tablas...');
+            createTablesOnly(); // Solo crear tablas, NO poblar datos
           } else if (row.count === 0) {
             console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
             populateWithSampleData();
@@ -175,6 +175,69 @@ function initDatabaseIfEmpty() {
 
       console.log('✅ Tablas creadas, poblando con datos...');
       populateWithSampleData();
+    });
+  }
+
+  function createTablesOnly() {
+    db.serialize(() => {
+      // Crear tablas si no existen (sin poblar datos)
+      db.run(`CREATE TABLE IF NOT EXISTS ciudades (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL UNIQUE
+      )`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS complejos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        ciudad_id INTEGER,
+        direccion TEXT,
+        telefono TEXT,
+        email TEXT,
+        descripcion TEXT,
+        FOREIGN KEY (ciudad_id) REFERENCES ciudades (id)
+      )`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS canchas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        complejo_id INTEGER,
+        nombre TEXT NOT NULL,
+        tipo TEXT NOT NULL CHECK(tipo IN ('padel', 'futbol')),
+        precio_hora INTEGER NOT NULL,
+        descripcion TEXT,
+        activa INTEGER DEFAULT 1,
+        FOREIGN KEY (complejo_id) REFERENCES complejos (id)
+      )`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS reservas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cancha_id INTEGER,
+        fecha TEXT NOT NULL,
+        hora_inicio TEXT NOT NULL,
+        hora_fin TEXT NOT NULL,
+        nombre_cliente TEXT NOT NULL,
+        rut_cliente TEXT NOT NULL,
+        email_cliente TEXT NOT NULL,
+        codigo_reserva TEXT UNIQUE NOT NULL,
+        estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'confirmada', 'cancelada')),
+        precio_total INTEGER NOT NULL,
+        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (cancha_id) REFERENCES canchas (id)
+      )`);
+
+      // Tabla de usuarios administradores
+      db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        rol TEXT NOT NULL CHECK(rol IN ('super_admin', 'admin', 'usuario')),
+        activo INTEGER DEFAULT 1,
+        fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ultimo_acceso DATETIME
+      )`);
+
+      console.log('✅ Tablas creadas, preservando datos existentes...');
+      db.close();
     });
   }
 
