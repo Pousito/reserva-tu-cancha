@@ -1,20 +1,21 @@
-# Dependencias
+# Dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Variables de entorno
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Base de datos
+# Database files (except example)
 *.db
 *.sqlite
 *.sqlite3
+!database.example.sqlite
 
 # Logs
 logs/
@@ -24,26 +25,91 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# Archivos temporales
-*.tmp
-*.temp
-temp_button.txt
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Archivos del sistema
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Archivos de IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# Archivos de build
-dist/
-build/
-coverage/
+# Temporary files
+tmp/
+temp/
 
-# Archivos de debug
-debug_*.png
-*.png
+# Backup files
+*.backup
+*.bak
+
+# Development and debug files
+debug-*
+test-*
+emergency-*

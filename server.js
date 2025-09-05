@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { initDatabaseIfEmpty } = require('./init-db');
+const { initDatabaseIfEmpty } = require('./scripts/database/init-db');
 require('dotenv').config();
 
 const app = express();

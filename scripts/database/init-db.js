@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { createDatabaseBackup, restoreFromBackup, checkDatabaseHasData } = require('./backup-db');
+const { createDatabaseBackup, restoreFromBackup, checkDatabaseHasData } = require('../../backup-db');
 
 // Función para inicializar base de datos solo si está vacía
 function initDatabaseIfEmpty() {

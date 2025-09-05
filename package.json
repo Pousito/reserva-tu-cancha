@@ -9,13 +9,15 @@
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
     "install-client": "cd client && npm install",
-    "deploy": "node auto-deploy.js",
+    "deploy": "node scripts/deployment/auto-deploy.js",
     "quick-deploy": "git add . && git commit -m \"Quick update\" && git push origin main",
-    "deploy-full": "node deploy_and_populate.js deploy",
-    "populate-db": "node deploy_and_populate.js populate",
-    "check-db": "node deploy_and_populate.js check",
-    "check-render": "node check_render_status.js",
-    "populate-reservas": "node populate_reservas.js"
+    "deploy-full": "node scripts/deployment/deploy_and_populate.js deploy",
+    "populate-db": "node scripts/deployment/deploy_and_populate.js populate",
+    "check-db": "node scripts/deployment/deploy_and_populate.js check",
+    "check-render": "node scripts/database/check_render_status.js",
+    "populate-reservas": "node scripts/database/populate_reservas.js",
+    "test": "echo \"No tests specified\" && exit 0",
+    "lint": "echo \"No linter configured\" && exit 0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
