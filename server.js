@@ -934,12 +934,15 @@ app.post('/api/reservas', (req, res) => {
     // sendConfirmationEmail(email_cliente, codigo_reserva, fecha, hora_inicio);
     
     // 🔄 EXPORTAR AUTOMÁTICAMENTE las reservas para persistencia
+    console.log('🔄 Iniciando exportación automática después de crear reserva...');
     setTimeout(() => {
       try {
+        console.log('📤 Llamando a exportReservations()...');
         exportReservations();
         console.log('✅ Reservas exportadas automáticamente después de crear reserva');
       } catch (error) {
         console.error('❌ Error exportando reservas automáticamente:', error);
+        console.error('❌ Stack trace:', error.stack);
       }
     }, 1000);
     

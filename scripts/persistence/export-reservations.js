@@ -9,6 +9,7 @@ const path = require('path');
 function exportReservations() {
   console.log('📤 EXPORTANDO RESERVAS PARA PERSISTENCIA');
   console.log('========================================');
+  console.log('🔍 Función exportReservations() llamada correctamente');
   
   const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
   const exportFile = '/opt/render/project/data/data-backup.json';
