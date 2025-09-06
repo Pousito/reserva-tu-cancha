@@ -2072,6 +2072,22 @@ app.use('*', (req, res) => {
 async function initializeBackupSystem() {
   try {
     console.log('🛡️  Inicializando sistema de respaldo...');
+    
+    // 🔍 DIAGNÓSTICO: Verificar rutas de respaldos
+    console.log('🔍 DIAGNÓSTICO DE RUTAS DE RESPALDOS');
+    console.log('=====================================');
+    console.log(`📁 Ruta de BD: ${dbPath}`);
+    console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+    console.log(`🔧 DB_PATH: ${process.env.DB_PATH || 'undefined'}`);
+    console.log(`💾 RENDER_DISK_PATH: ${process.env.RENDER_DISK_PATH || 'undefined'}`);
+    
+    // Determinar ruta de respaldos
+    const backupDir = process.env.NODE_ENV === 'production' 
+      ? '/opt/render/project/src/backups'
+      : './backups';
+    console.log(`📂 Ruta de respaldos calculada: ${backupDir}`);
+    console.log('=====================================');
+    
     backupSystem = new BackupSystem(dbPath);
     await backupSystem.connectDb();
 
