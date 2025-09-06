@@ -8,6 +8,8 @@ const { migrateToPersistentDisk } = require('./scripts/migration/migrate-to-pers
 const { checkPaths } = require('./scripts/diagnostic/check-paths');
 const { autoRestoreFromBackups } = require('./scripts/persistence/auto-restore');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
+const { importReservations } = require('./scripts/persistence/import-reservations');
+const { exportReservations } = require('./scripts/persistence/export-reservations');
 require('dotenv').config();
 
 const app = express();
@@ -58,14 +60,21 @@ const db = new sqlite3.Database(dbPath, (err) => {
         if (restored) {
           console.log('✅ Datos restaurados exitosamente');
         } else {
-          console.log('🔄 No se pudo restaurar, inicializando base de datos...');
-          initDatabaseIfEmpty();
+          console.log('🔄 No se pudo restaurar, intentando importar desde respaldo en memoria...');
           
-          // Después de inicializar, insertar reservas de emergencia
-          setTimeout(() => {
-            console.log('🚨 Insertando reservas de emergencia...');
-            insertEmergencyReservations();
-          }, 2000);
+          // Intentar importar desde respaldo en memoria
+          if (importReservations()) {
+            console.log('✅ Reservas importadas desde respaldo en memoria');
+          } else {
+            console.log('🔄 No hay respaldo en memoria, inicializando base de datos...');
+            initDatabaseIfEmpty();
+            
+            // Después de inicializar, insertar reservas de emergencia
+            setTimeout(() => {
+              console.log('🚨 Insertando reservas de emergencia...');
+              insertEmergencyReservations();
+            }, 2000);
+          }
         }
       }).catch(error => {
         console.error('❌ Error en restauración:', error);
@@ -863,6 +872,16 @@ app.get('/api/disponibilidad/:canchaId/:fecha', (req, res) => {
     }
     res.json(rows);
   });
+});
+
+// Endpoint para exportar reservas (usar antes de deploy)
+app.post('/api/export-reservas', (req, res) => {
+  try {
+    exportReservations();
+    res.json({ message: 'Reservas exportadas exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Crear nueva reserva
