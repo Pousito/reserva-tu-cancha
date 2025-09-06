@@ -15,16 +15,16 @@ services:
       - key: CORS_ORIGIN
         value: https://reserva-tu-cancha.onrender.com
       - key: DB_PATH
-        value: /opt/render/project/src/database.sqlite
+        value: /opt/render/project/data/database.sqlite
       - key: RENDER_DISK_PATH
-        value: /opt/render/project/src
+        value: /opt/render/project/data
     healthCheckPath: /health
     autoDeploy: true
     branch: main
     # Configuración para base de datos persistente
     disk:
       name: reserva-tu-cancha-db
-      mountPath: /opt/render/project/src
+      mountPath: /opt/render/project/data
       sizeGB: 1
     # Asegurar que el disco se monte correctamente
     region: oregon
