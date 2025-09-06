@@ -2088,7 +2088,8 @@ async function initializeBackupSystem() {
     console.log(`📂 Ruta de respaldos calculada: ${backupDir}`);
     console.log('=====================================');
     
-    backupSystem = new BackupSystem(dbPath);
+    // 🔧 SOLUCIÓN: Pasar la ruta de respaldos correcta al BackupSystem
+    backupSystem = new BackupSystem(dbPath, backupDir);
     await backupSystem.connectDb();
 
     console.log('🔍 VERIFICANDO ESTADO DE LA BD');
