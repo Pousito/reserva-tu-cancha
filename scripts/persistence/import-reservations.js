@@ -11,7 +11,7 @@ function importReservations() {
   console.log('====================================');
   
   const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
-  const importFile = '/opt/render/project/src/data-backup.json';
+  const importFile = '/opt/render/project/data/data-backup.json';
   
   // Verificar si existe el archivo de importación
   if (!fs.existsSync(importFile)) {

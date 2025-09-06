@@ -11,7 +11,7 @@ function exportReservations() {
   console.log('========================================');
   
   const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
-  const exportFile = '/opt/render/project/src/data-backup.json';
+  const exportFile = '/opt/render/project/data/data-backup.json';
   
   const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
@@ -83,9 +83,24 @@ function exportReservations() {
               
               // Guardar archivo de exportación
               try {
+                // Asegurar que el directorio existe
+                const exportDir = path.dirname(exportFile);
+                if (!fs.existsSync(exportDir)) {
+                  fs.mkdirSync(exportDir, { recursive: true });
+                  console.log(`📁 Directorio creado: ${exportDir}`);
+                }
+                
                 fs.writeFileSync(exportFile, JSON.stringify(exportData, null, 2));
                 console.log(`✅ Datos exportados a: ${exportFile}`);
                 console.log(`📊 Total de registros exportados: ${exportData.reservas.length + exportData.complejos.length + exportData.canchas.length + exportData.ciudades.length + exportData.usuarios.length}`);
+                
+                // Verificar que el archivo se creó correctamente
+                if (fs.existsSync(exportFile)) {
+                  const stats = fs.statSync(exportFile);
+                  console.log(`📊 Tamaño del archivo de respaldo: ${stats.size} bytes`);
+                } else {
+                  console.error('❌ El archivo de respaldo no se creó correctamente');
+                }
               } catch (error) {
                 console.error('❌ Error guardando archivo de exportación:', error);
               }

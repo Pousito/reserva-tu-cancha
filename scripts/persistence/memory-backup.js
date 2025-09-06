@@ -7,7 +7,7 @@ const path = require('path');
  */
 class MemoryBackupSystem {
   constructor() {
-    this.backupFile = '/opt/render/project/src/data-backup.json';
+    this.backupFile = '/opt/render/project/data/data-backup.json';
     this.data = null;
   }
 
