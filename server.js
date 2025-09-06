@@ -2168,5 +2168,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📱 Accesible desde otros dispositivos en la misma red`);
               console.log(`🛡️  Sistema de respaldo automático activado`);
             console.log(`💾 Respaldos automáticos cada 6 horas`);
-            console.log(`🧪 PRUEBA RESTAURACIÓN: Verificando sistema de restauración automática - Reserva creada`);
+            console.log(`🧪 PRUEBA FINAL: Sistema de restauración corregido - Verificar persistencia de reserva`);
 });
