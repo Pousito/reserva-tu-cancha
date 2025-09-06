@@ -15,9 +15,9 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Base de datos con ruta persistente para Render
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/opt/render/project/src/database.sqlite'  // Ruta persistente en Render
-  : './database.sqlite';                       // Ruta local
+const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === 'production' 
+  ? '/opt/render/project/data/database.sqlite'  // Ruta persistente en Render
+  : './database.sqlite');                       // Ruta local
 
 let backupSystem; // Sistema de respaldo
 
