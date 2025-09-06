@@ -7,6 +7,7 @@ const { BackupSystem } = require('./scripts/database/backup-system');
 const { migrateToPersistentDisk } = require('./scripts/migration/migrate-to-persistent-disk');
 const { checkPaths } = require('./scripts/diagnostic/check-paths');
 const { autoRestoreFromBackups } = require('./scripts/persistence/auto-restore');
+const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
 require('dotenv').config();
 
 const app = express();
@@ -59,6 +60,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
         } else {
           console.log('🔄 No se pudo restaurar, inicializando base de datos...');
           initDatabaseIfEmpty();
+          
+          // Después de inicializar, insertar reservas de emergencia
+          setTimeout(() => {
+            console.log('🚨 Insertando reservas de emergencia...');
+            insertEmergencyReservations();
+          }, 2000);
         }
       }).catch(error => {
         console.error('❌ Error en restauración:', error);
