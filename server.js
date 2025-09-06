@@ -2023,6 +2023,22 @@ app.post('/admin/populate-db', async (req, res) => {
   }
 });
 
+// Endpoint para exportar manualmente
+app.post('/api/export-manual', (req, res) => {
+  try {
+    console.log('🔄 Exportación manual iniciada');
+    exportReservations();
+    res.json({ 
+      success: true, 
+      message: 'Exportación manual iniciada',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error en exportación manual:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para ver el archivo de respaldo (diagnóstico)
 app.get('/api/debug/backup', (req, res) => {
   try {
