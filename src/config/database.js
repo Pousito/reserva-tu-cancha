@@ -4,8 +4,8 @@ const { initDatabaseIfEmpty } = require('../../scripts/database/init-db');
 
 // Configuración de la base de datos
 const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/opt/render/project/data/database.sqlite'  // Ruta persistente en Render
-  : './database.sqlite';                        // Ruta local
+  ? '/opt/render/project/src/database.sqlite'  // Ruta persistente en Render
+  : './database.sqlite';                       // Ruta local
 
 // Crear instancia de la base de datos
 const db = new sqlite3.Database(dbPath, (err) => {

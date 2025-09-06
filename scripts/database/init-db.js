@@ -7,7 +7,7 @@ function initDatabaseIfEmpty() {
   console.log('🚀 INICIANDO initDatabaseIfEmpty()');
   console.log('================================');
   
-  const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
+  const dbPath = process.env.DB_PATH || '/opt/render/project/src/database.sqlite';
   
   console.log(`📁 Ruta de BD: ${dbPath}`);
   console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
