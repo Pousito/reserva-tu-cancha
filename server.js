@@ -63,18 +63,20 @@ const db = new sqlite3.Database(dbPath, (err) => {
           console.log('🔄 No se pudo restaurar, intentando importar desde respaldo en memoria...');
           
           // Intentar importar desde respaldo en memoria
-          if (importReservations()) {
-            console.log('✅ Reservas importadas desde respaldo en memoria');
-          } else {
-            console.log('🔄 No hay respaldo en memoria, inicializando base de datos...');
-            initDatabaseIfEmpty();
-            
-            // Después de inicializar, insertar reservas de emergencia
-            setTimeout(() => {
-              console.log('🚨 Insertando reservas de emergencia...');
-              insertEmergencyReservations();
-            }, 2000);
-          }
+          setTimeout(() => {
+            if (importReservations()) {
+              console.log('✅ Reservas importadas desde respaldo en memoria');
+            } else {
+              console.log('🔄 No hay respaldo en memoria, inicializando base de datos...');
+              initDatabaseIfEmpty();
+              
+              // Después de inicializar, insertar reservas de emergencia
+              setTimeout(() => {
+                console.log('🚨 Insertando reservas de emergencia...');
+                insertEmergencyReservations();
+              }, 2000);
+            }
+          }, 3000); // Esperar 3 segundos para que se cree el archivo de respaldo
         }
       }).catch(error => {
         console.error('❌ Error en restauración:', error);

@@ -14,10 +14,14 @@ function importReservations() {
   const importFile = '/opt/render/project/data/data-backup.json';
   
   // Verificar si existe el archivo de importación
+  console.log(`🔍 Verificando archivo de respaldo: ${importFile}`);
   if (!fs.existsSync(importFile)) {
     console.log('ℹ️  No hay archivo de respaldo para importar');
+    console.log(`❌ Archivo no encontrado: ${importFile}`);
     return false;
   }
+  
+  console.log(`✅ Archivo de respaldo encontrado: ${importFile}`);
   
   try {
     const content = fs.readFileSync(importFile, 'utf8');
