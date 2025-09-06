@@ -51,12 +51,20 @@ function migrateToPersistentDisk() {
       }
       
       const backupFiles = fs.readdirSync(sourceBackups);
+      let migratedCount = 0;
+      
       backupFiles.forEach(file => {
-        const sourceFile = path.join(sourceBackups, file);
-        const targetFile = path.join(targetBackups, file);
-        fs.copyFileSync(sourceFile, targetFile);
-        console.log(`✅ Respaldo migrado: ${file}`);
+        // Migrar TODOS los archivos de respaldo (tanto .sqlite como .hash)
+        if (file.includes('database_backup_')) {
+          const sourceFile = path.join(sourceBackups, file);
+          const targetFile = path.join(targetBackups, file);
+          fs.copyFileSync(sourceFile, targetFile);
+          console.log(`✅ Respaldo migrado: ${file}`);
+          migratedCount++;
+        }
       });
+      
+      console.log(`📊 Total de respaldos migrados: ${migratedCount}`);
     } else {
       console.log(`ℹ️  No hay respaldos existentes para migrar`);
     }

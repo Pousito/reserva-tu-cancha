@@ -21,12 +21,17 @@ async function autoRestoreFromBackups() {
     }
     
     const backupFiles = fs.readdirSync(backupDir)
-      .filter(file => file.endsWith('.sqlite') && !file.endsWith('.hash'))
+      .filter(file => file.endsWith('.sqlite') && !file.endsWith('.hash') && file.includes('database_backup_'))
       .sort()
       .reverse(); // Más recientes primero
     
     if (backupFiles.length === 0) {
       console.log('❌ No hay respaldos disponibles');
+      console.log('🔍 Archivos en directorio de respaldos:');
+      const allFiles = fs.readdirSync(backupDir);
+      allFiles.forEach(file => {
+        console.log(`  - ${file}`);
+      });
       return false;
     }
     
