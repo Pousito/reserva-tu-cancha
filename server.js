@@ -90,6 +90,18 @@ const db = new sqlite3.Database(dbPath, (err) => {
     setTimeout(() => {
       initializeBackupSystem();
     }, 1000);
+    
+    // 🔄 EXPORTACIÓN AUTOMÁTICA cada 5 minutos para mantener respaldo actualizado
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(() => {
+        try {
+          exportReservations();
+          console.log('🔄 Exportación automática de reservas completada');
+        } catch (error) {
+          console.error('❌ Error en exportación automática:', error);
+        }
+      }, 5 * 60 * 1000); // Cada 5 minutos
+    }
   }
 });
 
@@ -920,6 +932,16 @@ app.post('/api/reservas', (req, res) => {
     
     // Enviar email de confirmación (implementar después)
     // sendConfirmationEmail(email_cliente, codigo_reserva, fecha, hora_inicio);
+    
+    // 🔄 EXPORTAR AUTOMÁTICAMENTE las reservas para persistencia
+    setTimeout(() => {
+      try {
+        exportReservations();
+        console.log('✅ Reservas exportadas automáticamente después de crear reserva');
+      } catch (error) {
+        console.error('❌ Error exportando reservas automáticamente:', error);
+      }
+    }, 1000);
     
     res.json({
       id: this.lastID,
