@@ -6,6 +6,7 @@ const { initDatabaseIfEmpty } = require('./scripts/database/init-db');
 const { BackupSystem } = require('./scripts/database/backup-system');
 const { migrateToPersistentDisk } = require('./scripts/migration/migrate-to-persistent-disk');
 const { checkPaths } = require('./scripts/diagnostic/check-paths');
+const { autoRestoreFromBackups } = require('./scripts/persistence/auto-restore');
 require('dotenv').config();
 
 const app = express();
@@ -32,12 +33,14 @@ const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === 'production'
 
 let backupSystem; // Sistema de respaldo
 
-// Ejecutar migración y diagnóstico antes de conectar a la base de datos
+// Ejecutar migración, diagnóstico y restauración antes de conectar a la base de datos
 if (process.env.NODE_ENV === 'production') {
   console.log('🔄 Ejecutando migración al disco persistente...');
   migrateToPersistentDisk();
   console.log('\n🔍 Ejecutando diagnóstico de rutas...');
   checkPaths();
+  console.log('\n🔄 Intentando restauración automática...');
+  // La restauración se ejecutará de forma asíncrona
 }
 
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -47,10 +50,21 @@ const db = new sqlite3.Database(dbPath, (err) => {
   } else {
     console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
     
-    // En producción, usar init-db.js para inicialización inteligente
+    // En producción, intentar restaurar antes de inicializar
     if (process.env.NODE_ENV === 'production') {
-      console.log('🚀 Modo producción: Usando inicialización inteligente');
-      initDatabaseIfEmpty();
+      console.log('🚀 Modo producción: Intentando restauración automática...');
+      autoRestoreFromBackups().then(restored => {
+        if (restored) {
+          console.log('✅ Datos restaurados exitosamente');
+        } else {
+          console.log('🔄 No se pudo restaurar, inicializando base de datos...');
+          initDatabaseIfEmpty();
+        }
+      }).catch(error => {
+        console.error('❌ Error en restauración:', error);
+        console.log('🔄 Inicializando base de datos...');
+        initDatabaseIfEmpty();
+      });
     } else {
       console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
       initDatabase();
