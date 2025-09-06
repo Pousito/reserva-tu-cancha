@@ -2029,7 +2029,9 @@ app.get('/api/debug/backup', (req, res) => {
     console.log('🔍 Endpoint de diagnóstico de respaldo llamado');
     
     const fs = require('fs');
-    const backupFile = '/opt/render/project/data/data-backup.json';
+    const backupFile = process.env.NODE_ENV === 'production' 
+      ? '/opt/render/project/src/data/reservations.json'  // Nueva ruta en código
+      : './data/reservations.json';                       // Ruta local
     
     if (!fs.existsSync(backupFile)) {
       console.log('❌ Archivo de respaldo no existe');
