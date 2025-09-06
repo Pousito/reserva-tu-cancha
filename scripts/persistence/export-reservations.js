@@ -12,7 +12,9 @@ function exportReservations() {
   console.log('🔍 Función exportReservations() llamada correctamente');
   
   const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
-  const exportFile = '/opt/render/project/data/data-backup.json';
+  const exportFile = process.env.NODE_ENV === 'production' 
+    ? '/opt/render/project/src/data/reservations.json'  // En producción, guardar en código
+    : './data/reservations.json';                       // En desarrollo, guardar localmente
   
   const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
@@ -99,6 +101,15 @@ function exportReservations() {
                 if (fs.existsSync(exportFile)) {
                   const stats = fs.statSync(exportFile);
                   console.log(`📊 Tamaño del archivo de respaldo: ${stats.size} bytes`);
+                  
+                  // En producción, hacer commit automático
+                  if (process.env.NODE_ENV === 'production') {
+                    console.log('🔄 Iniciando commit automático...');
+                    const { autoCommit } = require('./auto-commit');
+                    setTimeout(() => {
+                      autoCommit();
+                    }, 2000);
+                  }
                 } else {
                   console.error('❌ El archivo de respaldo no se creó correctamente');
                 }

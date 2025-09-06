@@ -11,7 +11,9 @@ function importReservations() {
   console.log('====================================');
   
   const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
-  const importFile = '/opt/render/project/data/data-backup.json';
+  const importFile = process.env.NODE_ENV === 'production' 
+    ? '/opt/render/project/src/data/reservations.json'  // En producción, leer desde código
+    : './data/reservations.json';                       // En desarrollo, leer localmente
   
   // Verificar si existe el archivo de importación
   console.log(`🔍 Verificando archivo de respaldo: ${importFile}`);
