@@ -4,6 +4,8 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const { initDatabaseIfEmpty } = require('./scripts/database/init-db');
 const { BackupSystem } = require('./scripts/database/backup-system');
+const { migrateToPersistentDisk } = require('./scripts/migration/migrate-to-persistent-disk');
+const { checkPaths } = require('./scripts/diagnostic/check-paths');
 require('dotenv').config();
 
 const app = express();
@@ -20,6 +22,14 @@ const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === 'production'
   : './database.sqlite');                       // Ruta local
 
 let backupSystem; // Sistema de respaldo
+
+// Ejecutar migración y diagnóstico antes de conectar a la base de datos
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔄 Ejecutando migración al disco persistente...');
+  migrateToPersistentDisk();
+  console.log('\n🔍 Ejecutando diagnóstico de rutas...');
+  checkPaths();
+}
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
