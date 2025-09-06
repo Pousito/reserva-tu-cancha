@@ -2021,6 +2021,83 @@ app.post('/admin/populate-db', async (req, res) => {
   }
 });
 
+// Endpoint para ver el archivo de respaldo (diagnóstico)
+app.get('/api/debug/backup', (req, res) => {
+  try {
+    console.log('🔍 Endpoint de diagnóstico de respaldo llamado');
+    
+    const fs = require('fs');
+    const backupFile = '/opt/render/project/data/data-backup.json';
+    
+    if (!fs.existsSync(backupFile)) {
+      console.log('❌ Archivo de respaldo no existe');
+      return res.json({
+        success: false,
+        message: 'Archivo de respaldo no existe',
+        path: backupFile,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const backupData = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
+    const stats = fs.statSync(backupFile);
+    
+    console.log(`📊 Archivo de respaldo encontrado: ${backupFile}`);
+    console.log(`📊 Tamaño: ${stats.size} bytes`);
+    console.log(`📊 Última modificación: ${stats.mtime}`);
+    console.log(`📊 Reservas en respaldo: ${backupData.reservas ? backupData.reservas.length : 0}`);
+    
+    res.json({
+      success: true,
+      path: backupFile,
+      size: stats.size,
+      lastModified: stats.mtime,
+      data: backupData,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en endpoint de diagnóstico de respaldo:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para ver todas las reservas (diagnóstico)
+app.get('/api/debug/reservas', (req, res) => {
+  try {
+    console.log('🔍 Endpoint de diagnóstico de reservas llamado');
+    
+    db.all(`
+      SELECT r.*, c.nombre as cancha_nombre, comp.nombre as complejo_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos comp ON c.complejo_id = comp.id
+      ORDER BY r.fecha DESC, r.hora_inicio DESC
+    `, (err, rows) => {
+      if (err) {
+        console.error('❌ Error obteniendo reservas:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      console.log(`📊 Total de reservas encontradas: ${rows.length}`);
+      rows.forEach((reserva, index) => {
+        console.log(`📋 Reserva ${index + 1}: ${reserva.codigo_reserva} - ${reserva.nombre_cliente} - ${reserva.fecha} ${reserva.hora_inicio}`);
+      });
+      
+      res.json({
+        success: true,
+        total: rows.length,
+        reservas: rows,
+        timestamp: new Date().toISOString()
+      });
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en endpoint de diagnóstico:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para verificar estado de la BD
 app.get('/admin/check-db', async (req, res) => {
   try {
