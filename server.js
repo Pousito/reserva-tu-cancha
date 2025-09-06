@@ -2080,16 +2080,10 @@ async function initializeBackupSystem() {
     console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
     console.log(`🔧 DB_PATH: ${process.env.DB_PATH || 'undefined'}`);
     console.log(`💾 RENDER_DISK_PATH: ${process.env.RENDER_DISK_PATH || 'undefined'}`);
-    
-    // Determinar ruta de respaldos
-    const backupDir = process.env.NODE_ENV === 'production' 
-      ? '/opt/render/project/src/backups'
-      : './backups';
-    console.log(`📂 Ruta de respaldos calculada: ${backupDir}`);
     console.log('=====================================');
     
-    // 🔧 SOLUCIÓN: Pasar la ruta de respaldos correcta al BackupSystem
-    backupSystem = new BackupSystem(dbPath, backupDir);
+    // 🔧 SOLUCIÓN: Usar la inicialización original que funcionaba
+    backupSystem = new BackupSystem(dbPath);
     await backupSystem.connectDb();
 
     console.log('🔍 VERIFICANDO ESTADO DE LA BD');
