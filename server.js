@@ -17,6 +17,15 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Base de datos con ruta persistente para Render
+// Forzar configuración de variables de entorno en producción
+if (process.env.NODE_ENV === 'production') {
+  process.env.DB_PATH = '/opt/render/project/data/database.sqlite';
+  process.env.RENDER_DISK_PATH = '/opt/render/project/data';
+  console.log('🔧 Variables de entorno forzadas para producción');
+  console.log(`🔧 DB_PATH: ${process.env.DB_PATH}`);
+  console.log(`💾 RENDER_DISK_PATH: ${process.env.RENDER_DISK_PATH}`);
+}
+
 const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === 'production' 
   ? '/opt/render/project/data/database.sqlite'  // Ruta persistente en Render
   : './database.sqlite');                       // Ruta local
@@ -2092,8 +2101,12 @@ async function initializeBackupSystem() {
     console.log(`💾 RENDER_DISK_PATH: ${process.env.RENDER_DISK_PATH || 'undefined'}`);
     console.log('=====================================');
     
-    // 🔧 SOLUCIÓN: Usar la inicialización original que funcionaba
-    backupSystem = new BackupSystem(dbPath);
+    // 🔧 SOLUCIÓN: Usar la ruta persistente para respaldos
+    const backupDir = process.env.NODE_ENV === 'production' 
+      ? '/opt/render/project/data/backups'
+      : './backups';
+    console.log(`📂 Ruta de respaldos: ${backupDir}`);
+    backupSystem = new BackupSystem(dbPath, backupDir);
     await backupSystem.connectDb();
 
     console.log('🔍 VERIFICANDO ESTADO DE LA BD');
