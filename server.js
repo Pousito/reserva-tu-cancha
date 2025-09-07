@@ -184,6 +184,20 @@ app.get('/api/canchas/:complejoId', async (req, res) => {
   }
 });
 
+// Obtener canchas por complejo y tipo
+app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
+  try {
+    const { complejoId, tipo } = req.params;
+    const canchas = await db.query(
+      'SELECT * FROM canchas WHERE complejo_id = ? AND tipo = ? ORDER BY nombre',
+      [complejoId, tipo]
+    );
+    res.json(canchas);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Obtener reservas
 app.get('/api/reservas', async (req, res) => {
   try {

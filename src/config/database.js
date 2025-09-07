@@ -13,6 +13,9 @@ class DatabaseManager {
   async connect() {
     console.log('🔌 CONECTANDO A BASE DE DATOS');
     console.log('==============================');
+    console.log('🌍 Entorno:', process.env.NODE_ENV);
+    console.log('📊 Base de datos:', this.databaseUrl ? 'PostgreSQL' : 'SQLite');
+    console.log('🔗 DATABASE_URL:', this.databaseUrl ? 'Definido' : 'No definido');
     
     if (this.isProduction && this.databaseUrl) {
       console.log('🐘 Usando PostgreSQL en producción');
