@@ -514,6 +514,89 @@ app.get('/api/debug/table-data', (req, res) => {
   });
 });
 
+// Endpoint de emergencia para poblar complejos y canchas
+app.get('/api/emergency/populate-complexes', (req, res) => {
+  console.log('🏢 POBLANDO COMPLEJOS Y CANCHAS DE EMERGENCIA');
+  
+  const complejos = [
+    { nombre: 'Complejo Deportivo Central', ciudad: 'Santiago', direccion: 'Av. Providencia 123', telefono: '+56912345678', email: 'info@complejocentral.cl' },
+    { nombre: 'Padel Club Premium', ciudad: 'Santiago', direccion: 'Las Condes 456', telefono: '+56987654321', email: 'reservas@padelclub.cl' },
+    { nombre: 'MagnaSports', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@magnasports.cl' },
+    { nombre: 'Centro Deportivo Costero', ciudad: 'Valparaíso', direccion: 'Av. Argentina 9012', telefono: '+56 32 2345 6791', email: 'info@costero.cl' },
+    { nombre: 'Club Deportivo Norte', ciudad: 'Santiago', direccion: 'Av. Las Condes 5678', telefono: '+56 2 2345 6790', email: 'info@norte.cl' }
+  ];
+  
+  const canchas = [
+    { nombre: 'Cancha Futbol 1', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
+    { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
+    { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
+    { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
+    { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+    { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+    { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
+    { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
+  ];
+  
+  let complejosInsertados = 0;
+  let canchasInsertadas = 0;
+  let errores = 0;
+  
+  // Insertar complejos
+  complejos.forEach((complejo, index) => {
+    const sql = `
+      INSERT OR IGNORE INTO complejos (nombre, ciudad_id, direccion, telefono, email) 
+      SELECT ?, id, ?, ?, ? FROM ciudades WHERE nombre = ?
+    `;
+    
+    db.run(sql, [complejo.nombre, complejo.direccion, complejo.telefono, complejo.email, complejo.ciudad], function(err) {
+      if (err) {
+        console.error(`❌ Error insertando complejo ${complejo.nombre}:`, err.message);
+        errores++;
+      } else {
+        console.log(`✅ Complejo insertado: ${complejo.nombre}`);
+        complejosInsertados++;
+      }
+      
+      // Si es el último complejo, insertar canchas
+      if (complejosInsertados + errores === complejos.length) {
+        setTimeout(() => {
+          insertCanchas();
+        }, 1000);
+      }
+    });
+  });
+  
+  function insertCanchas() {
+    canchas.forEach((cancha, index) => {
+      const sql = `
+        INSERT OR IGNORE INTO canchas (complejo_id, nombre, tipo, precio_hora) 
+        SELECT id, ?, ?, ? FROM complejos WHERE nombre = ?
+      `;
+      
+      db.run(sql, [cancha.nombre, cancha.tipo, cancha.precio, cancha.complejo], function(err) {
+        if (err) {
+          console.error(`❌ Error insertando cancha ${cancha.nombre}:`, err.message);
+          errores++;
+        } else {
+          console.log(`✅ Cancha insertada: ${cancha.nombre}`);
+          canchasInsertadas++;
+        }
+        
+        // Si es la última cancha, enviar respuesta
+        if (canchasInsertadas + errores === canchas.length + complejos.length) {
+          res.json({
+            success: true,
+            message: `Complejos y canchas poblados: ${complejosInsertados} complejos, ${canchasInsertadas} canchas`,
+            complejosInsertados,
+            canchasInsertadas,
+            errores
+          });
+        }
+      });
+    });
+  }
+});
+
 // Endpoint de emergencia para insertar reservas de prueba
 app.get('/api/emergency/insert-reservas', (req, res) => {
   console.log('🚨 INSERTANDO RESERVAS DE EMERGENCIA');
