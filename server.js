@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-// PostgreSQL + SQLite Hybrid Database System
+// PostgreSQL + SQLite Hybrid Database System - Populate All Tables
 const DatabaseManager = require('./src/config/database');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
 require('dotenv').config();
