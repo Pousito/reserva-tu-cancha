@@ -53,36 +53,49 @@ const db = new sqlite3.Database(dbPath, (err) => {
   } else {
     console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
     
-    // En producción, intentar restaurar antes de inicializar
+    // En producción, inicializar primero las tablas, luego intentar restaurar
     if (process.env.NODE_ENV === 'production') {
-      console.log('🚀 Modo producción: Intentando restauración automática...');
-      autoRestoreFromBackups().then(restored => {
-        if (restored) {
-          console.log('✅ Datos restaurados exitosamente');
-        } else {
-          console.log('🔄 No se pudo restaurar, intentando importar desde respaldo en memoria...');
-          
-          // Intentar importar desde respaldo en memoria
-          setTimeout(() => {
-            if (importReservations()) {
-              console.log('✅ Reservas importadas desde respaldo en memoria');
-            } else {
-              console.log('🔄 No hay respaldo en memoria, inicializando base de datos...');
-              initDatabaseIfEmpty();
-              
-              // Después de inicializar, insertar reservas de emergencia
-              setTimeout(() => {
-                console.log('🚨 Insertando reservas de emergencia...');
+      console.log('🚀 Modo producción: Inicializando estructura de BD primero...');
+      
+      // PRIMERO: Asegurar que las tablas existan
+      initDatabaseIfEmpty();
+      
+      // SEGUNDO: Después de un delay, intentar restaurar datos
+      setTimeout(() => {
+        console.log('🔄 Intentando restauración automática...');
+        autoRestoreFromBackups().then(restored => {
+          if (restored) {
+            console.log('✅ Datos restaurados exitosamente');
+          } else {
+            console.log('🔄 No se pudo restaurar, intentando importar desde respaldo en memoria...');
+            
+            // Intentar importar desde respaldo en memoria
+            setTimeout(() => {
+              if (importReservations()) {
+                console.log('✅ Reservas importadas desde respaldo en memoria');
+              } else {
+                console.log('🔄 No hay respaldo en memoria, insertando reservas de emergencia...');
                 insertEmergencyReservations();
-              }, 2000);
-            }
-          }, 3000); // Esperar 3 segundos para que se cree el archivo de respaldo
-        }
-      }).catch(error => {
-        console.error('❌ Error en restauración:', error);
-        console.log('🔄 Inicializando base de datos...');
-        initDatabaseIfEmpty();
-      });
+                
+                // Después de insertar emergencia, exportar para respaldo
+                setTimeout(() => {
+                  console.log('📤 Exportando datos iniciales...');
+                  exportReservations();
+                }, 1000);
+              }
+            }, 2000);
+          }
+        }).catch(error => {
+          console.error('❌ Error en restauración:', error);
+          console.log('🔄 Insertando reservas de emergencia...');
+          insertEmergencyReservations();
+          
+          setTimeout(() => {
+            console.log('📤 Exportando datos iniciales...');
+            exportReservations();
+          }, 1000);
+        });
+      }, 3000); // Esperar 3 segundos para que las tablas se creen
     } else {
       console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
       initDatabase();
