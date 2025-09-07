@@ -417,6 +417,35 @@ app.listen(PORT, () => {
 });
 
 // Manejo de cierre graceful
+// Función para crear respaldos automáticos
+async function createBackup() {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Crear directorio de respaldos si no existe
+    const backupDir = './data/backups';
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    
+    // Generar nombre de archivo con timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFileName = `database_backup_${timestamp}.sqlite`;
+    const backupPath = path.join(backupDir, backupFileName);
+    
+    // Copiar base de datos actual al respaldo
+    const currentDbPath = process.env.DB_PATH || './database.sqlite';
+    if (fs.existsSync(currentDbPath)) {
+      fs.copyFileSync(currentDbPath, backupPath);
+      console.log(`💾 Respaldo creado: ${backupFileName}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error creando respaldo:', error.message);
+  }
+}
+
 process.on('SIGINT', async () => {
   console.log('\n🔄 Cerrando servidor...');
   await db.close();

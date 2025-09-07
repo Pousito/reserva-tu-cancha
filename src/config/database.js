@@ -63,11 +63,67 @@ class DatabaseManager {
         } else {
           console.log('✅ SQLite conectado exitosamente');
           this.createSQLiteTables().then(() => {
-            resolve();
+            // En producción, intentar restaurar datos de respaldos
+            if (this.isProduction) {
+              this.restoreFromBackups().then(() => {
+                resolve();
+              }).catch(() => {
+                console.log('⚠️ No se pudieron restaurar respaldos, continuando...');
+                resolve();
+              });
+            } else {
+              resolve();
+            }
           }).catch(reject);
         }
       });
     });
+  }
+
+  async restoreFromBackups() {
+    const fs = require('fs');
+    const path = require('path');
+    
+    try {
+      const backupDir = './data/backups';
+      if (!fs.existsSync(backupDir)) {
+        console.log('📁 Directorio de respaldos no existe');
+        return;
+      }
+      
+      const files = fs.readdirSync(backupDir)
+        .filter(file => file.endsWith('.sqlite'))
+        .sort()
+        .reverse(); // Más recientes primero
+      
+      if (files.length === 0) {
+        console.log('📋 No hay respaldos disponibles');
+        return;
+      }
+      
+      // Buscar el respaldo más reciente con datos
+      for (const file of files) {
+        const backupPath = path.join(backupDir, file);
+        const stats = fs.statSync(backupPath);
+        
+        if (stats.size > 0) {
+          console.log(`🔄 Restaurando desde respaldo: ${file}`);
+          
+          // Copiar respaldo a la base de datos principal
+          const currentDbPath = process.env.DB_PATH || './database.sqlite';
+          fs.copyFileSync(backupPath, currentDbPath);
+          
+          console.log('✅ Respaldo restaurado exitosamente');
+          return;
+        }
+      }
+      
+      console.log('⚠️ No se encontraron respaldos válidos');
+      
+    } catch (error) {
+      console.error('❌ Error restaurando respaldos:', error.message);
+      throw error;
+    }
   }
 
   async createPostgreSQLTables() {
