@@ -144,8 +144,8 @@ function mostrarReservasRecientes(reservas) {
         <div class="reservation-item">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h6 class="mb-1">${reserva.cliente_nombre}</h6>
-                    <p class="text-muted mb-1 small">${reserva.complejo_nombre}</p>
+                    <h6 class="mb-1">${reserva.nombre_cliente || 'Sin nombre'}</h6>
+                    <p class="text-muted mb-1 small">${reserva.complejo_nombre || 'Sin complejo'}</p>
                     <p class="text-muted mb-0 small">${formatearFecha(reserva.fecha)} - ${reserva.hora_inicio}</p>
                 </div>
                 <span class="badge bg-primary">$${reserva.precio_total}</span>
@@ -168,8 +168,8 @@ function mostrarReservasHoy(reservas) {
         <div class="reservation-item">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h6 class="mb-1">${reserva.cliente_nombre}</h6>
-                    <p class="text-muted mb-1 small">${reserva.complejo_nombre} - ${reserva.cancha_nombre}</p>
+                    <h6 class="mb-1">${reserva.nombre_cliente || 'Sin nombre'}</h6>
+                    <p class="text-muted mb-1 small">${reserva.complejo_nombre || 'Sin complejo'} - ${reserva.cancha_nombre || 'Sin cancha'}</p>
                     <p class="text-muted mb-0 small">${reserva.hora_inicio} - ${reserva.hora_fin}</p>
                 </div>
                 <div class="text-end">
@@ -233,27 +233,59 @@ function actualizarGrafico(datos) {
 }
 
 function formatearFecha(fecha) {
-    // Parsear la fecha manualmente para evitar problemas de zona horaria
-    const [año, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+    if (!fecha) return 'Sin fecha';
     
-    return fechaObj.toLocaleDateString('es-CL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    try {
+        // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
+        let fechaObj;
+        if (fecha.includes('T')) {
+            // Fecha ISO - extraer solo la parte de fecha
+            const fechaParte = fecha.split('T')[0];
+            const [año, mes, dia] = fechaParte.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia);
+        } else {
+            // Fecha simple (YYYY-MM-DD)
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia);
+        }
+        
+        return fechaObj.toLocaleDateString('es-CL', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (error) {
+        console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
+        return 'Fecha inválida';
+    }
 }
 
 function formatearFechaCorta(fecha) {
-    // Parsear la fecha manualmente para evitar problemas de zona horaria
-    const [año, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+    if (!fecha) return 'Sin fecha';
     
-    return fechaObj.toLocaleDateString('es-CL', {
-        month: 'short',
-        day: 'numeric'
-    });
+    try {
+        // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
+        let fechaObj;
+        if (fecha.includes('T')) {
+            // Fecha ISO - extraer solo la parte de fecha
+            const fechaParte = fecha.split('T')[0];
+            const [año, mes, dia] = fechaParte.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia);
+        } else {
+            // Fecha simple (YYYY-MM-DD)
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia);
+        }
+        
+        return fechaObj.toLocaleDateString('es-CL', {
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (error) {
+        console.error('Error formateando fecha corta:', error, 'Fecha original:', fecha);
+        return 'Fecha inválida';
+    }
 }
 
 function logout() {
