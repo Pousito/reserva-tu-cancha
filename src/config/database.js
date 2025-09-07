@@ -1,211 +1,319 @@
+const { Pool } = require('pg');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { initDatabaseIfEmpty } = require('../../scripts/database/init-db');
 
-// Configuración de la base de datos
-const dbPath = process.env.DB_PATH || (process.env.NODE_ENV === 'production' 
-  ? '/opt/render/project/data/database.sqlite'  // Ruta persistente en Render
-  : './database.sqlite');                       // Ruta local
+class DatabaseManager {
+  constructor() {
+    this.pgPool = null;
+    this.sqliteDb = null;
+    this.isProduction = process.env.NODE_ENV === 'production';
+    this.databaseUrl = process.env.DATABASE_URL;
+  }
 
-// Crear instancia de la base de datos
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error conectando a la base de datos:', err);
-    console.error('Ruta intentada:', dbPath);
-  } else {
-    console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
+  async connect() {
+    console.log('🔌 CONECTANDO A BASE DE DATOS');
+    console.log('==============================');
     
-    // En producción, usar init-db.js para inicialización inteligente
-    if (process.env.NODE_ENV === 'production') {
-      console.log('🚀 Modo producción: Usando inicialización inteligente');
-      initDatabaseIfEmpty();
+    if (this.isProduction && this.databaseUrl) {
+      console.log('🐘 Usando PostgreSQL en producción');
+      await this.connectPostgreSQL();
     } else {
-      console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
-      initDatabase();
+      console.log('📁 Usando SQLite en desarrollo');
+      await this.connectSQLite();
+    }
+    
+    console.log('✅ Conexión a base de datos establecida');
+  }
+
+  async connectPostgreSQL() {
+    try {
+      this.pgPool = new Pool({
+        connectionString: this.databaseUrl,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      });
+
+      // Probar conexión
+      const client = await this.pgPool.connect();
+      console.log('✅ PostgreSQL conectado exitosamente');
+      client.release();
+
+      // Crear tablas si no existen
+      await this.createPostgreSQLTables();
+      
+    } catch (error) {
+      console.error('❌ Error conectando a PostgreSQL:', error.message);
+      console.log('🔄 Fallback a SQLite...');
+      await this.connectSQLite();
     }
   }
-});
 
-// Función de inicialización para desarrollo
-function initDatabase() {
-  db.serialize(() => {
-    // Tabla de ciudades
-    db.run(`CREATE TABLE IF NOT EXISTS ciudades (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL UNIQUE
-    )`);
+  async connectSQLite() {
+    const dbPath = process.env.DB_PATH || './database.sqlite';
+    
+    return new Promise((resolve, reject) => {
+      this.sqliteDb = new sqlite3.Database(dbPath, (err) => {
+        if (err) {
+          console.error('❌ Error conectando a SQLite:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ SQLite conectado exitosamente');
+          this.createSQLiteTables();
+          resolve();
+        }
+      });
+    });
+  }
 
-    // Tabla de complejos deportivos
-    db.run(`CREATE TABLE IF NOT EXISTS complejos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      ciudad_id INTEGER,
-      direccion TEXT,
-      telefono TEXT,
-      email TEXT,
-      descripcion TEXT,
-      FOREIGN KEY (ciudad_id) REFERENCES ciudades (id)
-    )`);
+  async createPostgreSQLTables() {
+    const client = await this.pgPool.connect();
+    
+    try {
+      // Crear tabla ciudades
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ciudades (
+          id SERIAL PRIMARY KEY,
+          nombre VARCHAR(255) NOT NULL UNIQUE
+        )
+      `);
 
-    // Tabla de canchas
-    db.run(`CREATE TABLE IF NOT EXISTS canchas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      complejo_id INTEGER,
-      nombre TEXT NOT NULL,
-      tipo TEXT NOT NULL CHECK(tipo IN ('padel', 'futbol')),
-      precio_hora INTEGER NOT NULL,
-      descripcion TEXT,
-      activa INTEGER DEFAULT 1,
-      FOREIGN KEY (complejo_id) REFERENCES complejos (id)
-    )`);
+      // Crear tabla complejos
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS complejos (
+          id SERIAL PRIMARY KEY,
+          nombre VARCHAR(255) NOT NULL,
+          ciudad_id INTEGER REFERENCES ciudades(id),
+          direccion TEXT,
+          telefono VARCHAR(50),
+          email VARCHAR(255)
+        )
+      `);
 
-    // Tabla de reservas
-    db.run(`CREATE TABLE IF NOT EXISTS reservas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      cancha_id INTEGER,
-      fecha TEXT NOT NULL,
-      hora_inicio TEXT NOT NULL,
-      hora_fin TEXT NOT NULL,
-      nombre_cliente TEXT NOT NULL,
-      rut_cliente TEXT NOT NULL,
-      email_cliente TEXT NOT NULL,
-      codigo_reserva TEXT UNIQUE NOT NULL,
-      estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'confirmada', 'cancelada')),
-      precio_total INTEGER NOT NULL,
-      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (cancha_id) REFERENCES canchas (id)
-    )`);
+      // Crear tabla canchas
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS canchas (
+          id SERIAL PRIMARY KEY,
+          complejo_id INTEGER REFERENCES complejos(id),
+          nombre VARCHAR(255) NOT NULL,
+          tipo VARCHAR(50),
+          precio_hora INTEGER
+        )
+      `);
 
-    // Tabla de usuarios administradores
-    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      nombre TEXT NOT NULL,
-      rol TEXT NOT NULL CHECK(rol IN ('super_admin', 'admin', 'usuario')),
-      activo INTEGER DEFAULT 1,
-      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-      ultimo_acceso DATETIME
-    )`);
+      // Crear tabla usuarios
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS usuarios (
+          id SERIAL PRIMARY KEY,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          nombre VARCHAR(255),
+          rol VARCHAR(50) DEFAULT 'usuario',
+          activo BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
 
-    // Migraciones
-    db.run(`ALTER TABLE complejos ADD COLUMN descripcion TEXT`, (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error('Error agregando columna descripcion:', err);
-      } else if (!err) {
-        console.log('Campo descripcion agregado a la tabla complejos');
-      }
+      // Crear tabla reservas
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS reservas (
+          id SERIAL PRIMARY KEY,
+          codigo_reserva VARCHAR(50) UNIQUE NOT NULL,
+          cancha_id INTEGER REFERENCES canchas(id),
+          usuario_id INTEGER REFERENCES usuarios(id),
+          nombre_cliente VARCHAR(255) NOT NULL,
+          email_cliente VARCHAR(255) NOT NULL,
+          telefono_cliente VARCHAR(50),
+          fecha DATE NOT NULL,
+          hora_inicio TIME NOT NULL,
+          hora_fin TIME NOT NULL,
+          estado VARCHAR(50) DEFAULT 'pendiente',
+          precio_total INTEGER,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      console.log('✅ Tablas PostgreSQL creadas exitosamente');
+      
+    } catch (error) {
+      console.error('❌ Error creando tablas PostgreSQL:', error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  createSQLiteTables() {
+    const db = this.sqliteDb;
+    
+    db.serialize(() => {
+      // Crear tabla ciudades
+      db.run(`CREATE TABLE IF NOT EXISTS ciudades (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL UNIQUE
+      )`);
+
+      // Crear tabla complejos
+      db.run(`CREATE TABLE IF NOT EXISTS complejos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        ciudad_id INTEGER,
+        direccion TEXT,
+        telefono TEXT,
+        email TEXT,
+        FOREIGN KEY (ciudad_id) REFERENCES ciudades (id)
+      )`);
+
+      // Crear tabla canchas
+      db.run(`CREATE TABLE IF NOT EXISTS canchas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        complejo_id INTEGER,
+        nombre TEXT NOT NULL,
+        tipo TEXT,
+        precio_hora INTEGER,
+        FOREIGN KEY (complejo_id) REFERENCES complejos (id)
+      )`);
+
+      // Crear tabla usuarios
+      db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        nombre TEXT,
+        rol TEXT DEFAULT 'usuario',
+        activo INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+
+      // Crear tabla reservas
+      db.run(`CREATE TABLE IF NOT EXISTS reservas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo_reserva TEXT UNIQUE NOT NULL,
+        cancha_id INTEGER,
+        usuario_id INTEGER,
+        nombre_cliente TEXT NOT NULL,
+        email_cliente TEXT NOT NULL,
+        telefono_cliente TEXT,
+        fecha DATE NOT NULL,
+        hora_inicio TIME NOT NULL,
+        hora_fin TIME NOT NULL,
+        estado TEXT DEFAULT 'pendiente',
+        precio_total INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (cancha_id) REFERENCES canchas (id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+      )`);
     });
 
-    db.run(`ALTER TABLE canchas ADD COLUMN descripcion TEXT`, (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error('Error agregando columna descripcion a canchas:', err);
-      } else if (!err) {
-        console.log('Campo descripcion agregado a la tabla canchas');
+    console.log('✅ Tablas SQLite creadas exitosamente');
+  }
+
+  // Métodos de consulta unificados
+  async query(sql, params = []) {
+    if (this.pgPool) {
+      // PostgreSQL
+      const client = await this.pgPool.connect();
+      try {
+        const result = await client.query(sql, params);
+        return result.rows;
+      } finally {
+        client.release();
       }
-    });
+    } else {
+      // SQLite
+      return new Promise((resolve, reject) => {
+        this.sqliteDb.all(sql, params, (err, rows) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(rows);
+          }
+        });
+      });
+    }
+  }
 
-    db.run(`ALTER TABLE canchas ADD COLUMN activa INTEGER DEFAULT 1`, (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error('Error agregando columna activa a canchas:', err);
-      } else if (!err) {
-        console.log('Campo activa agregado a la tabla canchas');
+  async run(sql, params = []) {
+    if (this.pgPool) {
+      // PostgreSQL
+      const client = await this.pgPool.connect();
+      try {
+        const result = await client.query(sql, params);
+        return { lastID: result.rows[0]?.id || 0, changes: result.rowCount };
+      } finally {
+        client.release();
       }
-    });
+    } else {
+      // SQLite
+      return new Promise((resolve, reject) => {
+        this.sqliteDb.run(sql, params, function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve({ lastID: this.lastID, changes: this.changes });
+          }
+        });
+      });
+    }
+  }
 
-    // Insertar datos de ejemplo
-    insertSampleData();
-  });
-}
+  async get(sql, params = []) {
+    if (this.pgPool) {
+      // PostgreSQL
+      const client = await this.pgPool.connect();
+      try {
+        const result = await client.query(sql, params);
+        return result.rows[0] || null;
+      } finally {
+        client.release();
+      }
+    } else {
+      // SQLite
+      return new Promise((resolve, reject) => {
+        this.sqliteDb.get(sql, params, (err, row) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(row || null);
+          }
+        });
+      });
+    }
+  }
 
-// Insertar datos de ejemplo solo si la base de datos está vacía
-function insertSampleData() {
-  // Verificar si ya hay datos en la base de datos
-  db.get("SELECT COUNT(*) as count FROM ciudades", (err, row) => {
-    if (err) {
-      console.error('Error verificando datos existentes:', err);
-      return;
+  async close() {
+    if (this.pgPool) {
+      await this.pgPool.end();
+      console.log('✅ Conexión PostgreSQL cerrada');
     }
     
-    // Si ya hay datos, no insertar nada
-    if (row.count > 0) {
-      console.log('Base de datos ya contiene datos. Saltando inserción de datos de ejemplo.');
-      return;
+    if (this.sqliteDb) {
+      this.sqliteDb.close();
+      console.log('✅ Conexión SQLite cerrada');
     }
-    
-    console.log('Base de datos vacía. Insertando datos de ejemplo...');
-    
-    // Insertar ciudades
-    db.run("INSERT INTO ciudades (nombre) VALUES ('Santiago')");
-    db.run("INSERT INTO ciudades (nombre) VALUES ('Valparaíso')");
-    db.run("INSERT INTO ciudades (nombre) VALUES ('Concepción')");
-    db.run("INSERT INTO ciudades (nombre) VALUES ('Los Ángeles')");
-    
-    // Insertar complejos después de que las ciudades estén creadas
-    db.run("INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ('Complejo Deportivo Central', 1, 'Av. Providencia 123', '+56912345678', 'info@complejocentral.cl')");
-    db.run("INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ('Padel Club Premium', 1, 'Las Condes 456', '+56987654321', 'reservas@padelclub.cl')");
-    
-    // Insertar MagnaSports usando el ID correcto de Los Ángeles
-    db.get("SELECT id FROM ciudades WHERE nombre = 'Los Ángeles'", (err, row) => {
-      if (err) {
-        console.error('Error obteniendo ID de Los Ángeles:', err);
-        return;
-      }
-      if (row) {
-        db.run("INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ('MagnaSports', ?, 'Monte Perdido 1685', '+56987654321', 'reservas@magnasports.cl')", [row.id]);
-      }
-    });
-    
-    // Insertar canchas
-    db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (1, 'Cancha Futbol 1', 'futbol', 25000)");
-    db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (1, 'Cancha Futbol 2', 'futbol', 25000)");
-    db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (2, 'Padel 1', 'padel', 30000)");
-    db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (2, 'Padel 2', 'padel', 30000)");
-    db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (3, 'Cancha Techada 1', 'futbol', 28000)");
-    db.run("INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (3, 'Cancha Techada 2', 'futbol', 28000)");
-    
-    console.log('Datos de ejemplo insertados correctamente.');
-    
-    // Crear usuarios administradores
-    createAdminUsers();
-  });
+  }
+
+  // Método para obtener información de la base de datos
+  getDatabaseInfo() {
+    if (this.pgPool) {
+      return {
+        type: 'PostgreSQL',
+        connected: true,
+        url: this.databaseUrl ? 'Configurado' : 'No configurado'
+      };
+    } else if (this.sqliteDb) {
+      return {
+        type: 'SQLite',
+        connected: true,
+        path: process.env.DB_PATH || './database.sqlite'
+      };
+    } else {
+      return {
+        type: 'No conectado',
+        connected: false
+      };
+    }
+  }
 }
 
-// Crear usuarios administradores
-function createAdminUsers() {
-  console.log('Creando usuarios administradores...');
-  
-  const adminUsers = [
-    {
-      email: 'admin@reservatucancha.com',
-      password: 'admin123',
-      nombre: 'Super Administrador',
-      rol: 'super_admin'
-    },
-    {
-      email: 'admin@magnasports.cl',
-      password: 'magnasports2024',
-      nombre: 'Administrador MagnaSports',
-      rol: 'admin'
-    },
-    {
-      email: 'admin@complejocentral.cl',
-      password: 'complejo2024',
-      nombre: 'Administrador Complejo Central',
-      rol: 'admin'
-    }
-  ];
-  
-  adminUsers.forEach(usuario => {
-    db.run("INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)", 
-      [usuario.email, usuario.password, usuario.nombre, usuario.rol], (err) => {
-      if (err) {
-        console.error(`Error creando usuario ${usuario.email}:`, err);
-      } else {
-        console.log(`Usuario administrador creado: ${usuario.email}`);
-      }
-    });
-  });
-}
-
-module.exports = db;
+module.exports = DatabaseManager;
