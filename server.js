@@ -459,3 +459,4 @@ process.on('SIGTERM', async () => {
 });
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
+// Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
