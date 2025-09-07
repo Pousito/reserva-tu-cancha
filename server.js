@@ -155,7 +155,7 @@ app.get('/debug/postgresql', async (req, res) => {
       nodeEnv: process.env.NODE_ENV,
       databaseUrl: process.env.DATABASE_URL ? 'Definido' : 'No definido',
       databaseUrlLength: process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0,
-      currentDbType: db.getDbType()
+      currentDbType: db.getDbType ? db.getDbType() : 'Unknown'
     };
     
     if (!process.env.DATABASE_URL) {
