@@ -144,7 +144,7 @@ async function populateSampleData() {
       }
       
       console.log('✅ Datos de ejemplo insertados exitosamente');
-    } else {
+            } else {
       console.log(`✅ Base de datos ya tiene ${ciudadesCount} ciudades y ${reservasCount} reservas`);
     }
   } catch (error) {
@@ -165,7 +165,7 @@ app.get('/health', async (req, res) => {
     const reservas = await db.query('SELECT COUNT(*) as count FROM reservas');
     const canchas = await db.query('SELECT COUNT(*) as count FROM canchas');
     const complejos = await db.query('SELECT COUNT(*) as count FROM complejos');
-    
+      
       res.json({ 
       status: 'OK',
       timestamp: new Date().toISOString(),
@@ -222,13 +222,13 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
 // Endpoint para verificar disponibilidad de canchas
 app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
   try {
-    const { canchaId, fecha } = req.params;
+  const { canchaId, fecha } = req.params;
     console.log(`🔍 Verificando disponibilidad - Cancha: ${canchaId}, Fecha: ${fecha}`);
     
     // Obtener reservas existentes para la cancha y fecha
     const reservas = await db.query(`
       SELECT hora_inicio, hora_fin, estado
-      FROM reservas 
+    FROM reservas 
       WHERE cancha_id = $1 AND DATE(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
       ORDER BY hora_inicio
     `, [canchaId, fecha]);
@@ -271,7 +271,7 @@ app.get('/api/admin/estadisticas', async (req, res) => {
     
     console.log('✅ Estadísticas cargadas:', stats);
     res.json(stats);
-  } catch (error) {
+      } catch (error) {
     console.error('❌ Error cargando estadísticas:', error);
     res.status(500).json({ error: error.message });
   }
@@ -283,8 +283,8 @@ app.get('/api/admin/reservas-recientes', async (req, res) => {
     
     const reservas = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
+    FROM reservas r
+    JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ORDER BY r.created_at DESC
@@ -305,8 +305,8 @@ app.get('/api/admin/reservas-hoy', async (req, res) => {
     
     const reservasHoy = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
+    FROM reservas r
+    JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE DATE(r.fecha) = CURRENT_DATE
@@ -340,8 +340,8 @@ app.get('/api/debug/clean-duplicate-complexes', async (req, res) => {
     
     // Verificar resultado
     const remaining = await db.query('SELECT COUNT(*) as count FROM complejos');
-    
-    res.json({ 
+      
+      res.json({
       success: true, 
       message: 'Complejos duplicados eliminados', 
       deleted: result.changes,
@@ -427,7 +427,7 @@ app.get('/api/debug/insert-courts', async (req, res) => {
         );
         results.push({ cancha: cancha.nombre, result });
         console.log(`✅ Cancha insertada: ${cancha.nombre}`, result);
-      } else {
+    } else {
         console.log(`❌ Complejo no encontrado: ${cancha.complejo}`);
       }
     }
@@ -546,7 +546,7 @@ app.get('/debug/postgresql', async (req, res) => {
       });
       
     } catch (pgError) {
-      res.json({ 
+    res.json({
         success: false, 
         message: 'Error conectando a PostgreSQL',
         debugInfo,
@@ -610,7 +610,7 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
       [complejoId, tipo]
     );
     res.json(canchas);
-      } catch (error) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -620,14 +620,45 @@ app.get('/api/reservas', async (req, res) => {
   try {
     const reservas = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
-    FROM reservas r
-    JOIN canchas c ON r.cancha_id = c.id
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ORDER BY r.fecha DESC, r.hora_inicio DESC
     `);
     res.json(reservas);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Buscar reserva por código o nombre
+app.get('/api/reservas/:busqueda', async (req, res) => {
+  try {
+    const { busqueda } = req.params;
+    console.log(`🔍 Buscando reserva: ${busqueda}`);
+    
+    // Buscar por código de reserva o nombre del cliente
+    const reserva = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      WHERE r.codigo_reserva = $1 OR r.nombre_cliente ILIKE $2
+      ORDER BY r.created_at DESC
+      LIMIT 1
+    `, [busqueda, `%${busqueda}%`]);
+    
+    if (reserva.length > 0) {
+      console.log(`✅ Reserva encontrada: ${reserva[0].codigo_reserva}`);
+      res.json(reserva[0]);
+    } else {
+      console.log(`❌ Reserva no encontrada: ${busqueda}`);
+      res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+  } catch (error) {
+    console.error('❌ Error buscando reserva:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -716,7 +747,7 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
           [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente']
         );
         insertadas++;
-  } catch (error) {
+      } catch (error) {
         console.error('Error insertando reserva:', error);
         errores++;
       }
@@ -724,8 +755,8 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
     
     const reservasDespues = await db.query('SELECT COUNT(*) as count FROM reservas');
       
-      res.json({
-        success: true,
+  res.json({
+    success: true,
       message: `Reservas insertadas: ${insertadas}, Errores: ${errores}`,
       total: reservasPrueba.length,
       insertadas,
@@ -759,7 +790,7 @@ app.get('/api/debug/table-data', async (req, res) => {
         usuarios: { count: usuarios[0].count }
       }
     });
-      } catch (error) {
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
