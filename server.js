@@ -219,6 +219,43 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
+// Endpoint para insertar canchas
+app.get('/api/debug/insert-courts', async (req, res) => {
+  try {
+    console.log('🏟️ Insertando canchas...');
+    const canchasData = [
+      { nombre: 'Cancha Futbol 1', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
+      { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
+      { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
+      { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
+      { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+      { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+      { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
+      { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
+    ];
+    const results = [];
+    
+    for (const cancha of canchasData) {
+      const complejoId = await db.get('SELECT id FROM complejos WHERE nombre = $1', [cancha.complejo]);
+      if (complejoId) {
+        const result = await db.run(
+          'INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES ($1, $2, $3, $4)',
+          [complejoId.id, cancha.nombre, cancha.tipo, cancha.precio]
+        );
+        results.push({ cancha: cancha.nombre, result });
+        console.log(`✅ Cancha insertada: ${cancha.nombre}`, result);
+      } else {
+        console.log(`❌ Complejo no encontrado: ${cancha.complejo}`);
+      }
+    }
+    
+    res.json({ success: true, message: 'Canchas insertadas', results: results });
+  } catch (error) {
+    console.error('❌ Error insertando canchas:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoint para insertar complejos
 app.get('/api/debug/insert-complexes', async (req, res) => {
   try {
