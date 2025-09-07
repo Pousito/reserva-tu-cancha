@@ -58,45 +58,21 @@ const db = new sqlite3.Database(dbPath, (err) => {
     if (process.env.NODE_ENV === 'production') {
       console.log('🚀 Modo producción: Inicializando estructura de BD primero...');
       
-      // PRIMERO: Asegurar que las tablas existan
-      initDatabaseIfEmpty();
-      
-      // SEGUNDO: Después de un delay, intentar restaurar datos
-      setTimeout(() => {
-        console.log('🔄 Intentando restauración automática...');
-        autoRestoreFromBackups().then(restored => {
-          if (restored) {
-            console.log('✅ Datos restaurados exitosamente');
-          } else {
-            console.log('🔄 No se pudo restaurar, intentando importar desde respaldo en memoria...');
-            
-            // Intentar importar desde respaldo en memoria
-            setTimeout(() => {
-              if (importReservations()) {
-                console.log('✅ Reservas importadas desde respaldo en memoria');
-              } else {
-                console.log('🔄 No hay respaldo en memoria, insertando reservas de emergencia...');
-                insertEmergencyReservations();
-                
-                // Después de insertar emergencia, exportar para respaldo
-                setTimeout(() => {
-                  console.log('📤 Exportando datos iniciales...');
-                  exportReservations();
-                }, 1000);
-              }
-            }, 2000);
-          }
-        }).catch(error => {
+      // PRIMERO: Intentar restaurar datos desde respaldos
+      console.log('🔄 Intentando restauración automática...');
+      autoRestoreFromBackups().then(restored => {
+        if (restored) {
+          console.log('✅ Datos restaurados exitosamente');
+        } else {
+          console.log('🔄 No se pudo restaurar, inicializando BD desde cero...');
+          // Solo si no hay respaldos, inicializar desde cero
+          initDatabaseIfEmpty();
+        }
+      }).catch(error => {
           console.error('❌ Error en restauración:', error);
-          console.log('🔄 Insertando reservas de emergencia...');
-          insertEmergencyReservations();
-          
-          setTimeout(() => {
-            console.log('📤 Exportando datos iniciales...');
-            exportReservations();
-          }, 1000);
+          console.log('🔄 Inicializando BD desde cero...');
+          initDatabaseIfEmpty();
         });
-      }, 3000); // Esperar 3 segundos para que las tablas se creen
     } else {
       console.log('🖥️  Modo desarrollo: Usando inicialización estándar');
       initDatabase();
