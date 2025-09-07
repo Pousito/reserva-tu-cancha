@@ -219,6 +219,28 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
+// Endpoint para verificar disponibilidad de canchas
+app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
+  try {
+    const { canchaId, fecha } = req.params;
+    console.log(`🔍 Verificando disponibilidad - Cancha: ${canchaId}, Fecha: ${fecha}`);
+    
+    // Obtener reservas existentes para la cancha y fecha
+    const reservas = await db.query(`
+      SELECT hora_inicio, hora_fin, estado
+      FROM reservas 
+      WHERE cancha_id = $1 AND DATE(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
+      ORDER BY hora_inicio
+    `, [canchaId, fecha]);
+    
+    console.log(`✅ ${reservas.length} reservas encontradas para cancha ${canchaId} en ${fecha}`);
+    res.json(reservas);
+  } catch (error) {
+    console.error('❌ Error verificando disponibilidad:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoints del panel de administrador
 app.get('/api/admin/estadisticas', async (req, res) => {
   try {
