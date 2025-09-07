@@ -39,7 +39,15 @@ async function populateSampleData() {
     const ciudades = await db.query('SELECT COUNT(*) as count FROM ciudades');
     const reservas = await db.query('SELECT COUNT(*) as count FROM reservas');
     
-    if (ciudades[0].count === 0) {
+    console.log('🔍 Debug - Ciudades encontradas:', ciudades);
+    console.log('🔍 Debug - Reservas encontradas:', reservas);
+    
+    const ciudadesCount = ciudades[0]?.count || 0;
+    const reservasCount = reservas[0]?.count || 0;
+    
+    console.log(`📊 Debug - Ciudades: ${ciudadesCount}, Reservas: ${reservasCount}`);
+    
+    if (ciudadesCount === 0) {
       console.log('🌱 Poblando base de datos con datos de ejemplo...');
     
     // Insertar ciudades
@@ -129,8 +137,8 @@ async function populateSampleData() {
       }
       
       console.log('✅ Datos de ejemplo insertados exitosamente');
-            } else {
-      console.log(`✅ Base de datos ya tiene ${ciudades[0].count} ciudades y ${reservas[0].count} reservas`);
+    } else {
+      console.log(`✅ Base de datos ya tiene ${ciudadesCount} ciudades y ${reservasCount} reservas`);
     }
   } catch (error) {
     console.error('❌ Error poblando datos de ejemplo:', error);
