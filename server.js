@@ -52,11 +52,18 @@ async function populateSampleData() {
     
     // Insertar ciudades
       const ciudadesData = ['Santiago', 'Valparaíso', 'Concepción', 'Los Ángeles', 'La Serena', 'Antofagasta'];
+      console.log('🏙️ Insertando ciudades:', ciudadesData);
       for (const ciudad of ciudadesData) {
-        if (db.getDbType() === 'PostgreSQL') {
-          await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
-        } else {
-          await db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad]);
+        try {
+          if (db.getDbType() === 'PostgreSQL') {
+            const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
+            console.log(`✅ Ciudad insertada: ${ciudad}`, result);
+          } else {
+            const result = await db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad]);
+            console.log(`✅ Ciudad insertada: ${ciudad}`, result);
+          }
+        } catch (error) {
+          console.error(`❌ Error insertando ciudad ${ciudad}:`, error);
         }
       }
       
