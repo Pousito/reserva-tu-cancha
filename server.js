@@ -219,6 +219,86 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
+// Endpoints del panel de administrador
+app.get('/api/admin/estadisticas', async (req, res) => {
+  try {
+    console.log('📊 Cargando estadísticas del panel de administrador...');
+    
+    // Obtener estadísticas
+    const totalReservas = await db.get('SELECT COUNT(*) as count FROM reservas');
+    const totalCanchas = await db.get('SELECT COUNT(*) as count FROM canchas');
+    const totalComplejos = await db.get('SELECT COUNT(*) as count FROM complejos');
+    const ingresosTotales = await db.get('SELECT COALESCE(SUM(precio_total), 0) as total FROM reservas WHERE estado = \'confirmada\'');
+    
+    // Reservas por día (últimos 7 días)
+    const reservasPorDia = await db.query(`
+      SELECT DATE(fecha) as dia, COUNT(*) as cantidad
+      FROM reservas 
+      WHERE fecha >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY DATE(fecha)
+      ORDER BY dia
+    `);
+    
+    const stats = {
+      totalReservas: totalReservas.count,
+      totalCanchas: totalCanchas.count,
+      totalComplejos: totalComplejos.count,
+      ingresosTotales: parseInt(ingresosTotales.total),
+      reservasPorDia: reservasPorDia
+    };
+    
+    console.log('✅ Estadísticas cargadas:', stats);
+    res.json(stats);
+  } catch (error) {
+    console.error('❌ Error cargando estadísticas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/reservas-recientes', async (req, res) => {
+  try {
+    console.log('📝 Cargando reservas recientes...');
+    
+    const reservas = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      ORDER BY r.created_at DESC
+      LIMIT 10
+    `);
+    
+    console.log(`✅ ${reservas.length} reservas recientes cargadas`);
+    res.json(reservas);
+  } catch (error) {
+    console.error('❌ Error cargando reservas recientes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/reservas-hoy', async (req, res) => {
+  try {
+    console.log('📅 Cargando reservas de hoy...');
+    
+    const reservasHoy = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      WHERE DATE(r.fecha) = CURRENT_DATE
+      ORDER BY r.hora_inicio
+    `);
+    
+    console.log(`✅ ${reservasHoy.length} reservas de hoy cargadas`);
+    res.json(reservasHoy);
+  } catch (error) {
+    console.error('❌ Error cargando reservas de hoy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para limpiar complejos duplicados
 app.get('/api/debug/clean-duplicate-complexes', async (req, res) => {
   try {
