@@ -996,7 +996,7 @@ app.get('/api/debug/database', (req, res) => {
   const diagnosticInfo = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'undefined',
-    dbPath: process.env.NODE_ENV === 'production' ? '/opt/render/project/src/database.sqlite' : './database.sqlite',
+    dbPath: process.env.NODE_ENV === 'production' ? '/opt/render/project/data/database.sqlite' : './database.sqlite',
     serverStatus: 'running',
     databaseConnection: 'unknown'
   };
@@ -2376,7 +2376,7 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     version: '1.0.0',
-    dbPath: process.env.NODE_ENV === 'production' ? '/opt/render/project/src/database.sqlite' : './database.sqlite'
+    dbPath: process.env.NODE_ENV === 'production' ? '/opt/render/project/data/database.sqlite' : './database.sqlite'
   };
   
   // Verificar estado de la base de datos
@@ -2398,7 +2398,7 @@ app.get('/health', (req, res) => {
       // Verificar archivo de BD
       const fs = require('fs');
       try {
-        const dbPath = process.env.NODE_ENV === 'production' ? '/opt/render/project/src/database.sqlite' : './database.sqlite';
+        const dbPath = process.env.NODE_ENV === 'production' ? '/opt/render/project/data/database.sqlite' : './database.sqlite';
         if (fs.existsSync(dbPath)) {
           const stats = fs.statSync(dbPath);
           diagnosticInfo.databaseFile = {
