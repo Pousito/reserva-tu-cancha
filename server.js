@@ -219,6 +219,38 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
+// Endpoint para limpiar complejos duplicados
+app.get('/api/debug/clean-duplicate-complexes', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando complejos duplicados...');
+    
+    // Eliminar complejos duplicados, manteniendo solo el de menor ID
+    const result = await db.run(`
+      DELETE FROM complejos 
+      WHERE id NOT IN (
+        SELECT MIN(id) 
+        FROM complejos 
+        GROUP BY nombre, ciudad_id, direccion, telefono, email
+      )
+    `);
+    
+    console.log(`✅ Complejos duplicados eliminados: ${result.changes}`);
+    
+    // Verificar resultado
+    const remaining = await db.query('SELECT COUNT(*) as count FROM complejos');
+    
+    res.json({ 
+      success: true, 
+      message: 'Complejos duplicados eliminados', 
+      deleted: result.changes,
+      remaining: remaining[0].count
+    });
+  } catch (error) {
+    console.error('❌ Error limpiando duplicados:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoint para verificar estructura de tabla reservas
 app.get('/api/debug/check-reservas-structure', async (req, res) => {
   try {
