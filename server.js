@@ -146,6 +146,68 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Debug endpoint para verificar PostgreSQL
+app.get('/debug/postgresql', async (req, res) => {
+  try {
+    const { Pool } = require('pg');
+    
+    const debugInfo = {
+      nodeEnv: process.env.NODE_ENV,
+      databaseUrl: process.env.DATABASE_URL ? 'Definido' : 'No definido',
+      databaseUrlLength: process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0,
+      currentDbType: db.getDbType()
+    };
+    
+    if (!process.env.DATABASE_URL) {
+      return res.json({
+        success: false,
+        message: 'DATABASE_URL no está definido',
+        debugInfo
+      });
+    }
+    
+    try {
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      });
+      
+      const client = await pool.connect();
+      const result = await client.query('SELECT NOW() as current_time, version() as pg_version');
+      
+      client.release();
+      await pool.end();
+      
+      res.json({
+        success: true,
+        message: 'PostgreSQL conectado exitosamente',
+        debugInfo,
+        postgresql: {
+          currentTime: result.rows[0].current_time,
+          version: result.rows[0].pg_version
+        }
+      });
+      
+    } catch (pgError) {
+      res.json({
+        success: false,
+        message: 'Error conectando a PostgreSQL',
+        debugInfo,
+        error: pgError.message
+      });
+    }
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error en debug endpoint',
+      error: error.message
+    });
+  }
+});
+
 // Obtener ciudades
 app.get('/api/ciudades', async (req, res) => {
   try {
