@@ -59,8 +59,9 @@ class DatabaseManager {
           reject(err);
         } else {
           console.log('✅ SQLite conectado exitosamente');
-          this.createSQLiteTables();
-          resolve();
+          this.createSQLiteTables().then(() => {
+            resolve();
+          }).catch(reject);
         }
       });
     });
@@ -143,69 +144,102 @@ class DatabaseManager {
     }
   }
 
-  createSQLiteTables() {
+  async createSQLiteTables() {
     const db = this.sqliteDb;
     
-    db.serialize(() => {
-      // Crear tabla ciudades
-      db.run(`CREATE TABLE IF NOT EXISTS ciudades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL UNIQUE
-      )`);
+    return new Promise((resolve, reject) => {
+      db.serialize(() => {
+        // Crear tabla ciudades
+        db.run(`CREATE TABLE IF NOT EXISTS ciudades (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL UNIQUE
+        )`, (err) => {
+          if (err) {
+            console.error('❌ Error creando tabla ciudades:', err.message);
+            reject(err);
+            return;
+          }
+        });
 
-      // Crear tabla complejos
-      db.run(`CREATE TABLE IF NOT EXISTS complejos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        ciudad_id INTEGER,
-        direccion TEXT,
-        telefono TEXT,
-        email TEXT,
-        FOREIGN KEY (ciudad_id) REFERENCES ciudades (id)
-      )`);
+        // Crear tabla complejos
+        db.run(`CREATE TABLE IF NOT EXISTS complejos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nombre TEXT NOT NULL,
+          ciudad_id INTEGER,
+          direccion TEXT,
+          telefono TEXT,
+          email TEXT,
+          FOREIGN KEY (ciudad_id) REFERENCES ciudades (id)
+        )`, (err) => {
+          if (err) {
+            console.error('❌ Error creando tabla complejos:', err.message);
+            reject(err);
+            return;
+          }
+        });
 
-      // Crear tabla canchas
-      db.run(`CREATE TABLE IF NOT EXISTS canchas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        complejo_id INTEGER,
-        nombre TEXT NOT NULL,
-        tipo TEXT,
-        precio_hora INTEGER,
-        FOREIGN KEY (complejo_id) REFERENCES complejos (id)
-      )`);
+        // Crear tabla canchas
+        db.run(`CREATE TABLE IF NOT EXISTS canchas (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          complejo_id INTEGER,
+          nombre TEXT NOT NULL,
+          tipo TEXT,
+          precio_hora INTEGER,
+          FOREIGN KEY (complejo_id) REFERENCES complejos (id)
+        )`, (err) => {
+          if (err) {
+            console.error('❌ Error creando tabla canchas:', err.message);
+            reject(err);
+            return;
+          }
+        });
 
-      // Crear tabla usuarios
-      db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        nombre TEXT,
-        rol TEXT DEFAULT 'usuario',
-        activo INTEGER DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`);
+        // Crear tabla usuarios
+        db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          nombre TEXT,
+          rol TEXT DEFAULT 'usuario',
+          activo INTEGER DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`, (err) => {
+          if (err) {
+            console.error('❌ Error creando tabla usuarios:', err.message);
+            reject(err);
+            return;
+          }
+        });
 
-      // Crear tabla reservas
-      db.run(`CREATE TABLE IF NOT EXISTS reservas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        codigo_reserva TEXT UNIQUE NOT NULL,
-        cancha_id INTEGER,
-        usuario_id INTEGER,
-        nombre_cliente TEXT NOT NULL,
-        email_cliente TEXT NOT NULL,
-        telefono_cliente TEXT,
-        fecha DATE NOT NULL,
-        hora_inicio TIME NOT NULL,
-        hora_fin TIME NOT NULL,
-        estado TEXT DEFAULT 'pendiente',
-        precio_total INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (cancha_id) REFERENCES canchas (id),
-        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
-      )`);
+        // Crear tabla reservas
+        db.run(`CREATE TABLE IF NOT EXISTS reservas (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          codigo_reserva TEXT UNIQUE NOT NULL,
+          cancha_id INTEGER,
+          usuario_id INTEGER,
+          nombre_cliente TEXT NOT NULL,
+          email_cliente TEXT NOT NULL,
+          telefono_cliente TEXT,
+          fecha DATE NOT NULL,
+          hora_inicio TIME NOT NULL,
+          hora_fin TIME NOT NULL,
+          estado TEXT DEFAULT 'pendiente',
+          precio_total INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (cancha_id) REFERENCES canchas (id),
+          FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+        )`, (err) => {
+          if (err) {
+            console.error('❌ Error creando tabla reservas:', err.message);
+            reject(err);
+            return;
+          }
+          
+          console.log('✅ Tablas SQLite creadas exitosamente');
+          resolve();
+        });
+      });
     });
-
-    console.log('✅ Tablas SQLite creadas exitosamente');
   }
 
   // Métodos de consulta unificados
