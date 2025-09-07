@@ -199,6 +199,26 @@ app.get('/api/debug/test-insert', async (req, res) => {
   }
 });
 
+// Endpoint para insertar todas las ciudades
+app.get('/api/debug/insert-all-cities', async (req, res) => {
+  try {
+    console.log('🏙️ Insertando todas las ciudades...');
+    const ciudadesData = ['Valparaíso', 'Concepción', 'Los Ángeles', 'La Serena', 'Antofagasta'];
+    const results = [];
+    
+    for (const ciudad of ciudadesData) {
+      const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
+      results.push({ ciudad, result });
+      console.log(`✅ Ciudad insertada: ${ciudad}`, result);
+    }
+    
+    res.json({ success: true, message: 'Todas las ciudades insertadas', results: results });
+  } catch (error) {
+    console.error('❌ Error insertando ciudades:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoint para forzar inicialización de datos
 app.get('/api/debug/force-init', async (req, res) => {
   try {
