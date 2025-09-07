@@ -82,13 +82,26 @@ function initDatabaseIfEmpty() {
       }
     }
     
-    // Verificar si ya hay datos (tanto ciudades como reservas)
-    db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
+    // Verificar si la tabla ciudades existe usando una consulta más segura
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='ciudades'", (err, tableRow) => {
       if (err) {
-        console.log('📋 Tabla ciudades no existe, creando estructura...');
-        console.log('❌ Error específico:', err.message);
+        console.log('❌ Error verificando tabla ciudades:', err.message);
         createTables();
-      } else {
+        return;
+      }
+      
+      if (!tableRow) {
+        console.log('📋 Tabla ciudades no existe, creando estructura...');
+        createTables();
+        return;
+      }
+      
+      // Si la tabla existe, verificar si tiene datos
+      db.get('SELECT COUNT(*) as count FROM ciudades', (err, row) => {
+        if (err) {
+          console.log('❌ Error contando ciudades:', err.message);
+          return;
+        }
         // Verificar también si hay reservas existentes
         db.get('SELECT COUNT(*) as reservas FROM reservas', (err, reservasRow) => {
           if (err) {
@@ -111,7 +124,7 @@ function initDatabaseIfEmpty() {
             });
           }
         });
-      }
+      });
     });
   }
 
