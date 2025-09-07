@@ -219,6 +219,40 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
+// Endpoint para insertar complejos
+app.get('/api/debug/insert-complexes', async (req, res) => {
+  try {
+    console.log('🏢 Insertando complejos...');
+    const complejosData = [
+      { nombre: 'Complejo Deportivo Central', ciudad: 'Santiago', direccion: 'Av. Providencia 123', telefono: '+56912345678', email: 'info@complejocentral.cl' },
+      { nombre: 'Padel Club Premium', ciudad: 'Santiago', direccion: 'Las Condes 456', telefono: '+56987654321', email: 'reservas@padelclub.cl' },
+      { nombre: 'MagnaSports', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@magnasports.cl' },
+      { nombre: 'Centro Deportivo Costero', ciudad: 'Valparaíso', direccion: 'Av. Argentina 9012', telefono: '+56 32 2345 6791', email: 'info@costero.cl' },
+      { nombre: 'Club Deportivo Norte', ciudad: 'Santiago', direccion: 'Av. Las Condes 5678', telefono: '+56 2 2345 6790', email: 'info@norte.cl' }
+    ];
+    const results = [];
+    
+    for (const complejo of complejosData) {
+      const ciudadId = await db.get('SELECT id FROM ciudades WHERE nombre = $1', [complejo.ciudad]);
+      if (ciudadId) {
+        const result = await db.run(
+          'INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (nombre) DO NOTHING',
+          [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
+        );
+        results.push({ complejo: complejo.nombre, result });
+        console.log(`✅ Complejo insertado: ${complejo.nombre}`, result);
+      } else {
+        console.log(`❌ Ciudad no encontrada: ${complejo.ciudad}`);
+      }
+    }
+    
+    res.json({ success: true, message: 'Complejos insertados', results: results });
+  } catch (error) {
+    console.error('❌ Error insertando complejos:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoint para forzar inicialización de datos
 app.get('/api/debug/force-init', async (req, res) => {
   try {
