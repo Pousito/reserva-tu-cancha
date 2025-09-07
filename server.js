@@ -236,7 +236,7 @@ app.get('/api/debug/insert-complexes', async (req, res) => {
       const ciudadId = await db.get('SELECT id FROM ciudades WHERE nombre = $1', [complejo.ciudad]);
       if (ciudadId) {
         const result = await db.run(
-          'INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (nombre) DO NOTHING',
+          'INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ($1, $2, $3, $4, $5)',
           [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
         );
         results.push({ complejo: complejo.nombre, result });
