@@ -219,6 +219,24 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
+// Endpoint para verificar estructura de tabla reservas
+app.get('/api/debug/check-reservas-structure', async (req, res) => {
+  try {
+    console.log('🔍 Verificando estructura de tabla reservas...');
+    const structure = await db.query(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas' 
+      ORDER BY ordinal_position
+    `);
+    console.log('📋 Estructura de tabla reservas:', structure);
+    res.json({ success: true, message: 'Estructura de tabla reservas', structure: structure });
+  } catch (error) {
+    console.error('❌ Error verificando estructura:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoint para insertar reservas de prueba
 app.get('/api/debug/insert-test-reservations', async (req, res) => {
   try {
