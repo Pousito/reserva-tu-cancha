@@ -199,12 +199,14 @@ app.get('/api/debug/force-init', async (req, res) => {
     `);
     console.log('📋 Tablas existentes:', tables);
     
+    // Poblar datos de ejemplo primero
+    console.log('🌱 Poblando datos de ejemplo...');
+    await populateSampleData();
+    
     // Intentar insertar una ciudad directamente
     console.log('🧪 Insertando ciudad de prueba...');
     const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', ['Ciudad de Prueba']);
     console.log('✅ Resultado inserción:', result);
-    
-    await populateSampleData();
     res.json({ success: true, message: 'Inicialización forzada exitosamente', tables: tables });
   } catch (error) {
     console.error('❌ Error en inicialización forzada:', error);
