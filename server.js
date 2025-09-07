@@ -384,6 +384,116 @@ app.get('/api/admin/canchas', async (req, res) => {
   }
 });
 
+// Endpoint para generar reportes (panel de administración)
+app.post('/api/admin/reports', async (req, res) => {
+  try {
+    const { dateFrom, dateTo, complexId } = req.body;
+    console.log('📊 Generando reportes para administración...', { dateFrom, dateTo, complexId });
+    
+    // Construir filtros SQL
+    let whereClause = `WHERE DATE(r.fecha) BETWEEN $1 AND $2`;
+    let params = [dateFrom, dateTo];
+    
+    if (complexId) {
+      whereClause += ` AND co.id = $3`;
+      params.push(complexId);
+    }
+    
+    // Métricas generales
+    const totalReservas = await db.get(`
+      SELECT COUNT(*) as count 
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+    `, params);
+    
+    const ingresosTotales = await db.get(`
+      SELECT COALESCE(SUM(precio_total), 0) as total 
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause} AND r.estado = 'confirmada'
+    `, params);
+    
+    const reservasConfirmadas = await db.get(`
+      SELECT COUNT(*) as count 
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause} AND r.estado = 'confirmada'
+    `, params);
+    
+    // Reservas por día
+    const reservasPorDia = await db.query(`
+      SELECT DATE(r.fecha) as fecha, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY DATE(r.fecha)
+      ORDER BY DATE(r.fecha)
+    `, params);
+    
+    // Reservas por complejo
+    const reservasPorComplejo = await db.query(`
+      SELECT co.nombre as complejo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY co.id, co.nombre
+      ORDER BY ingresos DESC
+    `, params);
+    
+    // Reservas por tipo de cancha
+    const reservasPorTipo = await db.query(`
+      SELECT c.tipo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY c.tipo
+      ORDER BY ingresos DESC
+    `, params);
+    
+    // Top canchas más reservadas
+    const topCanchas = await db.query(`
+      SELECT c.nombre as cancha, co.nombre as complejo, COUNT(*) as reservas, COALESCE(SUM(r.precio_total), 0) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY c.id, c.nombre, co.nombre
+      ORDER BY reservas DESC
+      LIMIT 10
+    `, params);
+    
+    const reportData = {
+      metrics: {
+        totalReservas: parseInt(totalReservas.count),
+        ingresosTotales: parseInt(ingresosTotales.total),
+        reservasConfirmadas: parseInt(reservasConfirmadas.count),
+        tasaConfirmacion: totalReservas.count > 0 ? (reservasConfirmadas.count / totalReservas.count * 100).toFixed(1) : 0
+      },
+      charts: {
+        reservasPorDia: reservasPorDia,
+        reservasPorComplejo: reservasPorComplejo,
+        reservasPorTipo: reservasPorTipo
+      },
+      tables: {
+        topCanchas: topCanchas
+      }
+    };
+    
+    console.log(`✅ Reportes generados exitosamente`);
+    res.json(reportData);
+  } catch (error) {
+    console.error('❌ Error generando reportes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para limpiar complejos duplicados
 app.get('/api/debug/clean-duplicate-complexes', async (req, res) => {
   try {
