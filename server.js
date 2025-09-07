@@ -41,11 +41,15 @@ async function populateSampleData() {
     
     if (ciudades[0].count === 0) {
       console.log('🌱 Poblando base de datos con datos de ejemplo...');
-      
-      // Insertar ciudades
+    
+    // Insertar ciudades
       const ciudadesData = ['Santiago', 'Valparaíso', 'Concepción', 'Los Ángeles', 'La Serena', 'Antofagasta'];
       for (const ciudad of ciudadesData) {
-        await db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad]);
+        if (db.getDbType() === 'PostgreSQL') {
+          await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
+        } else {
+          await db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad]);
+        }
       }
       
       // Insertar complejos
@@ -58,12 +62,19 @@ async function populateSampleData() {
       ];
       
       for (const complejo of complejosData) {
-        const ciudadId = await db.get('SELECT id FROM ciudades WHERE nombre = ?', [complejo.ciudad]);
+        const ciudadId = await db.get('SELECT id FROM ciudades WHERE nombre = $1', [complejo.ciudad]);
         if (ciudadId) {
-          await db.run(
-            'INSERT OR IGNORE INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES (?, ?, ?, ?, ?)',
-            [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
-          );
+          if (db.getDbType() === 'PostgreSQL') {
+            await db.run(
+              'INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (nombre) DO NOTHING',
+              [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
+            );
+      } else {
+            await db.run(
+              'INSERT OR IGNORE INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES (?, ?, ?, ?, ?)',
+              [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
+            );
+          }
         }
       }
       
@@ -80,12 +91,19 @@ async function populateSampleData() {
       ];
       
       for (const cancha of canchasData) {
-        const complejoId = await db.get('SELECT id FROM complejos WHERE nombre = ?', [cancha.complejo]);
+        const complejoId = await db.get('SELECT id FROM complejos WHERE nombre = $1', [cancha.complejo]);
         if (complejoId) {
-          await db.run(
-            'INSERT OR IGNORE INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (?, ?, ?, ?)',
-            [complejoId.id, cancha.nombre, cancha.tipo, cancha.precio]
-          );
+          if (db.getDbType() === 'PostgreSQL') {
+            await db.run(
+              'INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES ($1, $2, $3, $4) ON CONFLICT (nombre) DO NOTHING',
+              [complejoId.id, cancha.nombre, cancha.tipo, cancha.precio]
+            );
+      } else {
+            await db.run(
+              'INSERT OR IGNORE INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (?, ?, ?, ?)',
+              [complejoId.id, cancha.nombre, cancha.tipo, cancha.precio]
+            );
+          }
         }
       }
       
@@ -97,14 +115,21 @@ async function populateSampleData() {
       ];
       
       for (const usuario of usuariosData) {
-        await db.run(
-          'INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)',
-          [usuario.email, usuario.password, usuario.nombre, usuario.rol]
-        );
+        if (db.getDbType() === 'PostgreSQL') {
+          await db.run(
+            'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, true) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, nombre = EXCLUDED.nombre, rol = EXCLUDED.rol',
+            [usuario.email, usuario.password, usuario.nombre, usuario.rol]
+          );
+        } else {
+          await db.run(
+            'INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)',
+            [usuario.email, usuario.password, usuario.nombre, usuario.rol]
+          );
+        }
       }
       
       console.log('✅ Datos de ejemplo insertados exitosamente');
-    } else {
+            } else {
       console.log(`✅ Base de datos ya tiene ${ciudades[0].count} ciudades y ${reservas[0].count} reservas`);
     }
   } catch (error) {
@@ -126,7 +151,7 @@ app.get('/health', async (req, res) => {
     const canchas = await db.query('SELECT COUNT(*) as count FROM canchas');
     const complejos = await db.query('SELECT COUNT(*) as count FROM complejos');
     
-    res.json({
+      res.json({ 
       status: 'OK',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -160,7 +185,7 @@ app.get('/debug/postgresql', async (req, res) => {
     
     if (!process.env.DATABASE_URL) {
       return res.json({
-        success: false,
+        success: false, 
         message: 'DATABASE_URL no está definido',
         debugInfo
       });
@@ -180,8 +205,8 @@ app.get('/debug/postgresql', async (req, res) => {
       client.release();
       await pool.end();
       
-      res.json({
-        success: true,
+      res.json({ 
+        success: true, 
         message: 'PostgreSQL conectado exitosamente',
         debugInfo,
         postgresql: {
@@ -191,8 +216,8 @@ app.get('/debug/postgresql', async (req, res) => {
       });
       
     } catch (pgError) {
-      res.json({
-        success: false,
+      res.json({ 
+        success: false, 
         message: 'Error conectando a PostgreSQL',
         debugInfo,
         error: pgError.message
@@ -201,7 +226,7 @@ app.get('/debug/postgresql', async (req, res) => {
     
   } catch (error) {
     res.status(500).json({
-      success: false,
+        success: false, 
       message: 'Error en debug endpoint',
       error: error.message
     });
@@ -221,9 +246,9 @@ app.get('/api/ciudades', async (req, res) => {
 // Obtener complejos por ciudad
 app.get('/api/complejos/:ciudadId', async (req, res) => {
   try {
-    const { ciudadId } = req.params;
+  const { ciudadId } = req.params;
     const complejos = await db.query(
-      'SELECT c.*, ci.nombre as ciudad_nombre FROM complejos c JOIN ciudades ci ON c.ciudad_id = ci.id WHERE c.ciudad_id = ? ORDER BY c.nombre',
+      'SELECT c.*, ci.nombre as ciudad_nombre FROM complejos c JOIN ciudades ci ON c.ciudad_id = ci.id WHERE c.ciudad_id = $1 ORDER BY c.nombre',
       [ciudadId]
     );
     res.json(complejos);
@@ -237,7 +262,7 @@ app.get('/api/canchas/:complejoId', async (req, res) => {
   try {
     const { complejoId } = req.params;
     const canchas = await db.query(
-      'SELECT * FROM canchas WHERE complejo_id = ? ORDER BY nombre',
+      'SELECT * FROM canchas WHERE complejo_id = $1 ORDER BY nombre',
       [complejoId]
     );
     res.json(canchas);
@@ -251,11 +276,11 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
   try {
     const { complejoId, tipo } = req.params;
     const canchas = await db.query(
-      'SELECT * FROM canchas WHERE complejo_id = ? AND tipo = ? ORDER BY nombre',
+      'SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2 ORDER BY nombre',
       [complejoId, tipo]
     );
     res.json(canchas);
-  } catch (error) {
+      } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -265,8 +290,8 @@ app.get('/api/reservas', async (req, res) => {
   try {
     const reservas = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
+    FROM reservas r
+    JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ORDER BY r.fecha DESC, r.hora_inicio DESC
@@ -290,8 +315,8 @@ app.post('/api/reservas', async (req, res) => {
       [codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
     );
     
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       id: result.lastID,
       codigo_reserva,
       message: 'Reserva creada exitosamente'
@@ -361,16 +386,16 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
           [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente']
         );
         insertadas++;
-      } catch (error) {
+  } catch (error) {
         console.error('Error insertando reserva:', error);
         errores++;
       }
     }
     
     const reservasDespues = await db.query('SELECT COUNT(*) as count FROM reservas');
-    
-    res.json({
-      success: true,
+      
+      res.json({
+        success: true,
       message: `Reservas insertadas: ${insertadas}, Errores: ${errores}`,
       total: reservasPrueba.length,
       insertadas,
@@ -394,8 +419,8 @@ app.get('/api/debug/table-data', async (req, res) => {
     
     const canchasEjemplos = await db.query('SELECT id, nombre, complejo_id FROM canchas LIMIT 5');
     
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       data: {
         ciudades: { count: ciudades[0].count },
         complejos: { count: complejos[0].count },
@@ -404,7 +429,7 @@ app.get('/api/debug/table-data', async (req, res) => {
         usuarios: { count: usuarios[0].count }
       }
     });
-  } catch (error) {
+      } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
