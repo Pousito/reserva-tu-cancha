@@ -109,7 +109,17 @@ function initDatabaseIfEmpty() {
             createTablesOnly(); // Solo crear tablas, NO poblar datos
           } else if (row.count === 0) {
             console.log('🌱 Base de datos vacía, poblando con datos de ejemplo...');
-            populateWithSampleData();
+            populateWithSampleData(() => {
+              // Crear respaldo DESPUÉS de que terminen las inserciones
+              console.log('💾 Creando respaldo después de poblar datos...');
+              backupSystem.createBackup().then(() => {
+                console.log('✅ Respaldo creado exitosamente después de poblar datos');
+                db.close();
+              }).catch(error => {
+                console.error('❌ Error creando respaldo:', error);
+                db.close();
+              });
+            });
           } else {
             console.log(`✅ Base de datos ya tiene ${row.count} ciudades y ${reservasRow.reservas} reservas`);
             console.log('✅ No se necesita inicializar - preservando datos existentes');
@@ -254,7 +264,7 @@ function initDatabaseIfEmpty() {
     });
   }
 
-  function populateWithSampleData() {
+  function populateWithSampleData(callback) {
   console.log('🌱 Insertando ciudades de ejemplo...');
   
   // Datos de ejemplo
@@ -273,11 +283,11 @@ function initDatabaseIfEmpty() {
   // Agregar complejos y canchas de ejemplo después de un delay
   setTimeout(() => {
     console.log('🏢 Insertando complejos de ejemplo...');
-    insertSampleComplexes();
+    insertSampleComplexes(callback);
   }, 1000);
 }
 
-function insertSampleComplexes() {
+function insertSampleComplexes(callback) {
   const complejos = [
     { nombre: 'Complejo Deportivo Central', ciudad: 'Santiago', direccion: 'Av. Providencia 123', telefono: '+56912345678', email: 'info@complejocentral.cl' },
     { nombre: 'Padel Club Premium', ciudad: 'Santiago', direccion: 'Las Condes 456', telefono: '+56987654321', email: 'reservas@padelclub.cl' },
@@ -306,12 +316,12 @@ function insertSampleComplexes() {
     
     // Insertar canchas después de un delay
     setTimeout(() => {
-      insertSampleCourts();
+      insertSampleCourts(callback);
     }, 1000);
   });
 }
 
-function insertSampleCourts() {
+function insertSampleCourts(callback) {
   console.log('⚽ Insertando canchas de ejemplo...');
   
   const canchas = [
@@ -345,12 +355,12 @@ function insertSampleCourts() {
     
     // Crear usuarios administradores después de un delay
     setTimeout(() => {
-      createAdminUsers();
+      createAdminUsers(callback);
     }, 1000);
   });
 }
 
-function createAdminUsers() {
+function createAdminUsers(callback) {
   console.log('👑 Creando usuarios administradores...');
   
   const adminUsers = [
@@ -385,23 +395,13 @@ function createAdminUsers() {
     });
   });
   
-  // Cerrar la base de datos después de crear usuarios
-  setTimeout(async () => {
+  // Ejecutar callback cuando termine todo
+  setTimeout(() => {
     console.log('🎉 Base de datos completamente inicializada con datos de ejemplo y usuarios administradores');
-    
-    // Crear respaldo de la BD inicializada usando el sistema unificado
-    try {
-      const backupSystem = new BackupSystem(dbPath);
-      await backupSystem.connectDb();
-      await backupSystem.createBackup();
-      console.log('✅ Respaldo inicial creado exitosamente');
-    } catch (error) {
-      console.error('❌ Error creando respaldo inicial:', error);
+    if (callback) {
+      callback();
     }
-    
-    db.close();
   }, 2000);
-}
 }
 
 // Exportar función para uso en server.js
