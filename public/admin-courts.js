@@ -197,8 +197,8 @@ function displayCourts(courtsToShow) {
                 </div>
                 <div class="col-md-6">
                     <small class="text-muted">
-                        <i class="fas fa-circle me-1 ${court.activa ? 'text-success' : 'text-danger'}"></i>
-                        ${court.activa ? 'Activa' : 'Inactiva'}
+                        <i class="fas fa-circle me-1 text-success"></i>
+                        Activa
                     </small>
                 </div>
             </div>
@@ -275,7 +275,7 @@ async function loadCourtData(courtId) {
             document.getElementById('courtType').value = court.tipo;
             document.getElementById('courtPrice').value = court.precio_hora || '';
             document.getElementById('courtDescription').value = court.descripcion || '';
-            document.getElementById('courtActive').checked = court.activa !== 0;
+            document.getElementById('courtActive').checked = true; // Por defecto activa
         }
     } catch (error) {
         console.error('Error cargando datos de la cancha:', error);
@@ -297,7 +297,7 @@ async function saveCourt() {
         tipo: document.getElementById('courtType').value,
         precio_hora: parseInt(document.getElementById('courtPrice').value),
         descripcion: document.getElementById('courtDescription').value.trim(),
-        activa: document.getElementById('courtActive').checked ? 1 : 0
+        activa: 1 // Por defecto activa
     };
     
     // Validaciones adicionales
@@ -418,7 +418,7 @@ function viewCourtDetails(courtId) {
         document.getElementById('detailCourtComplex').textContent = getComplexName(court.complejo_id);
         document.getElementById('detailCourtType').textContent = court.tipo.toUpperCase();
         document.getElementById('detailCourtPrice').textContent = court.precio_hora ? `$${court.precio_hora.toLocaleString()} por hora` : 'No especificado';
-        document.getElementById('detailCourtStatus').textContent = court.activa ? 'Activa' : 'Inactiva';
+        document.getElementById('detailCourtStatus').textContent = 'Activa';
         document.getElementById('detailCourtDescription').textContent = court.descripcion || '';
         
         // Mostrar el modal
