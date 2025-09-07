@@ -352,3 +352,4 @@ process.on('SIGTERM', async () => {
   await db.close();
   process.exit(0);
 });
+// Test de persistencia - Sun Sep  7 02:06:46 -03 2025
