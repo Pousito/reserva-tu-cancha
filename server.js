@@ -183,8 +183,22 @@ app.get('/health', async (req, res) => {
 app.get('/api/debug/force-init', async (req, res) => {
   try {
     console.log('🔄 Forzando inicialización de datos...');
+    
+    // Verificar si las tablas existen
+    const tables = await db.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    console.log('📋 Tablas existentes:', tables);
+    
+    // Intentar insertar una ciudad directamente
+    console.log('🧪 Insertando ciudad de prueba...');
+    const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', ['Ciudad de Prueba']);
+    console.log('✅ Resultado inserción:', result);
+    
     await populateSampleData();
-    res.json({ success: true, message: 'Inicialización forzada exitosamente' });
+    res.json({ success: true, message: 'Inicialización forzada exitosamente', tables: tables });
   } catch (error) {
     console.error('❌ Error en inicialización forzada:', error);
     res.status(500).json({ success: false, error: error.message });
