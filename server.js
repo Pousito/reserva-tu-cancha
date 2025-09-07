@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-// Test comment for persistence verification - Automated Test 1
+// Test comment for persistence verification - Automated Test 2
 const { initDatabaseIfEmpty } = require('./scripts/database/init-db');
 const { BackupSystem } = require('./scripts/database/backup-system');
 const { migrateToPersistentDisk } = require('./scripts/migration/migrate-to-persistent-disk');
