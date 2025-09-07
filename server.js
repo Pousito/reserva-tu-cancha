@@ -47,7 +47,7 @@ async function populateSampleData() {
     
     console.log(`📊 Debug - Ciudades: ${ciudadesCount}, Reservas: ${reservasCount}`);
     
-    if (ciudadesCount === 0) {
+    if (ciudadesCount <= 1) { // Cambiar a <= 1 para incluir la ciudad de prueba
       console.log('🌱 Poblando base de datos con datos de ejemplo...');
     
     // Insertar ciudades
