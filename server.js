@@ -363,6 +363,27 @@ app.get('/api/admin/complejos', async (req, res) => {
   }
 });
 
+// Endpoint para obtener canchas (panel de administración)
+app.get('/api/admin/canchas', async (req, res) => {
+  try {
+    console.log('⚽ Cargando canchas para administración...');
+    
+    const canchas = await db.query(`
+      SELECT c.*, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
+      FROM canchas c
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      ORDER BY co.nombre, c.nombre
+    `);
+    
+    console.log(`✅ ${canchas.length} canchas cargadas para administración`);
+    res.json(canchas);
+  } catch (error) {
+    console.error('❌ Error cargando canchas para administración:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para limpiar complejos duplicados
 app.get('/api/debug/clean-duplicate-complexes', async (req, res) => {
   try {
