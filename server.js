@@ -242,22 +242,22 @@ app.get('/api/debug/insert-test-reservations', async (req, res) => {
   try {
     console.log('📝 Insertando reservas de prueba...');
     const reservasData = [
-      { cancha_id: 1, fecha: '2024-09-15', hora_inicio: '10:00', hora_fin: '11:00', usuario_nombre: 'Juan Pérez', usuario_email: 'juan@email.com', usuario_telefono: '+56912345678', precio_total: 25000 },
-      { cancha_id: 2, fecha: '2024-09-15', hora_inicio: '14:00', hora_fin: '15:00', usuario_nombre: 'María González', usuario_email: 'maria@email.com', usuario_telefono: '+56987654321', precio_total: 25000 }
+      { cancha_id: 1, fecha: '2024-09-15', hora_inicio: '10:00', hora_fin: '11:00', nombre_cliente: 'Juan Pérez', email_cliente: 'juan@email.com', telefono_cliente: '+56912345678', precio_total: 25000, codigo_reserva: 'RES001' },
+      { cancha_id: 2, fecha: '2024-09-15', hora_inicio: '14:00', hora_fin: '15:00', nombre_cliente: 'María González', email_cliente: 'maria@email.com', telefono_cliente: '+56987654321', precio_total: 25000, codigo_reserva: 'RES002' }
     ];
     const results = [];
     
     for (const reserva of reservasData) {
       try {
         const result = await db.run(
-          'INSERT INTO reservas (cancha_id, fecha, hora_inicio, hora_fin, usuario_nombre, usuario_email, usuario_telefono, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
-          [reserva.cancha_id, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.usuario_nombre, reserva.usuario_email, reserva.usuario_telefono, reserva.precio_total, 'confirmada']
+          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+          [reserva.codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'confirmada']
         );
-        results.push({ reserva: `${reserva.usuario_nombre} - ${reserva.fecha}`, result });
-        console.log(`✅ Reserva insertada: ${reserva.usuario_nombre}`, result);
+        results.push({ reserva: `${reserva.nombre_cliente} - ${reserva.fecha}`, result });
+        console.log(`✅ Reserva insertada: ${reserva.nombre_cliente}`, result);
       } catch (error) {
-        console.error(`❌ Error insertando reserva ${reserva.usuario_nombre}:`, error);
-        results.push({ reserva: `${reserva.usuario_nombre} - ${reserva.fecha}`, error: error.message });
+        console.error(`❌ Error insertando reserva ${reserva.nombre_cliente}:`, error);
+        results.push({ reserva: `${reserva.nombre_cliente} - ${reserva.fecha}`, error: error.message });
       }
     }
     
