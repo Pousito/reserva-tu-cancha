@@ -221,7 +221,8 @@ async function initializeBackupSystem() {
     await backupSystem.createBackup();
   } else {
     console.log(`✅ BD OK - ${hasData ? 'con reservas' : 'sin reservas'} encontradas`);
-    await backupSystem.createBackup(); // Crear un respaldo al inicio si todo está bien
+    // NO crear respaldo automático al inicio para preservar respaldos existentes
+    console.log('💾 Preservando respaldos existentes - no creando respaldo automático');
   }
 
   // Programar respaldos automáticos cada 6 horas (en producción)
