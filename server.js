@@ -186,6 +186,19 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Endpoint de prueba simple para insertar una ciudad
+app.get('/api/debug/test-insert', async (req, res) => {
+  try {
+    console.log('🧪 Insertando ciudad de prueba simple...');
+    const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', ['Santiago']);
+    console.log('✅ Resultado inserción Santiago:', result);
+    res.json({ success: true, message: 'Ciudad Santiago insertada', result: result });
+  } catch (error) {
+    console.error('❌ Error insertando Santiago:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Endpoint para forzar inicialización de datos
 app.get('/api/debug/force-init', async (req, res) => {
   try {
