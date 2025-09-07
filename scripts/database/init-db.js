@@ -403,6 +403,7 @@ function createAdminUsers(callback) {
     }
   }, 2000);
 }
+}
 
 // Exportar función para uso en server.js
 module.exports = { initDatabaseIfEmpty };
