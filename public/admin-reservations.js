@@ -175,9 +175,9 @@ function mostrarReservas(reservasAMostrar) {
             </td>
             <td>
                 <div>
-                    <strong>${reserva.cliente_nombre}</strong>
+                    <strong>${reserva.nombre_cliente || 'Sin nombre'}</strong>
                     <br>
-                    <small class="text-muted">${reserva.cliente_email}</small>
+                    <small class="text-muted">${reserva.email_cliente || 'Sin email'}</small>
                 </div>
             </td>
             <td>${reserva.complejo_nombre}</td>
@@ -309,16 +309,32 @@ async function cancelarReserva(codigoReserva) {
 }
 
 function formatearFecha(fecha) {
-    // Parsear la fecha manualmente para evitar problemas de zona horaria
-    const [año, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+    if (!fecha) return 'Sin fecha';
     
-    return fechaObj.toLocaleDateString('es-CL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    try {
+        // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
+        let fechaObj;
+        if (fecha.includes('T')) {
+            // Fecha ISO - extraer solo la parte de fecha
+            const fechaParte = fecha.split('T')[0];
+            const [año, mes, dia] = fechaParte.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia);
+        } else {
+            // Fecha simple (YYYY-MM-DD)
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia);
+        }
+        
+        return fechaObj.toLocaleDateString('es-CL', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (error) {
+        console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
+        return 'Fecha inválida';
+    }
 }
 
 function formatearFechaHora(fechaHora) {
