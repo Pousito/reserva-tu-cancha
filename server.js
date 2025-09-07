@@ -305,8 +305,8 @@ app.get('/api/admin/reservas-hoy', async (req, res) => {
     
     const reservasHoy = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
-    FROM reservas r
-    JOIN canchas c ON r.cancha_id = c.id
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE DATE(r.fecha) = CURRENT_DATE
@@ -317,6 +317,48 @@ app.get('/api/admin/reservas-hoy', async (req, res) => {
     res.json(reservasHoy);
   } catch (error) {
     console.error('❌ Error cargando reservas de hoy:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para obtener todas las reservas (panel de administración)
+app.get('/api/admin/reservas', async (req, res) => {
+  try {
+    console.log('📋 Cargando todas las reservas para administración...');
+    
+    const reservas = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      ORDER BY r.created_at DESC
+    `);
+    
+    console.log(`✅ ${reservas.length} reservas cargadas para administración`);
+    res.json(reservas);
+  } catch (error) {
+    console.error('❌ Error cargando reservas para administración:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para obtener complejos (panel de administración)
+app.get('/api/admin/complejos', async (req, res) => {
+  try {
+    console.log('🏢 Cargando complejos para administración...');
+    
+    const complejos = await db.query(`
+      SELECT c.*, ci.nombre as ciudad_nombre
+      FROM complejos c
+      JOIN ciudades ci ON c.ciudad_id = ci.id
+      ORDER BY c.nombre
+    `);
+    
+    console.log(`✅ ${complejos.length} complejos cargados para administración`);
+    res.json(complejos);
+  } catch (error) {
+    console.error('❌ Error cargando complejos para administración:', error);
     res.status(500).json({ error: error.message });
   }
 });
