@@ -541,60 +541,179 @@ app.get('/api/emergency/populate-complexes', (req, res) => {
   let canchasInsertadas = 0;
   let errores = 0;
   
-  // Insertar complejos
+  // Insertar complejos (verificando duplicados)
   complejos.forEach((complejo, index) => {
-    const sql = `
-      INSERT OR IGNORE INTO complejos (nombre, ciudad_id, direccion, telefono, email) 
-      SELECT ?, id, ?, ?, ? FROM ciudades WHERE nombre = ?
+    // Primero verificar si ya existe
+    const checkSql = `
+      SELECT COUNT(*) as count FROM complejos c 
+      JOIN ciudades ci ON c.ciudad_id = ci.id 
+      WHERE c.nombre = ? AND ci.nombre = ?
     `;
     
-    db.run(sql, [complejo.nombre, complejo.direccion, complejo.telefono, complejo.email, complejo.ciudad], function(err) {
+    db.get(checkSql, [complejo.nombre, complejo.ciudad], (err, row) => {
       if (err) {
-        console.error(`❌ Error insertando complejo ${complejo.nombre}:`, err.message);
+        console.error(`❌ Error verificando complejo ${complejo.nombre}:`, err.message);
         errores++;
-      } else {
-        console.log(`✅ Complejo insertado: ${complejo.nombre}`);
-        complejosInsertados++;
+        checkCompletion();
+        return;
       }
       
-      // Si es el último complejo, insertar canchas
-      if (complejosInsertados + errores === complejos.length) {
-        setTimeout(() => {
-          insertCanchas();
-        }, 1000);
+      if (row.count > 0) {
+        console.log(`⚠️ Complejo ya existe: ${complejo.nombre} en ${complejo.ciudad}`);
+        checkCompletion();
+        return;
       }
+      
+      // Si no existe, insertarlo
+      const insertSql = `
+        INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) 
+        SELECT ?, id, ?, ?, ? FROM ciudades WHERE nombre = ?
+      `;
+      
+      db.run(insertSql, [complejo.nombre, complejo.direccion, complejo.telefono, complejo.email, complejo.ciudad], function(err) {
+        if (err) {
+          console.error(`❌ Error insertando complejo ${complejo.nombre}:`, err.message);
+          errores++;
+        } else {
+          console.log(`✅ Complejo insertado: ${complejo.nombre}`);
+          complejosInsertados++;
+        }
+        checkCompletion();
+      });
     });
   });
   
+  function checkCompletion() {
+    // Si es el último complejo, insertar canchas
+    if (complejosInsertados + errores === complejos.length) {
+      setTimeout(() => {
+        insertCanchas();
+      }, 1000);
+    }
+  }
+  
   function insertCanchas() {
     canchas.forEach((cancha, index) => {
-      const sql = `
-        INSERT OR IGNORE INTO canchas (complejo_id, nombre, tipo, precio_hora) 
-        SELECT id, ?, ?, ? FROM complejos WHERE nombre = ?
+      // Verificar si la cancha ya existe
+      const checkSql = `
+        SELECT COUNT(*) as count FROM canchas c 
+        JOIN complejos co ON c.complejo_id = co.id 
+        WHERE c.nombre = ? AND co.nombre = ?
       `;
       
-      db.run(sql, [cancha.nombre, cancha.tipo, cancha.precio, cancha.complejo], function(err) {
+      db.get(checkSql, [cancha.nombre, cancha.complejo], (err, row) => {
         if (err) {
-          console.error(`❌ Error insertando cancha ${cancha.nombre}:`, err.message);
+          console.error(`❌ Error verificando cancha ${cancha.nombre}:`, err.message);
           errores++;
-        } else {
-          console.log(`✅ Cancha insertada: ${cancha.nombre}`);
-          canchasInsertadas++;
+          checkCanchasCompletion();
+          return;
         }
         
-        // Si es la última cancha, enviar respuesta
-        if (canchasInsertadas + errores === canchas.length + complejos.length) {
-          res.json({
-            success: true,
-            message: `Complejos y canchas poblados: ${complejosInsertados} complejos, ${canchasInsertadas} canchas`,
-            complejosInsertados,
-            canchasInsertadas,
-            errores
-          });
+        if (row.count > 0) {
+          console.log(`⚠️ Cancha ya existe: ${cancha.nombre} en ${cancha.complejo}`);
+          checkCanchasCompletion();
+          return;
         }
+        
+        // Si no existe, insertarla
+        const insertSql = `
+          INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) 
+          SELECT id, ?, ?, ? FROM complejos WHERE nombre = ?
+        `;
+        
+        db.run(insertSql, [cancha.nombre, cancha.tipo, cancha.precio, cancha.complejo], function(err) {
+          if (err) {
+            console.error(`❌ Error insertando cancha ${cancha.nombre}:`, err.message);
+            errores++;
+          } else {
+            console.log(`✅ Cancha insertada: ${cancha.nombre}`);
+            canchasInsertadas++;
+          }
+          checkCanchasCompletion();
+        });
       });
     });
   }
+  
+  function checkCanchasCompletion() {
+    // Si es la última cancha, enviar respuesta
+    if (canchasInsertadas + errores === canchas.length + complejos.length) {
+      res.json({
+        success: true,
+        message: `Complejos y canchas poblados: ${complejosInsertados} complejos, ${canchasInsertadas} canchas`,
+        complejosInsertados,
+        canchasInsertadas,
+        errores
+      });
+    }
+  }
+});
+
+// Endpoint de emergencia para limpiar datos duplicados
+app.get('/api/emergency/clean-duplicates', (req, res) => {
+  console.log('🧹 LIMPIANDO DATOS DUPLICADOS');
+  
+  // Limpiar complejos duplicados (mantener solo el primero)
+  const cleanComplejos = `
+    DELETE FROM complejos 
+    WHERE id NOT IN (
+      SELECT MIN(id) 
+      FROM complejos 
+      GROUP BY nombre, ciudad_id
+    )
+  `;
+  
+  // Limpiar canchas duplicadas (mantener solo la primera)
+  const cleanCanchas = `
+    DELETE FROM canchas 
+    WHERE id NOT IN (
+      SELECT MIN(id) 
+      FROM canchas 
+      GROUP BY nombre, complejo_id
+    )
+  `;
+  
+  db.run(cleanComplejos, (err) => {
+    if (err) {
+      console.error('❌ Error limpiando complejos duplicados:', err.message);
+      res.json({ success: false, error: err.message });
+      return;
+    }
+    
+    console.log('✅ Complejos duplicados eliminados');
+    
+    db.run(cleanCanchas, (err) => {
+      if (err) {
+        console.error('❌ Error limpiando canchas duplicadas:', err.message);
+        res.json({ success: false, error: err.message });
+        return;
+      }
+      
+      console.log('✅ Canchas duplicadas eliminadas');
+      
+      // Verificar resultados
+      db.get('SELECT COUNT(*) as count FROM complejos', (err, complejosRow) => {
+        if (err) {
+          res.json({ success: false, error: err.message });
+          return;
+        }
+        
+        db.get('SELECT COUNT(*) as count FROM canchas', (err, canchasRow) => {
+          if (err) {
+            res.json({ success: false, error: err.message });
+            return;
+          }
+          
+          res.json({
+            success: true,
+            message: 'Datos duplicados eliminados exitosamente',
+            complejosRestantes: complejosRow.count,
+            canchasRestantes: canchasRow.count
+          });
+        });
+      });
+    });
+  });
 });
 
 // Endpoint de emergencia para insertar reservas de prueba
