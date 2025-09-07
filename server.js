@@ -179,6 +179,18 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Endpoint para forzar inicialización de datos
+app.get('/api/debug/force-init', async (req, res) => {
+  try {
+    console.log('🔄 Forzando inicialización de datos...');
+    await populateSampleData();
+    res.json({ success: true, message: 'Inicialización forzada exitosamente' });
+  } catch (error) {
+    console.error('❌ Error en inicialización forzada:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Debug endpoint para verificar PostgreSQL
 app.get('/debug/postgresql', async (req, res) => {
   try {
