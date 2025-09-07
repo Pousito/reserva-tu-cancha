@@ -276,19 +276,19 @@ function updateMetrics() {
     const data = reportsData.metrics || {};
     
     // Ingresos
-    document.getElementById('totalRevenue').textContent = formatCurrency(data.totalRevenue || 0);
+    document.getElementById('totalRevenue').textContent = formatCurrency(data.ingresosTotales || 0);
     updateMetricChange('revenueChange', data.revenueChange || 0);
     
     // Reservas
-    document.getElementById('totalReservations').textContent = (data.totalReservations || 0).toLocaleString();
+    document.getElementById('totalReservations').textContent = (data.totalReservas || 0).toLocaleString();
     updateMetricChange('reservationsChange', data.reservationsChange || 0);
     
-    // Ocupación
-    document.getElementById('occupancyRate').textContent = `${(data.occupancyRate || 0).toFixed(1)}%`;
+    // Tasa de confirmación
+    document.getElementById('occupancyRate').textContent = `${data.tasaConfirmacion || 0}%`;
     updateMetricChange('occupancyChange', data.occupancyChange || 0);
     
-    // Clientes únicos
-    document.getElementById('uniqueCustomers').textContent = (data.uniqueCustomers || 0).toLocaleString();
+    // Reservas confirmadas
+    document.getElementById('uniqueCustomers').textContent = (data.reservasConfirmadas || 0).toLocaleString();
     updateMetricChange('customersChange', data.customersChange || 0);
 }
 
@@ -315,7 +315,7 @@ function updateCharts() {
 // Gráfico de ingresos
 function updateRevenueChart() {
     const ctx = document.getElementById('revenueChart').getContext('2d');
-    const data = reportsData.revenueChart || { labels: [], data: [] };
+    const data = reportsData.charts?.reservasPorDia || [];
     
     if (charts.revenue) {
         charts.revenue.destroy();
@@ -483,7 +483,7 @@ function updateTables() {
 
 // Tabla de top complejos
 function updateTopComplexesTable() {
-    const data = reportsData.topComplexes || [];
+    const data = reportsData.charts?.reservasPorComplejo || [];
     const tbody = document.getElementById('topComplexesTable');
     
     if (data.length === 0) {
@@ -507,7 +507,7 @@ function updateTopComplexesTable() {
 
 // Tabla de top canchas
 function updateTopCourtsTable() {
-    const data = reportsData.topCourts || [];
+    const data = reportsData.tables?.topCanchas || [];
     const tbody = document.getElementById('topCourtsTable');
     
     if (data.length === 0) {
