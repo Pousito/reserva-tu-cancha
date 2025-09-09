@@ -955,14 +955,14 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
 // Crear reserva
 app.post('/api/reservas', async (req, res) => {
   try {
-    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total } = req.body;
+    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total } = req.body;
     
     // Generar código de reserva único
     const codigo_reserva = 'RES' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
     
     const result = await db.run(
-      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
+      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
     );
     
     res.json({ 
@@ -1431,6 +1431,34 @@ app.get('/api/debug/test-date-formatting', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA AGREGAR CAMPO RUT_CLIENTE =====
+app.get('/api/debug/add-rut-column', async (req, res) => {
+  try {
+    console.log('🔧 Agregando columna rut_cliente a tabla reservas...');
+    
+    // Verificar si la columna ya existe
+    const columnExists = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas' AND column_name = 'rut_cliente'
+    `);
+    
+    if (columnExists.length > 0) {
+      console.log('✅ Columna rut_cliente ya existe');
+      return res.json({ success: true, message: 'Columna rut_cliente ya existe' });
+    }
+    
+    // Agregar la columna
+    await db.run('ALTER TABLE reservas ADD COLUMN rut_cliente VARCHAR(20)');
+    console.log('✅ Columna rut_cliente agregada exitosamente');
+    
+    res.json({ success: true, message: 'Columna rut_cliente agregada exitosamente' });
+  } catch (error) {
+    console.error('❌ Error agregando columna rut_cliente:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====
 app.get('/api/admin/customers-analysis', async (req, res) => {
   try {
@@ -1446,11 +1474,12 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       params.push(complexId);
     }
     
-    // 1. Clientes más frecuentes (por número de reservas)
+    // 1. Clientes más frecuentes (por número de reservas) - Agrupar por RUT si existe, sino por email
     const clientesFrecuentes = await db.query(`
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
+        r.rut_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         AVG(r.precio_total) as promedio_por_reserva,
@@ -1460,7 +1489,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY r.nombre_cliente, r.email_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
     `, params);
@@ -1470,6 +1499,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
+        r.rut_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         AVG(r.precio_total) as promedio_por_reserva,
@@ -1479,7 +1509,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY r.nombre_cliente, r.email_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       ORDER BY total_gastado DESC, total_reservas DESC
       LIMIT 10
     `, params);
@@ -1489,6 +1519,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
+        r.rut_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         MIN(r.fecha) as primera_reserva
@@ -1496,7 +1527,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY r.nombre_cliente, r.email_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       HAVING COUNT(*) = 1
       ORDER BY total_gastado DESC
       LIMIT 10
@@ -1506,6 +1537,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
+        r.rut_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         MIN(r.fecha) as primera_reserva,
@@ -1514,7 +1546,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY r.nombre_cliente, r.email_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       HAVING COUNT(*) > 1
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
