@@ -11,6 +11,64 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000/api'  // Desarrollo local
   : `${window.location.protocol}//${window.location.host}/api`;  // Producción (Render)
 
+// Función para leer parámetros URL
+function leerParametrosURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ciudad = urlParams.get('ciudad');
+    const complejo = urlParams.get('complejo');
+    
+    console.log('🔍 Parámetros URL encontrados:', { ciudad, complejo });
+    
+    return { ciudad, complejo };
+}
+
+// Función para pre-rellenar campos desde URL
+async function preRellenarDesdeURL() {
+    const { ciudad, complejo } = leerParametrosURL();
+    
+    if (ciudad) {
+        console.log('🏙️ Pre-rellenando ciudad:', ciudad);
+        // Esperar a que las ciudades se carguen
+        await new Promise(resolve => {
+            const checkCiudades = () => {
+                if (ciudades.length > 0) {
+                    const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+                    if (ciudadEncontrada) {
+                        document.getElementById('ciudad').value = ciudadEncontrada.id;
+                        document.getElementById('ciudad').dispatchEvent(new Event('change'));
+                        console.log('✅ Ciudad pre-rellenada:', ciudad);
+                    }
+                    resolve();
+                } else {
+                    setTimeout(checkCiudades, 100);
+                }
+            };
+            checkCiudades();
+        });
+    }
+    
+    if (complejo) {
+        console.log('🏢 Pre-rellenando complejo:', complejo);
+        // Esperar a que los complejos se carguen
+        await new Promise(resolve => {
+            const checkComplejos = () => {
+                if (complejos.length > 0) {
+                    const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                    if (complejoEncontrado) {
+                        document.getElementById('complejo').value = complejoEncontrado.id;
+                        document.getElementById('complejo').dispatchEvent(new Event('change'));
+                        console.log('✅ Complejo pre-rellenado:', complejo);
+                    }
+                    resolve();
+                } else {
+                    setTimeout(checkComplejos, 100);
+                }
+            };
+            checkComplejos();
+        });
+    }
+}
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== INICIALIZACIÓN DE LA APLICACIÓN ===');
@@ -21,6 +79,9 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarCiudades();
     configurarEventListeners();
     configurarFechaMinima();
+    
+    // Pre-rellenar campos desde URL después de cargar datos
+    setTimeout(preRellenarDesdeURL, 1000);
     
     // Verificar que la función scrollToReservar esté disponible
     if (typeof scrollToReservar === 'function') {
