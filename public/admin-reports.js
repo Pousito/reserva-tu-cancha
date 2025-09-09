@@ -63,7 +63,8 @@ function setupEventListeners() {
 // Establecer fechas por defecto
 function setDefaultDates() {
     const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Usar un rango más amplio para incluir todas las reservas existentes
+    const firstDay = new Date(2024, 0, 1); // 1 de enero de 2024
     
     document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
     document.getElementById('dateTo').value = today.toISOString().split('T')[0];
@@ -136,11 +137,13 @@ async function generateReports() {
         
         if (response.ok) {
             reportsData = await response.json();
+            console.log('📊 Datos de reportes recibidos:', reportsData);
             updateMetrics();
             updateCharts();
             updateTables();
         } else {
             console.error('Error generando reportes:', response.statusText);
+            console.error('Response status:', response.status);
             showErrorState();
         }
     } catch (error) {
@@ -183,7 +186,8 @@ function getPeriodDates(period) {
             to = new Date().toISOString().split('T')[0];
             break;
         case 'month':
-            from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            // Usar un rango más amplio para incluir todas las reservas
+            from = new Date(2024, 0, 1).toISOString().split('T')[0];
             to = new Date().toISOString().split('T')[0];
             break;
         case 'quarter':
@@ -274,21 +278,38 @@ function showErrorState() {
 // Actualizar métricas
 function updateMetrics() {
     const data = reportsData.metrics || {};
+    console.log('📊 Actualizando métricas con datos:', data);
     
     // Ingresos
-    document.getElementById('totalRevenue').textContent = formatCurrency(data.ingresosTotales || 0);
+    const ingresosElement = document.getElementById('totalRevenue');
+    if (ingresosElement) {
+        ingresosElement.textContent = formatCurrency(data.ingresosTotales || 0);
+        console.log('💰 Ingresos actualizados:', data.ingresosTotales);
+    }
     updateMetricChange('revenueChange', data.revenueChange || 0);
     
     // Reservas
-    document.getElementById('totalReservations').textContent = (data.totalReservas || 0).toLocaleString();
+    const reservasElement = document.getElementById('totalReservations');
+    if (reservasElement) {
+        reservasElement.textContent = (data.totalReservas || 0).toLocaleString();
+        console.log('📋 Reservas actualizadas:', data.totalReservas);
+    }
     updateMetricChange('reservationsChange', data.reservationsChange || 0);
     
     // Tasa de confirmación
-    document.getElementById('occupancyRate').textContent = `${data.tasaConfirmacion || 0}%`;
+    const ocupacionElement = document.getElementById('occupancyRate');
+    if (ocupacionElement) {
+        ocupacionElement.textContent = `${data.tasaConfirmacion || 0}%`;
+        console.log('📈 Tasa de confirmación actualizada:', data.tasaConfirmacion);
+    }
     updateMetricChange('occupancyChange', data.occupancyChange || 0);
     
     // Reservas confirmadas
-    document.getElementById('uniqueCustomers').textContent = (data.reservasConfirmadas || 0).toLocaleString();
+    const clientesElement = document.getElementById('uniqueCustomers');
+    if (clientesElement) {
+        clientesElement.textContent = (data.reservasConfirmadas || 0).toLocaleString();
+        console.log('👥 Clientes únicos actualizados:', data.reservasConfirmadas);
+    }
     updateMetricChange('customersChange', data.customersChange || 0);
 }
 
