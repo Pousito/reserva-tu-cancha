@@ -102,6 +102,23 @@ async function preRellenarDesdeURL() {
     console.log('✅ preRellenarDesdeURL completado');
     console.log('🔍 Estado final - Ciudad seleccionada:', document.getElementById('ciudadSelect')?.value);
     console.log('🔍 Estado final - Complejo seleccionado:', document.getElementById('complejoSelect')?.value);
+    
+    // Scroll automático a la sección de reservas si hay parámetros URL
+    if (ciudad || complejo) {
+        console.log('🔄 Haciendo scroll automático a la sección de reservas...');
+        setTimeout(() => {
+            const reservarSection = document.getElementById('reservar');
+            if (reservarSection) {
+                reservarSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                console.log('✅ Scroll completado a la sección de reservas');
+            } else {
+                console.error('❌ No se encontró la sección de reservas');
+            }
+        }, 500); // Pequeño delay para asegurar que los campos estén completamente cargados
+    }
 }
 
 // Inicialización
