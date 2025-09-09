@@ -1470,6 +1470,68 @@ app.get('/api/debug/test-simple', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA AGREGAR CAMPOS DE ROL =====
+app.get('/api/debug/add-role-fields', async (req, res) => {
+  try {
+    console.log('🔧 Agregando campos de rol a tabla usuarios...');
+    
+    // Verificar si las columnas ya existen
+    const columnsExist = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'usuarios' AND column_name IN ('rol', 'complejo_id')
+    `);
+    
+    const existingColumns = columnsExist.map(col => col.column_name);
+    console.log('📋 Columnas existentes:', existingColumns);
+    
+    let addedColumns = [];
+    
+    // Agregar columna rol si no existe
+    if (!existingColumns.includes('rol')) {
+      await db.run('ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT \'manager\'');
+      addedColumns.push('rol');
+      console.log('✅ Columna rol agregada');
+    } else {
+      console.log('ℹ️ Columna rol ya existe');
+    }
+    
+    // Agregar columna complejo_id si no existe
+    if (!existingColumns.includes('complejo_id')) {
+      await db.run('ALTER TABLE usuarios ADD COLUMN complejo_id INTEGER REFERENCES complejos(id)');
+      addedColumns.push('complejo_id');
+      console.log('✅ Columna complejo_id agregada');
+    } else {
+      console.log('ℹ️ Columna complejo_id ya existe');
+    }
+    
+    // Verificar estructura final
+    const finalStructure = await db.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'usuarios'
+      ORDER BY ordinal_position
+    `);
+    
+    console.log('📊 Estructura final de tabla usuarios:');
+    finalStructure.forEach(col => {
+      console.log(`- ${col.column_name}: ${col.data_type} (${col.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Campos de rol agregados exitosamente',
+      addedColumns,
+      existingColumns,
+      finalStructure
+    });
+    
+  } catch (error) {
+    console.error('❌ Error agregando campos de rol:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====
 app.get('/api/debug/clean-database', async (req, res) => {
   try {
