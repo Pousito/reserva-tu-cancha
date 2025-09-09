@@ -45,19 +45,17 @@ function configurarInterfazPorRol() {
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Cambio de período
-    document.getElementById('periodFilter').addEventListener('change', function() {
-        if (this.value === 'custom') {
-            document.getElementById('dateFrom').style.display = 'block';
-            document.getElementById('dateTo').style.display = 'block';
-        } else {
-            setDefaultDates();
-        }
-    });
-    
     // Cambio de fechas personalizadas
-    document.getElementById('dateFrom').addEventListener('change', updatePeriodFilter);
-    document.getElementById('dateTo').addEventListener('change', updatePeriodFilter);
+    document.getElementById('dateFrom').addEventListener('change', function() {
+        generateReports();
+        // Cerrar el calendario después de seleccionar fecha
+        this.blur();
+    });
+    document.getElementById('dateTo').addEventListener('change', function() {
+        generateReports();
+        // Cerrar el calendario después de seleccionar fecha
+        this.blur();
+    });
 }
 
 // Establecer fechas por defecto
@@ -70,10 +68,6 @@ function setDefaultDates() {
     document.getElementById('dateTo').value = today.toISOString().split('T')[0];
 }
 
-// Actualizar filtro de período
-function updatePeriodFilter() {
-    document.getElementById('periodFilter').value = 'custom';
-}
 
 // Cargar complejos
 async function loadComplexes() {
@@ -147,16 +141,8 @@ async function generateReports() {
 
 // Obtener filtros
 function getFilters() {
-    const period = document.getElementById('periodFilter').value;
     let dateFrom = document.getElementById('dateFrom').value;
     let dateTo = document.getElementById('dateTo').value;
-    
-    // Si no es período personalizado, calcular fechas
-    if (period !== 'custom') {
-        const dates = getPeriodDates(period);
-        dateFrom = dates.from;
-        dateTo = dates.to;
-    }
     
     return {
         dateFrom,
@@ -165,40 +151,6 @@ function getFilters() {
     };
 }
 
-// Obtener fechas según el período
-function getPeriodDates(period) {
-    const today = new Date();
-    let from, to;
-    
-    switch (period) {
-        case 'today':
-            from = to = today.toISOString().split('T')[0];
-            break;
-        case 'week':
-            from = new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
-            to = new Date().toISOString().split('T')[0];
-            break;
-        case 'month':
-            // Usar un rango más amplio para incluir todas las reservas
-            from = new Date(2025, 0, 1).toISOString().split('T')[0];
-            to = new Date().toISOString().split('T')[0];
-            break;
-        case 'quarter':
-            const quarter = Math.floor(today.getMonth() / 3);
-            from = new Date(today.getFullYear(), quarter * 3, 1).toISOString().split('T')[0];
-            to = new Date().toISOString().split('T')[0];
-            break;
-        case 'year':
-            from = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
-            to = new Date().toISOString().split('T')[0];
-            break;
-        default:
-            from = document.getElementById('dateFrom')?.value || new Date(2025, 0, 1).toISOString().split('T')[0];
-            to = document.getElementById('dateTo')?.value || new Date().toISOString().split('T')[0];
-    }
-    
-    return { from, to };
-}
 
 // Mostrar estado de carga
 function showLoadingState() {
@@ -583,7 +535,8 @@ async function updateCustomersTable() {
         console.log('👥 Iniciando análisis de clientes...');
         
         // Obtener datos de análisis de clientes
-        const { from: dateFrom, to: dateTo } = getPeriodDates();
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
         const complexId = document.getElementById('complexFilter').value;
         
         console.log('📅 Fechas:', { dateFrom, dateTo, complexId });
