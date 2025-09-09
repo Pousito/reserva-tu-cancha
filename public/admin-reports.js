@@ -25,25 +25,30 @@ document.addEventListener('DOMContentLoaded', function() {
 // Configurar event listeners
 function setupEventListeners() {
     // Filtros de fecha
-    document.getElementById('dateFrom').addEventListener('change', function() {
-        this.blur();
-        generateReports();
-    });
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    const complexFilter = document.getElementById('complexFilter');
     
-    document.getElementById('dateTo').addEventListener('change', function() {
-        this.blur();
-        generateReports();
-    });
+    if (dateFrom) {
+        dateFrom.addEventListener('change', function() {
+            this.blur();
+            generateReports();
+        });
+    }
+    
+    if (dateTo) {
+        dateTo.addEventListener('change', function() {
+            this.blur();
+            generateReports();
+        });
+    }
     
     // Filtro de complejo
-    document.getElementById('complexFilter').addEventListener('change', function() {
-        generateReports();
-    });
-    
-    // Filtro de deporte
-    document.getElementById('sportFilter').addEventListener('change', function() {
-        generateReports();
-    });
+    if (complexFilter) {
+        complexFilter.addEventListener('change', function() {
+            generateReports();
+        });
+    }
 }
 
 // Cargar complejos
@@ -80,17 +85,28 @@ function setDefaultDates() {
     const today = new Date();
     const firstDay = new Date(2025, 8, 1); // 1 de septiembre de 2025
     
-    document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
-    document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    
+    if (dateFrom) {
+        dateFrom.value = firstDay.toISOString().split('T')[0];
+    }
+    if (dateTo) {
+        dateTo.value = today.toISOString().split('T')[0];
+    }
 }
 
 // Obtener filtros
 function getFilters() {
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    const complexFilter = document.getElementById('complexFilter');
+    
     return {
-        dateFrom: document.getElementById('dateFrom').value,
-        dateTo: document.getElementById('dateTo').value,
-        complexId: document.getElementById('complexFilter').value || null,
-        sport: document.getElementById('sportFilter').value || null
+        dateFrom: dateFrom ? dateFrom.value : '',
+        dateTo: dateTo ? dateTo.value : '',
+        complexId: complexFilter ? complexFilter.value || null : null,
+        sport: null
     };
 }
 
@@ -135,126 +151,48 @@ async function generateReports() {
 
 // Mostrar estado de carga
 function showLoadingState() {
-    document.getElementById('metricsContainer').innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando métricas...</p>
-        </div>
-    `;
+    // Actualizar métricas individuales
+    const totalRevenue = document.getElementById('totalRevenue');
+    const totalReservations = document.getElementById('totalReservations');
+    const occupancyRate = document.getElementById('occupancyRate');
+    const uniqueCustomers = document.getElementById('uniqueCustomers');
     
-    document.getElementById('chartsContainer').innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando gráficos...</p>
-        </div>
-    `;
-    
-    document.getElementById('tablesContainer').innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando tablas...</p>
-        </div>
-    `;
+    if (totalRevenue) totalRevenue.textContent = 'Cargando...';
+    if (totalReservations) totalReservations.textContent = 'Cargando...';
+    if (occupancyRate) occupancyRate.textContent = 'Cargando...';
+    if (uniqueCustomers) uniqueCustomers.textContent = 'Cargando...';
 }
 
 // Mostrar estado de error
 function showErrorState(message) {
-    document.getElementById('metricsContainer').innerHTML = `
-        <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            ${message}
-        </div>
-    `;
+    // Actualizar métricas individuales con error
+    const totalRevenue = document.getElementById('totalRevenue');
+    const totalReservations = document.getElementById('totalReservations');
+    const occupancyRate = document.getElementById('occupancyRate');
+    const uniqueCustomers = document.getElementById('uniqueCustomers');
     
-    document.getElementById('chartsContainer').innerHTML = `
-        <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            ${message}
-        </div>
-    `;
+    if (totalRevenue) totalRevenue.textContent = 'Error';
+    if (totalReservations) totalReservations.textContent = 'Error';
+    if (occupancyRate) occupancyRate.textContent = 'Error';
+    if (uniqueCustomers) uniqueCustomers.textContent = 'Error';
     
-    document.getElementById('tablesContainer').innerHTML = `
-        <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            ${message}
-        </div>
-    `;
+    console.error('Error en reportes:', message);
 }
 
 // Actualizar métricas
 function updateMetrics() {
     const metrics = reportsData.metrics;
     
-    document.getElementById('metricsContainer').innerHTML = `
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="mb-0">$${metrics.ingresosTotales.toLocaleString()}</h4>
-                                <p class="mb-0">Ingresos Totales</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-dollar-sign fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="mb-0">${metrics.reservasTotales}</h4>
-                                <p class="mb-0">Reservas Totales</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-calendar-check fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="mb-0">${metrics.ocupacionPromedio}%</h4>
-                                <p class="mb-0">Ocupación Promedio</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-chart-pie fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="mb-0">${metrics.clientesUnicos}</h4>
-                                <p class="mb-0">Clientes Únicos</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-users fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+    // Actualizar métricas individuales
+    const totalRevenue = document.getElementById('totalRevenue');
+    const totalReservations = document.getElementById('totalReservations');
+    const occupancyRate = document.getElementById('occupancyRate');
+    const uniqueCustomers = document.getElementById('uniqueCustomers');
+    
+    if (totalRevenue) totalRevenue.textContent = `$${metrics.ingresosTotales.toLocaleString()}`;
+    if (totalReservations) totalReservations.textContent = metrics.reservasTotales;
+    if (occupancyRate) occupancyRate.textContent = `${metrics.ocupacionPromedio}%`;
+    if (uniqueCustomers) uniqueCustomers.textContent = metrics.clientesUnicos;
 }
 
 // Actualizar gráficos
@@ -276,7 +214,10 @@ function updateCharts() {
 
 // Actualizar gráfico de ingresos
 function updateIncomeChart(data) {
-    const ctx = document.getElementById('incomeChart').getContext('2d');
+    const canvas = document.getElementById('revenueChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -303,7 +244,10 @@ function updateIncomeChart(data) {
 
 // Actualizar gráfico de reservas
 function updateReservationsChart(data) {
-    const ctx = document.getElementById('reservationsChart').getContext('2d');
+    const canvas = document.getElementById('typeChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -333,7 +277,10 @@ function updateReservationsChart(data) {
 
 // Actualizar gráfico de ocupación
 function updateOccupancyChart(data) {
-    const ctx = document.getElementById('occupancyChart').getContext('2d');
+    const canvas = document.getElementById('occupancyChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -364,7 +311,10 @@ function updateOccupancyChart(data) {
 
 // Actualizar gráfico de horarios
 function updateHoursChart(data) {
-    const ctx = document.getElementById('hoursChart').getContext('2d');
+    const canvas = document.getElementById('hoursChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -427,67 +377,36 @@ async function updateCustomersTable() {
         
         // Actualizar tabla
         const tbody = document.querySelector('#customersTable tbody');
-        tbody.innerHTML = customersData.map(customer => `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="avatar me-3">
-                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+        if (tbody) {
+            tbody.innerHTML = customersData.map(customer => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar me-3">
+                                <i class="fas fa-user-circle fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">${customer.nombre_cliente}</div>
+                                <small class="text-muted">${customer.identificador_cliente}</small>
+                            </div>
                         </div>
-                        <div>
-                            <div class="fw-bold">${customer.nombre_cliente}</div>
-                            <small class="text-muted">${customer.identificador_cliente}</small>
-                        </div>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <span class="badge bg-primary">${customer.total_reservas}</span>
-                </td>
-                <td class="text-center">
-                    <span class="badge bg-success">$${customer.total_gastado.toLocaleString()}</span>
-                </td>
-                <td class="text-center">
-                    <small class="text-muted">${customer.ultima_reserva}</small>
-                </td>
-            </tr>
-        `).join('');
-        
-        document.getElementById('tablesContainer').innerHTML = `
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-users me-2"></i>
-                        Análisis de Clientes
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="customersTable">
-                            <thead>
-                                <tr>
-                                    <th>Cliente</th>
-                                    <th class="text-center">Cantidad de Reservas</th>
-                                    <th class="text-center">Total Gastado</th>
-                                    <th class="text-center">Última Reserva</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tbody.innerHTML}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        `;
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-primary">${customer.total_reservas}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-success">$${customer.total_gastado.toLocaleString()}</span>
+                    </td>
+                    <td class="text-center">
+                        <small class="text-muted">${customer.ultima_reserva}</small>
+                    </td>
+                </tr>
+            `).join('');
+        }
         
     } catch (error) {
         console.error('❌ Error cargando análisis de clientes:', error);
-        document.getElementById('tablesContainer').innerHTML = `
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Error cargando análisis de clientes: ${error.message}
-            </div>
-        `;
+        // No mostrar error en UI ya que la tabla ya existe en el HTML
     }
 }
 
