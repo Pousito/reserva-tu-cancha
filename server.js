@@ -1892,6 +1892,25 @@ app.get('/api/debug/check-password', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR TOKEN =====
+app.get('/api/debug/verify-token', authenticateToken, async (req, res) => {
+  try {
+    console.log('🔍 Verificando token...');
+    console.log('👤 Usuario del token:', req.user);
+    
+    res.json({ 
+      success: true, 
+      message: 'Token verificado exitosamente',
+      user: req.user,
+      complexFilter: req.complexFilter
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando token:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA VER USUARIOS =====
 app.get('/api/debug/list-users', async (req, res) => {
   try {
