@@ -1656,6 +1656,35 @@ app.get('/api/debug/create-role-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VER USUARIOS =====
+app.get('/api/debug/list-users', async (req, res) => {
+  try {
+    console.log('👥 Listando usuarios...');
+    
+    const usuarios = await db.query(`
+      SELECT u.id, u.email, u.nombre, u.rol, u.activo, u.complejo_id, c.nombre as complejo_nombre
+      FROM usuarios u
+      LEFT JOIN complejos c ON u.complejo_id = c.id
+      ORDER BY u.rol, u.email
+    `);
+    
+    console.log('📊 Usuarios encontrados:', usuarios.length);
+    usuarios.forEach(user => {
+      console.log(`- ${user.email}: ${user.rol} (${user.complejo_nombre || 'Sin complejo'}) - Activo: ${user.activo}`);
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Usuarios listados exitosamente',
+      usuarios
+    });
+    
+  } catch (error) {
+    console.error('❌ Error listando usuarios:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====
 app.get('/api/debug/clean-database', async (req, res) => {
   try {
