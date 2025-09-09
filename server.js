@@ -487,9 +487,13 @@ app.post('/api/admin/reports', async (req, res) => {
       ORDER BY DATE(r.fecha)
     `, params);
     
-    // Reservas por complejo
+    // Reservas por complejo con ocupación real
     const reservasPorComplejo = await db.query(`
-      SELECT co.nombre as complejo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      SELECT 
+        co.nombre as complejo, 
+        COUNT(*) as cantidad, 
+        COALESCE(SUM(r.precio_total), 0) as ingresos,
+        COUNT(DISTINCT c.id) as canchas_count
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -497,6 +501,53 @@ app.post('/api/admin/reports', async (req, res) => {
       GROUP BY co.id, co.nombre
       ORDER BY ingresos DESC
     `, params);
+    
+    // Calcular ocupación real para cada complejo
+    const reservasPorComplejoConOcupacion = await Promise.all(reservasPorComplejo.map(async (complejo) => {
+      // Calcular días en el rango de fechas
+      const fechaInicio = new Date(dateFrom);
+      const fechaFin = new Date(dateTo);
+      const diasDiferencia = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
+      
+      let slotsDisponibles = 0;
+      
+      // Calcular slots disponibles día por día según el complejo
+      for (let i = 0; i < diasDiferencia; i++) {
+        const fechaActual = new Date(fechaInicio);
+        fechaActual.setDate(fechaInicio.getDate() + i);
+        const diaSemana = fechaActual.getDay(); // 0 = domingo, 6 = sábado
+        
+        let horasPorDia = 0;
+        
+        if (complejo.complejo === 'MagnaSports') {
+          if (diaSemana === 0 || diaSemana === 6) {
+            // Fines de semana: 12:00-23:00 (12 horas)
+            horasPorDia = 12;
+          } else {
+            // Entre semana: 16:00-23:00 (8 horas)
+            horasPorDia = 8;
+          }
+        } else {
+          // Otros complejos: 08:00-23:00 (16 horas)
+          horasPorDia = 16;
+        }
+        
+        slotsDisponibles += complejo.canchas_count * horasPorDia;
+      }
+      
+      // Reservas reales en el período
+      const reservasReales = parseInt(complejo.cantidad);
+      
+      // Calcular ocupación real
+      const ocupacionReal = slotsDisponibles > 0 ? (reservasReales / slotsDisponibles * 100) : 0;
+      
+      return {
+        ...complejo,
+        ocupacion_real: ocupacionReal.toFixed(1),
+        slots_disponibles: slotsDisponibles,
+        slots_ocupados: reservasReales
+      };
+    }));
     
     // Reservas por tipo de cancha
     const reservasPorTipo = await db.query(`
@@ -542,7 +593,7 @@ app.post('/api/admin/reports', async (req, res) => {
       },
       charts: {
         reservasPorDia: reservasPorDia,
-        reservasPorComplejo: reservasPorComplejo,
+        reservasPorComplejo: reservasPorComplejoConOcupacion,
         reservasPorTipo: reservasPorTipo,
         horariosPopulares: horariosPopulares
       },

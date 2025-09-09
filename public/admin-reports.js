@@ -532,7 +532,14 @@ function updateTopComplexesTable() {
             <td>${complex.complejo}</td>
             <td>${complex.cantidad}</td>
             <td>${formatCurrency(complex.ingresos)}</td>
-            <td>${((complex.cantidad / data.reduce((sum, c) => sum + parseInt(c.cantidad), 0)) * 100).toFixed(1)}%</td>
+            <td>
+                <span class="badge ${complex.ocupacion_real > 70 ? 'bg-danger' : complex.ocupacion_real > 40 ? 'bg-warning' : 'bg-success'}">
+                    ${complex.ocupacion_real}%
+                </span>
+                <small class="text-muted d-block">
+                    ${complex.slots_ocupados}/${complex.slots_disponibles} slots
+                </small>
+            </td>
         </tr>
     `).join('');
 }
