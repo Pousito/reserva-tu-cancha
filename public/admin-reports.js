@@ -549,12 +549,15 @@ async function updateTopCourtsTable() {
 // Actualizar tabla de clientes
 async function updateCustomersTable() {
     try {
-        const filters = getFilters();
-        const { dateFrom, dateTo, complexId } = filters;
+        console.log('👥 Cargando Análisis de Clientes...');
         
-        // Verificar que las fechas no estén vacías
+        const dateFrom = document.getElementById('dateFrom')?.value;
+        const dateTo = document.getElementById('dateTo')?.value;
+        const complexId = document.getElementById('complexFilter')?.value;
+        
         if (!dateFrom || !dateTo) {
-            throw new Error(`Fechas inválidas: dateFrom=${dateFrom}, dateTo=${dateTo}`);
+            console.log('⚠️ Fechas no disponibles para Análisis de Clientes');
+            return;
         }
         
         // Construir URL relativa con parámetros
