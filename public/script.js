@@ -24,22 +24,38 @@ function leerParametrosURL() {
 
 // Función para pre-rellenar campos desde URL
 async function preRellenarDesdeURL() {
+    console.log('🔍 Iniciando preRellenarDesdeURL...');
     const { ciudad, complejo } = leerParametrosURL();
     
     if (ciudad) {
         console.log('🏙️ Pre-rellenando ciudad:', ciudad);
+        console.log('📊 Ciudades disponibles:', ciudades);
+        
         // Esperar a que las ciudades se carguen
         await new Promise(resolve => {
             const checkCiudades = () => {
+                console.log('🔍 Verificando ciudades...', ciudades.length);
                 if (ciudades.length > 0) {
                     const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+                    console.log('🔍 Ciudad encontrada:', ciudadEncontrada);
+                    
                     if (ciudadEncontrada) {
-                        document.getElementById('ciudad').value = ciudadEncontrada.id;
-                        document.getElementById('ciudad').dispatchEvent(new Event('change'));
-                        console.log('✅ Ciudad pre-rellenada:', ciudad);
+                        const ciudadSelect = document.getElementById('ciudad');
+                        console.log('🔍 Elemento ciudad:', ciudadSelect);
+                        
+                        if (ciudadSelect) {
+                            ciudadSelect.value = ciudadEncontrada.id;
+                            ciudadSelect.dispatchEvent(new Event('change'));
+                            console.log('✅ Ciudad pre-rellenada:', ciudad, 'ID:', ciudadEncontrada.id);
+                        } else {
+                            console.error('❌ Elemento ciudad no encontrado');
+                        }
+                    } else {
+                        console.error('❌ Ciudad no encontrada:', ciudad);
                     }
                     resolve();
                 } else {
+                    console.log('⏳ Esperando ciudades...');
                     setTimeout(checkCiudades, 100);
                 }
             };
@@ -49,24 +65,41 @@ async function preRellenarDesdeURL() {
     
     if (complejo) {
         console.log('🏢 Pre-rellenando complejo:', complejo);
+        console.log('📊 Complejos disponibles:', complejos);
+        
         // Esperar a que los complejos se carguen
         await new Promise(resolve => {
             const checkComplejos = () => {
+                console.log('🔍 Verificando complejos...', complejos.length);
                 if (complejos.length > 0) {
                     const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                    console.log('🔍 Complejo encontrado:', complejoEncontrado);
+                    
                     if (complejoEncontrado) {
-                        document.getElementById('complejo').value = complejoEncontrado.id;
-                        document.getElementById('complejo').dispatchEvent(new Event('change'));
-                        console.log('✅ Complejo pre-rellenado:', complejo);
+                        const complejoSelect = document.getElementById('complejo');
+                        console.log('🔍 Elemento complejo:', complejoSelect);
+                        
+                        if (complejoSelect) {
+                            complejoSelect.value = complejoEncontrado.id;
+                            complejoSelect.dispatchEvent(new Event('change'));
+                            console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
+                        } else {
+                            console.error('❌ Elemento complejo no encontrado');
+                        }
+                    } else {
+                        console.error('❌ Complejo no encontrado:', complejo);
                     }
                     resolve();
                 } else {
+                    console.log('⏳ Esperando complejos...');
                     setTimeout(checkComplejos, 100);
                 }
             };
             checkComplejos();
         });
     }
+    
+    console.log('✅ preRellenarDesdeURL completado');
 }
 
 // Inicialización
@@ -81,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
     configurarFechaMinima();
     
     // Pre-rellenar campos desde URL después de cargar datos
-    setTimeout(preRellenarDesdeURL, 1000);
+    setTimeout(preRellenarDesdeURL, 2000);
     
     // Verificar que la función scrollToReservar esté disponible
     if (typeof scrollToReservar === 'function') {
