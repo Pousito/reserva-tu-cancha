@@ -134,17 +134,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // Scroll automático y mostrar paso 3 si hay parámetros URL
-    setTimeout(() => {
-        console.log('🔍 Verificando parámetros URL para scroll...');
-        const urlParams = new URLSearchParams(window.location.search);
-        const ciudad = urlParams.get('ciudad');
-        const complejo = urlParams.get('complejo');
+    console.log('🔍 Verificando parámetros URL para scroll...');
+    const urlParams = new URLSearchParams(window.location.search);
+    const ciudad = urlParams.get('ciudad');
+    const complejo = urlParams.get('complejo');
+    
+    console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
+    
+    if (ciudad || complejo) {
+        console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
         
-        console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
-        
-        if (ciudad || complejo) {
-            console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
-            
+        setTimeout(() => {
             const reservarSection = document.getElementById('reservar');
             console.log('🔍 Sección de reservas encontrada:', reservarSection);
             
@@ -166,10 +166,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             } else {
                 console.error('❌ No se encontró la sección de reservas');
             }
-        } else {
-            console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
-        }
-    }, 1000); // Delay más largo para asegurar que todo esté cargado
+        }, 1000); // Delay para asegurar que todo esté cargado
+    } else {
+        console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
+    }
     
     // Verificar que la función scrollToReservar esté disponible
     if (typeof scrollToReservar === 'function') {
