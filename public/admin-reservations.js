@@ -130,7 +130,11 @@ function aplicarFiltros() {
     let reservasFiltradas = [...reservas];
     
     if (fecha) {
-        reservasFiltradas = reservasFiltradas.filter(r => r.fecha === fecha);
+        reservasFiltradas = reservasFiltradas.filter(r => {
+            const raw = r.fecha || '';
+            const soloFecha = raw.includes('T') ? raw.split('T')[0] : raw;
+            return soloFecha === fecha;
+        });
     }
     
     if (complejoId) {
