@@ -581,13 +581,18 @@ async function updateCustomersTable() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const customersData = await response.json();
+        const responseData = await response.json();
+        console.log('👥 Respuesta completa:', responseData);
+        
+        // Extraer datos de clientes de la respuesta
+        const customersData = responseData.data?.clientesFrecuentes || [];
         console.log('👥 Datos de clientes:', customersData);
         
         // Actualizar tabla
         const tbody = document.querySelector('#customersTable tbody');
         if (tbody) {
-            tbody.innerHTML = customersData.map(customer => `
+            if (customersData.length > 0) {
+                tbody.innerHTML = customersData.map(customer => `
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
@@ -596,7 +601,7 @@ async function updateCustomersTable() {
                             </div>
                             <div>
                                 <div class="fw-bold">${customer.nombre_cliente}</div>
-                                <small class="text-muted">${customer.identificador_cliente}</small>
+                                <small class="text-muted">${customer.email_cliente}</small>
                             </div>
                         </div>
                     </td>
@@ -607,11 +612,22 @@ async function updateCustomersTable() {
                         <span class="badge bg-success">$${customer.total_gastado.toLocaleString()}</span>
                     </td>
                     <td class="text-center">
-                        <small class="text-muted">${customer.ultima_reserva}</small>
+                        <small class="text-muted">${new Date(customer.ultima_reserva).toLocaleDateString()}</small>
                     </td>
                 </tr>
             `).join('');
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>No hay datos disponibles
+                        </td>
+                    </tr>
+                `;
+            }
         }
+        
+        console.log('✅ Análisis de Clientes actualizado');
         
     } catch (error) {
         console.error('❌ Error cargando análisis de clientes:', error);
