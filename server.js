@@ -1459,6 +1459,17 @@ app.get('/api/debug/add-rut-column', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT DE PRUEBA =====
+app.get('/api/debug/test-simple', async (req, res) => {
+  try {
+    console.log('🧪 Prueba simple...');
+    res.json({ success: true, message: 'Deploy funcionando correctamente', timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error('❌ Error en prueba simple:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====
 app.get('/api/admin/customers-analysis', async (req, res) => {
   try {
