@@ -389,11 +389,7 @@ async function updateCustomersTable() {
         
         console.log('🔗 URL:', url.toString());
         
-        const response = await fetch(url.toString(), {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            }
-        });
+        const response = await AdminUtils.authenticatedFetch(url.toString());
         
         console.log('📡 Respuesta customers:', response);
         
