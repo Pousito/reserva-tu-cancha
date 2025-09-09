@@ -102,30 +102,6 @@ async function preRellenarDesdeURL() {
     console.log('✅ preRellenarDesdeURL completado');
     console.log('🔍 Estado final - Ciudad seleccionada:', document.getElementById('ciudadSelect')?.value);
     console.log('🔍 Estado final - Complejo seleccionado:', document.getElementById('complejoSelect')?.value);
-    
-    // Scroll automático y mostrar paso 3 si hay parámetros URL
-    if (ciudad || complejo) {
-        console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
-        setTimeout(() => {
-            const reservarSection = document.getElementById('reservar');
-            if (reservarSection) {
-                // Hacer scroll a la sección de reservas
-                reservarSection.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                console.log('✅ Scroll completado a la sección de reservas');
-                
-                // Mostrar automáticamente el paso 3 (Tipo de Cancha)
-                setTimeout(() => {
-                    mostrarPaso(3);
-                    console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
-                }, 300); // Pequeño delay después del scroll
-            } else {
-                console.error('❌ No se encontró la sección de reservas');
-            }
-        }, 500); // Pequeño delay para asegurar que los campos estén completamente cargados
-    }
 }
 
 // Inicialización
@@ -152,6 +128,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         await preRellenarDesdeURL();
         console.log('✅ Pre-rellenado completado');
+        
+        // Scroll automático y mostrar paso 3 si hay parámetros URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const ciudad = urlParams.get('ciudad');
+        const complejo = urlParams.get('complejo');
+        
+        if (ciudad || complejo) {
+            console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
+            setTimeout(() => {
+                const reservarSection = document.getElementById('reservar');
+                if (reservarSection) {
+                    // Hacer scroll a la sección de reservas
+                    reservarSection.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    console.log('✅ Scroll completado a la sección de reservas');
+                    
+                    // Mostrar automáticamente el paso 3 (Tipo de Cancha)
+                    setTimeout(() => {
+                        mostrarPaso(3);
+                        console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
+                    }, 300); // Pequeño delay después del scroll
+                } else {
+                    console.error('❌ No se encontró la sección de reservas');
+                }
+            }, 500); // Pequeño delay para asegurar que los campos estén completamente cargados
+        }
         
     } catch (error) {
         console.error('❌ Error en inicialización:', error);
