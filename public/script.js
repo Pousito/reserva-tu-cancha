@@ -100,6 +100,8 @@ async function preRellenarDesdeURL() {
     }
     
     console.log('✅ preRellenarDesdeURL completado');
+    console.log('🔍 Estado final - Ciudad seleccionada:', document.getElementById('ciudadSelect')?.value);
+    console.log('🔍 Estado final - Complejo seleccionado:', document.getElementById('complejoSelect')?.value);
 }
 
 // Inicialización
@@ -116,6 +118,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Pre-rellenar campos desde URL después de cargar datos
     console.log('🔄 Iniciando pre-rellenado desde URL...');
+    console.log('🔍 URL actual:', window.location.href);
+    console.log('🔍 Parámetros URL:', window.location.search);
     await preRellenarDesdeURL();
     
     // Verificar que la función scrollToReservar esté disponible
