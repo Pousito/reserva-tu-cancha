@@ -133,18 +133,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error('❌ Error en inicialización:', error);
     }
     
-    // Scroll automático y mostrar paso 3 si hay parámetros URL (fuera del try-catch)
-    console.log('🔍 Verificando parámetros URL para scroll...');
-    const urlParams = new URLSearchParams(window.location.search);
-    const ciudad = urlParams.get('ciudad');
-    const complejo = urlParams.get('complejo');
-    
-    console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
-    
-    if (ciudad || complejo) {
-        console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
-        setTimeout(() => {
-            console.log('🔍 Buscando sección de reservas...');
+    // Scroll automático y mostrar paso 3 si hay parámetros URL
+    setTimeout(() => {
+        console.log('🔍 Verificando parámetros URL para scroll...');
+        const urlParams = new URLSearchParams(window.location.search);
+        const ciudad = urlParams.get('ciudad');
+        const complejo = urlParams.get('complejo');
+        
+        console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
+        
+        if (ciudad || complejo) {
+            console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
+            
             const reservarSection = document.getElementById('reservar');
             console.log('🔍 Sección de reservas encontrada:', reservarSection);
             
@@ -162,14 +162,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                     console.log('🔄 Mostrando paso 3...');
                     mostrarPaso(3);
                     console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
-                }, 300); // Pequeño delay después del scroll
+                }, 300);
             } else {
                 console.error('❌ No se encontró la sección de reservas');
             }
-        }, 500); // Pequeño delay para asegurar que los campos estén completamente cargados
-    } else {
-        console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
-    }
+        } else {
+            console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
+        }
+    }, 1000); // Delay más largo para asegurar que todo esté cargado
     
     // Verificar que la función scrollToReservar esté disponible
     if (typeof scrollToReservar === 'function') {
