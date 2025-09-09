@@ -19,16 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCities();
     loadComplexes();
     setupEventListeners();
-}
-
-// Configurar interfaz según el rol del usuario
-function configurarInterfazPorRol() {
-    if (currentUser.rol === 'complex_owner') {
-        // Los dueños de complejo no pueden gestionar otros complejos
-        document.querySelector('.btn-primary').style.display = 'none';
-        document.querySelector('h4').innerHTML = '<i class="fas fa-building me-2"></i>Mi Complejo';
-    }
-}
+});
 
 // Configurar event listeners
 function setupEventListeners() {
@@ -57,7 +48,6 @@ async function loadCities() {
 function populateCitySelect() {
     const select = document.getElementById('complexCity');
     select.innerHTML = '<option value="">Seleccionar ciudad...</option>';
-    
     cities.forEach(city => {
         const option = document.createElement('option');
         option.value = city.id;
@@ -108,9 +98,9 @@ function displayComplexes(complexesToShow) {
     
     if (complexesToShow.length === 0) {
         container.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="fas fa-building fa-3x mb-3"></i>
-                <p>No se encontraron complejos</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No se encontraron complejos
             </div>
         `;
         return;
@@ -118,46 +108,38 @@ function displayComplexes(complexesToShow) {
     
     container.innerHTML = complexesToShow.map(complex => `
         <div class="complex-card">
-            <div class="complex-header">
-                <div class="complex-info">
-                    <div class="complex-title">
-                        <i class="fas fa-building"></i>
+            <div class="row">
+                <div class="col-md-8">
+                    <h5 class="mb-2">
+                        <i class="fas fa-building me-2"></i>
                         ${complex.nombre}
-                    </div>
-                    <div class="complex-location">
-                        <i class="fas fa-map-marker-alt"></i>
+                    </h5>
+                    <p class="text-muted mb-2">
+                        <i class="fas fa-map-marker-alt me-2"></i>
                         ${getCityName(complex.ciudad_id)}
+                    </p>
+                    <p class="mb-2">${complex.direccion}</p>
+                    <p class="mb-0">
+                        <i class="fas fa-phone me-2"></i>
+                        ${complex.telefono}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group-vertical" role="group">
+                        <button class="btn btn-outline-primary btn-sm mb-2" onclick="viewComplexDetails(${complex.id})">
+                            <i class="fas fa-eye me-1"></i>
+                            Ver Detalles
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm mb-2" onclick="editComplex(${complex.id})">
+                            <i class="fas fa-edit me-1"></i>
+                            Editar
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteComplex(${complex.id})">
+                            <i class="fas fa-trash me-1"></i>
+                            Eliminar
+                        </button>
                     </div>
                 </div>
-                <div class="complex-actions">
-                    ${currentUser.rol === 'super_admin' ? `
-                        <button class="btn-action btn-edit" onclick="editComplex(${complex.id})" title="Editar complejo">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-action btn-delete" onclick="deleteComplex(${complex.id})" title="Eliminar complejo">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    ` : ''}
-                    <button class="btn-action btn-view" onclick="viewComplexDetails(${complex.id})" title="Ver detalles">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="complex-details">
-                <div class="detail-item email">
-                    <i class="fas fa-envelope"></i>
-                    <span>${complex.email || 'No especificado'}</span>
-                </div>
-                <div class="detail-item phone">
-                    <i class="fas fa-phone"></i>
-                    <span>${complex.telefono || 'No especificado'}</span>
-                </div>
-                ${complex.direccion ? `
-                    <div class="detail-item address">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${complex.direccion}</span>
-                    </div>
-                ` : ''}
             </div>
         </div>
     `).join('');
@@ -184,16 +166,16 @@ function openComplexModal(complexId = null) {
     const modalTitle = document.getElementById('complexModalTitle');
     const form = document.getElementById('complexForm');
     
-    form.reset();
-    
     if (complexId) {
         modalTitle.textContent = 'Editar Complejo';
         loadComplexData(complexId);
     } else {
-        modalTitle.textContent = 'Agregar Complejo';
+        modalTitle.textContent = 'Agregar Nuevo Complejo';
+        form.reset();
     }
     
-    new bootstrap.Modal(modal).show();
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
 }
 
 // Cargar datos del complejo para editar
@@ -201,12 +183,10 @@ async function loadComplexData(complexId) {
     try {
         const complex = complexes.find(c => c.id === complexId);
         if (complex) {
-            document.getElementById('complexId').value = complex.id;
             document.getElementById('complexName').value = complex.nombre;
             document.getElementById('complexCity').value = complex.ciudad_id;
-            document.getElementById('complexEmail').value = complex.email || '';
-            document.getElementById('complexPhone').value = complex.telefono || '';
-            document.getElementById('complexAddress').value = complex.direccion || '';
+            document.getElementById('complexAddress').value = complex.direccion;
+            document.getElementById('complexPhone').value = complex.telefono;
             document.getElementById('complexDescription').value = complex.descripcion || '';
         }
     } catch (error) {
@@ -224,29 +204,18 @@ async function saveComplex() {
     }
     
     const complexData = {
-        nombre: document.getElementById('complexName').value.trim(),
+        nombre: document.getElementById('complexName').value,
         ciudad_id: parseInt(document.getElementById('complexCity').value),
-        email: document.getElementById('complexEmail').value.trim(),
-        telefono: document.getElementById('complexPhone').value.trim(),
-        direccion: document.getElementById('complexAddress').value.trim(),
-        descripcion: document.getElementById('complexDescription').value.trim()
+        direccion: document.getElementById('complexAddress').value,
+        telefono: document.getElementById('complexPhone').value,
+        descripcion: document.getElementById('complexDescription').value
     };
     
-    // Validaciones adicionales
-    if (!complexData.nombre) {
-        showNotification('El nombre del complejo es requerido', 'error');
-        return;
-    }
-    
-    if (!complexData.ciudad_id) {
-        showNotification('Debe seleccionar una ciudad', 'error');
-        return;
-    }
-    
-    const complexId = document.getElementById('complexId').value;
-    const isEdit = complexId !== '';
+    const complexId = document.getElementById('complexModal').dataset.complexId;
+    const isEdit = !!complexId;
     
     try {
+        // Verificar token
         const token = localStorage.getItem('adminToken');
         if (!token) {
             showNotification('Sesión expirada. Por favor, inicie sesión nuevamente.', 'error');
@@ -268,30 +237,26 @@ async function saveComplex() {
             body: JSON.stringify(complexData)
         });
         
-        console.log('Respuesta recibida:', response.status, response.statusText);
-        
         if (response.ok) {
             const result = await response.json();
-            console.log('Resultado exitoso:', result);
+            showNotification(
+                isEdit ? 'Complejo actualizado exitosamente' : 'Complejo creado exitosamente',
+                'success'
+            );
             
+            // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('complexModal'));
             modal.hide();
+            
+            // Recargar lista
             loadComplexes();
-            showNotification(isEdit ? 'Complejo actualizado exitosamente' : 'Complejo creado exitosamente', 'success');
         } else {
-            let errorMessage = 'Error desconocido';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`;
-            } catch (e) {
-                errorMessage = `Error ${response.status}: ${response.statusText}`;
-            }
-            console.error('Error en respuesta:', errorMessage);
-            showNotification(`Error: ${errorMessage}`, 'error');
+            const error = await response.json();
+            showNotification(error.message || 'Error al guardar el complejo', 'error');
         }
     } catch (error) {
-        console.error('Error de conexión:', error);
-        showNotification(`Error de conexión: ${error.message}`, 'error');
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'error');
     }
 }
 
@@ -316,11 +281,11 @@ async function deleteComplex(complexId) {
         });
         
         if (response.ok) {
-            loadComplexes();
             showNotification('Complejo eliminado exitosamente', 'success');
+            loadComplexes();
         } else {
             const error = await response.json();
-            showNotification(`Error: ${error.error}`, 'error');
+            showNotification(error.message || 'Error al eliminar el complejo', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -332,20 +297,8 @@ async function deleteComplex(complexId) {
 function viewComplexDetails(complexId) {
     const complex = complexes.find(c => c.id === complexId);
     if (complex) {
-        // Actualizar el título del modal
-        document.getElementById('complexDetailsModalLabel').textContent = complex.nombre;
-        
-        // Llenar los datos en el modal
-        document.getElementById('detailName').textContent = complex.nombre;
-        document.getElementById('detailCity').textContent = getCityName(complex.ciudad_id);
-        document.getElementById('detailEmail').textContent = complex.email || '';
-        document.getElementById('detailPhone').textContent = complex.telefono || '';
-        document.getElementById('detailAddress').textContent = complex.direccion || '';
-        document.getElementById('detailDescription').textContent = complex.descripcion || '';
-        
-        // Mostrar el modal
-        const modal = new bootstrap.Modal(document.getElementById('complexDetailsModal'));
-        modal.show();
+        const cityName = getCityName(complex.ciudad_id);
+        alert(`Detalles del Complejo:\n\nNombre: ${complex.nombre}\nCiudad: ${cityName}\nDirección: ${complex.direccion}\nTeléfono: ${complex.telefono}\nDescripción: ${complex.descripcion || 'Sin descripción'}`);
     }
 }
 
@@ -358,12 +311,14 @@ function showNotification(message, type) {
     notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
     notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
     notification.innerHTML = `
-        <i class="fas ${icon} me-2"></i>${message}
+        <i class="fas ${icon} me-2"></i>
+        ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
     document.body.appendChild(notification);
     
+    // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);

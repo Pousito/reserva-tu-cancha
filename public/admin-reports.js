@@ -1,8 +1,7 @@
 // Variables globales
 let currentUser = null;
+let reportsData = null;
 let complexes = [];
-let reportsData = {};
-let charts = {};
 
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', function() {
@@ -21,41 +20,31 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     setDefaultDates();
     generateReports();
-}
-
-// Configurar interfaz según el rol del usuario
-function configurarInterfazPorRol() {
-    if (currentUser.rol === 'complex_owner') {
-        // Los dueños de complejo solo ven reportes de su complejo
-        document.querySelector('h5').textContent = 'Mis Reportes';
-    }
-}
+});
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Cambio de fechas personalizadas
+    // Filtros de fecha
     document.getElementById('dateFrom').addEventListener('change', function() {
-        generateReports();
-        // Cerrar el calendario después de seleccionar fecha
         this.blur();
-    });
-    document.getElementById('dateTo').addEventListener('change', function() {
         generateReports();
-        // Cerrar el calendario después de seleccionar fecha
-        this.blur();
     });
-}
-
-// Establecer fechas por defecto
-function setDefaultDates() {
-    const today = new Date();
-    // Usar septiembre 2025 como fecha de inicio
-    const firstDay = new Date(2025, 8, 1); // 1 de septiembre de 2025 (mes 8 = septiembre)
     
-    document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
-    document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+    document.getElementById('dateTo').addEventListener('change', function() {
+        this.blur();
+        generateReports();
+    });
+    
+    // Filtro de complejo
+    document.getElementById('complexFilter').addEventListener('change', function() {
+        generateReports();
+    });
+    
+    // Filtro de deporte
+    document.getElementById('sportFilter').addEventListener('change', function() {
+        generateReports();
+    });
 }
-
 
 // Cargar complejos
 async function loadComplexes() {
@@ -76,23 +65,33 @@ async function loadComplexes() {
 
 // Poblar filtro de complejos
 function populateComplexFilter() {
-    const filterSelect = document.getElementById('complexFilter');
-    
-    // Limpiar select
-    filterSelect.innerHTML = '<option value="">Todos los complejos</option>';
-    
-    // Filtrar complejos según el rol
-    let complexesToShow = complexes;
-    if (currentUser.rol === 'complex_owner') {
-        complexesToShow = complexes.filter(c => c.id === currentUser.complejo_id);
-    }
-    
-    complexesToShow.forEach(complex => {
+    const select = document.getElementById('complexFilter');
+    select.innerHTML = '<option value="">Todos los complejos</option>';
+    complexes.forEach(complex => {
         const option = document.createElement('option');
         option.value = complex.id;
         option.textContent = complex.nombre;
-        filterSelect.appendChild(option);
+        select.appendChild(option);
     });
+}
+
+// Establecer fechas por defecto
+function setDefaultDates() {
+    const today = new Date();
+    const firstDay = new Date(2025, 8, 1); // 1 de septiembre de 2025
+    
+    document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+}
+
+// Obtener filtros
+function getFilters() {
+    return {
+        dateFrom: document.getElementById('dateFrom').value,
+        dateTo: document.getElementById('dateTo').value,
+        complexId: document.getElementById('complexFilter').value || null,
+        sport: document.getElementById('sportFilter').value || null
+    };
 }
 
 // Generar reportes
@@ -126,335 +125,262 @@ async function generateReports() {
             await updateTables();
         } else {
             console.error('Error generando reportes:', response.statusText);
-            console.error('Response status:', response.status);
-            showErrorState();
+            showErrorState('Error generando reportes: ' + response.statusText);
         }
     } catch (error) {
         console.error('Error:', error);
-        showErrorState();
+        showErrorState('Error de conexión');
     }
 }
 
-// Obtener filtros
-function getFilters() {
-    let dateFrom = document.getElementById('dateFrom').value;
-    let dateTo = document.getElementById('dateTo').value;
-    
-    return {
-        dateFrom,
-        dateTo,
-        complexId: document.getElementById('complexFilter').value || null
-    };
-}
-
-
 // Mostrar estado de carga
 function showLoadingState() {
-    // Métricas
-    document.getElementById('totalRevenue').textContent = 'Cargando...';
-    document.getElementById('totalReservations').textContent = 'Cargando...';
-    document.getElementById('occupancyRate').textContent = 'Cargando...';
-    document.getElementById('uniqueCustomers').textContent = 'Cargando...';
-    
-    // Tablas
-    document.getElementById('topComplexesTable').innerHTML = `
-        <tr>
-            <td colspan="4" class="text-center text-muted">
-                <i class="fas fa-spinner fa-spin"></i> Cargando datos...
-            </td>
-        </tr>
+    document.getElementById('metricsContainer').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando métricas...</p>
+        </div>
     `;
     
-    document.getElementById('topCourtsTable').innerHTML = `
-        <tr>
-            <td colspan="4" class="text-center text-muted">
-                <i class="fas fa-spinner fa-spin"></i> Cargando datos...
-            </td>
-        </tr>
+    document.getElementById('chartsContainer').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando gráficos...</p>
+        </div>
     `;
     
-    document.getElementById('customersTable').innerHTML = `
-        <tr>
-            <td colspan="6" class="text-center text-muted">
-                <i class="fas fa-spinner fa-spin"></i> Cargando datos...
-            </td>
-        </tr>
+    document.getElementById('tablesContainer').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando tablas...</p>
+        </div>
     `;
 }
 
 // Mostrar estado de error
-function showErrorState() {
-    // Métricas
-    document.getElementById('totalRevenue').textContent = 'Error';
-    document.getElementById('totalReservations').textContent = 'Error';
-    document.getElementById('occupancyRate').textContent = 'Error';
-    document.getElementById('uniqueCustomers').textContent = 'Error';
-    
-    // Tablas
-    document.getElementById('topComplexesTable').innerHTML = `
-        <tr>
-            <td colspan="4" class="text-center text-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>Error cargando datos
-            </td>
-        </tr>
+function showErrorState(message) {
+    document.getElementById('metricsContainer').innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+        </div>
     `;
     
-    document.getElementById('topCourtsTable').innerHTML = `
-        <tr>
-            <td colspan="4" class="text-center text-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>Error cargando datos
-            </td>
-        </tr>
+    document.getElementById('chartsContainer').innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+        </div>
     `;
     
-    document.getElementById('customersTable').innerHTML = `
-        <tr>
-            <td colspan="6" class="text-center text-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>Error cargando datos
-            </td>
-        </tr>
+    document.getElementById('tablesContainer').innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+        </div>
     `;
 }
 
 // Actualizar métricas
 function updateMetrics() {
-    const data = reportsData.metrics || {};
-    console.log('📊 Actualizando métricas con datos:', data);
+    const metrics = reportsData.metrics;
     
-    // Ingresos
-    const ingresosElement = document.getElementById('totalRevenue');
-    if (ingresosElement) {
-        ingresosElement.textContent = formatCurrency(data.ingresosTotales || 0);
-        console.log('💰 Ingresos actualizados:', data.ingresosTotales);
-    }
-    updateMetricChange('revenueChange', data.revenueChange || 0);
-    
-    // Reservas
-    const reservasElement = document.getElementById('totalReservations');
-    if (reservasElement) {
-        reservasElement.textContent = (data.totalReservas || 0).toLocaleString();
-        console.log('📋 Reservas actualizadas:', data.totalReservas);
-    }
-    updateMetricChange('reservationsChange', data.reservationsChange || 0);
-    
-    // Ocupación promedio (calculada desde los complejos)
-    const ocupacionElement = document.getElementById('occupancyRate');
-    if (ocupacionElement) {
-        // Calcular ocupación promedio de todos los complejos
-        const complejos = reportsData.charts?.reservasPorComplejo || [];
-        let ocupacionPromedio = 0;
-        if (complejos.length > 0) {
-            const sumaOcupacion = complejos.reduce((sum, complejo) => sum + parseFloat(complejo.ocupacion_real || 0), 0);
-            ocupacionPromedio = (sumaOcupacion / complejos.length).toFixed(1);
-        }
-        ocupacionElement.textContent = `${ocupacionPromedio}%`;
-        console.log('📈 Ocupación promedio actualizada:', ocupacionPromedio);
-    }
-    updateMetricChange('occupancyChange', data.occupancyChange || 0);
-    
-    // Reservas confirmadas
-    const clientesElement = document.getElementById('uniqueCustomers');
-    if (clientesElement) {
-        clientesElement.textContent = (data.reservasConfirmadas || 0).toLocaleString();
-        console.log('👥 Clientes únicos actualizados:', data.reservasConfirmadas);
-    }
-    updateMetricChange('customersChange', data.customersChange || 0);
-}
-
-// Actualizar cambio de métrica
-function updateMetricChange(elementId, change) {
-    const element = document.getElementById(elementId);
-    const isPositive = change >= 0;
-    
-    element.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
-    element.innerHTML = `
-        <i class="fas fa-arrow-${isPositive ? 'up' : 'down'} me-1"></i>
-        ${isPositive ? '+' : ''}${change.toFixed(1)}%
+    document.getElementById('metricsContainer').innerHTML = `
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">$${metrics.ingresosTotales.toLocaleString()}</h4>
+                                <p class="mb-0">Ingresos Totales</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-dollar-sign fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">${metrics.reservasTotales}</h4>
+                                <p class="mb-0">Reservas Totales</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-check fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">${metrics.ocupacionPromedio}%</h4>
+                                <p class="mb-0">Ocupación Promedio</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-chart-pie fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">${metrics.clientesUnicos}</h4>
+                                <p class="mb-0">Clientes Únicos</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 }
 
 // Actualizar gráficos
 function updateCharts() {
-    updateRevenueChart();
-    updateTypeChart();
-    updateOccupancyChart();
-    updateHoursChart();
+    const charts = reportsData.charts;
+    
+    // Gráfico de ingresos por día
+    updateIncomeChart(charts.ingresosPorDia);
+    
+    // Gráfico de reservas por tipo
+    updateReservationsChart(charts.reservasPorTipo);
+    
+    // Gráfico de ocupación por complejo
+    updateOccupancyChart(charts.ocupacionPorComplejo);
+    
+    // Gráfico de horarios populares
+    updateHoursChart(charts.horariosPopulares);
 }
 
-// Gráfico de ingresos
-function updateRevenueChart() {
-    const ctx = document.getElementById('revenueChart').getContext('2d');
-    const data = reportsData.charts?.reservasPorDia || [];
-    
-    if (charts.revenue) {
-        charts.revenue.destroy();
-    }
-    
-    // Procesar datos del backend
-    const labels = data.map(item => formatDate(item.fecha));
-    const ingresos = data.map(item => parseInt(item.ingresos));
-    
-    charts.revenue = new Chart(ctx, {
+// Actualizar gráfico de ingresos
+function updateIncomeChart(data) {
+    const ctx = document.getElementById('incomeChart').getContext('2d');
+    new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: data.map(item => item.fecha),
             datasets: [{
                 label: 'Ingresos',
-                data: ingresos,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
+                data: data.map(item => item.ingresos),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
-                    }
+                title: {
+                    display: true,
+                    text: 'Ingresos por Día'
                 }
             }
         }
     });
 }
 
-// Gráfico de tipos
-function updateTypeChart() {
-    const ctx = document.getElementById('typeChart').getContext('2d');
-    const data = reportsData.charts?.reservasPorTipo || [];
-    
-    if (charts.type) {
-        charts.type.destroy();
-    }
-    
-    // Procesar datos del backend
-    const labels = data.map(item => item.tipo.charAt(0).toUpperCase() + item.tipo.slice(1));
-    const cantidades = data.map(item => parseInt(item.cantidad));
-    
-    charts.type = new Chart(ctx, {
+// Actualizar gráfico de reservas
+function updateReservationsChart(data) {
+    const ctx = document.getElementById('reservationsChart').getContext('2d');
+    new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: labels,
+            labels: data.map(item => item.tipo),
             datasets: [{
-                data: cantidades,
+                data: data.map(item => item.cantidad),
                 backgroundColor: [
-                    '#007bff',
-                    '#28a745',
-                    '#ffc107',
-                    '#dc3545',
-                    '#6f42c1',
-                    '#fd7e14'
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
                 ]
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom'
+                title: {
+                    display: true,
+                    text: 'Reservas por Tipo'
                 }
             }
         }
     });
 }
 
-// Gráfico de ocupación
-function updateOccupancyChart() {
+// Actualizar gráfico de ocupación
+function updateOccupancyChart(data) {
     const ctx = document.getElementById('occupancyChart').getContext('2d');
-    const data = reportsData.charts?.reservasPorComplejo || [];
-    
-    if (charts.occupancy) {
-        charts.occupancy.destroy();
-    }
-    
-    // Procesar datos del backend
-    const labels = data.map(item => item.complejo);
-    const cantidades = data.map(item => parseInt(item.cantidad));
-    
-    charts.occupancy = new Chart(ctx, {
+    new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: data.map(item => item.complejo),
             datasets: [{
-                label: 'Reservas',
-                data: cantidades,
-                backgroundColor: '#667eea',
-                borderColor: '#764ba2',
-                borderWidth: 1
+                label: 'Ocupación (%)',
+                data: data.map(item => item.ocupacion),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)'
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
+                title: {
+                    display: true,
+                    text: 'Ocupación por Complejo'
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
+                    max: 100
                 }
             }
         }
     });
 }
 
-// Gráfico de horarios
-function updateHoursChart() {
+// Actualizar gráfico de horarios
+function updateHoursChart(data) {
     const ctx = document.getElementById('hoursChart').getContext('2d');
-    const data = reportsData.charts?.horariosPopulares || [];
-    
-    if (charts.hours) {
-        charts.hours.destroy();
-    }
-    
-    // Procesar datos del backend
-    const labels = data.map(item => item.hora);
-    const cantidades = data.map(item => parseInt(item.cantidad));
-    
-    charts.hours = new Chart(ctx, {
+    new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: data.map(item => item.hora),
             datasets: [{
                 label: 'Reservas',
-                data: cantidades,
-                backgroundColor: '#ffc107',
-                borderColor: '#fd7e14',
-                borderWidth: 1
+                data: data.map(item => item.cantidad),
+                backgroundColor: 'rgba(255, 99, 132, 0.8)'
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
+                title: {
+                    display: true,
+                    text: 'Horarios Más Populares'
                 }
             }
         }
@@ -463,79 +389,14 @@ function updateHoursChart() {
 
 // Actualizar tablas
 async function updateTables() {
-    updateTopComplexesTable();
-    updateTopCourtsTable();
     await updateCustomersTable();
 }
 
-// Tabla de top complejos
-function updateTopComplexesTable() {
-    const data = reportsData.charts?.reservasPorComplejo || [];
-    const tbody = document.getElementById('topComplexesTable');
-    
-    if (data.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center text-muted">No hay datos disponibles</td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tbody.innerHTML = data.map(complex => `
-        <tr>
-            <td>${complex.complejo}</td>
-            <td>${complex.cantidad}</td>
-            <td>${formatCurrency(complex.ingresos)}</td>
-            <td>
-                <span class="badge ${complex.ocupacion_real > 70 ? 'bg-danger' : complex.ocupacion_real > 40 ? 'bg-warning' : 'bg-success'}">
-                    ${complex.ocupacion_real}%
-                </span>
-                <small class="text-muted d-block">
-                    ${complex.slots_ocupados}/${complex.slots_disponibles} slots
-                </small>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// Tabla de top canchas
-function updateTopCourtsTable() {
-    const data = reportsData.tables?.topCanchas || [];
-    const tbody = document.getElementById('topCourtsTable');
-    
-    if (data.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center text-muted">No hay datos disponibles</td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tbody.innerHTML = data.map(court => `
-        <tr>
-            <td>${court.cancha}</td>
-            <td>${court.complejo}</td>
-            <td>${court.reservas}</td>
-            <td>${formatCurrency(court.ingresos)}</td>
-        </tr>
-    `).join('');
-}
-
-// Tabla de clientes
+// Actualizar tabla de clientes
 async function updateCustomersTable() {
-    const tbody = document.getElementById('customersTable');
-    
     try {
-        console.log('👥 Iniciando análisis de clientes...');
-        
-        // Obtener datos de análisis de clientes
-        const dateFrom = document.getElementById('dateFrom').value;
-        const dateTo = document.getElementById('dateTo').value;
-        const complexId = document.getElementById('complexFilter').value;
-        
-        console.log('📅 Fechas:', { dateFrom, dateTo, complexId });
+        const filters = getFilters();
+        const { dateFrom, dateTo, complexId } = filters;
         
         // Verificar que las fechas no estén vacías
         if (!dateFrom || !dateTo) {
@@ -549,317 +410,104 @@ async function updateCustomersTable() {
         
         console.log('🔗 URL:', url.toString());
         
-        const response = await fetch(url);
-        console.log('📡 Response status:', response.status);
+        const response = await fetch(url.toString(), {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            }
+        });
         
-        const result = await response.json();
-        console.log('📊 Result:', result);
+        console.log('📡 Respuesta customers:', response);
         
-        if (!result.success) {
-            throw new Error(result.error || 'Error al cargar análisis de clientes');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const data = result.data;
-        console.log('📈 Data recibida:', data);
+        const customersData = await response.json();
+        console.log('👥 Datos de clientes:', customersData);
         
-        // Mostrar estadísticas generales
-        updateCustomersStats(data.estadisticas);
-        
-        // Mostrar tabla de clientes más frecuentes
-        if (data.clientesFrecuentes && data.clientesFrecuentes.length > 0) {
-            tbody.innerHTML = data.clientesFrecuentes.map((cliente, index) => `
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="avatar-lg bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 20px; font-weight: bold;">
-                                ${cliente.nombre_cliente.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <div class="fw-bold">${cliente.nombre_cliente}</div>
-                                <small class="text-muted">${cliente.email_cliente}</small>
-                                ${cliente.identificador_cliente && cliente.identificador_cliente !== cliente.email_cliente ? `<br><small class="text-info">RUT: ${cliente.identificador_cliente}</small>` : ''}
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge bg-primary fs-6">${cliente.total_reservas}</span>
-                    </td>
-                    <td>${formatCurrency(cliente.promedio_por_reserva)}</td>
-                    <td>
-                        <small class="text-muted">
-                            ${formatDate(cliente.ultima_reserva)}
-                        </small>
-                    </td>
-                    <td>
-                        <span class="badge ${cliente.total_reservas > 1 ? 'bg-success' : 'bg-warning'}">
-                            ${cliente.total_reservas > 1 ? 'Recurrente' : 'Nuevo'}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
-        } else {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">
-                            <i class="fas fa-users me-2"></i>
-                            No hay datos de clientes para el período seleccionado
-                        </td>
-                    </tr>
-                `;
-        }
-        
-        // Actualizar gráficos de clientes si existen
-        updateCustomersCharts(data);
-        
-    } catch (error) {
-        console.error('Error cargando análisis de clientes:', error);
-        tbody.innerHTML = `
+        // Actualizar tabla
+        const tbody = document.querySelector('#customersTable tbody');
+        tbody.innerHTML = customersData.map(customer => `
             <tr>
-                <td colspan="5" class="text-center text-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Error cargando análisis de clientes
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar me-3">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">${customer.nombre_cliente}</div>
+                            <small class="text-muted">${customer.identificador_cliente}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-primary">${customer.total_reservas}</span>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-success">$${customer.total_gastado.toLocaleString()}</span>
+                </td>
+                <td class="text-center">
+                    <small class="text-muted">${customer.ultima_reserva}</small>
                 </td>
             </tr>
+        `).join('');
+        
+        document.getElementById('tablesContainer').innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Análisis de Clientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="customersTable">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th class="text-center">Cantidad de Reservas</th>
+                                    <th class="text-center">Total Gastado</th>
+                                    <th class="text-center">Última Reserva</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tbody.innerHTML}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('❌ Error cargando análisis de clientes:', error);
+        document.getElementById('tablesContainer').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error cargando análisis de clientes: ${error.message}
+            </div>
         `;
     }
 }
 
-// Actualizar estadísticas de clientes
-function updateCustomersStats(stats) {
-    try {
-        console.log('📊 Actualizando estadísticas de clientes:', stats);
-        
-        // Actualizar métricas de clientes únicos
-        const clientesUnicosElement = document.getElementById('uniqueCustomers');
-        if (clientesUnicosElement) {
-            clientesUnicosElement.textContent = (stats.clientes_unicos || 0).toLocaleString();
-            console.log('✅ Clientes únicos actualizados:', stats.clientes_unicos);
-        } else {
-            console.log('⚠️ Elemento uniqueCustomers no encontrado');
-        }
-        
-        // Mostrar estadísticas adicionales si hay elementos para ellas
-        const clientesActivosElement = document.getElementById('activeCustomers');
-        if (clientesActivosElement) {
-            clientesActivosElement.textContent = (stats.clientes_activos_30_dias || 0).toLocaleString();
-            console.log('✅ Clientes activos actualizados:', stats.clientes_activos_30_dias);
-        } else {
-            console.log('⚠️ Elemento activeCustomers no encontrado (esto es normal)');
-        }
-        
-        const clientesNuevosElement = document.getElementById('newCustomers');
-        if (clientesNuevosElement) {
-            const clientesNuevos = (stats.clientes_unicos || 0) - (stats.clientes_activos_30_dias || 0);
-            clientesNuevosElement.textContent = Math.max(0, clientesNuevos).toLocaleString();
-            console.log('✅ Clientes nuevos actualizados:', clientesNuevos);
-        } else {
-            console.log('⚠️ Elemento newCustomers no encontrado (esto es normal)');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error actualizando estadísticas de clientes:', error);
-    }
-}
-
-// Actualizar gráficos de clientes
-function updateCustomersCharts(data) {
-    try {
-        console.log('📊 Actualizando gráficos de clientes:', data);
-        
-        // Crear gráfico de distribución de clientes por complejo si hay datos
-        if (data.distribucionComplejos && data.distribucionComplejos.length > 0) {
-            console.log('📈 Creando gráfico de distribución por complejo:', data.distribucionComplejos);
-            createCustomersByComplexChart(data.distribucionComplejos);
-        } else {
-            console.log('⚠️ No hay datos de distribución por complejo');
-        }
-        
-        // Crear gráfico de clientes nuevos vs recurrentes
-        if (data.clientesNuevos && data.clientesRecurrentes) {
-            console.log('📈 Creando gráfico de nuevos vs recurrentes:', {
-                nuevos: data.clientesNuevos.length,
-                recurrentes: data.clientesRecurrentes.length
-            });
-            createNewVsRecurringCustomersChart(data.clientesNuevos, data.clientesRecurrentes);
-        } else {
-            console.log('⚠️ No hay datos de clientes nuevos/recurrentes');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error actualizando gráficos de clientes:', error);
-    }
-}
-
-// Crear gráfico de clientes por complejo
-function createCustomersByComplexChart(data) {
-    try {
-        console.log('📊 Creando gráfico de clientes por complejo:', data);
-        
-        const ctx = document.getElementById('customersByComplexChart');
-        if (!ctx) {
-            console.log('⚠️ Elemento customersByComplexChart no encontrado');
-            return;
-        }
-        
-        // Destruir gráfico existente si existe
-        if (charts.customersByComplex) {
-            charts.customersByComplex.destroy();
-        }
-    
-    charts.customersByComplex = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: data.map(item => item.complejo),
-            datasets: [{
-                data: data.map(item => item.clientes_unicos),
-                backgroundColor: [
-                    '#667eea',
-                    '#764ba2',
-                    '#f093fb',
-                    '#f5576c',
-                    '#4facfe',
-                    '#00f2fe'
-                ],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Distribución de Clientes por Complejo',
-                    font: {
-                        size: 14,
-                        weight: 'bold'
-                    }
-                }
-            }
-        }
-    });
-    
-    console.log('✅ Gráfico de clientes por complejo creado exitosamente');
-    
-    } catch (error) {
-        console.error('❌ Error creando gráfico de clientes por complejo:', error);
-    }
-}
-
-// Crear gráfico de clientes nuevos vs recurrentes
-function createNewVsRecurringCustomersChart(clientesNuevos, clientesRecurrentes) {
-    try {
-        console.log('📊 Creando gráfico de nuevos vs recurrentes:', {
-            nuevos: clientesNuevos.length,
-            recurrentes: clientesRecurrentes.length
-        });
-        
-        const ctx = document.getElementById('newVsRecurringChart');
-        if (!ctx) {
-            console.log('⚠️ Elemento newVsRecurringChart no encontrado');
-            return;
-        }
-        
-        // Destruir gráfico existente si existe
-        if (charts.newVsRecurring) {
-            charts.newVsRecurring.destroy();
-        }
-    
-    charts.newVsRecurring = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Clientes Nuevos', 'Clientes Recurrentes'],
-            datasets: [{
-                label: 'Número de Clientes',
-                data: [clientesNuevos.length, clientesRecurrentes.length],
-                backgroundColor: ['#f5576c', '#4facfe'],
-                borderColor: ['#f5576c', '#4facfe'],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'Clientes Nuevos vs Recurrentes',
-                    font: {
-                        size: 14,
-                        weight: 'bold'
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-    
-    console.log('✅ Gráfico de nuevos vs recurrentes creado exitosamente');
-    
-    } catch (error) {
-        console.error('❌ Error creando gráfico de nuevos vs recurrentes:', error);
-    }
-}
-
-// Funciones de utilidad
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-        minimumFractionDigits: 0
-    }).format(amount);
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('es-CL');
-}
-
-// Exportar a PDF
-function exportToPDF(type) {
-    showNotification('Función de exportación a PDF en desarrollo', 'info');
-}
-
-// Exportar a Excel
-function exportToExcel(type) {
-    showNotification('Función de exportación a Excel en desarrollo', 'info');
-}
-
 // Mostrar notificación
 function showNotification(message, type) {
-    const alertClass = type === 'success' ? 'alert-success' : 
-                      type === 'error' ? 'alert-danger' : 'alert-info';
-    const icon = type === 'success' ? 'fa-check-circle' : 
-                type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
     
     const notification = document.createElement('div');
     notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
     notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
     notification.innerHTML = `
-        <i class="fas ${icon} me-2"></i>${message}
+        <i class="fas ${icon} me-2"></i>
+        ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
     document.body.appendChild(notification);
     
+    // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
@@ -873,6 +521,3 @@ function logout() {
     localStorage.removeItem('adminUser');
     window.location.href = 'admin-login.html';
 }
-
-
-
