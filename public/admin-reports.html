@@ -188,6 +188,51 @@
         .report-table .table tbody tr:hover {
             background-color: #f8f9fa;
         }
+        
+        /* Scroll horizontal mejorado para tablas */
+        .table-responsive {
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            background: white;
+            padding: 1.5rem;
+        }
+        .table-responsive .table {
+            margin-bottom: 0;
+            min-width: 600px; /* Ancho mínimo para forzar scroll en pantallas pequeñas */
+        }
+        .table-responsive .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 1rem;
+            white-space: nowrap; /* Evitar que el texto se corte */
+        }
+        .table-responsive .table tbody td {
+            padding: 1rem;
+            border-color: #e9ecef;
+            vertical-align: middle;
+            white-space: nowrap; /* Evitar que el texto se corte */
+        }
+        .table-responsive .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Scrollbar personalizado */
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
 
         /* Botones de exportación */
         .export-buttons {
@@ -457,7 +502,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="report-table">
+                                    <div class="table-responsive">
                                         <table class="table table-hover">
                                             <thead>
                                                 <tr>
@@ -493,7 +538,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="report-table">
+                                    <div class="table-responsive">
                                         <table class="table table-hover">
                                             <thead>
                                                 <tr>
@@ -531,7 +576,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="report-table">
+                            <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
