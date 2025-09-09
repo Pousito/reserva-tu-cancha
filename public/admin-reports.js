@@ -61,8 +61,8 @@ function setupEventListeners() {
 // Establecer fechas por defecto
 function setDefaultDates() {
     const today = new Date();
-    // Usar un rango más amplio para incluir todas las reservas existentes
-    const firstDay = new Date(2025, 0, 1); // 1 de enero de 2025
+    // Usar septiembre 2025 como fecha de inicio
+    const firstDay = new Date(2025, 8, 1); // 1 de septiembre de 2025 (mes 8 = septiembre)
     
     document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
     document.getElementById('dateTo').value = today.toISOString().split('T')[0];
