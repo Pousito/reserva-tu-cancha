@@ -1532,6 +1532,120 @@ app.get('/api/debug/add-role-fields', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA CREAR USUARIOS DE EJEMPLO CON ROLES =====
+app.get('/api/debug/create-role-users', async (req, res) => {
+  try {
+    console.log('👥 Creando usuarios de ejemplo con roles...');
+    
+    // Obtener ID del complejo MagnaSports
+    const magnasports = await db.get('SELECT id FROM complejos WHERE nombre = $1', ['MagnaSports']);
+    if (!magnasports) {
+      throw new Error('Complejo MagnaSports no encontrado');
+    }
+    
+    const complejoId = magnasports.id;
+    console.log(`🏢 ID del complejo MagnaSports: ${complejoId}`);
+    
+    // Usuarios de ejemplo
+    const usuariosEjemplo = [
+      {
+        email: 'superadmin@reservatucancha.com',
+        password: 'superadmin123',
+        nombre: 'Super Administrador',
+        rol: 'super_admin',
+        complejo_id: null // Super admin no tiene complejo específico
+      },
+      {
+        email: 'dueno@magnasports.cl',
+        password: 'dueno123',
+        nombre: 'Dueño MagnaSports',
+        rol: 'owner',
+        complejo_id: complejoId
+      },
+      {
+        email: 'admin@magnasports.cl',
+        password: 'admin123',
+        nombre: 'Administrador MagnaSports',
+        rol: 'manager',
+        complejo_id: complejoId
+      }
+    ];
+    
+    const resultados = [];
+    
+    for (const usuario of usuariosEjemplo) {
+      try {
+        // Verificar si el usuario ya existe
+        const usuarioExistente = await db.get('SELECT id FROM usuarios WHERE email = $1', [usuario.email]);
+        
+        if (usuarioExistente) {
+          // Actualizar usuario existente
+          await db.run(`
+            UPDATE usuarios 
+            SET rol = $1, complejo_id = $2, nombre = $3
+            WHERE email = $4
+          `, [usuario.rol, usuario.complejo_id, usuario.nombre, usuario.email]);
+          
+          resultados.push({
+            email: usuario.email,
+            accion: 'actualizado',
+            rol: usuario.rol,
+            complejo_id: usuario.complejo_id
+          });
+          console.log(`✅ Usuario actualizado: ${usuario.email} (${usuario.rol})`);
+        } else {
+          // Crear nuevo usuario
+          const hashedPassword = await bcrypt.hash(usuario.password, 10);
+          await db.run(`
+            INSERT INTO usuarios (email, password, nombre, rol, complejo_id, activo)
+            VALUES ($1, $2, $3, $4, $5, true)
+          `, [usuario.email, hashedPassword, usuario.nombre, usuario.rol, usuario.complejo_id]);
+          
+          resultados.push({
+            email: usuario.email,
+            accion: 'creado',
+            rol: usuario.rol,
+            complejo_id: usuario.complejo_id
+          });
+          console.log(`✅ Usuario creado: ${usuario.email} (${usuario.rol})`);
+        }
+      } catch (error) {
+        console.error(`❌ Error con usuario ${usuario.email}:`, error);
+        resultados.push({
+          email: usuario.email,
+          accion: 'error',
+          error: error.message
+        });
+      }
+    }
+    
+    // Verificar usuarios finales
+    const usuariosFinales = await db.query(`
+      SELECT u.email, u.nombre, u.rol, u.complejo_id, c.nombre as complejo_nombre
+      FROM usuarios u
+      LEFT JOIN complejos c ON u.complejo_id = c.id
+      WHERE u.rol IN ('super_admin', 'owner', 'manager')
+      ORDER BY u.rol, u.email
+    `);
+    
+    console.log('📊 Usuarios finales:');
+    usuariosFinales.forEach(user => {
+      console.log(`- ${user.email}: ${user.rol} (${user.complejo_nombre || 'Sin complejo'})`);
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Usuarios de ejemplo creados exitosamente',
+      resultados,
+      usuariosFinales
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando usuarios de ejemplo:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====
 app.get('/api/debug/clean-database', async (req, res) => {
   try {
