@@ -193,8 +193,8 @@ function getPeriodDates(period) {
             to = new Date().toISOString().split('T')[0];
             break;
         default:
-            from = document.getElementById('dateFrom').value;
-            to = document.getElementById('dateTo').value;
+            from = document.getElementById('dateFrom')?.value || new Date(2024, 0, 1).toISOString().split('T')[0];
+            to = document.getElementById('dateTo')?.value || new Date().toISOString().split('T')[0];
     }
     
     return { from, to };
@@ -569,10 +569,15 @@ async function updateCustomersTable() {
         console.log('👥 Iniciando análisis de clientes...');
         
         // Obtener datos de análisis de clientes
-        const { dateFrom, dateTo } = getPeriodDates();
+        const { from: dateFrom, to: dateTo } = getPeriodDates();
         const complexId = document.getElementById('complexFilter').value;
         
         console.log('📅 Fechas:', { dateFrom, dateTo, complexId });
+        
+        // Verificar que las fechas no estén vacías
+        if (!dateFrom || !dateTo) {
+            throw new Error(`Fechas inválidas: dateFrom=${dateFrom}, dateTo=${dateTo}`);
+        }
         
         const url = new URL(`${API_BASE}/admin/customers-analysis`);
         url.searchParams.append('dateFrom', dateFrom);
