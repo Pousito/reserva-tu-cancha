@@ -103,18 +103,20 @@ async function preRellenarDesdeURL() {
 }
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== INICIALIZACIÓN DE LA APLICACIÓN ===');
     console.log('DOM cargado, inicializando aplicación');
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
     
-    cargarCiudades();
+    // Cargar ciudades y esperar a que se completen
+    await cargarCiudades();
     configurarEventListeners();
     configurarFechaMinima();
     
     // Pre-rellenar campos desde URL después de cargar datos
-    setTimeout(preRellenarDesdeURL, 2000);
+    console.log('🔄 Iniciando pre-rellenado desde URL...');
+    await preRellenarDesdeURL();
     
     // Verificar que la función scrollToReservar esté disponible
     if (typeof scrollToReservar === 'function') {
@@ -870,6 +872,9 @@ async function cargarCiudades() {
         
         console.log(`✅ ${ciudades.length} ciudades cargadas exitosamente`);
         
+        // Retornar las ciudades para que la función sea awaitable
+        return ciudades;
+        
     } catch (error) {
         console.error('❌ Error cargando ciudades:', error);
         console.error('🔗 URL intentada:', `${API_BASE}/ciudades`);
@@ -885,6 +890,9 @@ async function cargarCiudades() {
         }
         
         mostrarNotificacion(mensajeError, 'danger');
+        
+        // Retornar array vacío en caso de error
+        return [];
     }
 }
 
