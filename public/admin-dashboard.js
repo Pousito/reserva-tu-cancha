@@ -224,7 +224,7 @@ function inicializarGrafico() {
 function actualizarGrafico(datos) {
     if (!reservationsChart) return;
     
-    const labels = datos.map(item => formatearFechaCorta(item.fecha));
+    const labels = datos.map(item => formatearFechaCorta(item.dia));
     const values = datos.map(item => item.cantidad);
     
     reservationsChart.data.labels = labels;
