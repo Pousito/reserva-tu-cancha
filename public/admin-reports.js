@@ -133,7 +133,7 @@ async function generateReports() {
             console.log('📊 Datos de reportes recibidos:', reportsData);
             updateMetrics();
             updateCharts();
-            updateTables();
+            await updateTables();
         } else {
             console.error('Error generando reportes:', response.statusText);
             console.error('Response status:', response.status);
@@ -489,10 +489,10 @@ function updateHoursChart() {
 }
 
 // Actualizar tablas
-function updateTables() {
+async function updateTables() {
     updateTopComplexesTable();
     updateTopCourtsTable();
-    updateCustomersTable();
+    await updateCustomersTable();
 }
 
 // Tabla de top complejos
@@ -544,18 +544,224 @@ function updateTopCourtsTable() {
 }
 
 // Tabla de clientes
-function updateCustomersTable() {
+async function updateCustomersTable() {
     const tbody = document.getElementById('customersTable');
     
-    // Por ahora, mostrar un mensaje ya que el backend no envía datos de clientes
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="6" class="text-center text-muted">
-                <i class="fas fa-info-circle me-2"></i>
-                Análisis de clientes próximamente
-            </td>
-        </tr>
-    `;
+    try {
+        // Obtener datos de análisis de clientes
+        const { dateFrom, dateTo } = getPeriodDates();
+        const complexId = document.getElementById('complexFilter').value;
+        
+        const url = new URL(`${API_BASE}/admin/customers-analysis`);
+        url.searchParams.append('dateFrom', dateFrom);
+        url.searchParams.append('dateTo', dateTo);
+        if (complexId) url.searchParams.append('complexId', complexId);
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Error al cargar análisis de clientes');
+        }
+        
+        const data = result.data;
+        
+        // Mostrar estadísticas generales
+        updateCustomersStats(data.estadisticas);
+        
+        // Mostrar tabla de clientes más frecuentes
+        if (data.clientesFrecuentes && data.clientesFrecuentes.length > 0) {
+            tbody.innerHTML = data.clientesFrecuentes.map((cliente, index) => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                ${cliente.nombre_cliente.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="fw-bold">${cliente.nombre_cliente}</div>
+                                <small class="text-muted">${cliente.email_cliente}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">${cliente.total_reservas}</span>
+                    </td>
+                    <td>${formatCurrency(cliente.total_gastado)}</td>
+                    <td>${formatCurrency(cliente.promedio_por_reserva)}</td>
+                    <td>
+                        <small class="text-muted">
+                            ${formatDate(cliente.primera_reserva)} - ${formatDate(cliente.ultima_reserva)}
+                        </small>
+                    </td>
+                    <td>
+                        <span class="badge ${cliente.total_reservas > 1 ? 'bg-success' : 'bg-warning'}">
+                            ${cliente.total_reservas > 1 ? 'Recurrente' : 'Nuevo'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        <i class="fas fa-users me-2"></i>
+                        No hay datos de clientes para el período seleccionado
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // Actualizar gráficos de clientes si existen
+        updateCustomersCharts(data);
+        
+    } catch (error) {
+        console.error('Error cargando análisis de clientes:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error cargando análisis de clientes
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Actualizar estadísticas de clientes
+function updateCustomersStats(stats) {
+    // Actualizar métricas de clientes únicos
+    const clientesUnicosElement = document.getElementById('uniqueCustomers');
+    if (clientesUnicosElement) {
+        clientesUnicosElement.textContent = (stats.clientes_unicos || 0).toLocaleString();
+    }
+    
+    // Mostrar estadísticas adicionales si hay elementos para ellas
+    const clientesActivosElement = document.getElementById('activeCustomers');
+    if (clientesActivosElement) {
+        clientesActivosElement.textContent = (stats.clientes_activos_30_dias || 0).toLocaleString();
+    }
+    
+    const clientesNuevosElement = document.getElementById('newCustomers');
+    if (clientesNuevosElement) {
+        const clientesNuevos = (stats.clientes_unicos || 0) - (stats.clientes_activos_30_dias || 0);
+        clientesNuevosElement.textContent = Math.max(0, clientesNuevos).toLocaleString();
+    }
+}
+
+// Actualizar gráficos de clientes
+function updateCustomersCharts(data) {
+    // Crear gráfico de distribución de clientes por complejo si hay datos
+    if (data.distribucionComplejos && data.distribucionComplejos.length > 0) {
+        createCustomersByComplexChart(data.distribucionComplejos);
+    }
+    
+    // Crear gráfico de clientes nuevos vs recurrentes
+    if (data.clientesNuevos && data.clientesRecurrentes) {
+        createNewVsRecurringCustomersChart(data.clientesNuevos, data.clientesRecurrentes);
+    }
+}
+
+// Crear gráfico de clientes por complejo
+function createCustomersByComplexChart(data) {
+    const ctx = document.getElementById('customersByComplexChart');
+    if (!ctx) return;
+    
+    // Destruir gráfico existente si existe
+    if (charts.customersByComplex) {
+        charts.customersByComplex.destroy();
+    }
+    
+    charts.customersByComplex = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.map(item => item.complejo),
+            datasets: [{
+                data: data.map(item => item.clientes_unicos),
+                backgroundColor: [
+                    '#667eea',
+                    '#764ba2',
+                    '#f093fb',
+                    '#f5576c',
+                    '#4facfe',
+                    '#00f2fe'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Distribución de Clientes por Complejo',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Crear gráfico de clientes nuevos vs recurrentes
+function createNewVsRecurringCustomersChart(clientesNuevos, clientesRecurrentes) {
+    const ctx = document.getElementById('newVsRecurringChart');
+    if (!ctx) return;
+    
+    // Destruir gráfico existente si existe
+    if (charts.newVsRecurring) {
+        charts.newVsRecurring.destroy();
+    }
+    
+    charts.newVsRecurring = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Clientes Nuevos', 'Clientes Recurrentes'],
+            datasets: [{
+                label: 'Número de Clientes',
+                data: [clientesNuevos.length, clientesRecurrentes.length],
+                backgroundColor: ['#f5576c', '#4facfe'],
+                borderColor: ['#f5576c', '#4facfe'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Clientes Nuevos vs Recurrentes',
+                    font: {
+                        size: 14,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
 }
 
 // Funciones de utilidad
