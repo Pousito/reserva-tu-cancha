@@ -3,6 +3,12 @@ let currentUser = null;
 let reportsData = null;
 let complexes = [];
 
+// Variables para almacenar instancias de gráficos
+let revenueChart = null;
+let typeChart = null;
+let occupancyChart = null;
+let hoursChart = null;
+
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar sistema de roles
@@ -195,9 +201,32 @@ function updateMetrics() {
     if (uniqueCustomers) uniqueCustomers.textContent = metrics.reservasConfirmadas;
 }
 
+// Destruir gráficos existentes
+function destroyCharts() {
+    if (revenueChart) {
+        revenueChart.destroy();
+        revenueChart = null;
+    }
+    if (typeChart) {
+        typeChart.destroy();
+        typeChart = null;
+    }
+    if (occupancyChart) {
+        occupancyChart.destroy();
+        occupancyChart = null;
+    }
+    if (hoursChart) {
+        hoursChart.destroy();
+        hoursChart = null;
+    }
+}
+
 // Actualizar gráficos
 function updateCharts() {
     const charts = reportsData.charts;
+    
+    // Destruir gráficos existentes antes de crear nuevos
+    destroyCharts();
     
     // Gráfico de ingresos por día
     updateIncomeChart(charts.reservasPorDia);
@@ -218,7 +247,7 @@ function updateIncomeChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
+    revenueChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: data.map(item => new Date(item.fecha).toLocaleDateString()),
@@ -248,7 +277,7 @@ function updateReservationsChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
+    typeChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: data.map(item => item.tipo),
@@ -281,7 +310,7 @@ function updateOccupancyChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
+    occupancyChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: data.map(item => item.complejo),
@@ -315,7 +344,7 @@ function updateHoursChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
+    hoursChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: data.map(item => item.hora),
