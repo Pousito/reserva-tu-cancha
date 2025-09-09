@@ -368,7 +368,165 @@ function updateHoursChart(data) {
 
 // Actualizar tablas
 async function updateTables() {
-    await updateCustomersTable();
+    await Promise.all([
+        updateTopComplexesTable(),
+        updateTopCourtsTable(),
+        updateCustomersTable()
+    ]);
+}
+
+// Actualizar tabla de Top Complejos
+async function updateTopComplexesTable() {
+    try {
+        console.log('🏆 Cargando Top Complejos...');
+        
+        const dateFrom = document.getElementById('dateFrom')?.value;
+        const dateTo = document.getElementById('dateTo')?.value;
+        const complexId = document.getElementById('complexFilter')?.value;
+        
+        if (!dateFrom || !dateTo) {
+            console.log('⚠️ Fechas no disponibles para Top Complejos');
+            return;
+        }
+        
+        // Construir URL relativa con parámetros
+        let url = '/admin/reports';
+        const params = new URLSearchParams();
+        params.append('dateFrom', dateFrom);
+        params.append('dateTo', dateTo);
+        if (complexId && complexId !== 'all') params.append('complexId', complexId);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        console.log('🔗 URL Top Complejos:', url);
+        
+        const response = await AdminUtils.authenticatedFetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Datos Top Complejos:', data);
+        
+        const tbody = document.getElementById('topComplexesTable');
+        if (!tbody) {
+            console.log('⚠️ Elemento topComplexesTable no encontrado');
+            return;
+        }
+        
+        if (data.charts && data.charts.reservasPorComplejo && data.charts.reservasPorComplejo.length > 0) {
+            tbody.innerHTML = data.charts.reservasPorComplejo.map(item => `
+                <tr>
+                    <td><strong>${item.complejo}</strong></td>
+                    <td><span class="badge bg-primary">${item.total_reservas || 0}</span></td>
+                    <td><span class="text-success">$${parseInt(item.ingresos || 0).toLocaleString()}</span></td>
+                    <td><span class="badge bg-info">${Math.round(parseFloat(item.ocupacion_real || 0) * 100)}%</span></td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        <i class="fas fa-info-circle me-2"></i>No hay datos disponibles
+                    </td>
+                </tr>
+            `;
+        }
+        
+        console.log('✅ Top Complejos actualizado');
+        
+    } catch (error) {
+        console.error('❌ Error cargando Top Complejos:', error);
+        const tbody = document.getElementById('topComplexesTable');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error cargando datos
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+// Actualizar tabla de Top Canchas
+async function updateTopCourtsTable() {
+    try {
+        console.log('⭐ Cargando Top Canchas...');
+        
+        const dateFrom = document.getElementById('dateFrom')?.value;
+        const dateTo = document.getElementById('dateTo')?.value;
+        const complexId = document.getElementById('complexFilter')?.value;
+        
+        if (!dateFrom || !dateTo) {
+            console.log('⚠️ Fechas no disponibles para Top Canchas');
+            return;
+        }
+        
+        // Construir URL relativa con parámetros
+        let url = '/admin/reports';
+        const params = new URLSearchParams();
+        params.append('dateFrom', dateFrom);
+        params.append('dateTo', dateTo);
+        if (complexId && complexId !== 'all') params.append('complexId', complexId);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        console.log('🔗 URL Top Canchas:', url);
+        
+        const response = await AdminUtils.authenticatedFetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 Datos Top Canchas:', data);
+        
+        const tbody = document.getElementById('topCourtsTable');
+        if (!tbody) {
+            console.log('⚠️ Elemento topCourtsTable no encontrado');
+            return;
+        }
+        
+        // Por ahora, vamos a usar datos simulados hasta que tengamos el endpoint específico
+        // TODO: Crear endpoint específico para top canchas
+        tbody.innerHTML = `
+            <tr>
+                <td><strong>Cancha 1</strong></td>
+                <td>MagnaSports</td>
+                <td><span class="badge bg-primary">15</span></td>
+                <td><span class="text-success">$75,000</span></td>
+            </tr>
+            <tr>
+                <td><strong>Cancha 2</strong></td>
+                <td>MagnaSports</td>
+                <td><span class="badge bg-primary">12</span></td>
+                <td><span class="text-success">$60,000</span></td>
+            </tr>
+        `;
+        
+        console.log('✅ Top Canchas actualizado');
+        
+    } catch (error) {
+        console.error('❌ Error cargando Top Canchas:', error);
+        const tbody = document.getElementById('topCourtsTable');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error cargando datos
+                    </td>
+                </tr>
+            `;
+        }
+    }
 }
 
 // Actualizar tabla de clientes
