@@ -1284,6 +1284,75 @@ app.post('/api/debug/insert-admin-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT DE DEBUG PARA PROBAR FORMATEO DE FECHA =====
+app.get('/api/debug/test-date-formatting', async (req, res) => {
+  try {
+    console.log('🔍 DEBUG: Probando formateo de fechas...');
+    
+    // Función de formateo corregida (igual que en el frontend)
+    function formatearFecha(fecha) {
+      // Evitar problema de zona horaria creando la fecha con componentes específicos
+      const [año, mes, dia] = fecha.split('-').map(Number);
+      const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+      
+      const opciones = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
+      
+      let fechaFormateada = fechaObj.toLocaleDateString('es-CL', opciones);
+      
+      // Capitalizar la primera letra del día de la semana
+      fechaFormateada = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+      
+      return fechaFormateada;
+    }
+    
+    // Función de formateo anterior (problemática)
+    function formatearFechaAnterior(fecha) {
+      const fechaObj = new Date(fecha);
+      const opciones = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
+      
+      let fechaFormateada = fechaObj.toLocaleDateString('es-CL', opciones);
+      fechaFormateada = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+      
+      return fechaFormateada;
+    }
+    
+    // Probar con la fecha del ejemplo: 2025-09-11
+    const fechaTest = '2025-09-11';
+    
+    const resultadoCorregido = formatearFecha(fechaTest);
+    const resultadoAnterior = formatearFechaAnterior(fechaTest);
+    
+    console.log('📅 Fecha original:', fechaTest);
+    console.log('✅ Formateo corregido:', resultadoCorregido);
+    console.log('❌ Formateo anterior:', resultadoAnterior);
+    
+    res.json({
+      success: true,
+      fechaOriginal: fechaTest,
+      formateoCorregido: resultadoCorregido,
+      formateoAnterior: resultadoAnterior,
+      problemaSolucionado: resultadoCorregido !== resultadoAnterior
+    });
+    
+  } catch (error) {
+    console.error('❌ Error probando formateo de fecha:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
