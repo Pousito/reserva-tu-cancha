@@ -1239,6 +1239,51 @@ app.get('/api/debug/check-users-structure', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA INSERTAR USUARIOS ADMIN =====
+app.post('/api/debug/insert-admin-users', async (req, res) => {
+  try {
+    console.log('👥 Insertando usuarios administradores...');
+    
+    const usuariosData = [
+      { email: 'admin@reservatucancha.com', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
+      { email: 'admin@magnasports.cl', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
+      { email: 'admin@complejocentral.cl', password: 'complejo2024', nombre: 'Administrador Complejo Central', rol: 'admin' }
+    ];
+    
+    const insertedUsers = [];
+    
+    for (const usuario of usuariosData) {
+      try {
+        await db.run(
+          'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, true) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, nombre = EXCLUDED.nombre, rol = EXCLUDED.rol',
+          [usuario.email, usuario.password, usuario.nombre, usuario.rol]
+        );
+        insertedUsers.push(usuario.email);
+        console.log(`✅ Usuario insertado: ${usuario.email}`);
+      } catch (error) {
+        console.error(`❌ Error insertando usuario ${usuario.email}:`, error);
+      }
+    }
+    
+    // Verificar usuarios insertados
+    const count = await db.get('SELECT COUNT(*) as count FROM usuarios');
+    
+    res.json({
+      success: true,
+      message: 'Usuarios administradores insertados',
+      insertedUsers: insertedUsers,
+      totalUsers: count.count
+    });
+    
+  } catch (error) {
+    console.error('❌ Error insertando usuarios admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
