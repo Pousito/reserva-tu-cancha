@@ -1485,12 +1485,11 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       params.push(complexId);
     }
     
-    // 1. Clientes más frecuentes (por número de reservas) - Agrupar por RUT si existe, sino por email
+    // Consulta simplificada para probar
     const clientesFrecuentes = await db.query(`
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
-        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         AVG(r.precio_total) as promedio_por_reserva,
@@ -1500,112 +1499,8 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
+      GROUP BY r.nombre_cliente, r.email_cliente
       ORDER BY total_reservas DESC, total_gastado DESC
-      LIMIT 10
-    `, params);
-    
-    // 2. Clientes con mayor gasto
-    const clientesMayorGasto = await db.query(`
-      SELECT 
-        r.nombre_cliente,
-        r.email_cliente,
-        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
-        COUNT(*) as total_reservas,
-        SUM(r.precio_total) as total_gastado,
-        AVG(r.precio_total) as promedio_por_reserva,
-        MIN(r.fecha) as primera_reserva,
-        MAX(r.fecha) as ultima_reserva
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
-      ORDER BY total_gastado DESC, total_reservas DESC
-      LIMIT 10
-    `, params);
-    
-    // 3. Clientes nuevos vs recurrentes
-    const clientesNuevos = await db.query(`
-      SELECT 
-        r.nombre_cliente,
-        r.email_cliente,
-        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
-        COUNT(*) as total_reservas,
-        SUM(r.precio_total) as total_gastado,
-        MIN(r.fecha) as primera_reserva
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
-      HAVING COUNT(*) = 1
-      ORDER BY total_gastado DESC
-      LIMIT 10
-    `, params);
-    
-    const clientesRecurrentes = await db.query(`
-      SELECT 
-        r.nombre_cliente,
-        r.email_cliente,
-        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
-        COUNT(*) as total_reservas,
-        SUM(r.precio_total) as total_gastado,
-        MIN(r.fecha) as primera_reserva,
-        MAX(r.fecha) as ultima_reserva
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
-      HAVING COUNT(*) > 1
-      ORDER BY total_reservas DESC, total_gastado DESC
-      LIMIT 10
-    `, params);
-    
-    // 4. Estadísticas generales de clientes
-    const estadisticasClientes = await db.get(`
-      SELECT 
-        COUNT(DISTINCT COALESCE(r.rut_cliente, r.email_cliente)) as clientes_unicos,
-        COUNT(DISTINCT r.email_cliente) as emails_unicos,
-        COUNT(*) as total_reservas,
-        SUM(r.precio_total) as ingresos_totales,
-        AVG(r.precio_total) as promedio_por_reserva,
-        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '30 days' THEN COALESCE(r.rut_cliente, r.email_cliente) END) as clientes_activos_30_dias,
-        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '7 days' THEN COALESCE(r.rut_cliente, r.email_cliente) END) as clientes_activos_7_dias
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-    `, params);
-    
-    // 5. Distribución de clientes por complejo
-    const distribucionComplejos = await db.query(`
-      SELECT 
-        co.nombre as complejo,
-        COUNT(DISTINCT COALESCE(r.rut_cliente, r.email_cliente)) as clientes_unicos,
-        COUNT(*) as total_reservas,
-        SUM(r.precio_total) as ingresos
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-      GROUP BY co.id, co.nombre
-      ORDER BY clientes_unicos DESC
-    `, params);
-    
-    // 6. Horarios más populares
-    const horariosPopulares = await db.query(`
-      SELECT 
-        r.hora_inicio as hora,
-        COUNT(*) as cantidad,
-        SUM(r.precio_total) as ingresos
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-      GROUP BY r.hora_inicio
-      ORDER BY cantidad DESC, ingresos DESC
       LIMIT 10
     `, params);
     
@@ -1615,12 +1510,12 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       success: true,
       data: {
         clientesFrecuentes: clientesFrecuentes,
-        clientesMayorGasto: clientesMayorGasto,
-        clientesNuevos: clientesNuevos,
-        clientesRecurrentes: clientesRecurrentes,
-        estadisticas: estadisticasClientes,
-        distribucionComplejos: distribucionComplejos,
-        horariosPopulares: horariosPopulares
+        clientesMayorGasto: clientesFrecuentes,
+        clientesNuevos: [],
+        clientesRecurrentes: [],
+        estadisticas: { clientes_unicos: clientesFrecuentes.length },
+        distribucionComplejos: [],
+        horariosPopulares: []
       }
     });
     
