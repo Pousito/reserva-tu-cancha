@@ -1555,13 +1555,13 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
     // 4. Estadísticas generales de clientes
     const estadisticasClientes = await db.get(`
       SELECT 
-        COUNT(DISTINCT r.nombre_cliente) as clientes_unicos,
+        COUNT(DISTINCT COALESCE(r.rut_cliente, r.email_cliente)) as clientes_unicos,
         COUNT(DISTINCT r.email_cliente) as emails_unicos,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as ingresos_totales,
         AVG(r.precio_total) as promedio_por_reserva,
-        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '30 days' THEN r.nombre_cliente END) as clientes_activos_30_dias,
-        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '7 days' THEN r.nombre_cliente END) as clientes_activos_7_dias
+        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '30 days' THEN COALESCE(r.rut_cliente, r.email_cliente) END) as clientes_activos_30_dias,
+        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '7 days' THEN COALESCE(r.rut_cliente, r.email_cliente) END) as clientes_activos_7_dias
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -1572,7 +1572,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
     const distribucionComplejos = await db.query(`
       SELECT 
         co.nombre as complejo,
-        COUNT(DISTINCT r.nombre_cliente) as clientes_unicos,
+        COUNT(DISTINCT COALESCE(r.rut_cliente, r.email_cliente)) as clientes_unicos,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as ingresos
       FROM reservas r
