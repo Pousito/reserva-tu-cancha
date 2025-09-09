@@ -69,14 +69,21 @@ function populateCitySelect() {
 // Cargar complejos
 async function loadComplexes() {
     try {
+        console.log('🔍 Cargando complejos...');
         const response = await AdminUtils.authenticatedFetch('/admin/complejos');
-        if (!response) return;
+        console.log('📡 Respuesta recibida:', response);
+        
+        if (!response) {
+            console.error('❌ No se recibió respuesta');
+            return;
+        }
         
         if (response.ok) {
             complexes = await response.json();
+            console.log('✅ Complejos cargados:', complexes);
             displayComplexes(complexes);
         } else {
-            console.error('Error cargando complejos:', response.statusText);
+            console.error('❌ Error cargando complejos:', response.statusText);
             document.getElementById('complexesList').innerHTML = `
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>

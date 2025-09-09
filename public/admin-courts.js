@@ -108,14 +108,21 @@ function populateComplexSelects() {
 // Cargar canchas
 async function loadCourts() {
     try {
+        console.log('🔍 Cargando canchas...');
         const response = await AdminUtils.authenticatedFetch('/admin/canchas');
-        if (!response) return;
+        console.log('📡 Respuesta recibida:', response);
+        
+        if (!response) {
+            console.error('❌ No se recibió respuesta');
+            return;
+        }
         
         if (response.ok) {
             courts = await response.json();
+            console.log('✅ Canchas cargadas:', courts);
             displayCourts(courts);
         } else {
-            console.error('Error cargando canchas:', response.statusText);
+            console.error('❌ Error cargando canchas:', response.statusText);
             document.getElementById('courtsList').innerHTML = `
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>

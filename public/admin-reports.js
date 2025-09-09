@@ -103,6 +103,7 @@ async function generateReports() {
         const filters = getFilters();
         
         // Obtener datos de reportes (sin autenticación ya que el backend no la requiere)
+        console.log('🔍 Generando reportes...');
         const response = await AdminUtils.authenticatedFetch('/admin/reports', {
             method: 'POST',
             headers: {
@@ -110,6 +111,12 @@ async function generateReports() {
             },
             body: JSON.stringify(filters)
         });
+        console.log('📡 Respuesta recibida:', response);
+        
+        if (!response) {
+            console.error('❌ No se recibió respuesta');
+            return;
+        }
         
         if (response.ok) {
             reportsData = await response.json();
