@@ -462,9 +462,26 @@ app.get('/api/admin/reservas-hoy', async (req, res) => {
 });
 
 // Endpoint para obtener todas las reservas (panel de administración)
-app.get('/api/admin/reservas', async (req, res) => {
+app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('📋 Cargando todas las reservas para administración...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      // Super admin ve todo
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      // Dueños y administradores solo ven su complejo
+      whereClause = 'WHERE c.complejo_id = $1';
+      params = [complexFilter];
+    }
     
     const reservas = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
@@ -472,8 +489,9 @@ app.get('/api/admin/reservas', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
+      ${whereClause}
       ORDER BY r.created_at DESC
-    `);
+    `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
     res.json(reservas);
@@ -484,16 +502,34 @@ app.get('/api/admin/reservas', async (req, res) => {
 });
 
 // Endpoint para obtener complejos (panel de administración)
-app.get('/api/admin/complejos', async (req, res) => {
+app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('🏢 Cargando complejos para administración...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      // Super admin ve todo
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      // Dueños y administradores solo ven su complejo
+      whereClause = 'WHERE c.id = $1';
+      params = [complexFilter];
+    }
     
     const complejos = await db.query(`
       SELECT c.*, ci.nombre as ciudad_nombre
       FROM complejos c
       JOIN ciudades ci ON c.ciudad_id = ci.id
+      ${whereClause}
       ORDER BY c.nombre
-    `);
+    `, params);
     
     console.log(`✅ ${complejos.length} complejos cargados para administración`);
     res.json(complejos);
@@ -504,17 +540,35 @@ app.get('/api/admin/complejos', async (req, res) => {
 });
 
 // Endpoint para obtener canchas (panel de administración)
-app.get('/api/admin/canchas', async (req, res) => {
+app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('⚽ Cargando canchas para administración...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      // Super admin ve todo
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      // Dueños y administradores solo ven su complejo
+      whereClause = 'WHERE c.complejo_id = $1';
+      params = [complexFilter];
+    }
     
     const canchas = await db.query(`
       SELECT c.*, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
       FROM canchas c
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
+      ${whereClause}
       ORDER BY co.nombre, c.nombre
-    `);
+    `, params);
     
     console.log(`✅ ${canchas.length} canchas cargadas para administración`);
     res.json(canchas);
@@ -525,7 +579,7 @@ app.get('/api/admin/canchas', async (req, res) => {
 });
 
 // Endpoint para confirmar una reserva (panel de administración)
-app.put('/api/admin/reservas/:codigoReserva/confirmar', async (req, res) => {
+app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     const { codigoReserva } = req.params;
     console.log(`✅ Confirmando reserva: ${codigoReserva}`);
@@ -550,7 +604,7 @@ app.put('/api/admin/reservas/:codigoReserva/confirmar', async (req, res) => {
 });
 
 // Endpoint para cancelar una reserva (panel de administración)
-app.put('/api/admin/reservas/:codigoReserva/cancelar', async (req, res) => {
+app.put('/api/admin/reservas/:codigoReserva/cancelar', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     const { codigoReserva } = req.params;
     console.log(`🚫 Cancelando reserva: ${codigoReserva}`);
@@ -575,18 +629,30 @@ app.put('/api/admin/reservas/:codigoReserva/cancelar', async (req, res) => {
 });
 
 // Endpoint para generar reportes (panel de administración)
-app.post('/api/admin/reports', async (req, res) => {
+app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     const { dateFrom, dateTo, complexId } = req.body;
     console.log('📊 Generando reportes para administración...', { dateFrom, dateTo, complexId });
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
     
-    // Construir filtros SQL
+    const userRole = req.user.rol;
+    const userComplexFilter = req.complexFilter;
+    
+    // Construir filtros SQL según el rol
     let whereClause = `WHERE DATE(r.fecha) BETWEEN $1 AND $2`;
     let params = [dateFrom, dateTo];
     
-    if (complexId) {
+    // Aplicar filtro de complejo según el rol
+    if (userRole === 'super_admin') {
+      // Super admin puede filtrar por cualquier complejo
+      if (complexId) {
+        whereClause += ` AND co.id = $3`;
+        params.push(complexId);
+      }
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      // Dueños y administradores solo pueden ver su complejo
       whereClause += ` AND co.id = $3`;
-      params.push(complexId);
+      params.push(userComplexFilter);
     }
     
     // Métricas generales
