@@ -1084,7 +1084,8 @@ app.post('/api/admin/login', async (req, res) => {
     
     // Buscar usuario en la base de datos
     let user;
-    if (db.getDbType() === 'PostgreSQL') {
+    const dbInfo = db.getDatabaseInfo();
+    if (dbInfo.type === 'PostgreSQL') {
       user = await db.get(
         'SELECT * FROM usuarios WHERE email = $1 AND activo = true',
         [email]
