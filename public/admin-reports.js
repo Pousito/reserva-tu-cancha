@@ -64,7 +64,7 @@ function setupEventListeners() {
 function setDefaultDates() {
     const today = new Date();
     // Usar un rango más amplio para incluir todas las reservas existentes
-    const firstDay = new Date(2024, 0, 1); // 1 de enero de 2024
+    const firstDay = new Date(2025, 0, 1); // 1 de enero de 2025
     
     document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
     document.getElementById('dateTo').value = today.toISOString().split('T')[0];
@@ -180,7 +180,7 @@ function getPeriodDates(period) {
             break;
         case 'month':
             // Usar un rango más amplio para incluir todas las reservas
-            from = new Date(2024, 0, 1).toISOString().split('T')[0];
+            from = new Date(2025, 0, 1).toISOString().split('T')[0];
             to = new Date().toISOString().split('T')[0];
             break;
         case 'quarter':
@@ -193,7 +193,7 @@ function getPeriodDates(period) {
             to = new Date().toISOString().split('T')[0];
             break;
         default:
-            from = document.getElementById('dateFrom')?.value || new Date(2024, 0, 1).toISOString().split('T')[0];
+            from = document.getElementById('dateFrom')?.value || new Date(2025, 0, 1).toISOString().split('T')[0];
             to = document.getElementById('dateTo')?.value || new Date().toISOString().split('T')[0];
     }
     
@@ -289,11 +289,18 @@ function updateMetrics() {
     }
     updateMetricChange('reservationsChange', data.reservationsChange || 0);
     
-    // Tasa de confirmación
+    // Ocupación promedio (calculada desde los complejos)
     const ocupacionElement = document.getElementById('occupancyRate');
     if (ocupacionElement) {
-        ocupacionElement.textContent = `${data.tasaConfirmacion || 0}%`;
-        console.log('📈 Tasa de confirmación actualizada:', data.tasaConfirmacion);
+        // Calcular ocupación promedio de todos los complejos
+        const complejos = reportsData.charts?.reservasPorComplejo || [];
+        let ocupacionPromedio = 0;
+        if (complejos.length > 0) {
+            const sumaOcupacion = complejos.reduce((sum, complejo) => sum + parseFloat(complejo.ocupacion_real || 0), 0);
+            ocupacionPromedio = (sumaOcupacion / complejos.length).toFixed(1);
+        }
+        ocupacionElement.textContent = `${ocupacionPromedio}%`;
+        console.log('📈 Ocupación promedio actualizada:', ocupacionPromedio);
     }
     updateMetricChange('occupancyChange', data.occupancyChange || 0);
     
