@@ -628,7 +628,7 @@ async function updateCustomersTable() {
                             <div>
                                 <div class="fw-bold">${cliente.nombre_cliente}</div>
                                 <small class="text-muted">${cliente.email_cliente}</small>
-                                ${cliente.rut_cliente ? `<br><small class="text-info">RUT: ${cliente.rut_cliente}</small>` : ''}
+                                ${cliente.identificador_cliente && cliente.identificador_cliente !== cliente.email_cliente ? `<br><small class="text-info">RUT: ${cliente.identificador_cliente}</small>` : ''}
                             </div>
                         </div>
                     </td>

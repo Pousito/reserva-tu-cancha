@@ -1479,7 +1479,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
-        r.rut_cliente,
+        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         AVG(r.precio_total) as promedio_por_reserva,
@@ -1489,7 +1489,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente, r.rut_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
     `, params);
@@ -1499,7 +1499,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
-        r.rut_cliente,
+        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         AVG(r.precio_total) as promedio_por_reserva,
@@ -1509,7 +1509,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente, r.rut_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       ORDER BY total_gastado DESC, total_reservas DESC
       LIMIT 10
     `, params);
@@ -1519,7 +1519,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
-        r.rut_cliente,
+        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         MIN(r.fecha) as primera_reserva
@@ -1527,7 +1527,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente, r.rut_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       HAVING COUNT(*) = 1
       ORDER BY total_gastado DESC
       LIMIT 10
@@ -1537,7 +1537,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
-        r.rut_cliente,
+        COALESCE(r.rut_cliente, r.email_cliente) as identificador_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         MIN(r.fecha) as primera_reserva,
@@ -1546,7 +1546,7 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause}
-      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente, r.rut_cliente
+      GROUP BY COALESCE(r.rut_cliente, r.email_cliente), r.nombre_cliente, r.email_cliente
       HAVING COUNT(*) > 1
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
