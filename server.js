@@ -1367,6 +1367,149 @@ app.get('/api/debug/test-date-formatting', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====
+app.get('/api/admin/customers-analysis', async (req, res) => {
+  try {
+    const { dateFrom, dateTo, complexId } = req.query;
+    console.log('👥 Generando análisis de clientes...', { dateFrom, dateTo, complexId });
+    
+    // Construir filtros SQL
+    let whereClause = `WHERE DATE(r.fecha) BETWEEN $1 AND $2`;
+    let params = [dateFrom, dateTo];
+    
+    if (complexId) {
+      whereClause += ` AND co.id = $3`;
+      params.push(complexId);
+    }
+    
+    // 1. Clientes más frecuentes (por número de reservas)
+    const clientesFrecuentes = await db.query(`
+      SELECT 
+        r.nombre_cliente,
+        r.email_cliente,
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as total_gastado,
+        AVG(r.precio_total) as promedio_por_reserva,
+        MIN(r.fecha) as primera_reserva,
+        MAX(r.fecha) as ultima_reserva
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY r.nombre_cliente, r.email_cliente
+      ORDER BY total_reservas DESC, total_gastado DESC
+      LIMIT 10
+    `, params);
+    
+    // 2. Clientes con mayor gasto
+    const clientesMayorGasto = await db.query(`
+      SELECT 
+        r.nombre_cliente,
+        r.email_cliente,
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as total_gastado,
+        AVG(r.precio_total) as promedio_por_reserva,
+        MIN(r.fecha) as primera_reserva,
+        MAX(r.fecha) as ultima_reserva
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY r.nombre_cliente, r.email_cliente
+      ORDER BY total_gastado DESC, total_reservas DESC
+      LIMIT 10
+    `, params);
+    
+    // 3. Clientes nuevos vs recurrentes
+    const clientesNuevos = await db.query(`
+      SELECT 
+        r.nombre_cliente,
+        r.email_cliente,
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as total_gastado,
+        MIN(r.fecha) as primera_reserva
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY r.nombre_cliente, r.email_cliente
+      HAVING COUNT(*) = 1
+      ORDER BY total_gastado DESC
+      LIMIT 10
+    `, params);
+    
+    const clientesRecurrentes = await db.query(`
+      SELECT 
+        r.nombre_cliente,
+        r.email_cliente,
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as total_gastado,
+        MIN(r.fecha) as primera_reserva,
+        MAX(r.fecha) as ultima_reserva
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY r.nombre_cliente, r.email_cliente
+      HAVING COUNT(*) > 1
+      ORDER BY total_reservas DESC, total_gastado DESC
+      LIMIT 10
+    `, params);
+    
+    // 4. Estadísticas generales de clientes
+    const estadisticasClientes = await db.get(`
+      SELECT 
+        COUNT(DISTINCT r.nombre_cliente) as clientes_unicos,
+        COUNT(DISTINCT r.email_cliente) as emails_unicos,
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as ingresos_totales,
+        AVG(r.precio_total) as promedio_por_reserva,
+        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '30 days' THEN r.nombre_cliente END) as clientes_activos_30_dias,
+        COUNT(DISTINCT CASE WHEN r.fecha >= CURRENT_DATE - INTERVAL '7 days' THEN r.nombre_cliente END) as clientes_activos_7_dias
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+    `, params);
+    
+    // 5. Distribución de clientes por complejo
+    const distribucionComplejos = await db.query(`
+      SELECT 
+        co.nombre as complejo,
+        COUNT(DISTINCT r.nombre_cliente) as clientes_unicos,
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY co.id, co.nombre
+      ORDER BY clientes_unicos DESC
+    `, params);
+    
+    console.log('✅ Análisis de clientes generado exitosamente');
+    
+    res.json({
+      success: true,
+      data: {
+        clientesFrecuentes: clientesFrecuentes,
+        clientesMayorGasto: clientesMayorGasto,
+        clientesNuevos: clientesNuevos,
+        clientesRecurrentes: clientesRecurrentes,
+        estadisticas: estadisticasClientes,
+        distribucionComplejos: distribucionComplejos
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error generando análisis de clientes:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
