@@ -107,6 +107,7 @@ async function preRellenarDesdeURL() {
 // Inicialización
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== INICIALIZACIÓN DE LA APLICACIÓN ===');
+    console.log('🚀 VERSIÓN CON DEBUGGING MEJORADO - ' + new Date().toISOString());
     console.log('DOM cargado, inicializando aplicación');
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
