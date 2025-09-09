@@ -133,6 +133,12 @@ function hideElementsByRole() {
         const reportsElements = document.querySelectorAll('[data-role="reports"]');
         reportsElements.forEach(el => el.style.display = 'none');
     }
+
+    // Ocultar filtro de complejo para dueños y managers (solo ven su complejo)
+    if (!canViewAllComplexes()) {
+        const complexFilterElements = document.querySelectorAll('[data-role="complex-filter"]');
+        complexFilterElements.forEach(el => el.style.display = 'none');
+    }
 }
 
 /**

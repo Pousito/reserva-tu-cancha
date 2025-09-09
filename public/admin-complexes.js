@@ -1,8 +1,3 @@
-// Configuración de la API - Dinámico para desarrollo y producción
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000/api' 
-    : 'https://reserva-tu-cancha.onrender.com/api';
-
 // Variables globales
 let currentUser = null;
 let complexes = [];
@@ -10,24 +5,20 @@ let cities = [];
 
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', function() {
-    checkAuth();
-    loadCities();
-    loadComplexes();
-    setupEventListeners();
-});
-
-// Verificar autenticación
-function checkAuth() {
-    const token = localStorage.getItem('adminToken');
-    const user = localStorage.getItem('adminUser');
-    
-    if (!token || !user) {
-        window.location.href = 'admin-login.html';
+    // Inicializar sistema de roles
+    if (!AdminUtils.initializeRoleSystem()) {
         return;
     }
     
-    currentUser = JSON.parse(user);
+    // Configurar logout
+    AdminUtils.setupLogout();
+    
+    currentUser = AdminUtils.getCurrentUser();
     document.getElementById('adminWelcome').textContent = `Bienvenido, ${currentUser.nombre}`;
+    
+    loadCities();
+    loadComplexes();
+    setupEventListeners();
     
     // Configurar interfaz según el rol
     configurarInterfazPorRol();
@@ -81,12 +72,8 @@ function populateCitySelect() {
 // Cargar complejos
 async function loadComplexes() {
     try {
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/complejos`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/complejos`);
+        if (!response) return;
         
         if (response.ok) {
             complexes = await response.json();
