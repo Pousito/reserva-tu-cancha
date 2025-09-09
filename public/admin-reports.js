@@ -368,11 +368,17 @@ function updateHoursChart(data) {
 
 // Actualizar tablas
 async function updateTables() {
-    await Promise.all([
-        updateTopComplexesTable(),
-        updateTopCourtsTable(),
-        updateCustomersTable()
-    ]);
+    console.log('🔄 Iniciando updateTables...');
+    try {
+        await Promise.all([
+            updateTopComplexesTable(),
+            updateTopCourtsTable(),
+            updateCustomersTable()
+        ]);
+        console.log('✅ updateTables completado');
+    } catch (error) {
+        console.error('❌ Error en updateTables:', error);
+    }
 }
 
 // Actualizar tabla de Top Complejos
@@ -591,7 +597,7 @@ async function updateCustomersTable() {
         console.log('👥 Datos de clientes:', customersData);
         
         // Actualizar tabla
-        const tbody = document.querySelector('#customersTable tbody');
+        const tbody = document.querySelector('#customersTable');
         console.log('🔍 Elemento tbody encontrado:', tbody);
         console.log('📊 Datos de clientes a mostrar:', customersData.length);
         
