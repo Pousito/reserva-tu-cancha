@@ -1148,6 +1148,42 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT DE DEBUG PARA LOGIN =====
+app.get('/api/debug/login-test', async (req, res) => {
+  try {
+    console.log('🔍 DEBUG: Probando funcionalidad de login...');
+    
+    // Verificar información de la base de datos
+    const dbInfo = db.getDatabaseInfo();
+    console.log('📊 Info de BD:', dbInfo);
+    
+    // Probar consulta de usuarios
+    let users;
+    if (dbInfo.type === 'PostgreSQL') {
+      users = await db.query('SELECT id, email, nombre, rol, activo FROM usuarios LIMIT 5');
+    } else {
+      users = await db.query('SELECT id, email, nombre, rol, activo FROM usuarios LIMIT 5');
+    }
+    
+    console.log('👥 Usuarios encontrados:', users.length);
+    
+    res.json({
+      success: true,
+      dbInfo: dbInfo,
+      usersCount: users.length,
+      users: users
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en debug login:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
