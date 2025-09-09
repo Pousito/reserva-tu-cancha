@@ -1326,22 +1326,36 @@ app.get('/api/debug/test-date-formatting', async (req, res) => {
       return fechaFormateada;
     }
     
-    // Probar con la fecha del ejemplo: 2025-09-11
-    const fechaTest = '2025-09-11';
+    // Probar con varias fechas para detectar problemas de zona horaria
+    const fechasTest = ['2025-09-11', '2025-01-01', '2025-12-31', '2025-06-15'];
     
-    const resultadoCorregido = formatearFecha(fechaTest);
-    const resultadoAnterior = formatearFechaAnterior(fechaTest);
+    const resultados = [];
+    let hayDiferencias = false;
     
-    console.log('📅 Fecha original:', fechaTest);
-    console.log('✅ Formateo corregido:', resultadoCorregido);
-    console.log('❌ Formateo anterior:', resultadoAnterior);
+    for (const fechaTest of fechasTest) {
+      const resultadoCorregido = formatearFecha(fechaTest);
+      const resultadoAnterior = formatearFechaAnterior(fechaTest);
+      
+      console.log('📅 Fecha original:', fechaTest);
+      console.log('✅ Formateo corregido:', resultadoCorregido);
+      console.log('❌ Formateo anterior:', resultadoAnterior);
+      
+      const hayDiferencia = resultadoCorregido !== resultadoAnterior;
+      if (hayDiferencia) hayDiferencias = true;
+      
+      resultados.push({
+        fechaOriginal: fechaTest,
+        formateoCorregido: resultadoCorregido,
+        formateoAnterior: resultadoAnterior,
+        hayDiferencia: hayDiferencia
+      });
+    }
     
     res.json({
       success: true,
-      fechaOriginal: fechaTest,
-      formateoCorregido: resultadoCorregido,
-      formateoAnterior: resultadoAnterior,
-      problemaSolucionado: resultadoCorregido !== resultadoAnterior
+      resultados: resultados,
+      problemaSolucionado: hayDiferencias,
+      zonaHoraria: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
     
   } catch (error) {
