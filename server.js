@@ -384,6 +384,56 @@ app.get('/api/admin/canchas', async (req, res) => {
   }
 });
 
+// Endpoint para confirmar una reserva (panel de administración)
+app.put('/api/admin/reservas/:codigoReserva/confirmar', async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    console.log(`✅ Confirmando reserva: ${codigoReserva}`);
+    
+    // Actualizar el estado de la reserva a 'confirmada'
+    const result = await db.run(
+      'UPDATE reservas SET estado = $1 WHERE codigo_reserva = $2',
+      ['confirmada', codigoReserva]
+    );
+    
+    if (result.changes > 0) {
+      console.log(`✅ Reserva ${codigoReserva} confirmada exitosamente`);
+      res.json({ success: true, message: 'Reserva confirmada exitosamente' });
+    } else {
+      console.log(`❌ Reserva ${codigoReserva} no encontrada`);
+      res.status(404).json({ success: false, message: 'Reserva no encontrada' });
+    }
+  } catch (error) {
+    console.error('❌ Error confirmando reserva:', error);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
+// Endpoint para cancelar una reserva (panel de administración)
+app.put('/api/admin/reservas/:codigoReserva/cancelar', async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    console.log(`🚫 Cancelando reserva: ${codigoReserva}`);
+    
+    // Actualizar el estado de la reserva a 'cancelada'
+    const result = await db.run(
+      'UPDATE reservas SET estado = $1 WHERE codigo_reserva = $2',
+      ['cancelada', codigoReserva]
+    );
+    
+    if (result.changes > 0) {
+      console.log(`✅ Reserva ${codigoReserva} cancelada exitosamente`);
+      res.json({ success: true, message: 'Reserva cancelada exitosamente' });
+    } else {
+      console.log(`❌ Reserva ${codigoReserva} no encontrada`);
+      res.status(404).json({ success: false, message: 'Reserva no encontrada' });
+    }
+  } catch (error) {
+    console.error('❌ Error cancelando reserva:', error);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
 // Endpoint para generar reportes (panel de administración)
 app.post('/api/admin/reports', async (req, res) => {
   try {
