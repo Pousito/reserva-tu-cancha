@@ -521,6 +521,18 @@ app.post('/api/admin/reports', async (req, res) => {
       LIMIT 10
     `, params);
     
+    // Horarios más populares
+    const horariosPopulares = await db.query(`
+      SELECT r.hora_inicio as hora, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY r.hora_inicio
+      ORDER BY cantidad DESC, ingresos DESC
+      LIMIT 10
+    `, params);
+    
     const reportData = {
       metrics: {
         totalReservas: parseInt(totalReservas.count),
@@ -531,7 +543,8 @@ app.post('/api/admin/reports', async (req, res) => {
       charts: {
         reservasPorDia: reservasPorDia,
         reservasPorComplejo: reservasPorComplejo,
-        reservasPorTipo: reservasPorTipo
+        reservasPorTipo: reservasPorTipo,
+        horariosPopulares: horariosPopulares
       },
       tables: {
         topCanchas: topCanchas
@@ -1487,6 +1500,21 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
       ORDER BY clientes_unicos DESC
     `, params);
     
+    // 6. Horarios más populares
+    const horariosPopulares = await db.query(`
+      SELECT 
+        r.hora_inicio as hora,
+        COUNT(*) as cantidad,
+        SUM(r.precio_total) as ingresos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      GROUP BY r.hora_inicio
+      ORDER BY cantidad DESC, ingresos DESC
+      LIMIT 10
+    `, params);
+    
     console.log('✅ Análisis de clientes generado exitosamente');
     
     res.json({
@@ -1497,7 +1525,8 @@ app.get('/api/admin/customers-analysis', async (req, res) => {
         clientesNuevos: clientesNuevos,
         clientesRecurrentes: clientesRecurrentes,
         estadisticas: estadisticasClientes,
-        distribucionComplejos: distribucionComplejos
+        distribucionComplejos: distribucionComplejos,
+        horariosPopulares: horariosPopulares
       }
     });
     

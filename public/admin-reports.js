@@ -335,13 +335,17 @@ function updateRevenueChart() {
         charts.revenue.destroy();
     }
     
+    // Procesar datos del backend
+    const labels = data.map(item => formatDate(item.fecha));
+    const ingresos = data.map(item => parseInt(item.ingresos));
+    
     charts.revenue = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.labels,
+            labels: labels,
             datasets: [{
                 label: 'Ingresos',
-                data: data.data,
+                data: ingresos,
                 borderColor: '#28a745',
                 backgroundColor: 'rgba(40, 167, 69, 0.1)',
                 borderWidth: 3,
@@ -374,23 +378,29 @@ function updateRevenueChart() {
 // Gráfico de tipos
 function updateTypeChart() {
     const ctx = document.getElementById('typeChart').getContext('2d');
-    const data = reportsData.typeChart || { labels: [], data: [] };
+    const data = reportsData.charts?.reservasPorTipo || [];
     
     if (charts.type) {
         charts.type.destroy();
     }
     
+    // Procesar datos del backend
+    const labels = data.map(item => item.tipo.charAt(0).toUpperCase() + item.tipo.slice(1));
+    const cantidades = data.map(item => parseInt(item.cantidad));
+    
     charts.type = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: data.labels,
+            labels: labels,
             datasets: [{
-                data: data.data,
+                data: cantidades,
                 backgroundColor: [
                     '#007bff',
                     '#28a745',
                     '#ffc107',
-                    '#dc3545'
+                    '#dc3545',
+                    '#6f42c1',
+                    '#fd7e14'
                 ]
             }]
         },
@@ -409,19 +419,23 @@ function updateTypeChart() {
 // Gráfico de ocupación
 function updateOccupancyChart() {
     const ctx = document.getElementById('occupancyChart').getContext('2d');
-    const data = reportsData.occupancyChart || { labels: [], data: [] };
+    const data = reportsData.charts?.reservasPorComplejo || [];
     
     if (charts.occupancy) {
         charts.occupancy.destroy();
     }
     
+    // Procesar datos del backend
+    const labels = data.map(item => item.complejo);
+    const cantidades = data.map(item => parseInt(item.cantidad));
+    
     charts.occupancy = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.labels,
+            labels: labels,
             datasets: [{
-                label: 'Ocupación (%)',
-                data: data.data,
+                label: 'Reservas',
+                data: cantidades,
                 backgroundColor: '#667eea',
                 borderColor: '#764ba2',
                 borderWidth: 1
@@ -438,11 +452,8 @@ function updateOccupancyChart() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100,
                     ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
+                        stepSize: 1
                     }
                 }
             }
@@ -453,19 +464,23 @@ function updateOccupancyChart() {
 // Gráfico de horarios
 function updateHoursChart() {
     const ctx = document.getElementById('hoursChart').getContext('2d');
-    const data = reportsData.hoursChart || { labels: [], data: [] };
+    const data = reportsData.charts?.horariosPopulares || [];
     
     if (charts.hours) {
         charts.hours.destroy();
     }
     
+    // Procesar datos del backend
+    const labels = data.map(item => item.hora);
+    const cantidades = data.map(item => parseInt(item.cantidad));
+    
     charts.hours = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: data.labels,
+            labels: labels,
             datasets: [{
                 label: 'Reservas',
-                data: data.data,
+                data: cantidades,
                 backgroundColor: '#ffc107',
                 borderColor: '#fd7e14',
                 borderWidth: 1
@@ -481,7 +496,10 @@ function updateHoursChart() {
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
                 }
             }
         }
@@ -548,23 +566,33 @@ async function updateCustomersTable() {
     const tbody = document.getElementById('customersTable');
     
     try {
+        console.log('👥 Iniciando análisis de clientes...');
+        
         // Obtener datos de análisis de clientes
         const { dateFrom, dateTo } = getPeriodDates();
         const complexId = document.getElementById('complexFilter').value;
+        
+        console.log('📅 Fechas:', { dateFrom, dateTo, complexId });
         
         const url = new URL(`${API_BASE}/admin/customers-analysis`);
         url.searchParams.append('dateFrom', dateFrom);
         url.searchParams.append('dateTo', dateTo);
         if (complexId) url.searchParams.append('complexId', complexId);
         
+        console.log('🔗 URL:', url.toString());
+        
         const response = await fetch(url);
+        console.log('📡 Response status:', response.status);
+        
         const result = await response.json();
+        console.log('📊 Result:', result);
         
         if (!result.success) {
             throw new Error(result.error || 'Error al cargar análisis de clientes');
         }
         
         const data = result.data;
+        console.log('📈 Data recibida:', data);
         
         // Mostrar estadísticas generales
         updateCustomersStats(data.estadisticas);
