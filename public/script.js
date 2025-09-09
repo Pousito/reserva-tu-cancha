@@ -129,46 +129,46 @@ document.addEventListener('DOMContentLoaded', async function() {
         await preRellenarDesdeURL();
         console.log('✅ Pre-rellenado completado');
         
-        // Scroll automático y mostrar paso 3 si hay parámetros URL
-        console.log('🔍 Verificando parámetros URL para scroll...');
-        const urlParams = new URLSearchParams(window.location.search);
-        const ciudad = urlParams.get('ciudad');
-        const complejo = urlParams.get('complejo');
-        
-        console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
-        
-        if (ciudad || complejo) {
-            console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
-            setTimeout(() => {
-                console.log('🔍 Buscando sección de reservas...');
-                const reservarSection = document.getElementById('reservar');
-                console.log('🔍 Sección de reservas encontrada:', reservarSection);
-                
-                if (reservarSection) {
-                    // Hacer scroll a la sección de reservas
-                    console.log('🔄 Ejecutando scroll...');
-                    reservarSection.scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                    console.log('✅ Scroll completado a la sección de reservas');
-                    
-                    // Mostrar automáticamente el paso 3 (Tipo de Cancha)
-                    setTimeout(() => {
-                        console.log('🔄 Mostrando paso 3...');
-                        mostrarPaso(3);
-                        console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
-                    }, 300); // Pequeño delay después del scroll
-                } else {
-                    console.error('❌ No se encontró la sección de reservas');
-                }
-            }, 500); // Pequeño delay para asegurar que los campos estén completamente cargados
-        } else {
-            console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
-        }
-        
     } catch (error) {
         console.error('❌ Error en inicialización:', error);
+    }
+    
+    // Scroll automático y mostrar paso 3 si hay parámetros URL (fuera del try-catch)
+    console.log('🔍 Verificando parámetros URL para scroll...');
+    const urlParams = new URLSearchParams(window.location.search);
+    const ciudad = urlParams.get('ciudad');
+    const complejo = urlParams.get('complejo');
+    
+    console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
+    
+    if (ciudad || complejo) {
+        console.log('🔄 Haciendo scroll automático y mostrando paso 3...');
+        setTimeout(() => {
+            console.log('🔍 Buscando sección de reservas...');
+            const reservarSection = document.getElementById('reservar');
+            console.log('🔍 Sección de reservas encontrada:', reservarSection);
+            
+            if (reservarSection) {
+                // Hacer scroll a la sección de reservas
+                console.log('🔄 Ejecutando scroll...');
+                reservarSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                console.log('✅ Scroll completado a la sección de reservas');
+                
+                // Mostrar automáticamente el paso 3 (Tipo de Cancha)
+                setTimeout(() => {
+                    console.log('🔄 Mostrando paso 3...');
+                    mostrarPaso(3);
+                    console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
+                }, 300); // Pequeño delay después del scroll
+            } else {
+                console.error('❌ No se encontró la sección de reservas');
+            }
+        }, 500); // Pequeño delay para asegurar que los campos estén completamente cargados
+    } else {
+        console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
     }
     
     // Verificar que la función scrollToReservar esté disponible
