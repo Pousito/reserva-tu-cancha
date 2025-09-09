@@ -658,47 +658,85 @@ async function updateCustomersTable() {
 
 // Actualizar estadísticas de clientes
 function updateCustomersStats(stats) {
-    // Actualizar métricas de clientes únicos
-    const clientesUnicosElement = document.getElementById('uniqueCustomers');
-    if (clientesUnicosElement) {
-        clientesUnicosElement.textContent = (stats.clientes_unicos || 0).toLocaleString();
-    }
-    
-    // Mostrar estadísticas adicionales si hay elementos para ellas
-    const clientesActivosElement = document.getElementById('activeCustomers');
-    if (clientesActivosElement) {
-        clientesActivosElement.textContent = (stats.clientes_activos_30_dias || 0).toLocaleString();
-    }
-    
-    const clientesNuevosElement = document.getElementById('newCustomers');
-    if (clientesNuevosElement) {
-        const clientesNuevos = (stats.clientes_unicos || 0) - (stats.clientes_activos_30_dias || 0);
-        clientesNuevosElement.textContent = Math.max(0, clientesNuevos).toLocaleString();
+    try {
+        console.log('📊 Actualizando estadísticas de clientes:', stats);
+        
+        // Actualizar métricas de clientes únicos
+        const clientesUnicosElement = document.getElementById('uniqueCustomers');
+        if (clientesUnicosElement) {
+            clientesUnicosElement.textContent = (stats.clientes_unicos || 0).toLocaleString();
+            console.log('✅ Clientes únicos actualizados:', stats.clientes_unicos);
+        } else {
+            console.log('⚠️ Elemento uniqueCustomers no encontrado');
+        }
+        
+        // Mostrar estadísticas adicionales si hay elementos para ellas
+        const clientesActivosElement = document.getElementById('activeCustomers');
+        if (clientesActivosElement) {
+            clientesActivosElement.textContent = (stats.clientes_activos_30_dias || 0).toLocaleString();
+            console.log('✅ Clientes activos actualizados:', stats.clientes_activos_30_dias);
+        } else {
+            console.log('⚠️ Elemento activeCustomers no encontrado (esto es normal)');
+        }
+        
+        const clientesNuevosElement = document.getElementById('newCustomers');
+        if (clientesNuevosElement) {
+            const clientesNuevos = (stats.clientes_unicos || 0) - (stats.clientes_activos_30_dias || 0);
+            clientesNuevosElement.textContent = Math.max(0, clientesNuevos).toLocaleString();
+            console.log('✅ Clientes nuevos actualizados:', clientesNuevos);
+        } else {
+            console.log('⚠️ Elemento newCustomers no encontrado (esto es normal)');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando estadísticas de clientes:', error);
     }
 }
 
 // Actualizar gráficos de clientes
 function updateCustomersCharts(data) {
-    // Crear gráfico de distribución de clientes por complejo si hay datos
-    if (data.distribucionComplejos && data.distribucionComplejos.length > 0) {
-        createCustomersByComplexChart(data.distribucionComplejos);
-    }
-    
-    // Crear gráfico de clientes nuevos vs recurrentes
-    if (data.clientesNuevos && data.clientesRecurrentes) {
-        createNewVsRecurringCustomersChart(data.clientesNuevos, data.clientesRecurrentes);
+    try {
+        console.log('📊 Actualizando gráficos de clientes:', data);
+        
+        // Crear gráfico de distribución de clientes por complejo si hay datos
+        if (data.distribucionComplejos && data.distribucionComplejos.length > 0) {
+            console.log('📈 Creando gráfico de distribución por complejo:', data.distribucionComplejos);
+            createCustomersByComplexChart(data.distribucionComplejos);
+        } else {
+            console.log('⚠️ No hay datos de distribución por complejo');
+        }
+        
+        // Crear gráfico de clientes nuevos vs recurrentes
+        if (data.clientesNuevos && data.clientesRecurrentes) {
+            console.log('📈 Creando gráfico de nuevos vs recurrentes:', {
+                nuevos: data.clientesNuevos.length,
+                recurrentes: data.clientesRecurrentes.length
+            });
+            createNewVsRecurringCustomersChart(data.clientesNuevos, data.clientesRecurrentes);
+        } else {
+            console.log('⚠️ No hay datos de clientes nuevos/recurrentes');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando gráficos de clientes:', error);
     }
 }
 
 // Crear gráfico de clientes por complejo
 function createCustomersByComplexChart(data) {
-    const ctx = document.getElementById('customersByComplexChart');
-    if (!ctx) return;
-    
-    // Destruir gráfico existente si existe
-    if (charts.customersByComplex) {
-        charts.customersByComplex.destroy();
-    }
+    try {
+        console.log('📊 Creando gráfico de clientes por complejo:', data);
+        
+        const ctx = document.getElementById('customersByComplexChart');
+        if (!ctx) {
+            console.log('⚠️ Elemento customersByComplexChart no encontrado');
+            return;
+        }
+        
+        // Destruir gráfico existente si existe
+        if (charts.customersByComplex) {
+            charts.customersByComplex.destroy();
+        }
     
     charts.customersByComplex = new Chart(ctx, {
         type: 'doughnut',
@@ -740,17 +778,32 @@ function createCustomersByComplexChart(data) {
             }
         }
     });
+    
+    console.log('✅ Gráfico de clientes por complejo creado exitosamente');
+    
+    } catch (error) {
+        console.error('❌ Error creando gráfico de clientes por complejo:', error);
+    }
 }
 
 // Crear gráfico de clientes nuevos vs recurrentes
 function createNewVsRecurringCustomersChart(clientesNuevos, clientesRecurrentes) {
-    const ctx = document.getElementById('newVsRecurringChart');
-    if (!ctx) return;
-    
-    // Destruir gráfico existente si existe
-    if (charts.newVsRecurring) {
-        charts.newVsRecurring.destroy();
-    }
+    try {
+        console.log('📊 Creando gráfico de nuevos vs recurrentes:', {
+            nuevos: clientesNuevos.length,
+            recurrentes: clientesRecurrentes.length
+        });
+        
+        const ctx = document.getElementById('newVsRecurringChart');
+        if (!ctx) {
+            console.log('⚠️ Elemento newVsRecurringChart no encontrado');
+            return;
+        }
+        
+        // Destruir gráfico existente si existe
+        if (charts.newVsRecurring) {
+            charts.newVsRecurring.destroy();
+        }
     
     charts.newVsRecurring = new Chart(ctx, {
         type: 'bar',
@@ -790,6 +843,12 @@ function createNewVsRecurringCustomersChart(clientesNuevos, clientesRecurrentes)
             }
         }
     });
+    
+    console.log('✅ Gráfico de nuevos vs recurrentes creado exitosamente');
+    
+    } catch (error) {
+        console.error('❌ Error creando gráfico de nuevos vs recurrentes:', error);
+    }
 }
 
 // Funciones de utilidad
