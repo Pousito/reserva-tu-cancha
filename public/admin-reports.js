@@ -190,9 +190,9 @@ function updateMetrics() {
     const uniqueCustomers = document.getElementById('uniqueCustomers');
     
     if (totalRevenue) totalRevenue.textContent = `$${metrics.ingresosTotales.toLocaleString()}`;
-    if (totalReservations) totalReservations.textContent = metrics.reservasTotales;
-    if (occupancyRate) occupancyRate.textContent = `${metrics.ocupacionPromedio}%`;
-    if (uniqueCustomers) uniqueCustomers.textContent = metrics.clientesUnicos;
+    if (totalReservations) totalReservations.textContent = metrics.totalReservas;
+    if (occupancyRate) occupancyRate.textContent = `${Math.round(metrics.tasaConfirmacion)}%`;
+    if (uniqueCustomers) uniqueCustomers.textContent = metrics.reservasConfirmadas;
 }
 
 // Actualizar gráficos
@@ -200,13 +200,13 @@ function updateCharts() {
     const charts = reportsData.charts;
     
     // Gráfico de ingresos por día
-    updateIncomeChart(charts.ingresosPorDia);
+    updateIncomeChart(charts.reservasPorDia);
     
     // Gráfico de reservas por tipo
     updateReservationsChart(charts.reservasPorTipo);
     
     // Gráfico de ocupación por complejo
-    updateOccupancyChart(charts.ocupacionPorComplejo);
+    updateOccupancyChart(charts.reservasPorComplejo);
     
     // Gráfico de horarios populares
     updateHoursChart(charts.horariosPopulares);
@@ -215,16 +215,16 @@ function updateCharts() {
 // Actualizar gráfico de ingresos
 function updateIncomeChart(data) {
     const canvas = document.getElementById('revenueChart');
-    if (!canvas) return;
+    if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.map(item => item.fecha),
+            labels: data.map(item => new Date(item.fecha).toLocaleDateString()),
             datasets: [{
                 label: 'Ingresos',
-                data: data.map(item => item.ingresos),
+                data: data.map(item => parseInt(item.ingresos)),
                 borderColor: 'rgb(75, 192, 192)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 tension: 0.1
@@ -245,7 +245,7 @@ function updateIncomeChart(data) {
 // Actualizar gráfico de reservas
 function updateReservationsChart(data) {
     const canvas = document.getElementById('typeChart');
-    if (!canvas) return;
+    if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
@@ -253,7 +253,7 @@ function updateReservationsChart(data) {
         data: {
             labels: data.map(item => item.tipo),
             datasets: [{
-                data: data.map(item => item.cantidad),
+                data: data.map(item => parseInt(item.cantidad)),
                 backgroundColor: [
                     '#FF6384',
                     '#36A2EB',
@@ -278,7 +278,7 @@ function updateReservationsChart(data) {
 // Actualizar gráfico de ocupación
 function updateOccupancyChart(data) {
     const canvas = document.getElementById('occupancyChart');
-    if (!canvas) return;
+    if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
@@ -287,7 +287,7 @@ function updateOccupancyChart(data) {
             labels: data.map(item => item.complejo),
             datasets: [{
                 label: 'Ocupación (%)',
-                data: data.map(item => item.ocupacion),
+                data: data.map(item => Math.round(parseFloat(item.ocupacion_real) * 100)),
                 backgroundColor: 'rgba(54, 162, 235, 0.8)'
             }]
         },
@@ -312,7 +312,7 @@ function updateOccupancyChart(data) {
 // Actualizar gráfico de horarios
 function updateHoursChart(data) {
     const canvas = document.getElementById('hoursChart');
-    if (!canvas) return;
+    if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
@@ -321,7 +321,7 @@ function updateHoursChart(data) {
             labels: data.map(item => item.hora),
             datasets: [{
                 label: 'Reservas',
-                data: data.map(item => item.cantidad),
+                data: data.map(item => parseInt(item.cantidad)),
                 backgroundColor: 'rgba(255, 99, 132, 0.8)'
             }]
         },
