@@ -382,14 +382,20 @@ async function updateCustomersTable() {
             throw new Error(`Fechas inválidas: dateFrom=${dateFrom}, dateTo=${dateTo}`);
         }
         
-        const url = new URL('/admin/customers-analysis', window.location.origin);
-        url.searchParams.append('dateFrom', dateFrom);
-        url.searchParams.append('dateTo', dateTo);
-        if (complexId) url.searchParams.append('complexId', complexId);
+        // Construir URL relativa con parámetros
+        let url = '/admin/customers-analysis';
+        const params = new URLSearchParams();
+        params.append('dateFrom', dateFrom);
+        params.append('dateTo', dateTo);
+        if (complexId) params.append('complexId', complexId);
         
-        console.log('🔗 URL:', url.toString());
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
         
-        const response = await AdminUtils.authenticatedFetch(url.toString());
+        console.log('🔗 URL relativa:', url);
+        
+        const response = await AdminUtils.authenticatedFetch(url);
         
         console.log('📡 Respuesta customers:', response);
         
