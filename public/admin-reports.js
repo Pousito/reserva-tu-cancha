@@ -78,12 +78,7 @@ function updatePeriodFilter() {
 // Cargar complejos
 async function loadComplexes() {
     try {
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/complejos`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetch(`${API_BASE}/admin/complejos`);
         
         if (response.ok) {
             complexes = await response.json();
@@ -123,14 +118,12 @@ async function generateReports() {
         showLoadingState();
         
         const filters = getFilters();
-        const token = localStorage.getItem('adminToken');
         
-        // Obtener datos de reportes
+        // Obtener datos de reportes (sin autenticación ya que el backend no la requiere)
         const response = await fetch(`${API_BASE}/admin/reports`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(filters)
         });
@@ -518,10 +511,10 @@ function updateTopComplexesTable() {
     
     tbody.innerHTML = data.map(complex => `
         <tr>
-            <td>${complex.nombre}</td>
-            <td>${complex.reservas}</td>
+            <td>${complex.complejo}</td>
+            <td>${complex.cantidad}</td>
             <td>${formatCurrency(complex.ingresos)}</td>
-            <td>${complex.ocupacion.toFixed(1)}%</td>
+            <td>${((complex.cantidad / data.reduce((sum, c) => sum + parseInt(c.cantidad), 0)) * 100).toFixed(1)}%</td>
         </tr>
     `).join('');
 }
@@ -542,7 +535,7 @@ function updateTopCourtsTable() {
     
     tbody.innerHTML = data.map(court => `
         <tr>
-            <td>${court.nombre}</td>
+            <td>${court.cancha}</td>
             <td>${court.complejo}</td>
             <td>${court.reservas}</td>
             <td>${formatCurrency(court.ingresos)}</td>
@@ -552,32 +545,17 @@ function updateTopCourtsTable() {
 
 // Tabla de clientes
 function updateCustomersTable() {
-    const data = reportsData.customers || [];
     const tbody = document.getElementById('customersTable');
     
-    if (data.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-muted">No hay datos disponibles</td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tbody.innerHTML = data.map(customer => `
+    // Por ahora, mostrar un mensaje ya que el backend no envía datos de clientes
+    tbody.innerHTML = `
         <tr>
-            <td>${customer.nombre}</td>
-            <td>${customer.email}</td>
-            <td>${customer.reservas}</td>
-            <td>${formatCurrency(customer.totalGastado)}</td>
-            <td>${formatDate(customer.ultimaReserva)}</td>
-            <td>
-                <span class="badge ${customer.activo ? 'bg-success' : 'bg-secondary'}">
-                    ${customer.activo ? 'Activo' : 'Inactivo'}
-                </span>
+            <td colspan="6" class="text-center text-muted">
+                <i class="fas fa-info-circle me-2"></i>
+                Análisis de clientes próximamente
             </td>
         </tr>
-    `).join('');
+    `;
 }
 
 // Funciones de utilidad
