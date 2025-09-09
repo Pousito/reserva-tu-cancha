@@ -428,7 +428,7 @@ async function updateTopComplexesTable() {
             tbody.innerHTML = data.charts.reservasPorComplejo.map(item => `
                 <tr>
                     <td><strong>${item.complejo}</strong></td>
-                    <td><span class="badge bg-primary">${item.total_reservas || 0}</span></td>
+                    <td><span class="badge bg-primary">${item.cantidad || 0}</span></td>
                     <td><span class="text-success">$${parseInt(item.ingresos || 0).toLocaleString()}</span></td>
                     <td><span class="badge bg-info">${Math.round(parseFloat(item.ocupacion_real || 0) * 100)}%</span></td>
                 </tr>
@@ -509,22 +509,25 @@ async function updateTopCourtsTable() {
             return;
         }
         
-        // Por ahora, vamos a usar datos simulados hasta que tengamos el endpoint específico
-        // TODO: Crear endpoint específico para top canchas
-        tbody.innerHTML = `
-            <tr>
-                <td><strong>Cancha 1</strong></td>
-                <td>MagnaSports</td>
-                <td><span class="badge bg-primary">15</span></td>
-                <td><span class="text-success">$75,000</span></td>
-            </tr>
-            <tr>
-                <td><strong>Cancha 2</strong></td>
-                <td>MagnaSports</td>
-                <td><span class="badge bg-primary">12</span></td>
-                <td><span class="text-success">$60,000</span></td>
-            </tr>
-        `;
+        // Usar datos reales de tables.topCanchas
+        if (data.tables && data.tables.topCanchas && data.tables.topCanchas.length > 0) {
+            tbody.innerHTML = data.tables.topCanchas.map(item => `
+                <tr>
+                    <td><strong>${item.cancha}</strong></td>
+                    <td>${item.complejo}</td>
+                    <td><span class="badge bg-primary">${item.reservas || 0}</span></td>
+                    <td><span class="text-success">$${parseInt(item.ingresos || 0).toLocaleString()}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        <i class="fas fa-info-circle me-2"></i>No hay datos disponibles
+                    </td>
+                </tr>
+            `;
+        }
         
         console.log('✅ Top Canchas actualizado');
         
