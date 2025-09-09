@@ -1656,6 +1656,58 @@ app.get('/api/debug/create-role-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR CONTRASEÑA =====
+app.get('/api/debug/check-password', async (req, res) => {
+  try {
+    const { email, password } = req.query;
+    console.log('🔍 Verificando contraseña para:', email);
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email y contraseña son requeridos' 
+      });
+    }
+    
+    // Buscar usuario
+    const user = await db.get(`
+      SELECT u.*, c.nombre as complejo_nombre, c.id as complejo_id
+      FROM usuarios u
+      LEFT JOIN complejos c ON u.complejo_id = c.id
+      WHERE u.email = $1 AND u.activo = true
+    `, [email]);
+    
+    if (!user) {
+      return res.json({ 
+        success: false, 
+        error: 'Usuario no encontrado',
+        user: null
+      });
+    }
+    
+    // Verificar contraseña
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre,
+        rol: user.rol,
+        complejo_id: user.complejo_id,
+        complejo_nombre: user.complejo_nombre
+      },
+      passwordMatch,
+      passwordHash: user.password.substring(0, 20) + '...' // Solo mostrar los primeros 20 caracteres
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando contraseña:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA VER USUARIOS =====
 app.get('/api/debug/list-users', async (req, res) => {
   try {
