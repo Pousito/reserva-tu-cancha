@@ -1184,6 +1184,61 @@ app.get('/api/debug/login-test', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT DE DEBUG PARA ESTRUCTURA DE USUARIOS =====
+app.get('/api/debug/check-users-structure', async (req, res) => {
+  try {
+    console.log('🔍 DEBUG: Verificando estructura de tabla usuarios...');
+    
+    // Verificar si la tabla existe
+    const tableExists = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'usuarios'
+      );
+    `);
+    
+    console.log('📋 Tabla usuarios existe:', tableExists[0].exists);
+    
+    if (tableExists[0].exists) {
+      // Verificar estructura de la tabla
+      const structure = await db.query(`
+        SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns 
+        WHERE table_name = 'usuarios' 
+        ORDER BY ordinal_position
+      `);
+      
+      // Contar registros
+      const count = await db.get('SELECT COUNT(*) as count FROM usuarios');
+      
+      console.log('📊 Estructura de tabla usuarios:', structure);
+      console.log('👥 Total de usuarios:', count.count);
+      
+      res.json({
+        success: true,
+        tableExists: tableExists[0].exists,
+        structure: structure,
+        userCount: count.count
+      });
+    } else {
+      res.json({
+        success: true,
+        tableExists: false,
+        message: 'Tabla usuarios no existe'
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error verificando estructura usuarios:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
