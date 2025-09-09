@@ -198,7 +198,10 @@ async function authenticatedFetch(url, options = {}) {
         ...options.headers
     };
 
-    const response = await fetch(url, {
+    // Construir URL completa
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+
+    const response = await fetch(fullUrl, {
         ...options,
         headers
     });
