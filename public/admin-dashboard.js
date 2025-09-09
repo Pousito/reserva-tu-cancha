@@ -1,8 +1,3 @@
-// API Base URL - Dinámico para desarrollo y producción
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000/api' 
-    : 'https://reserva-tu-cancha.onrender.com/api';
-
 // Variables globales
 let reservationsChart = null;
 
@@ -10,18 +5,17 @@ let reservationsChart = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== ADMIN DASHBOARD INICIALIZADO ===');
     
-    // Verificar autenticación
-    if (!localStorage.getItem('adminToken')) {
-        window.location.href = 'admin-login.html';
+    // Inicializar sistema de roles
+    if (!AdminUtils.initializeRoleSystem()) {
         return;
     }
     
-    // Mostrar información del usuario
-    const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
-    document.getElementById('adminWelcome').textContent = `Bienvenido, ${adminUser.nombre || 'Admin'}`;
+    // Configurar logout
+    AdminUtils.setupLogout();
     
-    // Configurar interfaz según el rol
-    configurarInterfazPorRol(adminUser.rol);
+    // Mostrar información del usuario
+    const adminUser = AdminUtils.getCurrentUser();
+    document.getElementById('adminWelcome').textContent = `Bienvenido, ${adminUser.nombre || 'Admin'}`;
     
     // Cargar datos del dashboard
     cargarEstadisticas();
@@ -58,12 +52,8 @@ function configurarInterfazPorRol(rol) {
 
 async function cargarEstadisticas() {
     try {
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/estadisticas`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/estadisticas`);
+        if (!response) return;
         
         if (response.ok) {
             const stats = await response.json();
@@ -88,12 +78,8 @@ async function cargarEstadisticas() {
 
 async function cargarReservasRecientes() {
     try {
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/reservas-recientes`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reservas-recientes`);
+        if (!response) return;
         
         if (response.ok) {
             const reservas = await response.json();
