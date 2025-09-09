@@ -1471,7 +1471,10 @@ function calcularHoraFin(horaInicio) {
 }
 
  function formatearFecha(fecha) {
-     const fechaObj = new Date(fecha);
+     // Evitar problema de zona horaria creando la fecha con componentes específicos
+     const [año, mes, dia] = fecha.split('-').map(Number);
+     const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+     
      const opciones = {
          weekday: 'long',
          year: 'numeric',
