@@ -41,7 +41,7 @@ function setupEventListeners() {
 // Cargar ciudades
 async function loadCities() {
     try {
-        const response = await fetch(`${API_BASE}/ciudades`);
+        const response = await AdminUtils.authenticatedFetch('/ciudades');
         if (response.ok) {
             cities = await response.json();
             populateCitySelect();
@@ -69,7 +69,7 @@ function populateCitySelect() {
 // Cargar complejos
 async function loadComplexes() {
     try {
-        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/complejos`);
+        const response = await AdminUtils.authenticatedFetch('/admin/complejos');
         if (!response) return;
         
         if (response.ok) {
@@ -247,12 +247,12 @@ async function saveComplex() {
             return;
         }
         
-        const url = isEdit ? `${API_BASE}/admin/complejos/${complexId}` : `${API_BASE}/admin/complejos`;
+        const url = isEdit ? `/admin/complejos/${complexId}` : `/admin/complejos`;
         const method = isEdit ? 'PUT' : 'POST';
         
         console.log('Enviando solicitud:', { url, method, complexData });
         
-        const response = await fetch(url, {
+        const response = await AdminUtils.authenticatedFetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
@@ -301,7 +301,7 @@ async function deleteComplex(complexId) {
     
     try {
         const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/complejos/${complexId}`, {
+        const response = await AdminUtils.authenticatedFetch(`/admin/complejos/${complexId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

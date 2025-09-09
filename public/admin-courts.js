@@ -58,7 +58,7 @@ function setupEventListeners() {
 async function loadComplexes() {
     try {
         const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/complejos`, {
+        const response = await AdminUtils.authenticatedFetch('/admin/complejos', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -108,7 +108,7 @@ function populateComplexSelects() {
 // Cargar canchas
 async function loadCourts() {
     try {
-        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/canchas`);
+        const response = await AdminUtils.authenticatedFetch('/admin/canchas');
         if (!response) return;
         
         if (response.ok) {
@@ -316,12 +316,12 @@ async function saveCourt() {
             return;
         }
         
-        const url = isEdit ? `${API_BASE}/admin/canchas/${courtId}` : `${API_BASE}/admin/canchas`;
+        const url = isEdit ? `/admin/canchas/${courtId}` : `/admin/canchas`;
         const method = isEdit ? 'PUT' : 'POST';
         
         console.log('Enviando solicitud:', { url, method, courtData });
         
-        const response = await fetch(url, {
+        const response = await AdminUtils.authenticatedFetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
@@ -370,7 +370,7 @@ async function deleteCourt(courtId) {
     
     try {
         const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/canchas/${courtId}`, {
+        const response = await AdminUtils.authenticatedFetch(`/admin/canchas/${courtId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`

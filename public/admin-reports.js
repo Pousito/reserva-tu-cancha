@@ -60,7 +60,7 @@ function setDefaultDates() {
 // Cargar complejos
 async function loadComplexes() {
     try {
-        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/complejos`);
+        const response = await AdminUtils.authenticatedFetch('/admin/complejos');
         if (!response) return;
         
         if (response.ok) {
@@ -103,7 +103,7 @@ async function generateReports() {
         const filters = getFilters();
         
         // Obtener datos de reportes (sin autenticación ya que el backend no la requiere)
-        const response = await fetch(`${API_BASE}/admin/reports`, {
+        const response = await AdminUtils.authenticatedFetch('/admin/reports', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -535,7 +535,7 @@ async function updateCustomersTable() {
             throw new Error(`Fechas inválidas: dateFrom=${dateFrom}, dateTo=${dateTo}`);
         }
         
-        const url = new URL(`${API_BASE}/admin/customers-analysis`);
+        const url = new URL('/admin/customers-analysis', window.location.origin);
         url.searchParams.append('dateFrom', dateFrom);
         url.searchParams.append('dateTo', dateTo);
         if (complexId) url.searchParams.append('complexId', complexId);
