@@ -1656,6 +1656,52 @@ app.get('/api/debug/create-role-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA ACTUALIZAR CONTRASEÑA =====
+app.get('/api/debug/update-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.query;
+    console.log('🔧 Actualizando contraseña para:', email);
+    
+    if (!email || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email y nueva contraseña son requeridos' 
+      });
+    }
+    
+    // Hashear nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log('🔐 Nueva contraseña hasheada:', hashedPassword);
+    
+    // Actualizar contraseña en la base de datos
+    const result = await db.run(
+      'UPDATE usuarios SET password = $1 WHERE email = $2',
+      [hashedPassword, email]
+    );
+    
+    if (result.changes === 0) {
+      return res.json({ 
+        success: false, 
+        error: 'Usuario no encontrado' 
+      });
+    }
+    
+    console.log('✅ Contraseña actualizada exitosamente');
+    
+    res.json({ 
+      success: true, 
+      message: 'Contraseña actualizada exitosamente',
+      email,
+      newPassword,
+      hashedPassword
+    });
+    
+  } catch (error) {
+    console.error('❌ Error actualizando contraseña:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA VERIFICAR CONTRASEÑA =====
 app.get('/api/debug/check-password', async (req, res) => {
   try {
