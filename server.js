@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 // PostgreSQL + SQLite Hybrid Database System - Persistence Test
 const DatabaseManager = require('./src/config/database');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
@@ -1066,6 +1068,85 @@ process.on('SIGTERM', async () => {
   await db.close();
   process.exit(0);
 });
+
+// ===== ENDPOINT DE LOGIN PARA ADMINISTRADORES =====
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log('🔐 Intento de login admin:', email);
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email y contraseña son requeridos' 
+      });
+    }
+    
+    // Buscar usuario en la base de datos
+    let user;
+    if (db.getDbType() === 'PostgreSQL') {
+      user = await db.get(
+        'SELECT * FROM usuarios WHERE email = $1 AND activo = true',
+        [email]
+      );
+    } else {
+      user = await db.get(
+        'SELECT * FROM usuarios WHERE email = ? AND activo = 1',
+        [email]
+      );
+    }
+    
+    if (!user) {
+      console.log('❌ Usuario no encontrado:', email);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Credenciales inválidas' 
+      });
+    }
+    
+    // Verificar contraseña (en este caso, las contraseñas están en texto plano)
+    // En un sistema de producción, deberías usar bcrypt.compare()
+    if (user.password !== password) {
+      console.log('❌ Contraseña incorrecta para:', email);
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Credenciales inválidas' 
+      });
+    }
+    
+    // Generar token JWT
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email, 
+        rol: user.rol 
+      },
+      process.env.JWT_SECRET || 'fallback-secret-key',
+      { expiresIn: '24h' }
+    );
+    
+    console.log('✅ Login exitoso para:', email, 'Rol:', user.rol);
+    
+    res.json({
+      success: true,
+      token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre,
+        rol: user.rol
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en login admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
