@@ -1173,9 +1173,10 @@ app.post('/api/admin/login', async (req, res) => {
       });
     }
     
-    // Verificar contraseña (en este caso, las contraseñas están en texto plano)
-    // En un sistema de producción, deberías usar bcrypt.compare()
-    if (user.password !== password) {
+    // Verificar contraseña usando bcrypt
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    
+    if (!passwordMatch) {
       console.log('❌ Contraseña incorrecta para:', email);
       return res.status(401).json({ 
         success: false, 
