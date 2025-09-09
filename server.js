@@ -16,6 +16,79 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// ===== MIDDLEWARE DE AUTENTICACIÓN =====
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Token de acceso requerido' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key', (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, error: 'Token inválido' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// ===== MIDDLEWARE DE PERMISOS POR ROL =====
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'Usuario no autenticado' });
+    }
+
+    const userRole = req.user.rol;
+    if (!roles.includes(userRole)) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Permisos insuficientes',
+        required: roles,
+        current: userRole
+      });
+    }
+
+    next();
+  };
+};
+
+// ===== MIDDLEWARE DE RESTRICCIÓN POR COMPLEJO =====
+const requireComplexAccess = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'Usuario no autenticado' });
+  }
+
+  const userRole = req.user.rol;
+  const userComplexId = req.user.complejo_id;
+
+  // Super admin puede acceder a todo
+  if (userRole === 'super_admin') {
+    return next();
+  }
+
+  // Dueños y administradores solo pueden acceder a su complejo
+  if (userRole === 'owner' || userRole === 'manager') {
+    if (!userComplexId) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Usuario no tiene complejo asignado' 
+      });
+    }
+    
+    // Agregar filtro de complejo a la consulta
+    req.complexFilter = userComplexId;
+    return next();
+  }
+
+  return res.status(403).json({ 
+    success: false, 
+    error: 'Rol no válido para esta operación' 
+  });
+};
+
 // Sistema de base de datos híbrido (PostgreSQL + SQLite)
 const db = new DatabaseManager();
 
@@ -244,31 +317,78 @@ app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
 });
 
 // Endpoints del panel de administrador
-app.get('/api/admin/estadisticas', async (req, res) => {
+app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('📊 Cargando estadísticas del panel de administrador...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
     
-    // Obtener estadísticas
-    const totalReservas = await db.get('SELECT COUNT(*) as count FROM reservas');
-    const totalCanchas = await db.get('SELECT COUNT(*) as count FROM canchas');
-    const totalComplejos = await db.get('SELECT COUNT(*) as count FROM complejos');
-    const ingresosTotales = await db.get('SELECT COALESCE(SUM(precio_total), 0) as total FROM reservas WHERE estado = \'confirmada\'');
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      // Super admin ve todo
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      // Dueños y administradores solo ven su complejo
+      whereClause = 'WHERE c.complejo_id = $1';
+      params = [complexFilter];
+    }
+    
+    // Obtener estadísticas con filtros
+    const totalReservas = await db.get(`
+      SELECT COUNT(*) as count 
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      ${whereClause}
+    `, params);
+    
+    const totalCanchas = await db.get(`
+      SELECT COUNT(*) as count 
+      FROM canchas c
+      ${userRole === 'super_admin' ? '' : 'WHERE c.complejo_id = $1'}
+    `, userRole === 'super_admin' ? [] : [complexFilter]);
+    
+    const totalComplejos = await db.get(`
+      SELECT COUNT(*) as count 
+      FROM complejos
+      ${userRole === 'super_admin' ? '' : 'WHERE id = $1'}
+    `, userRole === 'super_admin' ? [] : [complexFilter]);
+    
+    // Solo super admin y dueños pueden ver ingresos
+    let ingresosTotales = { total: 0 };
+    if (userRole === 'super_admin' || userRole === 'owner') {
+      ingresosTotales = await db.get(`
+        SELECT COALESCE(SUM(r.precio_total), 0) as total 
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        WHERE r.estado = 'confirmada'
+        ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
+      `, userRole === 'super_admin' ? [] : [complexFilter]);
+    }
     
     // Reservas por día (últimos 7 días)
     const reservasPorDia = await db.query(`
-      SELECT DATE(fecha) as dia, COUNT(*) as cantidad
-      FROM reservas 
-      WHERE fecha >= CURRENT_DATE - INTERVAL '7 days'
-      GROUP BY DATE(fecha)
+      SELECT DATE(r.fecha) as dia, COUNT(*) as cantidad
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
+      ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
+      GROUP BY DATE(r.fecha)
       ORDER BY dia
-    `);
+    `, userRole === 'super_admin' ? [] : [complexFilter]);
     
     const stats = {
       totalReservas: totalReservas.count,
       totalCanchas: totalCanchas.count,
       totalComplejos: totalComplejos.count,
       ingresosTotales: parseInt(ingresosTotales.total),
-      reservasPorDia: reservasPorDia
+      reservasPorDia: reservasPorDia,
+      userRole: userRole,
+      complexFilter: complexFilter
     };
     
     console.log('✅ Estadísticas cargadas:', stats);
@@ -279,19 +399,37 @@ app.get('/api/admin/estadisticas', async (req, res) => {
   }
 });
 
-app.get('/api/admin/reservas-recientes', async (req, res) => {
+app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('📝 Cargando reservas recientes...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      // Super admin ve todo
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      // Dueños y administradores solo ven su complejo
+      whereClause = 'WHERE c.complejo_id = $1';
+      params = [complexFilter];
+    }
     
     const reservas = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
-    FROM reservas r
-    JOIN canchas c ON r.cancha_id = c.id
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
+      ${whereClause}
       ORDER BY r.created_at DESC
       LIMIT 10
-    `);
+    `, params);
     
     console.log(`✅ ${reservas.length} reservas recientes cargadas`);
     res.json(reservas);
