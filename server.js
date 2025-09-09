@@ -476,18 +476,18 @@ app.post('/api/admin/reports', async (req, res) => {
       ${whereClause} AND r.estado = 'confirmada'
     `, params);
     
-    // Reservas por día
+    // Reservas por día (solo confirmadas)
     const reservasPorDia = await db.query(`
       SELECT DATE(r.fecha) as fecha, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
+      ${whereClause} AND r.estado = 'confirmada'
       GROUP BY DATE(r.fecha)
       ORDER BY DATE(r.fecha)
     `, params);
     
-    // Reservas por complejo con ocupación real
+    // Reservas por complejo con ocupación real (solo confirmadas)
     const reservasPorComplejo = await db.query(`
       SELECT 
         co.nombre as complejo, 
@@ -497,7 +497,7 @@ app.post('/api/admin/reports', async (req, res) => {
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
+      ${whereClause} AND r.estado = 'confirmada'
       GROUP BY co.id, co.nombre
       ORDER BY ingresos DESC
     `, params);
@@ -549,36 +549,36 @@ app.post('/api/admin/reports', async (req, res) => {
       };
     }));
     
-    // Reservas por tipo de cancha
+    // Reservas por tipo de cancha (solo confirmadas)
     const reservasPorTipo = await db.query(`
       SELECT c.tipo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
+      ${whereClause} AND r.estado = 'confirmada'
       GROUP BY c.tipo
       ORDER BY ingresos DESC
     `, params);
     
-    // Top canchas más reservadas
+    // Top canchas más reservadas (solo confirmadas)
     const topCanchas = await db.query(`
       SELECT c.nombre as cancha, co.nombre as complejo, COUNT(*) as reservas, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
+      ${whereClause} AND r.estado = 'confirmada'
       GROUP BY c.id, c.nombre, co.nombre
       ORDER BY reservas DESC
       LIMIT 10
     `, params);
     
-    // Horarios más populares
+    // Horarios más populares (solo confirmadas)
     const horariosPopulares = await db.query(`
       SELECT r.hora_inicio as hora, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
+      ${whereClause} AND r.estado = 'confirmada'
       GROUP BY r.hora_inicio
       ORDER BY cantidad DESC, ingresos DESC
       LIMIT 10
