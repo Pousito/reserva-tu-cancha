@@ -555,6 +555,8 @@ async function updateCustomersTable() {
         const dateTo = document.getElementById('dateTo')?.value;
         const complexId = document.getElementById('complexFilter')?.value;
         
+        console.log('📅 Fechas obtenidas:', { dateFrom, dateTo, complexId });
+        
         if (!dateFrom || !dateTo) {
             console.log('⚠️ Fechas no disponibles para Análisis de Clientes');
             return;
@@ -590,6 +592,9 @@ async function updateCustomersTable() {
         
         // Actualizar tabla
         const tbody = document.querySelector('#customersTable tbody');
+        console.log('🔍 Elemento tbody encontrado:', tbody);
+        console.log('📊 Datos de clientes a mostrar:', customersData.length);
+        
         if (tbody) {
             if (customersData.length > 0) {
                 tbody.innerHTML = customersData.map(customer => `
