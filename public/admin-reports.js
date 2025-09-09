@@ -608,7 +608,7 @@ async function updateCustomersTable() {
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                            <div class="avatar-lg bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 20px; font-weight: bold;">
                                 ${cliente.nombre_cliente.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -618,13 +618,12 @@ async function updateCustomersTable() {
                         </div>
                     </td>
                     <td>
-                        <span class="badge bg-primary">${cliente.total_reservas}</span>
+                        <span class="badge bg-primary fs-6">${cliente.total_reservas}</span>
                     </td>
-                    <td>${formatCurrency(cliente.total_gastado)}</td>
                     <td>${formatCurrency(cliente.promedio_por_reserva)}</td>
                     <td>
                         <small class="text-muted">
-                            ${formatDate(cliente.primera_reserva)} - ${formatDate(cliente.ultima_reserva)}
+                            ${formatDate(cliente.ultima_reserva)}
                         </small>
                     </td>
                     <td>
@@ -635,14 +634,14 @@ async function updateCustomersTable() {
                 </tr>
             `).join('');
         } else {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-muted">
-                        <i class="fas fa-users me-2"></i>
-                        No hay datos de clientes para el período seleccionado
-                    </td>
-                </tr>
-            `;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            <i class="fas fa-users me-2"></i>
+                            No hay datos de clientes para el período seleccionado
+                        </td>
+                    </tr>
+                `;
         }
         
         // Actualizar gráficos de clientes si existen
@@ -652,7 +651,7 @@ async function updateCustomersTable() {
         console.error('Error cargando análisis de clientes:', error);
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-danger">
+                <td colspan="5" class="text-center text-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Error cargando análisis de clientes
                 </td>
