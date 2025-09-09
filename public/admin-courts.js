@@ -19,9 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadComplexes();
     loadCourts();
     setupEventListeners();
-    
-    // Configurar interfaz según el rol
-    configurarInterfazPorRol();
 }
 
 // Configurar interfaz según el rol del usuario

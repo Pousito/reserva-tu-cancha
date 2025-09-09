@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     setDefaultDates();
     generateReports();
-    configurarInterfazPorRol();
 }
 
 // Configurar interfaz según el rol del usuario
