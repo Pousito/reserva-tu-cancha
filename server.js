@@ -1470,6 +1470,78 @@ app.get('/api/debug/test-simple', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====
+app.get('/api/debug/clean-database', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando base de datos - solo Los Ángeles y MagnaSports...');
+    
+    // 1. Eliminar reservas de otros complejos (mantener solo MagnaSports)
+    const reservasEliminadas = await db.run(`
+      DELETE FROM reservas 
+      WHERE cancha_id IN (
+        SELECT c.id FROM canchas c 
+        JOIN complejos co ON c.complejo_id = co.id 
+        WHERE co.nombre != 'MagnaSports'
+      )
+    `);
+    console.log(`✅ Reservas eliminadas: ${reservasEliminadas.changes || 0}`);
+    
+    // 2. Eliminar canchas de otros complejos
+    const canchasEliminadas = await db.run(`
+      DELETE FROM canchas 
+      WHERE complejo_id IN (
+        SELECT id FROM complejos WHERE nombre != 'MagnaSports'
+      )
+    `);
+    console.log(`✅ Canchas eliminadas: ${canchasEliminadas.changes || 0}`);
+    
+    // 3. Eliminar complejos que no sean MagnaSports
+    const complejosEliminados = await db.run(`
+      DELETE FROM complejos WHERE nombre != 'MagnaSports'
+    `);
+    console.log(`✅ Complejos eliminados: ${complejosEliminados.changes || 0}`);
+    
+    // 4. Eliminar ciudades que no sean Los Ángeles
+    const ciudadesEliminadas = await db.run(`
+      DELETE FROM ciudades WHERE nombre != 'Los Ángeles'
+    `);
+    console.log(`✅ Ciudades eliminadas: ${ciudadesEliminadas.changes || 0}`);
+    
+    // 5. Verificar resultado final
+    const ciudadesRestantes = await db.query('SELECT * FROM ciudades');
+    const complejosRestantes = await db.query('SELECT * FROM complejos');
+    const canchasRestantes = await db.query('SELECT * FROM canchas');
+    const reservasRestantes = await db.query('SELECT COUNT(*) as count FROM reservas');
+    
+    console.log('📊 Estado final:');
+    console.log(`- Ciudades: ${ciudadesRestantes.length}`);
+    console.log(`- Complejos: ${complejosRestantes.length}`);
+    console.log(`- Canchas: ${canchasRestantes.length}`);
+    console.log(`- Reservas: ${reservasRestantes[0].count}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Base de datos limpiada exitosamente',
+      eliminados: {
+        reservas: reservasEliminadas.changes || 0,
+        canchas: canchasEliminadas.changes || 0,
+        complejos: complejosEliminados.changes || 0,
+        ciudades: ciudadesEliminadas.changes || 0
+      },
+      restantes: {
+        ciudades: ciudadesRestantes.length,
+        complejos: complejosRestantes.length,
+        canchas: canchasRestantes.length,
+        reservas: reservasRestantes[0].count
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error limpiando base de datos:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====
 app.get('/api/admin/customers-analysis', async (req, res) => {
   try {
