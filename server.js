@@ -439,7 +439,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
   }
 });
 
-app.get('/api/admin/reservas-hoy', async (req, res) => {
+app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('📅 Cargando reservas de hoy...');
     
@@ -2079,7 +2079,7 @@ app.get('/api/debug/clean-database', async (req, res) => {
 });
 
 // ===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====
-app.get('/api/admin/customers-analysis', async (req, res) => {
+app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     const { dateFrom, dateTo, complexId } = req.query;
     console.log('👥 Generando análisis de clientes...', { dateFrom, dateTo, complexId });
