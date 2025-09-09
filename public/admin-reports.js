@@ -389,20 +389,27 @@ async function updateTopComplexesTable() {
             return;
         }
         
-        // Construir URL relativa con parámetros
-        let url = '/admin/reports';
-        const params = new URLSearchParams();
-        params.append('dateFrom', dateFrom);
-        params.append('dateTo', dateTo);
-        if (complexId && complexId !== 'all') params.append('complexId', complexId);
+        // Construir URL y body para POST
+        const url = '/admin/reports';
+        const body = {
+            dateFrom: dateFrom,
+            dateTo: dateTo
+        };
         
-        if (params.toString()) {
-            url += '?' + params.toString();
+        if (complexId && complexId !== 'all') {
+            body.complexId = complexId;
         }
         
         console.log('🔗 URL Top Complejos:', url);
+        console.log('📦 Body Top Complejos:', body);
         
-        const response = await AdminUtils.authenticatedFetch(url);
+        const response = await AdminUtils.authenticatedFetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -467,20 +474,27 @@ async function updateTopCourtsTable() {
             return;
         }
         
-        // Construir URL relativa con parámetros
-        let url = '/admin/reports';
-        const params = new URLSearchParams();
-        params.append('dateFrom', dateFrom);
-        params.append('dateTo', dateTo);
-        if (complexId && complexId !== 'all') params.append('complexId', complexId);
+        // Construir URL y body para POST
+        const url = '/admin/reports';
+        const body = {
+            dateFrom: dateFrom,
+            dateTo: dateTo
+        };
         
-        if (params.toString()) {
-            url += '?' + params.toString();
+        if (complexId && complexId !== 'all') {
+            body.complexId = complexId;
         }
         
         console.log('🔗 URL Top Canchas:', url);
+        console.log('📦 Body Top Canchas:', body);
         
-        const response = await AdminUtils.authenticatedFetch(url);
+        const response = await AdminUtils.authenticatedFetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
