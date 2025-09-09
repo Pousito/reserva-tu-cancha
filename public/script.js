@@ -111,16 +111,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
     
-    // Cargar ciudades y esperar a que se completen
-    await cargarCiudades();
-    configurarEventListeners();
-    configurarFechaMinima();
-    
-    // Pre-rellenar campos desde URL después de cargar datos
-    console.log('🔄 Iniciando pre-rellenado desde URL...');
-    console.log('🔍 URL actual:', window.location.href);
-    console.log('🔍 Parámetros URL:', window.location.search);
-    await preRellenarDesdeURL();
+    try {
+        // Cargar ciudades y esperar a que se completen
+        console.log('🔄 Cargando ciudades...');
+        await cargarCiudades();
+        console.log('✅ Ciudades cargadas, configurando event listeners...');
+        
+        configurarEventListeners();
+        configurarFechaMinima();
+        
+        // Pre-rellenar campos desde URL después de cargar datos
+        console.log('🔄 Iniciando pre-rellenado desde URL...');
+        console.log('🔍 URL actual:', window.location.href);
+        console.log('🔍 Parámetros URL:', window.location.search);
+        
+        await preRellenarDesdeURL();
+        console.log('✅ Pre-rellenado completado');
+        
+    } catch (error) {
+        console.error('❌ Error en inicialización:', error);
+    }
     
     // Verificar que la función scrollToReservar esté disponible
     if (typeof scrollToReservar === 'function') {
