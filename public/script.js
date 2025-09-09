@@ -40,7 +40,7 @@ async function preRellenarDesdeURL() {
                     console.log('🔍 Ciudad encontrada:', ciudadEncontrada);
                     
                     if (ciudadEncontrada) {
-                        const ciudadSelect = document.getElementById('ciudad');
+                        const ciudadSelect = document.getElementById('ciudadSelect');
                         console.log('🔍 Elemento ciudad:', ciudadSelect);
                         
                         if (ciudadSelect) {
@@ -76,7 +76,7 @@ async function preRellenarDesdeURL() {
                     console.log('🔍 Complejo encontrado:', complejoEncontrado);
                     
                     if (complejoEncontrado) {
-                        const complejoSelect = document.getElementById('complejo');
+                        const complejoSelect = document.getElementById('complejoSelect');
                         console.log('🔍 Elemento complejo:', complejoSelect);
                         
                         if (complejoSelect) {
