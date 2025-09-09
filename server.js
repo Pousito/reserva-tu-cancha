@@ -1146,19 +1146,23 @@ app.post('/api/admin/login', async (req, res) => {
       });
     }
     
-    // Buscar usuario en la base de datos
+    // Buscar usuario en la base de datos con información del complejo
     let user;
     const dbInfo = db.getDatabaseInfo();
     if (dbInfo.type === 'PostgreSQL') {
-      user = await db.get(
-        'SELECT * FROM usuarios WHERE email = $1 AND activo = true',
-        [email]
-      );
+      user = await db.get(`
+        SELECT u.*, c.nombre as complejo_nombre, c.id as complejo_id
+        FROM usuarios u
+        LEFT JOIN complejos c ON u.complejo_id = c.id
+        WHERE u.email = $1 AND u.activo = true
+      `, [email]);
     } else {
-      user = await db.get(
-        'SELECT * FROM usuarios WHERE email = ? AND activo = 1',
-        [email]
-      );
+      user = await db.get(`
+        SELECT u.*, c.nombre as complejo_nombre, c.id as complejo_id
+        FROM usuarios u
+        LEFT JOIN complejos c ON u.complejo_id = c.id
+        WHERE u.email = ? AND u.activo = 1
+      `, [email]);
     }
     
     if (!user) {
@@ -1179,12 +1183,15 @@ app.post('/api/admin/login', async (req, res) => {
       });
     }
     
-    // Generar token JWT
+    // Generar token JWT con información completa
     const token = jwt.sign(
       { 
         userId: user.id, 
         email: user.email, 
-        rol: user.rol 
+        nombre: user.nombre,
+        rol: user.rol || 'manager',
+        complejo_id: user.complejo_id,
+        complejo_nombre: user.complejo_nombre
       },
       process.env.JWT_SECRET || 'fallback-secret-key',
       { expiresIn: '24h' }
@@ -1199,7 +1206,9 @@ app.post('/api/admin/login', async (req, res) => {
         id: user.id,
         email: user.email,
         nombre: user.nombre,
-        rol: user.rol
+        rol: user.rol || 'manager',
+        complejo_id: user.complejo_id,
+        complejo_nombre: user.complejo_nombre
       }
     });
     
