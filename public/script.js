@@ -2749,17 +2749,6 @@ async function cargarHorariosBasicos() {
         horaSelect.appendChild(option);
     });
     
-    // Mostrar/ocultar mensaje informativo sobre horarios
-    const horarioInfo = document.getElementById('horarioInfo');
-    if (horarioInfo) {
-        const hoy = new Date().toISOString().split('T')[0];
-        if (fecha === hoy && horarios.length < 8) { // Si es hoy y hay menos horarios de lo normal
-            horarioInfo.style.display = 'block';
-        } else {
-            horarioInfo.style.display = 'none';
-        }
-    }
-    
     // Si hay fecha seleccionada, verificar disponibilidad automáticamente
     if (fecha) {
         console.log('🚀 cargarHorariosBasicos - Verificando disponibilidad automáticamente...');
