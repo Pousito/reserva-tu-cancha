@@ -1999,35 +1999,86 @@ async function cargarCiudades() {
 }
 
 async function cargarComplejos(ciudadId) {
-    try {
-        console.log('🔄 Cargando complejos para ciudad ID:', ciudadId);
-        const response = await fetch(`${API_BASE}/complejos/${ciudadId}`);
-        complejos = await response.json();
-        
-        const select = document.getElementById('complejoSelect');
-        select.innerHTML = '<option value="">Selecciona un complejo...</option>';
-        
-        complejos.forEach(complejo => {
-            const option = document.createElement('option');
-            option.value = complejo.id;
-            option.textContent = complejo.nombre;
-            select.appendChild(option);
-        });
-        
-        console.log('✅ Complejos cargados exitosamente:', complejos.length, 'complejos');
-        console.log('📋 Lista de complejos:', complejos.map(c => `${c.nombre} (ID: ${c.id})`));
-        
-        // Disparar evento personalizado para notificar que los complejos están listos
-        const event = new CustomEvent('complejosCargados', { 
-            detail: { ciudadId, complejos } 
-        });
-        document.dispatchEvent(event);
-        
-        return complejos;
-    } catch (error) {
-        console.error('❌ Error cargando complejos:', error);
-        mostrarNotificacion('Error al cargar los complejos', 'danger');
-        throw error;
+    const maxIntentos = 3;
+    let intento = 0;
+    
+    while (intento < maxIntentos) {
+        try {
+            intento++;
+            console.log(`🔄 Intento ${intento}/${maxIntentos} - Cargando complejos para ciudad ID:`, ciudadId);
+            
+            const response = await fetch(`${API_BASE}/complejos/${ciudadId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                // Agregar timeout
+                signal: AbortSignal.timeout(10000) // 10 segundos timeout
+            });
+            
+            console.log('📡 Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            complejos = await response.json();
+            console.log('🏢 Complejos recibidos:', complejos);
+            
+            if (!Array.isArray(complejos)) {
+                throw new Error('Los datos recibidos no son un array de complejos');
+            }
+            
+            const select = document.getElementById('complejoSelect');
+            if (!select) {
+                throw new Error('No se encontró el elemento select de complejos');
+            }
+            
+            select.innerHTML = '<option value="">Selecciona un complejo...</option>';
+            
+            complejos.forEach(complejo => {
+                const option = document.createElement('option');
+                option.value = complejo.id;
+                option.textContent = complejo.nombre;
+                select.appendChild(option);
+            });
+            
+            console.log('✅ Complejos cargados exitosamente:', complejos.length, 'complejos');
+            console.log('📋 Lista de complejos:', complejos.map(c => `${c.nombre} (ID: ${c.id})`));
+            
+            // Disparar evento personalizado para notificar que los complejos están listos
+            const event = new CustomEvent('complejosCargados', { 
+                detail: { ciudadId, complejos } 
+            });
+            document.dispatchEvent(event);
+            
+            return complejos;
+            
+        } catch (error) {
+            console.error(`❌ Error en intento ${intento}/${maxIntentos} cargando complejos:`, error);
+            console.error('🔗 URL intentada:', `${API_BASE}/complejos/${ciudadId}`);
+            console.error('🌍 Hostname actual:', window.location.hostname);
+            console.error('🔗 API_BASE configurado:', API_BASE);
+            
+            if (intento < maxIntentos) {
+                console.log(`⏳ Esperando 2 segundos antes del siguiente intento...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } else {
+                // Mostrar error más específico
+                let mensajeError = 'Error al cargar los complejos';
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    mensajeError = 'Error de conexión: No se pudo conectar al servidor';
+                } else if (error.message.includes('HTTP error')) {
+                    mensajeError = `Error del servidor: ${error.message}`;
+                }
+                
+                mostrarNotificacion(mensajeError, 'danger');
+                
+                // Retornar array vacío en caso de error
+                return [];
+            }
+        }
     }
 }
 
