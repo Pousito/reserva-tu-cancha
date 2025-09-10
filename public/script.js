@@ -1884,6 +1884,10 @@ function configurarEventListeners() {
         if (complejoSeleccionado && tipoCanchaSeleccionado) {
             console.log('🔍 Llamando a mostrarSeccionDisponibilidad...');
             await mostrarSeccionDisponibilidad();
+            
+            // NUEVA LÓGICA: Cargar horarios con disponibilidad inmediatamente después de mostrar la sección
+            console.log('🚀 Cargando horarios con disponibilidad después de mostrar sección...');
+            await cargarHorariosConDisponibilidadInmediata();
         } else {
             console.log('🔍 No se puede mostrar disponibilidad - faltan datos');
         }
