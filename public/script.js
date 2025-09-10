@@ -942,7 +942,7 @@ async function preRellenarDesdeURL() {
                             }, 200);
                             
                             // Método 5: Llamar manualmente a la función de cambio si existe
-                            setTimeout(() => {
+                            setTimeout(async () => {
                                 // Simular el cambio de complejo para cargar horarios
                                 if (typeof validarHorariosSegunFecha === 'function') {
                                     console.log('🔄 Llamando validarHorariosSegunFecha manualmente...');
