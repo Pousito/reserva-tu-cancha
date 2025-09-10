@@ -972,6 +972,10 @@ async function preRellenarDesdeURLMejorado() {
                             const complejoSelect = document.getElementById('complejoSelect');
                             if (complejoSelect) {
                                 complejoSelect.value = complejoEncontrado.id;
+                                
+                                // IMPORTANTE: Asignar complejoSeleccionado antes de disparar eventos
+                                complejoSeleccionado = complejoEncontrado;
+                                
                                 complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
                                 
                                 // Indicador visual
@@ -1000,12 +1004,15 @@ async function preRellenarDesdeURLMejorado() {
                                         
                                         // Mostrar paso 3
                                         mostrarPaso(3);
+                                        
+                                        // Disparar evento change para activar la lógica del paso 4
+                                        futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
                                         console.log('✅ MagnaSports configurado - solo fútbol');
                                     }
+                                } else {
+                                    // Para otros complejos, mostrar paso 3 sin preseleccionar
+                                    mostrarPaso(3);
                                 }
-                                
-                                // 5. Mostrar paso 4 (Ver Disponibilidad)
-                                mostrarPaso(4);
                                 
                                 // 6. Scroll automático a la sección de disponibilidad
                                 setTimeout(() => {
