@@ -1896,16 +1896,21 @@ function configurarEventListeners() {
     // Filtros de fecha y hora
     document.getElementById('fechaSelect').addEventListener('change', async function() {
         await validarHorariosSegunFecha();
-        actualizarDisponibilidad();
+        // Si ya hay canchas cargadas, actualizar su disponibilidad
+        if (canchas.length > 0) {
+            await renderizarCanchasConDisponibilidad();
+        }
         // Cerrar el calendario después de seleccionar una fecha
         setTimeout(() => {
             this.blur();
         }, 100);
     });
-    document.getElementById('horaSelect').addEventListener('change', function() {
-        actualizarDisponibilidad();
-        // Cargar canchas cuando se selecciona una hora
-        if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
+    document.getElementById('horaSelect').addEventListener('change', async function() {
+        // Si ya hay canchas cargadas, actualizar su disponibilidad
+        if (canchas.length > 0) {
+            await renderizarCanchasConDisponibilidad();
+        } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
+            // Si no hay canchas, cargarlas
             cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
         }
     });
@@ -2432,21 +2437,15 @@ async function cargarCanchas(complejoId, tipo) {
         canchas = await response.json();
         console.log('🏟️ Canchas recibidas:', canchas);
         
-        renderizarCanchas();
-        console.log('🏟️ Canchas renderizadas');
+        // Renderizar canchas con disponibilidad correcta
+        await renderizarCanchasConDisponibilidad();
+        console.log('🏟️ Canchas renderizadas con disponibilidad');
         
         // Actualizar horarios con disponibilidad si hay fecha seleccionada
         const fecha = document.getElementById('fechaSelect').value;
         if (fecha && complejoSeleccionado) {
             console.log('🕐 Actualizando horarios con disponibilidad optimizada...');
             await actualizarHorariosConDisponibilidad();
-        }
-        
-        // Actualizar disponibilidad de canchas si hay fecha y hora seleccionadas
-        const hora = document.getElementById('horaSelect').value;
-        if (fecha && hora) {
-            console.log('🏟️ Actualizando disponibilidad de canchas...');
-            await actualizarDisponibilidad();
         }
         
         console.log('🏟️ === CARGAR CANCHAS COMPLETADO ===');
@@ -2783,7 +2782,146 @@ async function validarHorariosSegunFecha() {
     }
 }
 
- // Renderizar canchas
+// NUEVA FUNCIÓN: Renderizar canchas con disponibilidad correcta
+async function renderizarCanchasConDisponibilidad() {
+    const grid = document.getElementById('canchasGrid');
+    grid.innerHTML = '';
+    
+    const fecha = document.getElementById('fechaSelect').value;
+    const hora = document.getElementById('horaSelect').value;
+    
+    // Si es MagnaSports, crear estructura especial del galpón
+    if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports') {
+        // Crear contenedor del galpón
+        const galponContainer = document.createElement('div');
+        galponContainer.className = 'galpon-container';
+        
+        // Agregar calle Monte Perdido
+        const calleMontePerdido = document.createElement('div');
+        calleMontePerdido.className = 'calle-monte-perdido';
+        galponContainer.appendChild(calleMontePerdido);
+        
+        // Crear contenedor horizontal para las canchas
+        const canchasHorizontales = document.createElement('div');
+        canchasHorizontales.className = 'canchas-horizontales';
+        
+        // Ordenar canchas para MagnaSports: Cancha 1 a la izquierda, Cancha 2 a la derecha
+        const canchasOrdenadas = [...canchas].sort((a, b) => {
+            const numeroA = parseInt(a.nombre.match(/\d+/)[0]);
+            const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
+            return numeroA - numeroB;
+        });
+        
+        // Verificar disponibilidad para cada cancha
+        for (const cancha of canchasOrdenadas) {
+            const canchaCard = document.createElement('div');
+            canchaCard.dataset.canchaId = cancha.id;
+            canchaCard.dataset.precio = cancha.precio_hora;
+            
+            const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+            
+            // Verificar disponibilidad si hay fecha y hora
+            let estaDisponible = true;
+            let estadoBadge = '<span class="badge bg-success">Disponible</span>';
+            let cardClass = 'cancha-card disponible';
+            
+            if (fecha && hora) {
+                try {
+                    const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                    const reservas = await response.json();
+                    
+                    estaDisponible = !reservas.some(r => 
+                        r.hora_inicio <= hora && r.hora_fin > hora
+                    );
+                    
+                    if (estaDisponible) {
+                        cardClass = 'cancha-card disponible';
+                        estadoBadge = '<span class="badge bg-success">Disponible</span>';
+                    } else {
+                        cardClass = 'cancha-card ocupada';
+                        estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                    }
+                } catch (error) {
+                    console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
+                    // En caso de error, asumir disponible
+                }
+            }
+            
+            canchaCard.className = cardClass;
+            canchaCard.innerHTML = `
+                <div class="cancha-icon">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
+                <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
+                <p class="text-info small"><i class="fas fa-info-circle me-1"></i>Techada</p>
+                <p class="text-info small"><i class="fas fa-users me-1"></i>7 jugadores por equipo</p>
+                <div class="estado-disponibilidad">
+                    ${estadoBadge}
+                </div>
+            `;
+            
+            canchaCard.addEventListener('click', () => seleccionarCancha(cancha));
+            canchasHorizontales.appendChild(canchaCard);
+        }
+        
+        galponContainer.appendChild(canchasHorizontales);
+        grid.appendChild(galponContainer);
+    } else {
+        // Para otros complejos, usar layout estándar
+        for (const cancha of canchas) {
+            const canchaCard = document.createElement('div');
+            canchaCard.dataset.canchaId = cancha.id;
+            canchaCard.dataset.precio = cancha.precio_hora;
+            
+            const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+            
+            // Verificar disponibilidad si hay fecha y hora
+            let estaDisponible = true;
+            let estadoBadge = '<span class="badge bg-success">Disponible</span>';
+            let cardClass = 'cancha-card disponible';
+            
+            if (fecha && hora) {
+                try {
+                    const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                    const reservas = await response.json();
+                    
+                    estaDisponible = !reservas.some(r => 
+                        r.hora_inicio <= hora && r.hora_fin > hora
+                    );
+                    
+                    if (estaDisponible) {
+                        cardClass = 'cancha-card disponible';
+                        estadoBadge = '<span class="badge bg-success">Disponible</span>';
+                    } else {
+                        cardClass = 'cancha-card ocupada';
+                        estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                    }
+                } catch (error) {
+                    console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
+                    // En caso de error, asumir disponible
+                }
+            }
+            
+            canchaCard.className = cardClass;
+            canchaCard.innerHTML = `
+                <div class="cancha-icon">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                <h5>${cancha.nombre}</h5>
+                <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
+                <div class="estado-disponibilidad">
+                    ${estadoBadge}
+                </div>
+            `;
+            
+            canchaCard.addEventListener('click', () => seleccionarCancha(cancha));
+            grid.appendChild(canchaCard);
+        }
+    }
+}
+
+ // Renderizar canchas (función original mantenida para compatibilidad)
  function renderizarCanchas() {
      const grid = document.getElementById('canchasGrid');
      grid.innerHTML = '';
