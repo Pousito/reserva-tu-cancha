@@ -2012,19 +2012,27 @@ function ocultarPaso(numero) {
 }
 
 async function mostrarSeccionDisponibilidad() {
-    console.log('🔍 Ver disponibilidad - Iniciando carga de canchas y validación...');
+    console.log('🔍 Ver disponibilidad - Iniciando validación de horarios...');
     
     // Mostrar la sección de disponibilidad
     document.getElementById('disponibilidad').style.display = 'block';
     
-    // Cargar canchas para el complejo y tipo seleccionado
+    // Cargar canchas en background para validar disponibilidad (sin mostrarlas visualmente)
     if (complejoSeleccionado && tipoCanchaSeleccionado) {
-        console.log('🏢 Cargando canchas para:', complejoSeleccionado.nombre, 'tipo:', tipoCanchaSeleccionado);
-        await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+        console.log('🏢 Cargando canchas en background para validar disponibilidad:', complejoSeleccionado.nombre, 'tipo:', tipoCanchaSeleccionado);
         
-        // La función cargarCanchas ya llama a actualizarHorariosConDisponibilidad()
-        // por lo que la validación se ejecutará automáticamente
-        console.log('✅ Canchas cargadas y disponibilidad validada');
+        try {
+            // Cargar canchas sin renderizarlas visualmente
+            const response = await fetch(`${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}`);
+            canchas = await response.json();
+            
+            // Validar disponibilidad de todos los horarios
+            await actualizarHorariosConDisponibilidad();
+            
+            console.log('✅ Disponibilidad de horarios validada');
+        } catch (error) {
+            console.error('❌ Error validando disponibilidad:', error);
+        }
     }
     
     // Hacer scroll suave a la sección
