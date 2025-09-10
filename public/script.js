@@ -83,6 +83,15 @@ async function preRellenarDesdeURL() {
                             complejoSelect.value = complejoEncontrado.id;
                             complejoSelect.dispatchEvent(new Event('change'));
                             console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
+                            
+                            // Cargar canchas automáticamente para MagnaSports (fútbol)
+                            if (complejoEncontrado.nombre === 'MagnaSports') {
+                                console.log('🔄 Cargando canchas automáticamente para MagnaSports...');
+                                setTimeout(async () => {
+                                    await cargarCanchas(complejoEncontrado.id, 'futbol');
+                                    console.log('✅ Canchas cargadas automáticamente');
+                                }, 500);
+                            }
                         } else {
                             console.error('❌ Elemento complejo no encontrado');
                         }
