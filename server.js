@@ -1176,12 +1176,15 @@ app.post('/api/reservas', async (req, res) => {
   try {
     const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total } = req.body;
     
+    // Usar teléfono por defecto si no se proporciona
+    const telefono = telefono_cliente || 'No proporcionado';
+    
     // Generar código de reserva único
     const codigo_reserva = 'RES' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
     
     const result = await db.run(
-      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
-      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
+      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
     );
     
     res.json({ 

@@ -1424,6 +1424,54 @@ function validarRUT(rut) {
     return dv === dvCalculado;
 }
 
+// Validar nombre completo
+function validarNombre(nombre) {
+    if (!nombre || typeof nombre !== 'string') {
+        return false;
+    }
+    
+    // Limpiar espacios al inicio y final
+    nombre = nombre.trim();
+    
+    // Verificar que no esté vacío
+    if (nombre.length === 0) {
+        return false;
+    }
+    
+    // Verificar longitud mínima (al menos 2 caracteres)
+    if (nombre.length < 2) {
+        return false;
+    }
+    
+    // Verificar que contenga al menos un espacio (nombre y apellido)
+    if (!nombre.includes(' ')) {
+        return false;
+    }
+    
+    // Verificar que no contenga caracteres especiales o números
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+    return regex.test(nombre);
+}
+
+// Validar email
+function validarEmail(email) {
+    if (!email || typeof email !== 'string') {
+        return false;
+    }
+    
+    // Limpiar espacios al inicio y final
+    email = email.trim();
+    
+    // Verificar que no esté vacío
+    if (email.length === 0) {
+        return false;
+    }
+    
+    // Expresión regular para validar email
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
 // Formatear RUT con puntos y guión
 function formatearRUT(rut) {
     // Limpiar el RUT
@@ -2043,6 +2091,7 @@ async function mostrarSeccionDisponibilidad() {
             // Cargar canchas sin renderizarlas visualmente
             const response = await fetch(`${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}`);
             canchas = await response.json();
+            console.log('🏢 Canchas cargadas para validación:', canchas.length, 'canchas:', canchas.map(c => c.nombre));
             
             // Validar disponibilidad de todos los horarios
             await actualizarHorariosConDisponibilidad();
