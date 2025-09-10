@@ -460,16 +460,34 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
       `, userRole === 'super_admin' ? [] : [complexFilter]);
     }
     
-    // Reservas por día (últimos 7 días)
-    const reservasPorDia = await db.query(`
-      SELECT date(r.fecha) as dia, COUNT(*) as cantidad
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      WHERE r.fecha >= date('now', '-7 days')
-      ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
-      GROUP BY date(r.fecha)
-      ORDER BY dia
-    `, userRole === 'super_admin' ? [] : [complexFilter]);
+    // Reservas por día (últimos 7 días) - Compatible con PostgreSQL y SQLite
+    const dbInfo = db.getDatabaseInfo();
+    let fechaCondition;
+    let reservasPorDia;
+    
+    if (dbInfo.type === 'PostgreSQL') {
+      fechaCondition = 'r.fecha >= CURRENT_DATE - INTERVAL \'7 days\'';
+      reservasPorDia = await db.query(`
+        SELECT DATE(r.fecha) as dia, COUNT(*) as cantidad
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        WHERE ${fechaCondition}
+        ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
+        GROUP BY DATE(r.fecha)
+        ORDER BY dia
+      `, userRole === 'super_admin' ? [] : [complexFilter]);
+    } else {
+      fechaCondition = 'r.fecha >= date(\'now\', \'-7 days\')';
+      reservasPorDia = await db.query(`
+        SELECT date(r.fecha) as dia, COUNT(*) as cantidad
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        WHERE ${fechaCondition}
+        ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = ?'}
+        GROUP BY date(r.fecha)
+        ORDER BY dia
+      `, userRole === 'super_admin' ? [] : [complexFilter]);
+    }
     
     const stats = {
       totalReservas: totalReservas.count,
@@ -517,7 +535,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY r.created_at DESC
       LIMIT 10
     `, params);
     
@@ -580,7 +598,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY r.created_at DESC
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
@@ -1244,7 +1262,7 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE r.codigo_reserva = $1 OR r.nombre_cliente ILIKE $2
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY r.created_at DESC
       LIMIT 1
     `, [busqueda, `%${busqueda}%`]);
     
