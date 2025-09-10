@@ -1384,84 +1384,6 @@ async function verificarTodasCanchasOcupadas(fecha, hora) {
     return todasOcupadas;
 }
 
-// NUEVA FUNCIÓN OPTIMIZADA: Verificar disponibilidad completa de un complejo
-async function verificarDisponibilidadCompleta(complejoId, fecha) {
-    try {
-        console.log('🚀 Verificando disponibilidad completa para complejo:', complejoId, 'fecha:', fecha);
-        
-        const response = await fetch(`${API_BASE}/disponibilidad-completa/${complejoId}/${fecha}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const disponibilidad = await response.json();
-        console.log('✅ Disponibilidad completa obtenida:', Object.keys(disponibilidad).length, 'canchas');
-        
-        return disponibilidad;
-    } catch (error) {
-        console.error('❌ Error verificando disponibilidad completa:', error);
-        // Fallback al método anterior si falla
-        console.log('🔄 Usando método de fallback...');
-        return await verificarDisponibilidadFallback(complejoId, fecha);
-    }
-}
-
-// Función de fallback que usa el método anterior
-async function verificarDisponibilidadFallback(complejoId, fecha) {
-    const resultado = {};
-    
-    for (const cancha of canchas) {
-        try {
-            const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
-            const reservas = await response.json();
-            
-            resultado[cancha.id] = {
-                cancha_id: cancha.id,
-                cancha_nombre: cancha.nombre,
-                cancha_tipo: cancha.tipo,
-                reservas: reservas
-            };
-        } catch (error) {
-            console.error(`Error verificando cancha ${cancha.id}:`, error);
-            resultado[cancha.id] = {
-                cancha_id: cancha.id,
-                cancha_nombre: cancha.nombre,
-                cancha_tipo: cancha.tipo,
-                reservas: []
-            };
-        }
-    }
-    
-    return resultado;
-}
-
-// NUEVA FUNCIÓN: Verificar si una cancha está disponible en un horario específico usando datos precargados
-function verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadData) {
-    if (!disponibilidadData[canchaId]) {
-        console.log('⚠️ No hay datos de disponibilidad para cancha:', canchaId);
-        return true; // Asumir disponible si no hay datos
-    }
-    
-    const canchaData = disponibilidadData[canchaId];
-    const horaInicio = hora;
-    const horaFin = calcularHoraFin(hora);
-    
-    for (const reserva of canchaData.reservas) {
-        // Verificar si hay superposición de horarios
-        if (reserva.hora_inicio <= horaInicio && reserva.hora_fin > horaInicio) {
-            return false;
-        }
-        if (reserva.hora_inicio < horaFin && reserva.hora_fin >= horaFin) {
-            return false;
-        }
-        if (reserva.hora_inicio >= horaInicio && reserva.hora_fin <= horaFin) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
 // Validar RUT chileno
 function validarRUT(rut) {
     // Limpiar el RUT (quitar puntos, guiones y espacios)
@@ -2370,7 +2292,7 @@ async function cargarCanchas(complejoId, tipo) {
     }
 }
 
-// Actualizar horarios con información de disponibilidad - VERSIÓN OPTIMIZADA
+// Actualizar horarios con información de disponibilidad
 async function actualizarHorariosConDisponibilidad() {
     if (!complejoSeleccionado || !canchas.length) return;
     
@@ -2389,25 +2311,11 @@ async function actualizarHorariosConDisponibilidad() {
     const opcionesActuales = Array.from(horaSelect.options);
     console.log('🕐 Validando disponibilidad para', opcionesActuales.length, 'horarios en fecha:', fecha);
     
-    // NUEVA LÓGICA OPTIMIZADA: Obtener disponibilidad completa de una vez
-    console.log('🚀 Usando método optimizado para verificar disponibilidad...');
-    const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoSeleccionado.id, fecha);
-    
     for (const option of opcionesActuales) {
         if (option.value && option.value !== '') {
             console.log('🕐 Verificando horario:', option.value);
-            
-            // Verificar si todas las canchas están ocupadas usando datos precargados
-            let todasOcupadas = true;
-            for (const cancha of canchas) {
-                const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, option.value, disponibilidadCompleta);
-                console.log('🏟️ Cancha', cancha.id, '(', cancha.nombre, ') - Disponible:', estaDisponible);
-                if (estaDisponible) {
-                    todasOcupadas = false;
-                    break;
-                }
-            }
-            
+            // Verificar si todas las canchas están ocupadas en este horario
+            const todasOcupadas = await verificarTodasCanchasOcupadas(fecha, option.value);
             console.log('🕐 Horario', option.value, '- Todas ocupadas:', todasOcupadas);
             
             if (todasOcupadas) {
@@ -2467,23 +2375,12 @@ async function cargarHorariosComplejo(complejo) {
     // Verificar disponibilidad de cada horario si hay fecha seleccionada
     const fecha = document.getElementById('fechaSelect').value;
     if (fecha && canchas.length > 0) {
-        // NUEVA LÓGICA OPTIMIZADA: Obtener disponibilidad completa de una vez
-        console.log('🚀 Cargando horarios con método optimizado...');
-        const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejo.id, fecha);
-        
         for (const hora of horarios) {
             const option = document.createElement('option');
             option.value = hora;
             
-            // Verificar si todas las canchas están ocupadas usando datos precargados
-            let todasOcupadas = true;
-            for (const cancha of canchas) {
-                const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
-                if (estaDisponible) {
-                    todasOcupadas = false;
-                    break;
-                }
-            }
+            // Verificar si todas las canchas están ocupadas en este horario
+            const todasOcupadas = await verificarTodasCanchasOcupadas(fecha, hora);
             
             if (todasOcupadas) {
                 option.textContent = `${hora} (Todas ocupadas)`;
