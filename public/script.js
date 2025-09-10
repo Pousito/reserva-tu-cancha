@@ -1747,10 +1747,26 @@ function configurarEventListeners() {
                     console.log('⚽ Label de fútbol configurado');
                 }
                 
-                // IMPORTANTE: Disparar evento change para activar la lógica del paso 4
-                console.log('⚽ Disparando evento change en radio button fútbol...');
+                // NUEVA LÓGICA: Cargar canchas directamente sin depender del event listener
+                console.log('⚽ Cargando canchas directamente para MagnaSports...');
                 console.log('⚽ DEBUG AUTOMÁTICO - complejoSeleccionado:', complejoSeleccionado);
                 console.log('⚽ DEBUG AUTOMÁTICO - tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
+                
+                // Cargar canchas inmediatamente
+                setTimeout(async () => {
+                    console.log('🏟️ Cargando canchas automáticamente para MagnaSports...');
+                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                    
+                    // Verificar disponibilidad si hay fecha
+                    const fecha = document.getElementById('fechaSelect').value;
+                    if (fecha) {
+                        console.log('🕐 Verificando disponibilidad automáticamente...');
+                        await actualizarHorariosConDisponibilidad();
+                    }
+                }, 200);
+                
+                // IMPORTANTE: Disparar evento change para activar la lógica del paso 4
+                console.log('⚽ Disparando evento change en radio button fútbol...');
                 futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
                 console.log('⚽ Evento change disparado');
                 
