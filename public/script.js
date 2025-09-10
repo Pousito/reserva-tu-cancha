@@ -1845,64 +1845,84 @@ function mostrarSeccionDisponibilidad() {
 
 // Funciones de carga de datos
 async function cargarCiudades() {
-    try {
-        console.log('🔄 Intentando cargar ciudades desde:', `${API_BASE}/ciudades`);
-        
-        const response = await fetch(`${API_BASE}/ciudades`);
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', response.headers);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    const maxIntentos = 3;
+    let intento = 0;
+    
+    while (intento < maxIntentos) {
+        try {
+            intento++;
+            console.log(`🔄 Intento ${intento}/${maxIntentos} - Cargando ciudades desde:`, `${API_BASE}/ciudades`);
+            
+            const response = await fetch(`${API_BASE}/ciudades`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                // Agregar timeout
+                signal: AbortSignal.timeout(10000) // 10 segundos timeout
+            });
+            
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response headers:', response.headers);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const ciudadesData = await response.json();
+            console.log('🏙️ Ciudades recibidas:', ciudadesData);
+            
+            if (!Array.isArray(ciudadesData)) {
+                throw new Error('Los datos recibidos no son un array de ciudades');
+            }
+            
+            ciudades = ciudadesData;
+            
+            const select = document.getElementById('ciudadSelect');
+            if (!select) {
+                throw new Error('No se encontró el elemento select de ciudades');
+            }
+            
+            // Limpiar opciones existentes
+            select.innerHTML = '<option value="">Selecciona una ciudad...</option>';
+            
+            ciudades.forEach(ciudad => {
+                const option = document.createElement('option');
+                option.value = ciudad.id;
+                option.textContent = ciudad.nombre;
+                select.appendChild(option);
+            });
+            
+            console.log(`✅ ${ciudades.length} ciudades cargadas exitosamente`);
+            
+            // Retornar las ciudades para que la función sea awaitable
+            return ciudades;
+            
+        } catch (error) {
+            console.error(`❌ Error en intento ${intento}/${maxIntentos} cargando ciudades:`, error);
+            console.error('🔗 URL intentada:', `${API_BASE}/ciudades`);
+            console.error('🌍 Hostname actual:', window.location.hostname);
+            console.error('🔗 API_BASE configurado:', API_BASE);
+            
+            if (intento < maxIntentos) {
+                console.log(`⏳ Esperando 2 segundos antes del siguiente intento...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } else {
+                // Mostrar error más específico
+                let mensajeError = 'Error al cargar las ciudades';
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    mensajeError = 'Error de conexión: No se pudo conectar al servidor';
+                } else if (error.message.includes('HTTP error')) {
+                    mensajeError = `Error del servidor: ${error.message}`;
+                }
+                
+                mostrarNotificacion(mensajeError, 'danger');
+                
+                // Retornar array vacío en caso de error
+                return [];
+            }
         }
-        
-        const ciudadesData = await response.json();
-        console.log('🏙️ Ciudades recibidas:', ciudadesData);
-        
-        if (!Array.isArray(ciudadesData)) {
-            throw new Error('Los datos recibidos no son un array de ciudades');
-        }
-        
-        ciudades = ciudadesData;
-        
-        const select = document.getElementById('ciudadSelect');
-        if (!select) {
-            throw new Error('No se encontró el elemento select de ciudades');
-        }
-        
-        // Limpiar opciones existentes
-        select.innerHTML = '<option value="">Selecciona una ciudad...</option>';
-        
-        ciudades.forEach(ciudad => {
-            const option = document.createElement('option');
-            option.value = ciudad.id;
-            option.textContent = ciudad.nombre;
-            select.appendChild(option);
-        });
-        
-        console.log(`✅ ${ciudades.length} ciudades cargadas exitosamente`);
-        
-        // Retornar las ciudades para que la función sea awaitable
-        return ciudades;
-        
-    } catch (error) {
-        console.error('❌ Error cargando ciudades:', error);
-        console.error('🔗 URL intentada:', `${API_BASE}/ciudades`);
-        console.error('🌍 Hostname actual:', window.location.hostname);
-        console.error('🔗 API_BASE configurado:', API_BASE);
-        
-        // Mostrar error más específico
-        let mensajeError = 'Error al cargar las ciudades';
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            mensajeError = 'Error de conexión: No se pudo conectar al servidor';
-        } else if (error.message.includes('HTTP error')) {
-            mensajeError = `Error del servidor: ${error.message}`;
-        }
-        
-        mostrarNotificacion(mensajeError, 'danger');
-        
-        // Retornar array vacío en caso de error
-        return [];
     }
 }
 
