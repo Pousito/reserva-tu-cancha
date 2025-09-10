@@ -1834,6 +1834,29 @@ app.get('/api/debug/force-sync-database', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA RESTAURAR RESERVAS =====
+app.get('/api/debug/restore-reservations', async (req, res) => {
+  try {
+    console.log('🔄 Iniciando restauración de reservas...');
+    
+    const { restoreProductionReservations } = require('./scripts/maintenance/restore-production-reservations');
+    await restoreProductionReservations();
+    
+    res.json({
+      success: true,
+      message: 'Reservas restauradas exitosamente',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error restaurando reservas:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ===== ENDPOINT PARA OPTIMIZAR BASE DE DATOS =====
 app.get('/api/debug/optimize-database', async (req, res) => {
   try {
