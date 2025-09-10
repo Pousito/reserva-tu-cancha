@@ -201,6 +201,9 @@ function preRellenarMovil(ciudad, complejo) {
                                     complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
                                 }, 50);
                             }
+                            setTimeout(() => {
+                                complejoSelect.style.backgroundColor = '';
+                                complejoSelect.style.border = '';
                             }, 1000);
                             
                         }, i * 200);
