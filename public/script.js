@@ -1687,9 +1687,21 @@ function configurarEventListeners() {
     });
 
     // Botón ver disponibilidad - solo muestra la sección de fecha/hora
-    document.getElementById('verDisponibilidad').addEventListener('click', async function() {
+    const verDisponibilidadBtn = document.getElementById('verDisponibilidad');
+    console.log('🔍 Botón verDisponibilidad encontrado:', verDisponibilidadBtn);
+    if (verDisponibilidadBtn) {
+        console.log('🔍 Botón verDisponibilidad visible:', verDisponibilidadBtn.style.display);
+        console.log('🔍 Botón verDisponibilidad offsetParent:', verDisponibilidadBtn.offsetParent);
+    }
+    verDisponibilidadBtn.addEventListener('click', async function() {
+        console.log('🔍 BOTÓN VER DISPONIBILIDAD CLICKEADO');
+        console.log('🔍 Complejo seleccionado:', complejoSeleccionado);
+        console.log('🔍 Tipo cancha seleccionado:', tipoCanchaSeleccionado);
         if (complejoSeleccionado && tipoCanchaSeleccionado) {
+            console.log('🔍 Llamando a mostrarSeccionDisponibilidad...');
             await mostrarSeccionDisponibilidad();
+        } else {
+            console.log('🔍 No se puede mostrar disponibilidad - faltan datos');
         }
     });
 
