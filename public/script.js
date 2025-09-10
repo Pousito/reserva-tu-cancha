@@ -146,19 +146,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
         
-        if (ciudad || complejo) {
-            console.log('🔄 Haciendo scroll automático al paso 3...');
-            
-            // Mostrar paso 3 inmediatamente
-            console.log('🔄 Mostrando paso 3...');
-            mostrarPaso(3);
-            console.log('✅ Paso 3 mostrado');
-            
-            // Scroll suave y único
-            setTimeout(() => {
-                console.log('🔄 Ejecutando scroll al paso 3...');
-                scrollToStep3();
-            }, 500); // Un solo delay para que el DOM se actualice
+         if (ciudad || complejo) {
+             console.log('🔄 Haciendo scroll automático al paso 4...');
+             
+             // Mostrar paso 4 (que contiene el botón "Ver disponibilidad")
+             console.log('🔄 Mostrando paso 4...');
+             mostrarPaso(4);
+             console.log('✅ Paso 4 mostrado');
+             
+             // Scroll suave al paso 4
+             setTimeout(() => {
+                 console.log('🔄 Ejecutando scroll al paso 4...');
+                 scrollToStep4();
+             }, 500); // Un solo delay para que el DOM se actualice
             
         } else {
             console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
@@ -1686,57 +1686,45 @@ function scrollSuave(elemento) {
     requestAnimationFrame(animation);
 }
 
-// Función específica para hacer scroll al paso 3
-function scrollToStep3() {
-    console.log('=== FUNCIÓN SCROLLTOSTEP3 LLAMADA ===');
+// Función específica para hacer scroll al paso 4
+function scrollToStep4() {
+    console.log('=== FUNCIÓN SCROLLTOSTEP4 LLAMADA ===');
     console.log('Timestamp:', new Date().toISOString());
     
-    const step3Element = document.getElementById('step3');
-    console.log('Elemento step3 encontrado:', step3Element);
+    const step4Element = document.getElementById('step4');
+    console.log('Elemento step4 encontrado:', step4Element);
     
-    if (step3Element) {
-        console.log('Intentando hacer scroll al paso 3');
-        
-        // Calcular la posición del elemento con offset para el navbar
-        const elementPosition = step3Element.offsetTop;
-        const offsetPosition = elementPosition - 120; // 120px de offset para el navbar
-        
-        console.log('Posición del elemento:', elementPosition);
-        console.log('Posición con offset:', offsetPosition);
-        console.log('Posición actual del scroll:', window.pageYOffset);
+    if (step4Element) {
+        console.log('Intentando hacer scroll al paso 4');
         
         try {
-            // Intentar primero con scrollIntoView moderno
-            if ('scrollBehavior' in document.documentElement.style) {
-                console.log('Usando scrollIntoView moderno para paso 3');
-                step3Element.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            } else {
-                // Navegadores antiguos
-                console.log('Usando scroll suave alternativo para paso 3');
-                scrollSuave(step3Element);
-            }
+            // Usar scrollIntoView moderno
+            console.log('Usando scrollIntoView moderno para paso 4');
+            step4Element.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+            });
             
-            console.log('Scroll al paso 3 completado exitosamente');
+            console.log('Scroll al paso 4 completado exitosamente');
             
             // Verificar que el scroll funcionó
             setTimeout(() => {
-                console.log('Posición después del scroll al paso 3:', window.pageYOffset);
+                console.log('Posición después del scroll al paso 4:', window.pageYOffset);
             }, 1000);
             
         } catch (error) {
-            console.error('Error durante el scroll al paso 3:', error);
+            console.error('Error durante el scroll al paso 4:', error);
             // Fallback: scroll simple
-            console.log('Usando fallback de scroll simple para paso 3');
+            console.log('Usando fallback de scroll simple para paso 4');
+            const elementPosition = step4Element.offsetTop;
+            const offsetPosition = elementPosition - 120; // 120px de offset para el navbar
             window.scrollTo({
                 top: offsetPosition,
                 behavior: 'smooth'
             });
         }
     } else {
-        console.error('No se encontró el paso 3');
+        console.error('No se encontró el paso 4');
         // Fallback: scroll a la sección de reservas
         const reservarSection = document.getElementById('reservar');
         if (reservarSection) {
@@ -1745,7 +1733,7 @@ function scrollToStep3() {
         }
     }
     
-    console.log('=== FIN FUNCIÓN SCROLLTOSTEP3 ===');
+    console.log('=== FIN FUNCIÓN SCROLLTOSTEP4 ===');
 }
 
 // Mejorar la función scrollToReservar con fallback
