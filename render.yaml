@@ -28,6 +28,7 @@ services:
         value: L660mKFmcDBk
     healthCheckPath: /health
     autoDeploy: true
+    # Forzar redeploy para configurar emails
     branch: main
     region: oregon
 
