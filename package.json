@@ -30,6 +30,7 @@
     "sync-production-db": "node scripts/maintenance/sync-production-db.js",
     "force-sync-production": "node scripts/maintenance/force-sync-production.js",
     "restore-production-reservations": "node scripts/maintenance/restore-production-reservations.js",
+    "simple-restore-reservations": "node scripts/maintenance/simple-restore-reservations.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0"
   },

@@ -1857,6 +1857,29 @@ app.get('/api/debug/restore-reservations', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA RESTAURACIÓN SIMPLE =====
+app.get('/api/debug/simple-restore-reservations', async (req, res) => {
+  try {
+    console.log('🔄 Iniciando restauración simple de reservas...');
+    
+    const { simpleRestoreReservations } = require('./scripts/maintenance/simple-restore-reservations');
+    await simpleRestoreReservations();
+    
+    res.json({
+      success: true,
+      message: 'Reservas restauradas exitosamente (método simple)',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en restauración simple:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ===== ENDPOINT PARA OPTIMIZAR BASE DE DATOS =====
 app.get('/api/debug/optimize-database', async (req, res) => {
   try {
