@@ -1002,12 +1002,33 @@ async function preRellenarDesdeURLMejorado() {
                                             padelRadio.parentElement.style.display = 'none';
                                         }
                                         
+                                        // Mostrar opción de fútbol
+                                        document.getElementById('futbol').parentElement.style.display = 'block';
+                                        
+                                        // Centrar la opción de fútbol (igual que en el event listener)
+                                        const step3CardBody = document.getElementById('step3').querySelector('.card-body');
+                                        step3CardBody.style.display = 'flex';
+                                        step3CardBody.style.justifyContent = 'center';
+                                        step3CardBody.style.alignItems = 'center';
+                                        step3CardBody.style.textAlign = 'center';
+                                        
+                                        // Asegurar que el radio button y el label estén alineados
+                                        const futbolLabel = document.querySelector('label[for="futbol"]');
+                                        if (futbolLabel) {
+                                            futbolLabel.style.display = 'flex';
+                                            futbolLabel.style.alignItems = 'center';
+                                            futbolLabel.style.justifyContent = 'flex-start';
+                                            futbolLabel.style.gap = '15px';
+                                            futbolLabel.style.margin = '0 auto';
+                                            futbolLabel.style.width = 'fit-content';
+                                        }
+                                        
                                         // Mostrar paso 3
                                         mostrarPaso(3);
                                         
                                         // Disparar evento change para activar la lógica del paso 4
                                         futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
-                                        console.log('✅ MagnaSports configurado - solo fútbol');
+                                        console.log('✅ MagnaSports configurado - solo fútbol con estilos centrados');
                                     }
                                 } else {
                                     // Para otros complejos, mostrar paso 3 sin preseleccionar
