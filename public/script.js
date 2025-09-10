@@ -2667,17 +2667,20 @@ async function cargarHorariosConDisponibilidadInmediata() {
         horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
         
         // Cargar cada horario con verificación de disponibilidad
+        // USAR LA MISMA LÓGICA QUE actualizarHorariosConDisponibilidad
         for (const hora of horarios) {
             const option = document.createElement('option');
             option.value = hora;
             
-            // Verificar si todas las canchas están ocupadas
+            // Verificar si todas las canchas están ocupadas usando datos precargados
             let todasOcupadas = true;
             let canchasVerificadas = 0;
             
+            // Verificar todas las canchas del complejo desde la disponibilidad
             for (const canchaId in disponibilidadCompleta) {
                 const estaDisponible = verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadCompleta);
                 canchasVerificadas++;
+                console.log('🏟️ cargarHorariosConDisponibilidadInmediata - Cancha', canchaId, '- Disponible:', estaDisponible);
                 if (estaDisponible) {
                     todasOcupadas = false;
                     break;
@@ -2694,6 +2697,9 @@ async function cargarHorariosConDisponibilidadInmediata() {
                 console.log('✅ cargarHorariosConDisponibilidadInmediata - Marcado como ocupado:', hora);
             } else {
                 option.textContent = hora;
+                option.classList.remove('hora-todas-ocupadas');
+                option.style.textDecoration = '';
+                option.style.color = '';
                 console.log('✅ cargarHorariosConDisponibilidadInmediata - Marcado como disponible:', hora);
             }
             
