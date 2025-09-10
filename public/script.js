@@ -2668,10 +2668,13 @@ async function validarHorariosSegunFecha() {
         
         // NUEVA LÓGICA: Verificar disponibilidad para cada horario
         console.log('🚀 validarHorariosSegunFecha - Verificando disponibilidad para', horarios.length, 'horarios...');
+        console.log('🚀 validarHorariosSegunFecha - Complejo ID:', complejoSeleccionado.id, 'Fecha:', fecha);
         
         try {
+            console.log('🚀 validarHorariosSegunFecha - Llamando a verificarDisponibilidadCompleta...');
             const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoSeleccionado.id, fecha);
             console.log('✅ validarHorariosSegunFecha - Disponibilidad obtenida para', Object.keys(disponibilidadCompleta).length, 'canchas');
+            console.log('✅ validarHorariosSegunFecha - Datos de disponibilidad:', disponibilidadCompleta);
             
             for (const hora of horarios) {
                 const option = document.createElement('option');
@@ -2706,6 +2709,7 @@ async function validarHorariosSegunFecha() {
             }
         } catch (error) {
             console.error('❌ validarHorariosSegunFecha - Error obteniendo disponibilidad, cargando horarios básicos:', error);
+            console.error('❌ validarHorariosSegunFecha - Error details:', error.message, error.stack);
             // Fallback: cargar horarios básicos si hay error
             horarios.forEach(hora => {
                 const option = document.createElement('option');
