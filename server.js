@@ -1108,6 +1108,21 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
   }
 });
 
+// Obtener tipos de cancha disponibles por complejo
+app.get('/api/tipos-canchas/:complejoId', async (req, res) => {
+  try {
+    const { complejoId } = req.params;
+    const tipos = await db.query(
+      'SELECT DISTINCT tipo FROM canchas WHERE complejo_id = $1 ORDER BY tipo',
+      [complejoId]
+    );
+    const tiposArray = tipos.map(t => t.tipo);
+    res.json(tiposArray);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Obtener reservas
 app.get('/api/reservas', async (req, res) => {
   try {
