@@ -104,6 +104,11 @@ function leerParametrosURL() {
             const urlParams = new URLSearchParams(window.location.search);
             ciudad = urlParams.get('ciudad');
             complejo = urlParams.get('complejo');
+            
+            // Decodificar parámetros URL
+            if (ciudad) ciudad = decodeURIComponent(ciudad);
+            if (complejo) complejo = decodeURIComponent(complejo);
+            
             console.log('📱 URLSearchParams resultado:', { ciudad, complejo });
         }
         
