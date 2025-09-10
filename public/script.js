@@ -2826,24 +2826,37 @@ async function renderizarCanchasConDisponibilidad() {
             let cardClass = 'cancha-card disponible';
             
             if (fecha && hora) {
-                try {
-                    const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
-                    const reservas = await response.json();
-                    
-                    estaDisponible = !reservas.some(r => 
-                        r.hora_inicio <= hora && r.hora_fin > hora
-                    );
-                    
-                    if (estaDisponible) {
-                        cardClass = 'cancha-card disponible';
-                        estadoBadge = '<span class="badge bg-success">Disponible</span>';
-                    } else {
-                        cardClass = 'cancha-card ocupada';
-                        estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                // PRIMERO: Verificar si la hora está marcada como "Todas ocupadas"
+                const horaSelect = document.getElementById('horaSelect');
+                const opcionSeleccionada = horaSelect.options[horaSelect.selectedIndex];
+                const esHoraTodasOcupadas = opcionSeleccionada && opcionSeleccionada.textContent.includes('(Todas ocupadas)');
+                
+                if (esHoraTodasOcupadas) {
+                    // Si la hora dice "Todas ocupadas", TODAS las canchas deben estar rojas
+                    cardClass = 'cancha-card ocupada';
+                    estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                    console.log('🔴 Cancha marcada como ocupada porque la hora está "Todas ocupadas":', cancha.nombre);
+                } else {
+                    // Si no es "Todas ocupadas", verificar disponibilidad individual
+                    try {
+                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                        const reservas = await response.json();
+                        
+                        estaDisponible = !reservas.some(r => 
+                            r.hora_inicio <= hora && r.hora_fin > hora
+                        );
+                        
+                        if (estaDisponible) {
+                            cardClass = 'cancha-card disponible';
+                            estadoBadge = '<span class="badge bg-success">Disponible</span>';
+                        } else {
+                            cardClass = 'cancha-card ocupada';
+                            estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                        }
+                    } catch (error) {
+                        console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
+                        // En caso de error, asumir disponible
                     }
-                } catch (error) {
-                    console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
-                    // En caso de error, asumir disponible
                 }
             }
             
@@ -2882,24 +2895,37 @@ async function renderizarCanchasConDisponibilidad() {
             let cardClass = 'cancha-card disponible';
             
             if (fecha && hora) {
-                try {
-                    const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
-                    const reservas = await response.json();
-                    
-                    estaDisponible = !reservas.some(r => 
-                        r.hora_inicio <= hora && r.hora_fin > hora
-                    );
-                    
-                    if (estaDisponible) {
-                        cardClass = 'cancha-card disponible';
-                        estadoBadge = '<span class="badge bg-success">Disponible</span>';
-                    } else {
-                        cardClass = 'cancha-card ocupada';
-                        estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                // PRIMERO: Verificar si la hora está marcada como "Todas ocupadas"
+                const horaSelect = document.getElementById('horaSelect');
+                const opcionSeleccionada = horaSelect.options[horaSelect.selectedIndex];
+                const esHoraTodasOcupadas = opcionSeleccionada && opcionSeleccionada.textContent.includes('(Todas ocupadas)');
+                
+                if (esHoraTodasOcupadas) {
+                    // Si la hora dice "Todas ocupadas", TODAS las canchas deben estar rojas
+                    cardClass = 'cancha-card ocupada';
+                    estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                    console.log('🔴 Cancha marcada como ocupada porque la hora está "Todas ocupadas":', cancha.nombre);
+                } else {
+                    // Si no es "Todas ocupadas", verificar disponibilidad individual
+                    try {
+                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                        const reservas = await response.json();
+                        
+                        estaDisponible = !reservas.some(r => 
+                            r.hora_inicio <= hora && r.hora_fin > hora
+                        );
+                        
+                        if (estaDisponible) {
+                            cardClass = 'cancha-card disponible';
+                            estadoBadge = '<span class="badge bg-success">Disponible</span>';
+                        } else {
+                            cardClass = 'cancha-card ocupada';
+                            estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                        }
+                    } catch (error) {
+                        console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
+                        // En caso de error, asumir disponible
                     }
-                } catch (error) {
-                    console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
-                    // En caso de error, asumir disponible
                 }
             }
             
