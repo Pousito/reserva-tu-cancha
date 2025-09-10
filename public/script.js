@@ -1815,6 +1815,7 @@ function configurarEventListeners() {
             console.log('🎯 Tipo de cancha seleccionado:', tipoCanchaSeleccionado);
             console.log('🎯 Llamando a mostrarPaso(4)...');
             mostrarPaso(4);
+            console.log('✅ mostrarPaso(4) completado, continuando...');
             
             // NUEVA LÓGICA: Cargar canchas automáticamente cuando se selecciona tipo de cancha
             console.log('🔍 DEBUG: Verificando condiciones para cargar canchas...');
