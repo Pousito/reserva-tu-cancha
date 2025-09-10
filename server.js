@@ -1674,6 +1674,142 @@ app.post('/api/debug/insert-admin-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT TEMPORAL PARA LIMPIAR BASE DE DATOS DE PRODUCCIÓN =====
+app.post('/api/debug/clean-production-db', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando base de datos de producción...');
+    
+    // PASO 1: Limpiar todos los datos existentes
+    console.log('PASO 1: Limpiando datos existentes...');
+    
+    // Actualizar usuarios para eliminar referencias a complejos
+    await db.run('UPDATE usuarios SET complejo_id = NULL WHERE complejo_id IS NOT NULL');
+    console.log('✅ Usuarios actualizados');
+    
+    // Eliminar reservas
+    await db.run('DELETE FROM reservas');
+    console.log('✅ Reservas eliminadas');
+    
+    // Eliminar canchas
+    await db.run('DELETE FROM canchas');
+    console.log('✅ Canchas eliminadas');
+    
+    // Eliminar complejos
+    await db.run('DELETE FROM complejos');
+    console.log('✅ Complejos eliminados');
+    
+    // Eliminar ciudades
+    await db.run('DELETE FROM ciudades');
+    console.log('✅ Ciudades eliminadas');
+    
+    // PASO 2: Insertar datos correctos
+    console.log('PASO 2: Insertando datos correctos...');
+    
+    // Insertar ciudad Los Ángeles
+    const ciudadResult = await db.run(
+      'INSERT INTO ciudades (nombre) VALUES ($1) RETURNING id',
+      ['Los Ángeles']
+    );
+    const ciudadId = ciudadResult.lastID;
+    console.log(`✅ Ciudad "Los Ángeles" insertada con ID: ${ciudadId}`);
+    
+    // Insertar complejo MagnaSports
+    const complejoResult = await db.run(
+      'INSERT INTO complejos (nombre, direccion, telefono, ciudad_id) VALUES ($1, $2, $3, $4) RETURNING id',
+      ['MagnaSports', 'Av. Principal 123', '+56912345678', ciudadId]
+    );
+    const complejoId = complejoResult.lastID;
+    console.log(`✅ Complejo "MagnaSports" insertado con ID: ${complejoId}`);
+    
+    // Insertar canchas
+    const cancha1Result = await db.run(
+      'INSERT INTO canchas (nombre, tipo, precio_hora, complejo_id) VALUES ($1, $2, $3, $4) RETURNING id',
+      ['Cancha Techada 1', 'Fútbol', 28000, complejoId]
+    );
+    const cancha1Id = cancha1Result.lastID;
+    console.log(`✅ Cancha "Cancha Techada 1" insertada con ID: ${cancha1Id}`);
+    
+    const cancha2Result = await db.run(
+      'INSERT INTO canchas (nombre, tipo, precio_hora, complejo_id) VALUES ($1, $2, $3, $4) RETURNING id',
+      ['Cancha Techada 2', 'Fútbol', 28000, complejoId]
+    );
+    const cancha2Id = cancha2Result.lastID;
+    console.log(`✅ Cancha "Cancha Techada 2" insertada con ID: ${cancha2Id}`);
+
+    // PASO 3: Insertar usuarios administradores
+    console.log('PASO 3: Insertando usuarios administradores...');
+    
+    const bcrypt = require('bcryptjs');
+    
+    // Super administrador
+    const superAdminPassword = await bcrypt.hash('superadmin123', 10);
+    await db.run(
+      'INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      ['superadmin@reservatucancha.com', superAdminPassword, 'Super Administrador', 'super_admin', true, null]
+    );
+    console.log('✅ Super administrador creado');
+    
+    // Dueño MagnaSports
+    const duenoPassword = await bcrypt.hash('dueno123', 10);
+    await db.run(
+      'INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      ['dueno@magnasports.cl', duenoPassword, 'Dueño MagnaSports', 'admin', true, complejoId]
+    );
+    console.log('✅ Dueño MagnaSports creado');
+    
+    // Administrador MagnaSports
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    await db.run(
+      'INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      ['admin@magnasports.cl', adminPassword, 'Administrador MagnaSports', 'admin', true, complejoId]
+    );
+    console.log('✅ Administrador MagnaSports creado');
+
+    // PASO 4: Verificar estado final
+    console.log('PASO 4: Verificando estado final...');
+    
+    const ciudadesCount = await db.get('SELECT COUNT(*) as count FROM ciudades');
+    const complejosCount = await db.get('SELECT COUNT(*) as count FROM complejos');
+    const canchasCount = await db.get('SELECT COUNT(*) as count FROM canchas');
+    const usuariosCount = await db.get('SELECT COUNT(*) as count FROM usuarios');
+    
+    console.log(`📊 Estado final:`);
+    console.log(`   - Ciudades: ${ciudadesCount.count}`);
+    console.log(`   - Complejos: ${complejosCount.count}`);
+    console.log(`   - Canchas: ${canchasCount.count}`);
+    console.log(`   - Usuarios: ${usuariosCount.count}`);
+    
+    res.json({
+      success: true,
+      message: 'Base de datos de producción limpiada y configurada correctamente',
+      data: {
+        ciudadId,
+        complejoId,
+        cancha1Id,
+        cancha2Id,
+        counts: {
+          ciudades: ciudadesCount.count,
+          complejos: complejosCount.count,
+          canchas: canchasCount.count,
+          usuarios: usuariosCount.count
+        }
+      },
+      credentials: {
+        superAdmin: 'superadmin@reservatucancha.com / superadmin123',
+        dueno: 'dueno@magnasports.cl / dueno123',
+        admin: 'admin@magnasports.cl / admin123'
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error limpiando base de datos:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT DE DEBUG PARA PROBAR FORMATEO DE FECHA =====
 app.get('/api/debug/test-date-formatting', async (req, res) => {
   try {
