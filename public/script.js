@@ -35,6 +35,12 @@ function obtenerHoraMinimaDisponible() {
     return horaRedondeada.toString().padStart(2, '0') + ':00';
 }
 
+// Función auxiliar para convertir tiempo a minutos (igual que en el servidor)
+function timeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':');
+    return parseInt(hours) * 60 + parseInt(minutes);
+}
+
 // Sistema de logs visibles para debugging móvil
 function crearLogVisible() {
     const logContainer = document.createElement('div');
@@ -1318,17 +1324,23 @@ async function verificarDisponibilidadCancha(canchaId, fecha, hora) {
         const horaFin = calcularHoraFin(hora);
         
         for (const reserva of reservas) {
-            // Verificar si hay superposición de horarios
+            // Verificar si hay superposición de horarios usando comparación en minutos
             // Una cancha está ocupada si la reserva se superpone con el horario solicitado
             // Superposición ocurre cuando: reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio
             
-            const haySuperposicion = reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio;
+            const reservaInicioMin = timeToMinutes(reserva.hora_inicio);
+            const reservaFinMin = timeToMinutes(reserva.hora_fin);
+            const horaInicioMin = timeToMinutes(horaInicio);
+            const horaFinMin = timeToMinutes(horaFin);
+            
+            const haySuperposicion = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
             
             if (haySuperposicion) {
                 console.log('🔴 verificarDisponibilidadCancha - Superposición detectada:', {
                     reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
                     solicitada: `${horaInicio}-${horaFin}`,
-                    canchaId: canchaId
+                    canchaId: canchaId,
+                    logica: `${reservaInicioMin} < ${horaFinMin} && ${reservaFinMin} > ${horaInicioMin}`
                 });
                 return false;
             }
@@ -1480,18 +1492,29 @@ function verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadD
     const horaFin = calcularHoraFin(hora);
     
     for (const reserva of canchaData.reservas) {
-        // Verificar si hay superposición de horarios
+        // Verificar si hay superposición de horarios usando comparación en minutos
         // Una cancha está ocupada si la reserva se superpone con el horario solicitado
         // Superposición ocurre cuando: reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio
         
-        const haySuperposicion = reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio;
+        const reservaInicioMin = timeToMinutes(reserva.hora_inicio);
+        const reservaFinMin = timeToMinutes(reserva.hora_fin);
+        const horaInicioMin = timeToMinutes(horaInicio);
+        const horaFinMin = timeToMinutes(horaFin);
+        
+        const haySuperposicion = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
         
         if (haySuperposicion) {
             console.log('🔴 Cancha ocupada - Superposición detectada:', {
                 reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
                 solicitada: `${horaInicio}-${horaFin}`,
                 canchaId: canchaId,
-                logica: `${reserva.hora_inicio} < ${horaFin} && ${reserva.hora_fin} > ${horaInicio}`
+                logica: `${reservaInicioMin} < ${horaFinMin} && ${reservaFinMin} > ${horaInicioMin}`,
+                minutos: {
+                    reservaInicio: reservaInicioMin,
+                    reservaFin: reservaFinMin,
+                    horaInicio: horaInicioMin,
+                    horaFin: horaFinMin
+                }
             });
             return false;
         }
@@ -3015,7 +3038,11 @@ async function renderizarCanchasConDisponibilidad() {
                             
                             estaDisponible = !reservas.some(r => {
                                 const horaFin = calcularHoraFin(hora);
-                                return r.hora_inicio < horaFin && r.hora_fin > hora;
+                                const reservaInicioMin = timeToMinutes(r.hora_inicio);
+                                const reservaFinMin = timeToMinutes(r.hora_fin);
+                                const horaInicioMin = timeToMinutes(hora);
+                                const horaFinMin = timeToMinutes(horaFin);
+                                return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
                             });
                             console.log('🎨 MagnaSports - Fetch individual para cancha', cancha.id, '- Disponible:', estaDisponible);
                         } catch (error) {
@@ -3088,7 +3115,11 @@ async function renderizarCanchasConDisponibilidad() {
                         
                         estaDisponible = !reservas.some(r => {
                             const horaFin = calcularHoraFin(hora);
-                            return r.hora_inicio < horaFin && r.hora_fin > hora;
+                            const reservaInicioMin = timeToMinutes(r.hora_inicio);
+                            const reservaFinMin = timeToMinutes(r.hora_fin);
+                            const horaInicioMin = timeToMinutes(hora);
+                            const horaFinMin = timeToMinutes(horaFin);
+                            return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
                         });
                         
                         if (estaDisponible) {
@@ -3573,7 +3604,11 @@ async function actualizarDisponibilidad() {
             const canchaCard = document.querySelector(`[data-cancha-id="${cancha.id}"]`);
             const estaDisponible = !reservas.some(r => {
                 const horaFin = calcularHoraFin(hora);
-                return r.hora_inicio < horaFin && r.hora_fin > hora;
+                const reservaInicioMin = timeToMinutes(r.hora_inicio);
+                const reservaFinMin = timeToMinutes(r.hora_fin);
+                const horaInicioMin = timeToMinutes(hora);
+                const horaFinMin = timeToMinutes(horaFin);
+                return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
             });
             
             if (estaDisponible) {
