@@ -1363,18 +1363,24 @@ async function verificarDisponibilidadTiempoReal() {
 
 // Verificar si todas las canchas están ocupadas en un horario específico
 async function verificarTodasCanchasOcupadas(fecha, hora) {
-    if (!canchas.length) return false;
+    if (!canchas.length) {
+        console.log('⚠️ No hay canchas cargadas para verificar disponibilidad');
+        return false;
+    }
     
+    console.log('🔍 Verificando', canchas.length, 'canchas para', fecha, hora);
     let todasOcupadas = true;
     
     for (const cancha of canchas) {
         const estaDisponible = await verificarDisponibilidadCancha(cancha.id, fecha, hora);
+        console.log('🏟️ Cancha', cancha.id, '(', cancha.nombre, ') - Disponible:', estaDisponible);
         if (estaDisponible) {
             todasOcupadas = false;
             break;
         }
     }
     
+    console.log('🔍 Resultado final - Todas ocupadas:', todasOcupadas);
     return todasOcupadas;
 }
 
@@ -2230,28 +2236,39 @@ async function actualizarHorariosConDisponibilidad() {
     if (!complejoSeleccionado || !canchas.length) return;
     
     const horaSelect = document.getElementById('horaSelect');
-    const fecha = document.getElementById('fechaSelect').value;
+    let fecha = document.getElementById('fechaSelect').value;
     
-    if (!fecha) return;
+    // Si no hay fecha seleccionada, usar fecha actual
+    if (!fecha) {
+        const hoy = new Date();
+        const fechaActual = hoy.toISOString().split('T')[0];
+        fecha = fechaActual;
+        console.log('📅 No hay fecha seleccionada, usando fecha actual:', fecha);
+    }
     
     // Obtener todas las opciones actuales
     const opcionesActuales = Array.from(horaSelect.options);
+    console.log('🕐 Validando disponibilidad para', opcionesActuales.length, 'horarios en fecha:', fecha);
     
     for (const option of opcionesActuales) {
         if (option.value && option.value !== '') {
+            console.log('🕐 Verificando horario:', option.value);
             // Verificar si todas las canchas están ocupadas en este horario
             const todasOcupadas = await verificarTodasCanchasOcupadas(fecha, option.value);
+            console.log('🕐 Horario', option.value, '- Todas ocupadas:', todasOcupadas);
             
             if (todasOcupadas) {
                 option.textContent = `${option.value} (Todas ocupadas)`;
                 option.classList.add('hora-todas-ocupadas');
                 option.style.textDecoration = 'line-through';
                 option.style.color = '#dc3545';
+                console.log('✅ Marcado como ocupado:', option.value);
             } else {
                 option.textContent = option.value;
                 option.classList.remove('hora-todas-ocupadas');
                 option.style.textDecoration = '';
                 option.style.color = '';
+                console.log('✅ Marcado como disponible:', option.value);
             }
         }
     }
