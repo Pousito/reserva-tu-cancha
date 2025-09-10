@@ -1856,9 +1856,10 @@ function configurarEventListeners() {
             console.log('🔍 Llamando a mostrarSeccionDisponibilidad...');
             await mostrarSeccionDisponibilidad();
             
-            // NUEVA LÓGICA: Cargar horarios con disponibilidad inmediatamente después de mostrar la sección
-            console.log('🚀 Cargando horarios con disponibilidad después de mostrar sección...');
-            await cargarHorariosConDisponibilidadInmediata();
+            // CORREGIDO: Solo cargar horarios básicos, NO con disponibilidad inmediata
+            // La disponibilidad se verificará cuando se seleccione fecha y hora
+            console.log('🚀 Cargando horarios básicos después de mostrar sección...');
+            await cargarHorariosBasicos();
         } else {
             console.log('🔍 No se puede mostrar disponibilidad - faltan datos');
         }
@@ -2527,13 +2528,13 @@ async function cargarHorariosComplejo(complejo) {
                 console.log('Cargando horarios de fin de semana (12:00-23:00)');
                 horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
             } else {
-                // Entre semana: 16:00-23:00
-                console.log('Cargando horarios de entre semana (16:00-23:00)');
+                // Lunes a viernes: 16:00-23:00
+                console.log('Cargando horarios de lunes a viernes (16:00-23:00)');
                 horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
             }
         } else {
-            // Si no hay fecha seleccionada, usar horarios de entre semana por defecto
-            console.log('No hay fecha seleccionada, usando horarios de entre semana por defecto');
+            // Si no hay fecha seleccionada, usar horarios de lunes a viernes por defecto
+            console.log('No hay fecha seleccionada, usando horarios de lunes a viernes por defecto');
             horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         }
     } else {
@@ -2616,6 +2617,72 @@ async function cargarHorariosComplejo(complejo) {
     }
 }
 
+// NUEVA FUNCIÓN: Cargar horarios básicos sin verificar disponibilidad
+async function cargarHorariosBasicos() {
+    console.log('🚀 cargarHorariosBasicos - INICIANDO...');
+    
+    if (!complejoSeleccionado) {
+        console.log('❌ cargarHorariosBasicos - No hay complejo seleccionado');
+        return;
+    }
+    
+    const horaSelect = document.getElementById('horaSelect');
+    if (!horaSelect) {
+        console.log('❌ cargarHorariosBasicos - No se encontró horaSelect');
+        return;
+    }
+    
+    console.log('🚀 cargarHorariosBasicos - Complejo:', complejoSeleccionado.nombre);
+    
+    // Determinar horarios según el complejo y día de la semana
+    let horarios = [];
+    const fecha = document.getElementById('fechaSelect').value;
+    
+    if (complejoSeleccionado.nombre === 'MagnaSports') {
+        if (fecha) {
+            const fechaObj = new Date(fecha + 'T00:00:00');
+            const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
+            
+            if (diaSemana === 0 || diaSemana === 6) {
+                // Fines de semana: 12:00-23:00
+                horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+            } else {
+                // Lunes a viernes: 16:00-23:00
+                horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+            }
+        } else {
+            // Si no hay fecha, usar horarios de fin de semana por defecto
+            horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        }
+    } else {
+        // Otros complejos: horario estándar
+        horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+    }
+    
+    console.log('🚀 cargarHorariosBasicos - Horarios a cargar:', horarios);
+    
+    // Limpiar horarios actuales
+    horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+    
+    // Cargar horarios básicos
+    horarios.forEach(hora => {
+        const option = document.createElement('option');
+        option.value = hora;
+        option.textContent = hora;
+        horaSelect.appendChild(option);
+    });
+    
+    // Si hay fecha seleccionada, verificar disponibilidad automáticamente
+    if (fecha) {
+        console.log('🚀 cargarHorariosBasicos - Verificando disponibilidad automáticamente...');
+        setTimeout(async () => {
+            await actualizarHorariosConDisponibilidad();
+        }, 100);
+    }
+    
+    console.log('✅ cargarHorariosBasicos - COMPLETADO exitosamente');
+}
+
 // NUEVA FUNCIÓN: Cargar horarios con disponibilidad inmediatamente cuando se muestra el paso 4
 async function cargarHorariosConDisponibilidadInmediata() {
     console.log('🚀 cargarHorariosConDisponibilidadInmediata - INICIANDO...');
@@ -2649,7 +2716,7 @@ async function cargarHorariosConDisponibilidadInmediata() {
             // Fines de semana: 12:00-23:00
             horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         } else {
-            // Entre semana: 16:00-23:00
+            // Lunes a viernes: 16:00-23:00
             horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         }
     } else {
@@ -2762,12 +2829,12 @@ async function validarHorariosSegunFecha() {
         }
     }
     
-    // Actualizar opciones disponibles según el día CON VERIFICACIÓN DE DISPONIBILIDAD
+    // Actualizar opciones disponibles según el día
     if (complejoSeleccionado.nombre === 'MagnaSports') {
-        console.log('🚀 validarHorariosSegunFecha - MagnaSports detectado, usando nueva lógica con disponibilidad...');
+        console.log('🚀 validarHorariosSegunFecha - MagnaSports detectado, cargando horarios básicos...');
         
-        // Llamar a la función que carga horarios con disponibilidad
-        await cargarHorariosConDisponibilidadInmediata();
+        // Cargar horarios básicos primero, la disponibilidad se verificará después
+        await cargarHorariosBasicos();
     } else {
         // Otros complejos: cargar horarios estándar
         cargarHorariosComplejo(complejoSeleccionado);

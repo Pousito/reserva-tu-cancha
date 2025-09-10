@@ -310,6 +310,9 @@ body {
         border-radius: 10px;
         position: relative;
         overflow: visible;
+        /* Asegurar que el contenedor sea visible en producción */
+        display: block !important;
+        visibility: visible !important;
     }
     
     .galpon-container::before {
@@ -773,6 +776,22 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+/* CORRECCIONES PARA PRODUCCIÓN - Asegurar que los estilos funcionen en Render */
+.galpon-container {
+    display: block !important;
+    visibility: visible !important;
+}
+
+.canchas-horizontales {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+.canchas-horizontales .cancha-card {
+    display: block !important;
+    visibility: visible !important;
 }
 
 /* ARCHIVO CSS COMPLETAMENTE RECREADO - MEJORAS DE MAGNASPORTS IMPLEMENTADAS */
