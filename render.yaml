@@ -18,8 +18,16 @@ services:
         fromDatabase:
           name: reserva-tu-cancha-db
           property: connectionString
+      - key: SMTP_HOST
+        value: smtp.zoho.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        value: reservas@reservatuscanchas.cl
+      - key: SMTP_PASS
+        value: L660mKFmcDBk
     healthCheckPath: /health
-    autoDeploy: false
+    autoDeploy: true
     branch: main
     region: oregon
 
