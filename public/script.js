@@ -2541,56 +2541,70 @@ async function cargarHorariosComplejo(complejo) {
     
     // Verificar disponibilidad de cada horario si hay fecha seleccionada
     const fecha = document.getElementById('fechaSelect').value;
-    if (fecha && canchas.length > 0) {
+    if (fecha) {
         // NUEVA LÓGICA OPTIMIZADA: Obtener disponibilidad completa de una vez
-        console.log('🚀 Cargando horarios con método optimizado...');
-        const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejo.id, fecha);
+        // Esto funciona incluso si las canchas no están cargadas aún
+        console.log('🚀 Cargando horarios con método optimizado (con o sin canchas cargadas)...');
         
-        for (const hora of horarios) {
-            const option = document.createElement('option');
-            option.value = hora;
+        try {
+            const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejo.id, fecha);
+            console.log('✅ Disponibilidad obtenida para', Object.keys(disponibilidadCompleta).length, 'canchas');
             
-            // Verificar si todas las canchas están ocupadas usando datos precargados
-            let todasOcupadas = true;
-            for (const cancha of canchas) {
-                const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
-                if (estaDisponible) {
-                    todasOcupadas = false;
-                    break;
+            for (const hora of horarios) {
+                const option = document.createElement('option');
+                option.value = hora;
+                
+                // Verificar si todas las canchas están ocupadas usando datos precargados
+                let todasOcupadas = true;
+                let canchasVerificadas = 0;
+                
+                // Si hay canchas cargadas, usar la lista de canchas
+                if (canchas.length > 0) {
+                    for (const cancha of canchas) {
+                        const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
+                        canchasVerificadas++;
+                        if (estaDisponible) {
+                            todasOcupadas = false;
+                            break;
+                        }
+                    }
+                } else {
+                    // Si no hay canchas cargadas, verificar todas las canchas del complejo desde la disponibilidad
+                    for (const canchaId in disponibilidadCompleta) {
+                        const estaDisponible = verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadCompleta);
+                        canchasVerificadas++;
+                        if (estaDisponible) {
+                            todasOcupadas = false;
+                            break;
+                        }
+                    }
                 }
+                
+                console.log('🕐 Horario', hora, '- Canchas verificadas:', canchasVerificadas, '- Todas ocupadas:', todasOcupadas);
+                
+                if (todasOcupadas && canchasVerificadas > 0) {
+                    option.textContent = `${hora} (Todas ocupadas)`;
+                    option.classList.add('hora-todas-ocupadas');
+                    option.style.textDecoration = 'line-through';
+                    option.style.color = '#dc3545';
+                } else {
+                    option.textContent = hora;
+                }
+                
+                horaSelect.appendChild(option);
             }
-            
-            if (todasOcupadas) {
-                option.textContent = `${hora} (Todas ocupadas)`;
-                option.classList.add('hora-todas-ocupadas');
-                option.style.textDecoration = 'line-through';
-                option.style.color = '#dc3545';
-            } else {
+        } catch (error) {
+            console.error('❌ Error obteniendo disponibilidad, cargando horarios básicos:', error);
+            // Fallback: cargar horarios básicos si hay error
+            horarios.forEach(hora => {
+                const option = document.createElement('option');
+                option.value = hora;
                 option.textContent = hora;
-            }
-            
-            horaSelect.appendChild(option);
-        }
-    } else if (fecha && canchas.length === 0) {
-        // Si hay fecha pero no hay canchas cargadas, cargar horarios y verificar disponibilidad después
-        console.log('📅 Hay fecha pero no hay canchas, cargando horarios básicos...');
-        horarios.forEach(hora => {
-            const option = document.createElement('option');
-            option.value = hora;
-            option.textContent = hora;
-            horaSelect.appendChild(option);
-        });
-        
-        // Verificar disponibilidad después de cargar canchas
-        if (complejoSeleccionado && tipoCanchaSeleccionado) {
-            console.log('🔄 Cargando canchas para verificar disponibilidad...');
-            setTimeout(async () => {
-                await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
-                await actualizarHorariosConDisponibilidad();
-            }, 100);
+                horaSelect.appendChild(option);
+            });
         }
     } else {
-        // Si no hay fecha o canchas, cargar horarios normalmente
+        // Si no hay fecha, cargar horarios normalmente
         horarios.forEach(hora => {
             const option = document.createElement('option');
             option.value = hora;
