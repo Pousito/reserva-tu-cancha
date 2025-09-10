@@ -140,48 +140,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (ciudad || complejo) {
             console.log('🔄 Haciendo scroll automático al paso 3...');
             
-            // Función alternativa de scroll que se ejecuta inmediatamente
-            function ejecutarScrollAlternativo() {
-                console.log('🔄 [ALTERNATIVO] Mostrando paso 3...');
-                mostrarPaso(3);
-                console.log('✅ [ALTERNATIVO] Paso 3 mostrado');
-                
-                // Scroll inmediato usando múltiples métodos
-                setTimeout(() => {
-                    console.log('🔄 [ALTERNATIVO] Ejecutando scroll...');
-                    
-                    const step3Element = document.getElementById('step3');
-                    if (step3Element) {
-                        console.log('✅ [ALTERNATIVO] Elemento step3 encontrado');
-                        
-                        // Método 1: scrollIntoView
-                        step3Element.scrollIntoView({ 
-                            behavior: 'smooth',
-                            block: 'center'
-                        });
-                        
-                        // Método 2: scrollTo como respaldo
-                        setTimeout(() => {
-                            const elementPosition = step3Element.offsetTop;
-                            const offsetPosition = elementPosition - 100;
-                            window.scrollTo({
-                                top: offsetPosition,
-                                behavior: 'smooth'
-                            });
-                            console.log('✅ [ALTERNATIVO] Scroll completado');
-                        }, 200);
-                    } else {
-                        console.error('❌ [ALTERNATIVO] Elemento step3 no encontrado');
-                    }
-                }, 100);
-            }
+            // Mostrar paso 3 inmediatamente
+            console.log('🔄 Mostrando paso 3...');
+            mostrarPaso(3);
+            console.log('✅ Paso 3 mostrado');
             
-            // Ejecutar inmediatamente
-            ejecutarScrollAlternativo();
-            
-            // También ejecutar con delay como respaldo
-            setTimeout(ejecutarScrollAlternativo, 1000);
-            setTimeout(ejecutarScrollAlternativo, 2000);
+            // Scroll suave y único
+            setTimeout(() => {
+                console.log('🔄 Ejecutando scroll al paso 3...');
+                scrollToStep3();
+            }, 500); // Un solo delay para que el DOM se actualice
             
         } else {
             console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
