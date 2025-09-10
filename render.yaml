@@ -13,7 +13,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://reserva-tu-cancha.onrender.com
+        value: https://www.reservatuscanchas.cl
       - key: DATABASE_URL
         fromDatabase:
           name: reserva-tu-cancha-db
