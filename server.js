@@ -320,6 +320,54 @@ app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
   }
 });
 
+// Endpoint de debug para verificar lógica de superposición
+app.get('/api/debug/verificar-superposicion/:canchaId/:fecha/:hora', async (req, res) => {
+  try {
+    const { canchaId, fecha, hora } = req.params;
+    console.log(`🔍 DEBUG - Verificando superposición - Cancha: ${canchaId}, Fecha: ${fecha}, Hora: ${hora}`);
+    
+    // Obtener reservas existentes
+    const reservas = await db.query(`
+      SELECT hora_inicio, hora_fin, estado
+      FROM reservas 
+      WHERE cancha_id = $1 AND date(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
+      ORDER BY hora_inicio
+    `, [canchaId, fecha]);
+    
+    // Calcular hora fin (hora + 1 hora)
+    const [horaNum, minutos] = hora.split(':');
+    const horaFinNum = parseInt(horaNum) + 1;
+    const horaFin = `${horaFinNum.toString().padStart(2, '0')}:${minutos}`;
+    
+    // Verificar superposición para cada reserva
+    const resultados = reservas.map(reserva => {
+      const haySuperposicion = reserva.hora_inicio < horaFin && reserva.hora_fin > hora;
+      return {
+        reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
+        solicitada: `${hora}-${horaFin}`,
+        haySuperposicion,
+        logica: `${reserva.hora_inicio} < ${horaFin} && ${reserva.hora_fin} > ${hora}`,
+        disponible: !haySuperposicion
+      };
+    });
+    
+    const estaDisponible = resultados.every(r => r.disponible);
+    
+    res.json({
+      canchaId,
+      fecha,
+      hora,
+      horaFin,
+      reservas: resultados,
+      estaDisponible,
+      totalReservas: reservas.length
+    });
+  } catch (error) {
+    console.error('❌ Error en debug de superposición:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint optimizado para verificar disponibilidad completa de un complejo
 app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
   try {
