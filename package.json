@@ -20,6 +20,9 @@
     "backup-create": "node -e \"const {BackupSystem} = require('./scripts/database/backup-system'); const bs = new BackupSystem(); bs.connectDb().then(() => bs.createBackup()).then(r => console.log(r)).catch(e => console.error(e))\"",
     "backup-list": "node -e \"const {BackupSystem} = require('./scripts/database/backup-system'); const bs = new BackupSystem(); console.log(bs.listBackups())\"",
     "backup-restore": "node -e \"const {BackupSystem} = require('./scripts/database/backup-system'); const bs = new BackupSystem(); bs.connectDb().then(() => bs.restoreFromLatestBackup()).then(r => console.log(r ? 'Restaurado' : 'Error')).catch(e => console.error(e))\"",
+    "clean-local-db": "node scripts/clean-database.js",
+    "check-prod-db": "node scripts/clean-production-db.js check",
+    "clean-prod-db": "node scripts/clean-production-db.js clean",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0"
   },
