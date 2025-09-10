@@ -11,55 +11,294 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000/api'  // Desarrollo local
   : `${window.location.protocol}//${window.location.host}/api`;  // Producción (Render)
 
-// Función para leer parámetros URL - Compatible con móviles
+// Función para leer parámetros URL - Ultra compatible con móviles
 function leerParametrosURL() {
     let ciudad = null;
     let complejo = null;
     
+    console.log('🔍 Iniciando lectura de parámetros URL...');
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('📱 Es móvil:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    console.log('🔗 URL completa:', window.location.href);
+    console.log('🔗 Search params:', window.location.search);
+    
     try {
-        // Método moderno con URLSearchParams
+        // Método 1: URLSearchParams moderno
         if (window.URLSearchParams) {
+            console.log('📱 Usando URLSearchParams moderno');
             const urlParams = new URLSearchParams(window.location.search);
             ciudad = urlParams.get('ciudad');
             complejo = urlParams.get('complejo');
-        } else {
-            // Fallback para navegadores antiguos (móviles)
+            console.log('📱 URLSearchParams resultado:', { ciudad, complejo });
+        }
+        
+        // Método 2: Fallback manual si URLSearchParams falla o no encuentra nada
+        if (!ciudad && !complejo) {
+            console.log('📱 URLSearchParams no encontró nada, usando fallback manual');
             const queryString = window.location.search.substring(1);
+            console.log('📱 Query string:', queryString);
             const params = queryString.split('&');
+            console.log('📱 Params array:', params);
             
             for (let i = 0; i < params.length; i++) {
                 const pair = params[i].split('=');
                 if (pair.length === 2) {
                     const key = decodeURIComponent(pair[0]);
                     const value = decodeURIComponent(pair[1]);
+                    console.log('📱 Par procesado:', { key, value });
                     
                     if (key === 'ciudad') ciudad = value;
                     if (key === 'complejo') complejo = value;
                 }
             }
         }
+        
+        // Método 3: Regex como último recurso
+        if (!ciudad && !complejo) {
+            console.log('📱 Fallback manual no encontró nada, usando regex');
+            const url = window.location.href;
+            const ciudadMatch = url.match(/[?&]ciudad=([^&]+)/);
+            const complejoMatch = url.match(/[?&]complejo=([^&]+)/);
+            
+            if (ciudadMatch) {
+                ciudad = decodeURIComponent(ciudadMatch[1]);
+                console.log('📱 Regex encontró ciudad:', ciudad);
+            }
+            if (complejoMatch) {
+                complejo = decodeURIComponent(complejoMatch[1]);
+                console.log('📱 Regex encontró complejo:', complejo);
+            }
+        }
+        
     } catch (error) {
         console.error('❌ Error leyendo parámetros URL:', error);
-        // Fallback manual
-        const url = window.location.href;
-        const ciudadMatch = url.match(/[?&]ciudad=([^&]+)/);
-        const complejoMatch = url.match(/[?&]complejo=([^&]+)/);
-        
-        if (ciudadMatch) ciudad = decodeURIComponent(ciudadMatch[1]);
-        if (complejoMatch) complejo = decodeURIComponent(complejoMatch[1]);
     }
     
-    console.log('🔍 Parámetros URL encontrados:', { ciudad, complejo });
-    console.log('📱 User Agent:', navigator.userAgent);
-    console.log('📱 Es móvil:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    console.log('🔍 Parámetros URL finales:', { ciudad, complejo });
     
     return { ciudad, complejo };
+}
+
+// Función específica para móviles - Pre-rellenado ultra agresivo
+function preRellenarMovil(ciudad, complejo) {
+    console.log('📱 === PRE-RELLENADO MÓVIL INICIADO ===');
+    console.log('📱 Parámetros recibidos:', { ciudad, complejo });
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('📱 Es móvil confirmado:', isMobile);
+    
+    if (!isMobile) {
+        console.log('📱 No es móvil, saltando pre-rellenado móvil');
+        return;
+    }
+    
+    // Pre-rellenar ciudad de forma ultra agresiva
+    if (ciudad) {
+        console.log('📱 Pre-rellenando ciudad en móvil:', ciudad);
+        
+        // Método 1: Buscar en ciudades cargadas
+        const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+        console.log('📱 Ciudad encontrada en array:', ciudadEncontrada);
+        
+        if (ciudadEncontrada) {
+            const ciudadSelect = document.getElementById('ciudadSelect');
+            console.log('📱 Elemento ciudad select:', ciudadSelect);
+            
+            if (ciudadSelect) {
+                // Forzar valor múltiples veces
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        ciudadSelect.value = ciudadEncontrada.id;
+                        ciudadSelect.setAttribute('value', ciudadEncontrada.id);
+                        console.log('📱 Intento', i + 1, 'ciudad value:', ciudadSelect.value);
+                        
+                        // Disparar eventos múltiples
+                        ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                        ciudadSelect.dispatchEvent(new Event('blur', { bubbles: true }));
+                        
+                        // Indicador visual
+                        ciudadSelect.style.backgroundColor = '#e8f5e8';
+                        ciudadSelect.style.border = '2px solid #28a745';
+                        
+                        setTimeout(() => {
+                            ciudadSelect.style.backgroundColor = '';
+                            ciudadSelect.style.border = '';
+                        }, 1000);
+                        
+                    }, i * 200);
+                }
+                
+                // Llamar cargarComplejos después de un delay
+                setTimeout(() => {
+                    console.log('📱 Llamando cargarComplejos para móvil...');
+                    if (typeof cargarComplejos === 'function') {
+                        cargarComplejos(ciudadEncontrada.id);
+                    }
+                }, 1000);
+            }
+        }
+    }
+    
+    // Pre-rellenar complejo de forma ultra agresiva
+    if (complejo) {
+        console.log('📱 Pre-rellenando complejo en móvil:', complejo);
+        
+        // Esperar un poco para que los complejos se carguen
+        setTimeout(() => {
+            const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+            console.log('📱 Complejo encontrado en array:', complejoEncontrado);
+            
+            if (complejoEncontrado) {
+                const complejoSelect = document.getElementById('complejoSelect');
+                console.log('📱 Elemento complejo select:', complejoSelect);
+                
+                if (complejoSelect) {
+                    // Forzar valor múltiples veces
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => {
+                            complejoSelect.value = complejoEncontrado.id;
+                            complejoSelect.setAttribute('value', complejoEncontrado.id);
+                            console.log('📱 Intento', i + 1, 'complejo value:', complejoSelect.value);
+                            
+                            // Disparar eventos múltiples
+                            complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                            complejoSelect.dispatchEvent(new Event('blur', { bubbles: true }));
+                            
+                            // Indicador visual
+                            complejoSelect.style.backgroundColor = '#e8f5e8';
+                            complejoSelect.style.border = '2px solid #28a745';
+                            
+                            setTimeout(() => {
+                                complejoSelect.style.backgroundColor = '';
+                                complejoSelect.style.border = '';
+                            }, 1000);
+                            
+                        }, i * 200);
+                    }
+                }
+            } else {
+                console.log('📱 Complejo no encontrado, reintentando en 2 segundos...');
+                setTimeout(() => {
+                    preRellenarMovil(ciudad, complejo);
+                }, 2000);
+            }
+        }, 1500);
+    }
+    
+    console.log('📱 === PRE-RELLENADO MÓVIL COMPLETADO ===');
+}
+
+// Función específica para PC - Pre-rellenado optimizado
+function preRellenarPC(ciudad, complejo) {
+    console.log('💻 === PRE-RELLENADO PC INICIADO ===');
+    console.log('💻 Parámetros recibidos:', { ciudad, complejo });
+    
+    // Pre-rellenar ciudad
+    if (ciudad) {
+        console.log('💻 Pre-rellenando ciudad en PC:', ciudad);
+        
+        const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+        console.log('💻 Ciudad encontrada en array:', ciudadEncontrada);
+        
+        if (ciudadEncontrada) {
+            const ciudadSelect = document.getElementById('ciudadSelect');
+            console.log('💻 Elemento ciudad select:', ciudadSelect);
+            
+            if (ciudadSelect) {
+                // Asignar valor
+                ciudadSelect.value = ciudadEncontrada.id;
+                ciudadSelect.setAttribute('value', ciudadEncontrada.id);
+                console.log('💻 Ciudad value asignado:', ciudadSelect.value);
+                
+                // Disparar eventos
+                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Indicador visual
+                ciudadSelect.style.backgroundColor = '#e8f5e8';
+                ciudadSelect.style.border = '2px solid #28a745';
+                setTimeout(() => {
+                    ciudadSelect.style.backgroundColor = '';
+                    ciudadSelect.style.border = '';
+                }, 2000);
+                
+                // Llamar cargarComplejos
+                setTimeout(() => {
+                    console.log('💻 Llamando cargarComplejos para PC...');
+                    if (typeof cargarComplejos === 'function') {
+                        cargarComplejos(ciudadEncontrada.id);
+                    }
+                }, 500);
+                
+                console.log('✅ Ciudad pre-rellenada en PC:', ciudad, 'ID:', ciudadEncontrada.id);
+            }
+        }
+    }
+    
+    // Pre-rellenar complejo con espera más larga
+    if (complejo) {
+        console.log('💻 Pre-rellenando complejo en PC:', complejo);
+        
+        // Esperar más tiempo para que los complejos se carguen
+        setTimeout(() => {
+            const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+            console.log('💻 Complejo encontrado en array:', complejoEncontrado);
+            console.log('💻 Complejos disponibles:', complejos.length);
+            
+            if (complejoEncontrado) {
+                const complejoSelect = document.getElementById('complejoSelect');
+                console.log('💻 Elemento complejo select:', complejoSelect);
+                
+                if (complejoSelect) {
+                    // Asignar valor
+                    complejoSelect.value = complejoEncontrado.id;
+                    complejoSelect.setAttribute('value', complejoEncontrado.id);
+                    console.log('💻 Complejo value asignado:', complejoSelect.value);
+                    
+                    // Disparar eventos
+                    complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    // Indicador visual
+                    complejoSelect.style.backgroundColor = '#e8f5e8';
+                    complejoSelect.style.border = '2px solid #28a745';
+                    setTimeout(() => {
+                        complejoSelect.style.backgroundColor = '';
+                        complejoSelect.style.border = '';
+                    }, 2000);
+                    
+                    console.log('✅ Complejo pre-rellenado en PC:', complejo, 'ID:', complejoEncontrado.id);
+                }
+            } else {
+                console.log('💻 Complejo no encontrado, reintentando en 3 segundos...');
+                setTimeout(() => {
+                    preRellenarPC(ciudad, complejo);
+                }, 3000);
+            }
+        }, 2000); // Esperar 2 segundos para que se carguen los complejos
+    }
+    
+    console.log('💻 === PRE-RELLENADO PC COMPLETADO ===');
 }
 
 // Función para pre-rellenar campos desde URL
 async function preRellenarDesdeURL() {
     console.log('🔍 Iniciando preRellenarDesdeURL...');
     const { ciudad, complejo } = leerParametrosURL();
+    
+    // Detectar si es móvil y usar función específica
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        console.log('📱 Dispositivo móvil detectado, usando pre-rellenado móvil');
+        preRellenarMovil(ciudad, complejo);
+        return;
+    }
+    
+    console.log('💻 Dispositivo PC detectado, usando pre-rellenado PC mejorado');
+    preRellenarPC(ciudad, complejo);
+    return;
     
     if (ciudad) {
         console.log('🏙️ Pre-rellenando ciudad:', ciudad);
