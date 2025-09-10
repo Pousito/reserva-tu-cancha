@@ -84,7 +84,7 @@ async function forceSyncProduction() {
         
         const cancha2Result = await db.run(`
             INSERT INTO canchas (id, complejo_id, nombre, tipo, precio_hora) 
-            VALUES (12, 1, $2, $2, $3)
+            VALUES (12, 1, $1, $2, $3)
         `, ['Cancha Techada 2', 'futbol', 28000]);
         console.log(`✅ Cancha Techada 2 creada con ID: 12`);
         
