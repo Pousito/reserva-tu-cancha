@@ -129,36 +129,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         await preRellenarDesdeURL();
         console.log('✅ Pre-rellenado completado');
         
+        // Scroll automático y mostrar paso 3 si hay parámetros URL
+        console.log('🔍 Verificando parámetros URL para scroll...');
+        const urlParams = new URLSearchParams(window.location.search);
+        const ciudad = urlParams.get('ciudad');
+        const complejo = urlParams.get('complejo');
+        
+        console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
+        
+        if (ciudad || complejo) {
+            console.log('🔄 Haciendo scroll automático al paso 3...');
+            
+            // Esperar a que los datos se carguen y se pre-rellenen
+            setTimeout(() => {
+                // Mostrar automáticamente el paso 3 (Tipo de Cancha) primero
+                console.log('🔄 Mostrando paso 3...');
+                mostrarPaso(3);
+                console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
+                
+                // Esperar un poco más para que el DOM se actualice completamente
+                setTimeout(() => {
+                    console.log('🔄 Ejecutando scroll al paso 3...');
+                    scrollToStep3();
+                }, 500); // Delay más largo para asegurar que el paso 3 esté completamente visible
+            }, 1200); // Delay inicial más largo para asegurar que todo esté cargado
+        } else {
+            console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
+        }
+        
     } catch (error) {
         console.error('❌ Error en inicialización:', error);
-    }
-    
-    // Scroll automático y mostrar paso 3 si hay parámetros URL
-    console.log('🔍 Verificando parámetros URL para scroll...');
-    const urlParams = new URLSearchParams(window.location.search);
-    const ciudad = urlParams.get('ciudad');
-    const complejo = urlParams.get('complejo');
-    
-    console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
-    
-    if (ciudad || complejo) {
-        console.log('🔄 Haciendo scroll automático al paso 3...');
-        
-        // Esperar a que los datos se carguen y se pre-rellenen
-        setTimeout(() => {
-            // Mostrar automáticamente el paso 3 (Tipo de Cancha) primero
-            console.log('🔄 Mostrando paso 3...');
-            mostrarPaso(3);
-            console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
-            
-            // Esperar un poco más para que el DOM se actualice completamente
-            setTimeout(() => {
-                console.log('🔄 Ejecutando scroll al paso 3...');
-                scrollToStep3();
-            }, 500); // Delay más largo para asegurar que el paso 3 esté completamente visible
-        }, 1200); // Delay inicial más largo para asegurar que todo esté cargado
-    } else {
-        console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
     }
     
     // Verificar que la función scrollToReservar esté disponible
