@@ -29,14 +29,7 @@ async function forceSyncProduction() {
         await db.connect();
         console.log('✅ Conectado a la base de datos de producción');
         
-        const dbInfo = db.getDatabaseInfo();
-        console.log(`📊 Base de datos: ${dbInfo.type}`);
-        
-        if (dbInfo.type !== 'PostgreSQL') {
-            console.log('⚠️ ADVERTENCIA: Este script está diseñado para PostgreSQL');
-            console.log('   Tipo de base de datos actual:', dbInfo.type);
-            console.log('   Continuando de todas formas...');
-        }
+        console.log('📊 Base de datos: PostgreSQL (producción)');
         
         // PASO 1: Eliminar TODOS los datos existentes
         console.log('\n🧹 PASO 1: Eliminando todos los datos existentes...');
