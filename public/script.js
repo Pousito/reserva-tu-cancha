@@ -1318,14 +1318,18 @@ async function verificarDisponibilidadCancha(canchaId, fecha, hora) {
         const horaFin = calcularHoraFin(hora);
         
         for (const reserva of reservas) {
-            // Si hay una reserva que se superpone, la cancha no está disponible
-            if (reserva.hora_inicio <= horaInicio && reserva.hora_fin > horaInicio) {
-                return false;
-            }
-            if (reserva.hora_inicio < horaFin && reserva.hora_fin >= horaFin) {
-                return false;
-            }
-            if (reserva.hora_inicio >= horaInicio && reserva.hora_fin <= horaFin) {
+            // Verificar si hay superposición de horarios
+            // Una cancha está ocupada si la reserva se superpone con el horario solicitado
+            // Superposición ocurre cuando: reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio
+            
+            const haySuperposicion = reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio;
+            
+            if (haySuperposicion) {
+                console.log('🔴 verificarDisponibilidadCancha - Superposición detectada:', {
+                    reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
+                    solicitada: `${horaInicio}-${horaFin}`,
+                    canchaId: canchaId
+                });
                 return false;
             }
         }
@@ -1477,13 +1481,18 @@ function verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadD
     
     for (const reserva of canchaData.reservas) {
         // Verificar si hay superposición de horarios
-        if (reserva.hora_inicio <= horaInicio && reserva.hora_fin > horaInicio) {
-            return false;
-        }
-        if (reserva.hora_inicio < horaFin && reserva.hora_fin >= horaFin) {
-            return false;
-        }
-        if (reserva.hora_inicio >= horaInicio && reserva.hora_fin <= horaFin) {
+        // Una cancha está ocupada si la reserva se superpone con el horario solicitado
+        // Superposición ocurre cuando: reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio
+        
+        const haySuperposicion = reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio;
+        
+        if (haySuperposicion) {
+            console.log('🔴 Cancha ocupada - Superposición detectada:', {
+                reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
+                solicitada: `${horaInicio}-${horaFin}`,
+                canchaId: canchaId,
+                logica: `${reserva.hora_inicio} < ${horaFin} && ${reserva.hora_fin} > ${horaInicio}`
+            });
             return false;
         }
     }
@@ -3004,9 +3013,10 @@ async function renderizarCanchasConDisponibilidad() {
                             const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
                             const reservas = await response.json();
                             
-                            estaDisponible = !reservas.some(r => 
-                                r.hora_inicio <= hora && r.hora_fin > hora
-                            );
+                            estaDisponible = !reservas.some(r => {
+                                const horaFin = calcularHoraFin(hora);
+                                return r.hora_inicio < horaFin && r.hora_fin > hora;
+                            });
                             console.log('🎨 MagnaSports - Fetch individual para cancha', cancha.id, '- Disponible:', estaDisponible);
                         } catch (error) {
                             console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
@@ -3076,9 +3086,10 @@ async function renderizarCanchasConDisponibilidad() {
                         const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
                         const reservas = await response.json();
                         
-                        estaDisponible = !reservas.some(r => 
-                            r.hora_inicio <= hora && r.hora_fin > hora
-                        );
+                        estaDisponible = !reservas.some(r => {
+                            const horaFin = calcularHoraFin(hora);
+                            return r.hora_inicio < horaFin && r.hora_fin > hora;
+                        });
                         
                         if (estaDisponible) {
                             cardClass = 'cancha-card disponible';
@@ -3560,9 +3571,10 @@ async function actualizarDisponibilidad() {
             const reservas = await response.json();
             
             const canchaCard = document.querySelector(`[data-cancha-id="${cancha.id}"]`);
-            const estaDisponible = !reservas.some(r => 
-                r.hora_inicio <= hora && r.hora_fin > hora
-            );
+            const estaDisponible = !reservas.some(r => {
+                const horaFin = calcularHoraFin(hora);
+                return r.hora_inicio < horaFin && r.hora_fin > hora;
+            });
             
             if (estaDisponible) {
                 canchaCard.className = 'cancha-card disponible';
