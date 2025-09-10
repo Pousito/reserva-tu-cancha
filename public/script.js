@@ -21,6 +21,8 @@ function leerParametrosURL() {
     console.log('📱 Es móvil:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     console.log('🔗 URL completa:', window.location.href);
     console.log('🔗 Search params:', window.location.search);
+    console.log('🌍 Hostname:', window.location.hostname);
+    console.log('🌍 Entorno:', window.location.hostname === 'localhost' ? 'LOCAL' : 'PRODUCCIÓN');
     
     try {
         // Método 1: URLSearchParams moderno
@@ -83,9 +85,12 @@ function leerParametrosURL() {
 function preRellenarMovil(ciudad, complejo) {
     console.log('📱 === PRE-RELLENADO MÓVIL INICIADO ===');
     console.log('📱 Parámetros recibidos:', { ciudad, complejo });
+    console.log('🌍 Entorno:', window.location.hostname === 'localhost' ? 'LOCAL' : 'PRODUCCIÓN');
+    console.log('🌍 Hostname:', window.location.hostname);
     
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     console.log('📱 Es móvil confirmado:', isMobile);
+    console.log('📱 User Agent:', navigator.userAgent);
     
     if (!isMobile) {
         console.log('📱 No es móvil, saltando pre-rellenado móvil');
@@ -125,6 +130,17 @@ function preRellenarMovil(ciudad, complejo) {
                             ciudadSelect.style.backgroundColor = '';
                             ciudadSelect.style.border = '';
                         }, 1000);
+                        
+                        // Método adicional para producción - Forzar re-render
+                        if (window.location.hostname !== 'localhost') {
+                            console.log('📱 PRODUCCIÓN: Forzando re-render del select');
+                            ciudadSelect.style.display = 'none';
+                            setTimeout(() => {
+                                ciudadSelect.style.display = '';
+                                ciudadSelect.value = ciudadEncontrada.id;
+                                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            }, 50);
+                        }
                         
                     }, i * 200);
                 }
@@ -175,6 +191,18 @@ function preRellenarMovil(ciudad, complejo) {
                                 complejoSelect.style.border = '';
                             }, 1000);
                             
+                            // Método adicional para producción - Forzar re-render
+                            if (window.location.hostname !== 'localhost') {
+                                console.log('📱 PRODUCCIÓN: Forzando re-render del select complejo');
+                                complejoSelect.style.display = 'none';
+                                setTimeout(() => {
+                                    complejoSelect.style.display = '';
+                                    complejoSelect.value = complejoEncontrado.id;
+                                    complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                }, 50);
+                            }
+                            }, 1000);
+                            
                         }, i * 200);
                     }
                 }
@@ -185,6 +213,37 @@ function preRellenarMovil(ciudad, complejo) {
                 }, 2000);
             }
         }, 1500);
+    }
+    
+    // Método adicional específico para producción - Ultra agresivo
+    if (window.location.hostname !== 'localhost') {
+        console.log('📱 PRODUCCIÓN: Iniciando método adicional ultra agresivo');
+        
+        setTimeout(() => {
+            console.log('📱 PRODUCCIÓN: Método adicional - Verificando elementos');
+            const ciudadSelect = document.getElementById('ciudadSelect');
+            const complejoSelect = document.getElementById('complejoSelect');
+            
+            if (ciudad && ciudadSelect) {
+                const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+                if (ciudadEncontrada) {
+                    console.log('📱 PRODUCCIÓN: Método adicional - Asignando ciudad');
+                    ciudadSelect.value = ciudadEncontrada.id;
+                    ciudadSelect.selectedIndex = Array.from(ciudadSelect.options).findIndex(option => option.value == ciudadEncontrada.id);
+                    ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            
+            if (complejo && complejoSelect) {
+                const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                if (complejoEncontrado) {
+                    console.log('📱 PRODUCCIÓN: Método adicional - Asignando complejo');
+                    complejoSelect.value = complejoEncontrado.id;
+                    complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
+                    complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        }, 3000);
     }
     
     console.log('📱 === PRE-RELLENADO MÓVIL COMPLETADO ===');
