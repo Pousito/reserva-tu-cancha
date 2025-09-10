@@ -1682,10 +1682,6 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     // PASO 1: Limpiar todos los datos existentes
     console.log('PASO 1: Limpiando datos existentes...');
     
-    // Actualizar usuarios para eliminar referencias a complejos
-    await db.run('UPDATE usuarios SET complejo_id = NULL WHERE complejo_id IS NOT NULL');
-    console.log('✅ Usuarios actualizados');
-    
     // Eliminar reservas
     await db.run('DELETE FROM reservas');
     console.log('✅ Reservas eliminadas');
@@ -1701,6 +1697,10 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     // Eliminar ciudades
     await db.run('DELETE FROM ciudades');
     console.log('✅ Ciudades eliminadas');
+    
+    // Eliminar usuarios
+    await db.run('DELETE FROM usuarios');
+    console.log('✅ Usuarios eliminados');
     
     // PASO 2: Insertar datos correctos
     console.log('PASO 2: Insertando datos correctos...');
