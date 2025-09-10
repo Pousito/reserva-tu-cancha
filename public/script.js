@@ -2308,3 +2308,9 @@ function scrollToStep4() {
         console.log('❌ No se encontró elemento reservar');
     }
 }
+
+// Función alias para el botón "Reservar Ahora"
+function scrollToReservar() {
+    console.log('🚀 SCROLLTORESERVAR LLAMADA');
+    scrollToStep4();
+}
