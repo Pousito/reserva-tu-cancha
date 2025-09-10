@@ -140,19 +140,49 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (ciudad || complejo) {
             console.log('🔄 Haciendo scroll automático al paso 3...');
             
-            // Esperar a que los datos se carguen y se pre-rellenen
-            setTimeout(() => {
-                // Mostrar automáticamente el paso 3 (Tipo de Cancha) primero
-                console.log('🔄 Mostrando paso 3...');
+            // Función alternativa de scroll que se ejecuta inmediatamente
+            function ejecutarScrollAlternativo() {
+                console.log('🔄 [ALTERNATIVO] Mostrando paso 3...');
                 mostrarPaso(3);
-                console.log('✅ Paso 3 (Tipo de Cancha) mostrado automáticamente');
+                console.log('✅ [ALTERNATIVO] Paso 3 mostrado');
                 
-                // Esperar un poco más para que el DOM se actualice completamente
+                // Scroll inmediato usando múltiples métodos
                 setTimeout(() => {
-                    console.log('🔄 Ejecutando scroll al paso 3...');
-                    scrollToStep3();
-                }, 500); // Delay más largo para asegurar que el paso 3 esté completamente visible
-            }, 1200); // Delay inicial más largo para asegurar que todo esté cargado
+                    console.log('🔄 [ALTERNATIVO] Ejecutando scroll...');
+                    
+                    const step3Element = document.getElementById('step3');
+                    if (step3Element) {
+                        console.log('✅ [ALTERNATIVO] Elemento step3 encontrado');
+                        
+                        // Método 1: scrollIntoView
+                        step3Element.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        
+                        // Método 2: scrollTo como respaldo
+                        setTimeout(() => {
+                            const elementPosition = step3Element.offsetTop;
+                            const offsetPosition = elementPosition - 100;
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                            console.log('✅ [ALTERNATIVO] Scroll completado');
+                        }, 200);
+                    } else {
+                        console.error('❌ [ALTERNATIVO] Elemento step3 no encontrado');
+                    }
+                }, 100);
+            }
+            
+            // Ejecutar inmediatamente
+            ejecutarScrollAlternativo();
+            
+            // También ejecutar con delay como respaldo
+            setTimeout(ejecutarScrollAlternativo, 1000);
+            setTimeout(ejecutarScrollAlternativo, 2000);
+            
         } else {
             console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
         }
