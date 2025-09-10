@@ -1749,6 +1749,8 @@ function configurarEventListeners() {
                 
                 // IMPORTANTE: Disparar evento change para activar la lógica del paso 4
                 console.log('⚽ Disparando evento change en radio button fútbol...');
+                console.log('⚽ DEBUG AUTOMÁTICO - complejoSeleccionado:', complejoSeleccionado);
+                console.log('⚽ DEBUG AUTOMÁTICO - tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
                 futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
                 console.log('⚽ Evento change disparado');
                 
