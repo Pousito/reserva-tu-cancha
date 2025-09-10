@@ -1601,37 +1601,8 @@ function configurarEventListeners() {
     const fechaSelect = document.getElementById('fechaSelect');
     const horaSelect = document.getElementById('horaSelect');
     
-    if (fechaSelect) {
-        fechaSelect.addEventListener('change', function() {
-            verificarDisponibilidadTiempoReal();
-            
-            // NUEVA LÓGICA: Cargar canchas automáticamente si hay complejo y tipo seleccionado
-            if (complejoSeleccionado && tipoCanchaSeleccionado) {
-                console.log('📅 Fecha seleccionada, cargando canchas automáticamente...');
-                setTimeout(async () => {
-                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
-                    // Verificar disponibilidad inmediatamente después de cargar canchas
-                    console.log('🕐 Verificando disponibilidad inmediatamente después de seleccionar fecha...');
-                    await actualizarHorariosConDisponibilidad();
-                }, 200);
-            }
-            
-            // Cerrar el calendario después de seleccionar una fecha
-            setTimeout(() => {
-                fechaSelect.blur();
-            }, 100);
-        });
-    }
-    
-    if (horaSelect) {
-        horaSelect.addEventListener('change', function() {
-            verificarDisponibilidadTiempoReal();
-            // Cargar canchas cuando se selecciona una hora
-            if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
-                cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
-            }
-        });
-    }
+    // NOTA: Los event listeners para fechaSelect y horaSelect están definidos más abajo
+    // para evitar duplicación y conflictos
     
     // Botón "Hoy" para establecer fecha actual
     const hoyBtn = document.getElementById('hoyBtn');
@@ -1759,7 +1730,7 @@ function configurarEventListeners() {
                 // Cargar canchas inmediatamente
                 setTimeout(async () => {
                     console.log('🏟️ Cargando canchas automáticamente para MagnaSports...');
-                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, false); // No renderizar visualmente en Fase 4
                     
                     // Verificar disponibilidad si hay fecha
                     const fecha = document.getElementById('fechaSelect').value;
@@ -1848,7 +1819,7 @@ function configurarEventListeners() {
                 console.log('⚽ Cargando canchas automáticamente para verificar disponibilidad...');
                 setTimeout(async () => {
                     console.log('🚀 Ejecutando cargarCanchas...');
-                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, false); // No renderizar visualmente en Fase 4
                     // Verificar disponibilidad inmediatamente después de cargar canchas
                     const fecha = document.getElementById('fechaSelect').value;
                     if (fecha) {
@@ -1895,23 +1866,39 @@ function configurarEventListeners() {
 
     // Filtros de fecha y hora
     document.getElementById('fechaSelect').addEventListener('change', async function() {
+        verificarDisponibilidadTiempoReal();
         await validarHorariosSegunFecha();
-        // Si ya hay canchas cargadas, actualizar su disponibilidad
-        if (canchas.length > 0) {
+        
+        // NUEVA LÓGICA: Cargar canchas automáticamente si hay complejo y tipo seleccionado
+        if (complejoSeleccionado && tipoCanchaSeleccionado) {
+            console.log('📅 Fecha seleccionada, cargando canchas automáticamente...');
+            setTimeout(async () => {
+                await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, false); // No renderizar visualmente en Fase 4
+                // Verificar disponibilidad inmediatamente después de cargar canchas
+                console.log('🕐 Verificando disponibilidad inmediatamente después de seleccionar fecha...');
+                await actualizarHorariosConDisponibilidad();
+            }, 200);
+        } else if (canchas.length > 0) {
+            // Si ya hay canchas cargadas, actualizar su disponibilidad
             await renderizarCanchasConDisponibilidad();
         }
+        
         // Cerrar el calendario después de seleccionar una fecha
         setTimeout(() => {
             this.blur();
         }, 100);
     });
     document.getElementById('horaSelect').addEventListener('change', async function() {
-        // Si ya hay canchas cargadas, actualizar su disponibilidad
+        verificarDisponibilidadTiempoReal();
+        
+        // Si ya hay canchas cargadas, renderizar visualmente (Fase 5)
         if (canchas.length > 0) {
+            console.log('🕐 Hora seleccionada - renderizando canchas visualmente (Fase 5)');
             await renderizarCanchasConDisponibilidad();
         } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
-            // Si no hay canchas, cargarlas
-            cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+            // Si no hay canchas, cargarlas y renderizar visualmente (Fase 5)
+            console.log('🕐 Hora seleccionada - cargando y renderizando canchas (Fase 5)');
+            await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, true);
         }
     });
 
@@ -2421,10 +2408,11 @@ async function cargarComplejos(ciudadId) {
     }
 }
 
-async function cargarCanchas(complejoId, tipo) {
+async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
     console.log('🏟️ === CARGAR CANCHAS INICIADO ===');
     console.log('🏟️ Complejo ID:', complejoId);
     console.log('🏟️ Tipo:', tipo);
+    console.log('🏟️ Renderizar visual:', renderizarVisual);
     console.log('🏟️ API_BASE:', API_BASE);
     
     try {
@@ -2437,9 +2425,13 @@ async function cargarCanchas(complejoId, tipo) {
         canchas = await response.json();
         console.log('🏟️ Canchas recibidas:', canchas);
         
-        // Renderizar canchas con disponibilidad correcta
-        await renderizarCanchasConDisponibilidad();
-        console.log('🏟️ Canchas renderizadas con disponibilidad');
+        // Solo renderizar visualmente si se solicita
+        if (renderizarVisual) {
+            await renderizarCanchasConDisponibilidad();
+            console.log('🏟️ Canchas renderizadas con disponibilidad');
+        } else {
+            console.log('🏟️ Canchas cargadas (sin renderizar visualmente)');
+        }
         
         // Actualizar horarios con disponibilidad si hay fecha seleccionada
         const fecha = document.getElementById('fechaSelect').value;
@@ -2784,6 +2776,10 @@ async function validarHorariosSegunFecha() {
 
 // NUEVA FUNCIÓN: Renderizar canchas con disponibilidad correcta
 async function renderizarCanchasConDisponibilidad() {
+    console.log('🎨 === RENDERIZAR CANCHAS INICIADO ===');
+    console.log('🎨 Canchas a renderizar:', canchas.length, canchas.map(c => c.nombre));
+    console.log('🎨 Complejo seleccionado:', complejoSeleccionado?.nombre);
+    
     const grid = document.getElementById('canchasGrid');
     grid.innerHTML = '';
     
@@ -2792,6 +2788,7 @@ async function renderizarCanchasConDisponibilidad() {
     
     // Si es MagnaSports, crear estructura especial del galpón
     if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports') {
+        console.log('🎨 Renderizando MagnaSports con', canchas.length, 'canchas');
         // Crear contenedor del galpón
         const galponContainer = document.createElement('div');
         galponContainer.className = 'galpon-container';
@@ -2945,6 +2942,9 @@ async function renderizarCanchasConDisponibilidad() {
             grid.appendChild(canchaCard);
         }
     }
+    
+    console.log('🎨 === RENDERIZAR CANCHAS COMPLETADO ===');
+    console.log('🎨 Elementos en el grid:', grid.children.length);
 }
 
  // Renderizar canchas (función original mantenida para compatibilidad)

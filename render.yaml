@@ -19,7 +19,7 @@ services:
           name: reserva-tu-cancha-db
           property: connectionString
     healthCheckPath: /health
-    autoDeploy: true
+    autoDeploy: false
     branch: main
     region: oregon
 

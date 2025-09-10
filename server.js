@@ -122,7 +122,7 @@ async function populateSampleData() {
     
     console.log(`📊 Debug - Ciudades: ${ciudadesCount}, Reservas: ${reservasCount}`);
     
-    if (ciudadesCount <= 1) { // Cambiar a <= 1 para incluir la ciudad de prueba
+    if (ciudadesCount === 0) { // Solo poblar si no hay ciudades
       console.log('🌱 Poblando base de datos con datos de ejemplo...');
     
     // Insertar ciudades
@@ -294,7 +294,11 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
-// Endpoint para verificar disponibilidad de canchas
+// ===== RUTAS OPTIMIZADAS DE DISPONIBILIDAD =====
+const availabilityRoutes = require('./src/routes/availability');
+app.use('/api/availability', availabilityRoutes);
+
+// Endpoint para verificar disponibilidad de canchas (legacy - mantener compatibilidad)
 app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
   try {
   const { canchaId, fecha } = req.params;
@@ -304,7 +308,7 @@ app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
     const reservas = await db.query(`
       SELECT hora_inicio, hora_fin, estado
     FROM reservas 
-      WHERE cancha_id = $1 AND DATE(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
+      WHERE cancha_id = $1 AND date(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
       ORDER BY hora_inicio
     `, [canchaId, fecha]);
     
@@ -328,7 +332,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
     let fechaCondition;
     
     if (dbInfo.type === 'PostgreSQL') {
-      fechaCondition = 'DATE(r.fecha) = $2';
+      fechaCondition = 'date(r.fecha) = $2';
     } else {
       fechaCondition = 'r.fecha = $2';
     }
@@ -347,7 +351,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
           r.codigo_reserva
         FROM canchas c
         LEFT JOIN reservas r ON c.id = r.cancha_id 
-          AND DATE(r.fecha) = $2
+          AND date(r.fecha) = $2
           AND r.estado IN ('confirmada', 'pendiente')
         WHERE c.complejo_id = $1
         ORDER BY c.id, r.hora_inicio
@@ -458,12 +462,12 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
     
     // Reservas por día (últimos 7 días)
     const reservasPorDia = await db.query(`
-      SELECT DATE(r.fecha) as dia, COUNT(*) as cantidad
+      SELECT date(r.fecha) as dia, COUNT(*) as cantidad
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
-      WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
+      WHERE r.fecha >= date('now', '-7 days')
       ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
-      GROUP BY DATE(r.fecha)
+      GROUP BY date(r.fecha)
       ORDER BY dia
     `, userRole === 'super_admin' ? [] : [complexFilter]);
     
@@ -471,7 +475,7 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
       totalReservas: totalReservas.count,
       totalCanchas: totalCanchas.count,
       totalComplejos: totalComplejos.count,
-      ingresosTotales: parseInt(ingresosTotales.total),
+      ingresosTotales: parseInt(ingresosTotales.total || 0),
       reservasPorDia: reservasPorDia,
       userRole: userRole,
       complexFilter: complexFilter
@@ -513,7 +517,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
       LIMIT 10
     `, params);
     
@@ -535,7 +539,7 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE DATE(r.fecha) = CURRENT_DATE
+      WHERE date(r.fecha) = date('now')
       ORDER BY r.hora_inicio
     `);
     
@@ -576,7 +580,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
@@ -725,7 +729,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     const userComplexFilter = req.complexFilter;
     
     // Construir filtros SQL según el rol
-    let whereClause = `WHERE DATE(r.fecha) BETWEEN $1 AND $2`;
+    let whereClause = `WHERE date(r.fecha) BETWEEN $1 AND $2`;
     let params = [dateFrom, dateTo];
     
     // Aplicar filtro de complejo según el rol
@@ -768,13 +772,13 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     
     // Reservas por día (solo confirmadas)
     const reservasPorDia = await db.query(`
-      SELECT DATE(r.fecha) as fecha, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      SELECT date(r.fecha) as fecha, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado = 'confirmada'
-      GROUP BY DATE(r.fecha)
-      ORDER BY DATE(r.fecha)
+      GROUP BY date(r.fecha)
+      ORDER BY date(r.fecha)
     `, params);
     
     // Reservas por complejo con ocupación real (solo confirmadas)
@@ -1240,7 +1244,7 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE r.codigo_reserva = $1 OR r.nombre_cliente ILIKE $2
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
       LIMIT 1
     `, [busqueda, `%${busqueda}%`]);
     
@@ -1272,6 +1276,10 @@ app.post('/api/reservas', async (req, res) => {
       'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
       [codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
     );
+    
+    // Invalidar caché de disponibilidad
+    const { invalidateCacheOnReservation } = require('./src/controllers/availabilityController');
+    invalidateCacheOnReservation(cancha_id, fecha);
     
     res.json({ 
       success: true, 
@@ -2360,7 +2368,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
     console.log('👥 Generando análisis de clientes...', { dateFrom, dateTo, complexId });
     
     // Construir filtros SQL
-    let whereClause = `WHERE DATE(r.fecha) BETWEEN $1 AND $2`;
+    let whereClause = `WHERE date(r.fecha) BETWEEN $1 AND $2`;
     let params = [dateFrom, dateTo];
     
     if (complexId) {

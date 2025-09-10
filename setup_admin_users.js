@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 console.log('👑 CONFIGURACIÓN DE USUARIOS ADMINISTRADORES');
 console.log('============================================');
@@ -100,8 +101,8 @@ function checkExistingUsers() {
         createAdminUsers();
       } else {
         console.log('✅ Super admin encontrado y activo');
-        console.log('\n🎉 Configuración de usuarios completada');
-        db.close();
+        console.log('🔄 Actualizando contraseñas con hash...');
+        createAdminUsers(); // Siempre actualizar contraseñas
       }
     }
   });
@@ -137,14 +138,21 @@ function createAdminUsers() {
     VALUES (?, ?, ?, ?, 1)
   `);
   
-  adminUsers.forEach(usuario => {
-    insertUser.run(usuario.email, usuario.password, usuario.nombre, usuario.rol, (err) => {
-      if (err) {
-        console.error(`❌ Error insertando usuario ${usuario.email}:`, err.message);
-      } else {
-        console.log(`✅ Usuario creado: ${usuario.email} (${usuario.rol})`);
-      }
-    });
+  adminUsers.forEach(async (usuario) => {
+    try {
+      // Hashear la contraseña
+      const hashedPassword = await bcrypt.hash(usuario.password, 10);
+      
+      insertUser.run(usuario.email, hashedPassword, usuario.nombre, usuario.rol, (err) => {
+        if (err) {
+          console.error(`❌ Error insertando usuario ${usuario.email}:`, err.message);
+        } else {
+          console.log(`✅ Usuario creado: ${usuario.email} (${usuario.rol}) con contraseña hasheada`);
+        }
+      });
+    } catch (error) {
+      console.error(`❌ Error hasheando contraseña para ${usuario.email}:`, error.message);
+    }
   });
   
   insertUser.finalize(() => {

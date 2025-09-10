@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { invalidateCacheOnReservation } = require('./availabilityController');
 
 /**
  * Obtener todas las ciudades
@@ -94,6 +95,9 @@ function createReserva(req, res) {
         res.status(500).json({ error: err.message });
         return;
       }
+      
+      // Invalidar caché de disponibilidad
+      invalidateCacheOnReservation(cancha_id, fecha);
       
       // Enviar email de confirmación (implementar después)
       // sendConfirmationEmail(email_cliente, codigo_reserva, fecha, hora_inicio);

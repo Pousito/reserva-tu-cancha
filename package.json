@@ -31,6 +31,9 @@
     "force-sync-production": "node scripts/maintenance/force-sync-production.js",
     "restore-production-reservations": "node scripts/maintenance/restore-production-reservations.js",
     "simple-restore-reservations": "node scripts/maintenance/simple-restore-reservations.js",
+    "sync-databases-improved": "node scripts/maintenance/sync-databases-improved.js",
+    "clean-duplicate-courts": "node scripts/maintenance/clean-duplicate-courts.js",
+    "auto-backup": "node scripts/maintenance/auto-backup.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0"
   },

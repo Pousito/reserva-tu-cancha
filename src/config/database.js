@@ -170,7 +170,9 @@ class DatabaseManager {
           nombre VARCHAR(255),
           rol VARCHAR(50) DEFAULT 'usuario',
           activo BOOLEAN DEFAULT true,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          complejo_id INTEGER,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (complejo_id) REFERENCES complejos(id)
         )
       `);
 
@@ -192,6 +194,16 @@ class DatabaseManager {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      // Migración: Agregar columna complejo_id si no existe
+      try {
+        await client.query(`ALTER TABLE usuarios ADD COLUMN complejo_id INTEGER`);
+        console.log('✅ Columna complejo_id agregada a usuarios (PostgreSQL)');
+      } catch (error) {
+        if (!error.message.includes('already exists')) {
+          console.error('❌ Error agregando columna complejo_id:', error.message);
+        }
+      }
 
       console.log('✅ Tablas PostgreSQL creadas exitosamente');
       
@@ -261,7 +273,9 @@ class DatabaseManager {
           nombre TEXT,
           rol TEXT DEFAULT 'usuario',
           activo INTEGER DEFAULT 1,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          complejo_id INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (complejo_id) REFERENCES complejos(id)
         )`, (err) => {
           if (err) {
             console.error('❌ Error creando tabla usuarios:', err.message);
@@ -293,6 +307,15 @@ class DatabaseManager {
             reject(err);
             return;
           }
+          
+          // Migración: Agregar columna complejo_id si no existe
+          db.run(`ALTER TABLE usuarios ADD COLUMN complejo_id INTEGER`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+              console.error('❌ Error agregando columna complejo_id:', err.message);
+            } else if (!err) {
+              console.log('✅ Columna complejo_id agregada a usuarios');
+            }
+          });
           
           console.log('✅ Tablas SQLite creadas exitosamente');
           resolve();
