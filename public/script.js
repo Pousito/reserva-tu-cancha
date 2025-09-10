@@ -1681,9 +1681,9 @@ function configurarEventListeners() {
     });
 
     // Botón ver disponibilidad - solo muestra la sección de fecha/hora
-    document.getElementById('verDisponibilidad').addEventListener('click', function() {
+    document.getElementById('verDisponibilidad').addEventListener('click', async function() {
         if (complejoSeleccionado && tipoCanchaSeleccionado) {
-            mostrarSeccionDisponibilidad();
+            await mostrarSeccionDisponibilidad();
         }
     });
 
@@ -2011,8 +2011,23 @@ function ocultarPaso(numero) {
     }
 }
 
-function mostrarSeccionDisponibilidad() {
+async function mostrarSeccionDisponibilidad() {
+    console.log('🔍 Ver disponibilidad - Iniciando carga de canchas y validación...');
+    
+    // Mostrar la sección de disponibilidad
     document.getElementById('disponibilidad').style.display = 'block';
+    
+    // Cargar canchas para el complejo y tipo seleccionado
+    if (complejoSeleccionado && tipoCanchaSeleccionado) {
+        console.log('🏢 Cargando canchas para:', complejoSeleccionado.nombre, 'tipo:', tipoCanchaSeleccionado);
+        await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+        
+        // La función cargarCanchas ya llama a actualizarHorariosConDisponibilidad()
+        // por lo que la validación se ejecutará automáticamente
+        console.log('✅ Canchas cargadas y disponibilidad validada');
+    }
+    
+    // Hacer scroll suave a la sección
     document.getElementById('disponibilidad').scrollIntoView({ behavior: 'smooth' });
 }
 
