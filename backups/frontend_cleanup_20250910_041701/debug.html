@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnóstico de Base de Datos - ReservaTuCancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .status-success { border-left: 5px solid #28a745; }
+        .status-error { border-left: 5px solid #dc3545; }
+        .status-warning { border-left: 5px solid #ffc107; }
+        .status-info { border-left: 5px solid #17a2b8; }
+        
+        .table-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .user-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">
+                    <i class="fas fa-database text-primary"></i>
+                    Diagnóstico de Base de Datos
+                </h1>
+                
+                <button class="btn btn-primary refresh-btn" onclick="runDiagnostic()">
+                    <i class="fas fa-sync-alt"></i> Actualizar Diagnóstico
+                </button>
+                
+                <div id="diagnosticResults">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Ejecutando diagnóstico...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ejecutar diagnóstico al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            runDiagnostic();
+        });
+
+        function runDiagnostic() {
+            const resultsDiv = document.getElementById('diagnosticResults');
+            resultsDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Ejecutando diagnóstico...</p>
+                </div>
+            `;
+
+            fetch('/api/debug/database')
+                .then(response => response.json())
+                .then(data => {
+                    displayResults(data);
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Error en el diagnóstico</h4>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p>Esto indica que hay un problema de conexión con el servidor.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('diagnosticResults');
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card status-card ${getStatusClass(data.databaseConnection)}">
+                            <div class="card-header">
+                                <h5><i class="fas fa-database"></i> Estado de la Base de Datos</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Estado:</strong> 
+                                    <span class="badge ${getBadgeClass(data.databaseConnection)}">
+                                        ${data.databaseConnection}
+                                    </span>
+                                </p>
+                                <p><strong>Ruta:</strong> ${data.dbPath}</p>
+                                <p><strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                                <p><strong>Environment:</strong> ${data.environment}</p>
+                                ${data.databaseError ? `<p class="text-danger"><strong>Error:</strong> ${data.databaseError}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card status-card ${getStatusClass(data.usersTable)}">
+                            <div class="card-header">
+                                <h5><i class="fas fa-users"></i> Tabla de Usuarios</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Tabla existe:</strong> 
+                                    <span class="badge ${getBadgeClass(data.usersTable)}">
+                                        ${data.usersTable ? 'SÍ' : 'NO'}
+                                    </span>
+                                </p>
+                                <p><strong>Cantidad de usuarios:</strong> 
+                                    <span class="badge bg-info">${data.usersCount}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card status-card status-info">
+                            <div class="card-header">
+                                <h5><i class="fas fa-list"></i> Tablas Existentes</h5>
+                            </div>
+                            <div class="card-body">
+                                ${data.tables && data.tables.length > 0 ? 
+                                    data.tables.map(table => `<span class="table-badge">${table}</span>`).join('') :
+                                    '<p class="text-muted">No se encontraron tablas</p>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (data.users && data.users.length > 0) {
+                html += `
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card status-card status-success">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-user-shield"></i> Usuarios Administradores</h5>
+                                </div>
+                                <div class="card-body">
+                                    ${data.users.map(user => `
+                                        <div class="user-badge">
+                                            <strong>${user.email}</strong><br>
+                                            <small>Rol: ${user.rol} | Activo: ${user.activo ? 'Sí' : 'No'}</small>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (!data.usersTable) {
+                html += `
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card status-card status-error">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-exclamation-triangle"></i> Problema Identificado</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>La tabla 'usuarios' NO existe.</strong></p>
+                                    <p>Esto explica por qué no puedes hacer login. La función de inicialización no se está ejecutando correctamente.</p>
+                                    <div class="alert alert-warning">
+                                        <h6>Posibles causas:</h6>
+                                        <ul>
+                                            <li>La función <code>initDatabaseIfEmpty()</code> no se está ejecutando</li>
+                                            <li>Hay un error en la creación de tablas</li>
+                                            <li>La base de datos no se está inicializando en producción</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function getStatusClass(status) {
+            if (status === 'connected' || status === true) return 'status-success';
+            if (status === 'error' || status === false) return 'status-error';
+            if (status === 'unknown') return 'status-warning';
+            return 'status-info';
+        }
+
+        function getBadgeClass(status) {
+            if (status === 'connected' || status === true) return 'bg-success';
+            if (status === 'error' || status === false) return 'bg-danger';
+            if (status === 'unknown') return 'bg-warning';
+            return 'bg-info';
+        }
+    </script>
+</body>
+</html>

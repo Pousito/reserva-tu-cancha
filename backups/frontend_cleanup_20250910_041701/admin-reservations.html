@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - ReservaTuCancha Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .navbar-admin {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .filter-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+        .reservations-table {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .table th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+            color: #495057;
+        }
+        .table td {
+            border: none;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .badge-confirmada { background: #d4edda; color: #155724; }
+        .badge-pendiente { background: #fff3cd; color: #856404; }
+        .badge-cancelada { background: #f8d7da; color: #721c24; }
+        .reservation-actions {
+            white-space: nowrap;
+        }
+        .btn-action {
+            padding: 4px 8px;
+            margin: 0 2px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h4 class="text-center mb-4">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Admin Panel
+                        </h4>
+                        
+                        <!-- Información del Usuario -->
+                        <div class="user-info mb-4 p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                            <div class="text-center">
+                                <i class="fas fa-user-circle fa-3x mb-2"></i>
+                                <h6 data-user="name">Cargando...</h6>
+                                <small data-user="role">Cargando...</small>
+                                <br>
+                                <small data-user="complex">Cargando...</small>
+                            </div>
+                        </div>
+                        
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="admin-dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="nav-link active" href="admin-reservations.html">
+                                <i class="fas fa-calendar-check me-2"></i>Reservas
+                            </a>
+                            <a class="nav-link" href="admin-complexes.html" data-role="all-complexes">
+                                <i class="fas fa-building me-2"></i>Complejos
+                            </a>
+                            <a class="nav-link" href="admin-courts.html">
+                                <i class="fas fa-futbol me-2"></i>Canchas
+                            </a>
+                            <a class="nav-link" href="admin-reports.html" data-role="reports">
+                                <i class="fas fa-chart-bar me-2"></i>Reportes
+                            </a>
+                            <hr class="my-3">
+                            <a class="nav-link" href="index.html">
+                                <i class="fas fa-globe me-2"></i>Sitio Principal
+                            </a>
+                            <a class="nav-link" href="#" data-action="logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-0">
+                <div class="main-content">
+                    <!-- Top Navbar -->
+                    <nav class="navbar navbar-admin">
+                        <div class="container-fluid">
+                            <h5 class="mb-0">Gestión de Reservas</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="me-3" id="adminWelcome">Bienvenido, Admin</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Content -->
+                    <div class="p-4">
+                        <!-- Filtros -->
+                        <div class="filter-card">
+                            <h6 class="mb-3">
+                                <i class="fas fa-filter me-2"></i>Filtros
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="fechaFilter" class="form-label">Fecha</label>
+                                    <input type="date" class="form-control" id="fechaFilter">
+                                </div>
+                                <div class="col-md-3 mb-3" data-role="complex-filter">
+                                    <label for="complejoFilter" class="form-label">Complejo</label>
+                                    <select class="form-select" id="complejoFilter">
+                                        <option value="">Todos los complejos</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="estadoFilter" class="form-label">Estado</label>
+                                    <select class="form-select" id="estadoFilter">
+                                        <option value="">Todos los estados</option>
+                                        <option value="confirmada">Confirmada</option>
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="cancelada">Cancelada</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3 d-flex align-items-end">
+                                    <button class="btn btn-primary me-2" onclick="aplicarFiltros()">
+                                        <i class="fas fa-search me-2"></i>Filtrar
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+                                        <i class="fas fa-times me-2"></i>Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Reservas -->
+                        <div class="reservations-table">
+                            <div class="p-3 border-bottom">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>Lista de Reservas
+                                    <span class="badge bg-primary ms-2" id="totalReservas">0</span>
+                                </h6>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Cliente</th>
+                                            <th>Complejo</th>
+                                            <th>Cancha</th>
+                                            <th>Fecha</th>
+                                            <th>Hora</th>
+                                            <th>Precio</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reservationsTableBody">
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin"></i> Cargando reservas...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles de Reserva -->
+    <div class="modal fade" id="reservationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de la Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="reservationModalBody">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/admin-utils.js?v=1.0"></script>
+    <script src="admin-reservations.js?v=1.2"></script>
+</body>
+</html>

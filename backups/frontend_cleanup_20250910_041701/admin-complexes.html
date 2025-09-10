@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Complejos - ReservaTuCancha Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        .navbar-admin {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .complex-card {
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .complex-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .complex-card:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+        .complex-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .complex-info {
+            flex: 1;
+            margin-right: 1rem;
+        }
+        .complex-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .complex-title i {
+            margin-right: 0.5rem;
+            color: #667eea;
+        }
+        .complex-location {
+            color: #6c757d;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .complex-location i {
+            margin-right: 0.5rem;
+            color: #28a745;
+        }
+        .complex-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .btn-action {
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            border: none;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+        .btn-edit {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+            color: white;
+        }
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+            color: white;
+        }
+        .btn-view {
+            background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+            color: white;
+        }
+        .btn-view:hover {
+            background: linear-gradient(135deg, #5a32a3 0%, #4c2a85 100%);
+            color: white;
+        }
+        .complex-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .detail-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .detail-item i {
+            margin-right: 0.5rem;
+            width: 16px;
+            text-align: center;
+        }
+        .detail-item.email i { color: #007bff; }
+        .detail-item.phone i { color: #28a745; }
+        .detail-item.address i { color: #ffc107; }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .status-active {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .status-inactive {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        /* Estilos para el modal de detalles del complejo */
+        .complex-details-modal {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        .complex-details-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 2rem;
+            position: relative;
+        }
+        .complex-details-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        .header-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .header-icon i {
+            font-size: 1.5rem;
+            color: white;
+        }
+        .header-text {
+            flex: 1;
+        }
+        .modal-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .modal-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin: 0.5rem 0 0 0;
+            font-weight: 400;
+        }
+        .complex-details-body {
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .detail-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+        }
+        .detail-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+        .detail-card.full-width {
+            grid-column: 1 / -1;
+        }
+        .detail-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        .detail-icon i {
+            color: white;
+            font-size: 1.1rem;
+        }
+        .detail-content {
+            flex: 1;
+        }
+        .detail-label {
+            color: #6c757d;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 0.5rem 0;
+        }
+        .detail-value {
+            color: #2c3e50;
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 0;
+            line-height: 1.4;
+        }
+        .detail-value:empty::before {
+            content: 'No especificado';
+            color: #adb5bd;
+            font-style: italic;
+        }
+        .complex-details-footer {
+            background: white;
+            border: none;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e9ecef;
+        }
+        .complex-details-footer .btn {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .complex-details-footer .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Animaciones */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .detail-card {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        .detail-card:nth-child(1) { animation-delay: 0.1s; }
+        .detail-card:nth-child(2) { animation-delay: 0.2s; }
+        .detail-card:nth-child(3) { animation-delay: 0.3s; }
+        .detail-card:nth-child(4) { animation-delay: 0.4s; }
+        .detail-card:nth-child(5) { animation-delay: 0.5s; }
+        .detail-card:nth-child(6) { animation-delay: 0.6s; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            .complex-details-header {
+                padding: 1.5rem;
+            }
+            .complex-details-body {
+                padding: 1.5rem;
+            }
+            .header-icon {
+                width: 50px;
+                height: 50px;
+                margin-right: 1rem;
+            }
+            .modal-title {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h4 class="text-center mb-4">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Admin Panel
+                        </h4>
+                        
+                        <!-- Información del Usuario -->
+                        <div class="user-info mb-4 p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                            <div class="text-center">
+                                <i class="fas fa-user-circle fa-3x mb-2"></i>
+                                <h6 data-user="name">Cargando...</h6>
+                                <small data-user="role">Cargando...</small>
+                                <br>
+                                <small data-user="complex">Cargando...</small>
+                            </div>
+                        </div>
+                        
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="admin-dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="nav-link" href="admin-reservations.html">
+                                <i class="fas fa-calendar-check me-2"></i>Reservas
+                            </a>
+                            <a class="nav-link active" href="admin-complexes.html" data-role="all-complexes">
+                                <i class="fas fa-building me-2"></i>Complejos
+                            </a>
+                            <a class="nav-link" href="admin-courts.html">
+                                <i class="fas fa-futbol me-2"></i>Canchas
+                            </a>
+                            <a class="nav-link" href="admin-reports.html" data-role="reports">
+                                <i class="fas fa-chart-bar me-2"></i>Reportes
+                            </a>
+                            <hr class="my-3">
+                            <a class="nav-link" href="index.html">
+                                <i class="fas fa-globe me-2"></i>Sitio Principal
+                            </a>
+                            <a class="nav-link" href="#" data-action="logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-0">
+                <div class="main-content">
+                    <!-- Top Navbar -->
+                    <nav class="navbar navbar-admin">
+                        <div class="container-fluid">
+                            <h5 class="mb-0">Gestión de Complejos</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="me-3" id="adminWelcome">Bienvenido, Admin</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Content -->
+                    <div class="p-4">
+                        <!-- Header with Add Button -->
+                        <div class="content-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="mb-0">
+                                    <i class="fas fa-building me-2"></i>Complejos Deportivos
+                                </h4>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#complexModal" onclick="openComplexModal()">
+                                    <i class="fas fa-plus me-2"></i>Agregar Complejo
+                                </button>
+                            </div>
+                            <p class="text-muted mb-0">Gestiona los complejos deportivos del sistema</p>
+                        </div>
+
+                        <!-- Complexes List -->
+                        <div class="content-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Lista de Complejos</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control" id="searchComplex" placeholder="Buscar complejo..." style="width: 250px;">
+                                    <button class="btn btn-outline-secondary" onclick="loadComplexes()">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="complexesList">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> Cargando complejos...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complex Modal -->
+    <div class="modal fade" id="complexModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="complexModalTitle">Agregar Complejo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="complexForm">
+                        <input type="hidden" id="complexId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="complexName" class="form-label">Nombre del Complejo</label>
+                                <input type="text" class="form-control" id="complexName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="complexCity" class="form-label">Ciudad</label>
+                                <select class="form-select" id="complexCity" required>
+                                    <option value="">Seleccionar ciudad...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="complexEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="complexEmail" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="complexPhone" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="complexPhone">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="complexAddress" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="complexAddress" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="complexDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="complexDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveComplex()">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles del complejo -->
+    <div class="modal fade" id="complexDetailsModal" tabindex="-1" aria-labelledby="complexDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content complex-details-modal">
+                <div class="modal-header complex-details-header">
+                    <div class="header-content">
+                        <div class="header-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="header-text">
+                            <h5 class="modal-title" id="complexDetailsModalLabel">Detalles del Complejo</h5>
+                            <p class="modal-subtitle" id="complexDetailsSubtitle">Información completa del complejo deportivo</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body complex-details-body">
+                    <div class="details-grid">
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-tag"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h6 class="detail-label">Nombre</h6>
+                                <p class="detail-value" id="detailName">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h6 class="detail-label">Ciudad</h6>
+                                <p class="detail-value" id="detailCity">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h6 class="detail-label">Email</h6>
+                                <p class="detail-value" id="detailEmail">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <div class="detail-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h6 class="detail-label">Teléfono</h6>
+                                <p class="detail-value" id="detailPhone">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card full-width">
+                            <div class="detail-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h6 class="detail-label">Dirección</h6>
+                                <p class="detail-value" id="detailAddress">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-card full-width">
+                            <div class="detail-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="detail-content">
+                                <h6 class="detail-label">Descripción</h6>
+                                <p class="detail-value" id="detailDescription">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer complex-details-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/admin-utils.js?v=1.0"></script>
+    <script src="admin-complexes.js?v=1.7"></script>
+</body>
+</html>

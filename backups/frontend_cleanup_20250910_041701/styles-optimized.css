@@ -1,0 +1,382 @@
+/* ARCHIVO CSS OPTIMIZADO PARA MÓVILES - MEJORAS DE RENDIMIENTO */
+
+/* Estilos generales optimizados */
+html {
+    scroll-behavior: auto; /* Cambiado de smooth a auto para mejor rendimiento en móviles */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    /* Optimizaciones para móviles */
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Botón Reservar Ahora optimizado */
+#reservarAhoraBtn {
+    cursor: pointer !important;
+    transition: transform 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    position: relative;
+    z-index: 10;
+    /* Optimizaciones para móviles */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+#reservarAhoraBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#reservarAhoraBtn:active {
+    transform: translateY(0);
+}
+
+/* Hero Section optimizada */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    /* Optimizaciones para móviles */
+    will-change: transform;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: 1;
+}
+
+.hero-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-image {
+    text-align: center;
+    /* Animación optimizada para móviles */
+    animation: float 8s ease-in-out infinite; /* Reducido de 6s a 8s para mejor rendimiento */
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); } /* Reducido de -20px a -15px */
+}
+
+/* Cards optimizadas */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    /* Optimizaciones para móviles */
+    will-change: transform;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    padding: 20px;
+    border: none;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+/* Formularios optimizados */
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    /* Optimizaciones para móviles */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    font-size: 16px; /* Previene zoom en iOS */
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    outline: none;
+}
+
+/* Botones optimizados */
+.btn {
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    /* Optimizaciones para móviles */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    will-change: transform;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-light {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-light:hover {
+    background: #f8f9fa;
+    color: #5a6fd8;
+    transform: translateY(-2px);
+}
+
+/* Date-time selector optimizado */
+.date-time-selector {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border: 2px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    position: relative;
+    overflow: hidden;
+}
+
+.date-time-selector::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transition: transform 0.2s ease; /* Reducido de 0.3s a 0.2s */
+}
+
+.date-time-selector:hover::before {
+    transform: scaleX(1);
+}
+
+.date-time-selector:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-color: rgba(102, 126, 234, 0.2);
+}
+
+/* Modern input optimizado */
+.modern-input {
+    border: 2px solid #e9ecef;
+    border-left: none;
+    padding: 15px 18px;
+    font-size: 1.1rem;
+    min-height: 50px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Reducido de 0.3s a 0.2s */
+    background: white;
+}
+
+.modern-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    outline: none;
+}
+
+/* Estilos para el calendario optimizado */
+.date-time-selector input[type="date"] {
+    font-size: 1.1rem !important;
+    padding: 15px 18px !important;
+    min-height: 50px;
+}
+
+.date-time-selector input[type="date"]::-webkit-calendar-picker-indicator {
+    font-size: 1.3rem;
+    padding: 8px;
+    cursor: pointer;
+    transform: scale(1.1); /* Reducido de 1.2 a 1.1 */
+}
+
+.date-time-selector input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    transform: scale(1.2); /* Reducido de 1.3 a 1.2 */
+}
+
+/* Animaciones optimizadas */
+.fade-in {
+    animation: fadeIn 0.3s ease-in; /* Reducido de 0.5s a 0.3s */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); } /* Reducido de 20px a 10px */
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out; /* Reducido de 0.5s a 0.3s */
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-50%); } /* Reducido de -100% a -50% */
+    to { transform: translateX(0); }
+}
+
+/* Estados de carga optimizados */
+.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: loading 1.2s infinite; /* Reducido de 1.5s a 1.2s */
+}
+
+@keyframes loading {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Responsive optimizado para móviles */
+@media (max-width: 768px) {
+    /* Desactivar animaciones en móviles para mejor rendimiento */
+    .card:hover {
+        transform: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+    
+    .date-time-selector:hover {
+        transform: none;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* Optimizaciones específicas para móviles */
+    .hero-section {
+        min-height: 80vh; /* Reducido de 100vh a 80vh */
+    }
+    
+    .hero-image {
+        animation: none; /* Desactivar animación en móviles */
+    }
+    
+    /* Mejorar legibilidad en móviles */
+    .card-body {
+        padding: 20px;
+    }
+    
+    .form-control, .form-select {
+        font-size: 16px; /* Previene zoom en iOS */
+        padding: 15px;
+    }
+    
+    /* Optimizar botones para touch */
+    .btn {
+        padding: 15px 25px;
+        min-height: 48px; /* Tamaño mínimo recomendado para touch */
+    }
+}
+
+/* Responsive para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .hero-section {
+        min-height: 70vh;
+        padding: 20px 0;
+    }
+    
+    .card-body {
+        padding: 15px;
+    }
+    
+    .btn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    .form-control, .form-select {
+        padding: 12px;
+        font-size: 16px;
+    }
+}
+
+/* Optimizaciones para pantallas ultra pequeñas */
+@media (max-width: 360px) {
+    .hero-section {
+        min-height: 60vh;
+    }
+    
+    .card-body {
+        padding: 12px;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+}
+
+/* Optimizaciones de rendimiento */
+* {
+    /* Mejorar rendimiento de scroll */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Optimizaciones para elementos que cambian frecuentemente */
+#ciudadSelect, #complejoSelect {
+    will-change: transform;
+}
+
+/* Optimizaciones para el scroll suave */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* Optimizaciones para dispositivos de baja potencia */
+@media (max-width: 768px) and (max-height: 600px) {
+    .hero-section {
+        min-height: 60vh;
+    }
+    
+    .card {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Sombra más ligera */
+    }
+}
