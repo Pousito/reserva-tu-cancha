@@ -6,6 +6,35 @@ let complejoSeleccionado = null;
 let tipoCanchaSeleccionado = null;
 let canchaSeleccionada = null;
 
+// Función para verificar si una hora está disponible según la hora actual
+function esHoraDisponibleParaReserva(hora, fecha) {
+    const ahora = new Date();
+    const fechaReserva = new Date(fecha + 'T' + hora + ':00');
+    
+    // Agregar 1 hora de margen (no se puede reservar en la próxima hora)
+    const horaMinima = new Date(ahora.getTime() + (60 * 60 * 1000)); // +1 hora
+    
+    // Si es el mismo día, verificar que la hora sea al menos 1 hora en el futuro
+    if (fechaReserva.toDateString() === ahora.toDateString()) {
+        return fechaReserva >= horaMinima;
+    }
+    
+    // Si es un día futuro, siempre está disponible
+    return fechaReserva > ahora;
+}
+
+// Función para obtener la hora mínima disponible para reserva hoy
+function obtenerHoraMinimaDisponible() {
+    const ahora = new Date();
+    const horaMinima = new Date(ahora.getTime() + (60 * 60 * 1000)); // +1 hora
+    const horaMinimaStr = horaMinima.getHours().toString().padStart(2, '0') + ':' + 
+                         horaMinima.getMinutes().toString().padStart(2, '0');
+    
+    // Redondear a la hora siguiente si hay minutos
+    const horaRedondeada = Math.ceil(horaMinima.getHours()) + (horaMinima.getMinutes() > 0 ? 1 : 0);
+    return horaRedondeada.toString().padStart(2, '0') + ':00';
+}
+
 // Sistema de logs visibles para debugging móvil
 function crearLogVisible() {
     const logContainer = document.createElement('div');
@@ -2611,13 +2640,36 @@ async function cargarHorariosComplejo(complejo) {
             });
         }
     } else {
-        // Si no hay fecha, cargar horarios normalmente
+        // Si no hay fecha, cargar horarios normalmente (sin filtro de tiempo)
         horarios.forEach(hora => {
             const option = document.createElement('option');
             option.value = hora;
             option.textContent = hora;
             horaSelect.appendChild(option);
         });
+    }
+    
+    // Aplicar filtro de tiempo si hay fecha seleccionada
+    if (fecha) {
+        const opcionesActuales = Array.from(horaSelect.options);
+        const opcionesFiltradas = opcionesActuales.filter(option => {
+            if (!option.value || option.value === '') return true; // Mantener opción vacía
+            
+            const esDisponible = esHoraDisponibleParaReserva(option.value, fecha);
+            if (!esDisponible) {
+                console.log('⏰ cargarHorariosComplejo - Hora filtrada (ya pasó o muy próxima):', option.value);
+            }
+            return esDisponible;
+        });
+        
+        // Si se filtraron opciones, actualizar el select
+        if (opcionesFiltradas.length !== opcionesActuales.length) {
+            horaSelect.innerHTML = '';
+            opcionesFiltradas.forEach(option => {
+                horaSelect.appendChild(option);
+            });
+            console.log('⏰ cargarHorariosComplejo - Horarios filtrados por hora actual');
+        }
     }
 }
 
@@ -2665,6 +2717,27 @@ async function cargarHorariosBasicos() {
     
     console.log('🚀 cargarHorariosBasicos - Horarios a cargar:', horarios);
     
+    // Filtrar horarios según la hora actual (si es el día de hoy)
+    if (fecha) {
+        const horariosFiltrados = horarios.filter(hora => {
+            const esDisponible = esHoraDisponibleParaReserva(hora, fecha);
+            if (!esDisponible) {
+                console.log('⏰ Hora filtrada (ya pasó o muy próxima):', hora);
+            }
+            return esDisponible;
+        });
+        
+        horarios = horariosFiltrados;
+        console.log('🚀 cargarHorariosBasicos - Horarios filtrados por hora actual:', horarios);
+        
+        // Si no hay horarios disponibles, mostrar mensaje
+        if (horarios.length === 0) {
+            console.log('⚠️ No hay horarios disponibles para hoy');
+            horaSelect.innerHTML = '<option value="">No hay horarios disponibles para hoy</option>';
+            return;
+        }
+    }
+    
     // Limpiar horarios actuales
     horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
     
@@ -2675,6 +2748,17 @@ async function cargarHorariosBasicos() {
         option.textContent = hora;
         horaSelect.appendChild(option);
     });
+    
+    // Mostrar/ocultar mensaje informativo sobre horarios
+    const horarioInfo = document.getElementById('horarioInfo');
+    if (horarioInfo) {
+        const hoy = new Date().toISOString().split('T')[0];
+        if (fecha === hoy && horarios.length < 8) { // Si es hoy y hay menos horarios de lo normal
+            horarioInfo.style.display = 'block';
+        } else {
+            horarioInfo.style.display = 'none';
+        }
+    }
     
     // Si hay fecha seleccionada, verificar disponibilidad automáticamente
     if (fecha) {
@@ -2789,9 +2873,19 @@ async function cargarHorariosConDisponibilidadInmediata() {
         console.error('❌ cargarHorariosConDisponibilidadInmediata - Error:', error);
         console.error('❌ cargarHorariosConDisponibilidadInmediata - Error details:', error.message);
         
-        // Fallback: cargar horarios básicos
+        // Fallback: cargar horarios básicos con filtro de tiempo
         horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
-        horarios.forEach(hora => {
+        
+        // Filtrar horarios según la hora actual
+        const horariosFiltrados = horarios.filter(hora => {
+            const esDisponible = esHoraDisponibleParaReserva(hora, fecha);
+            if (!esDisponible) {
+                console.log('⏰ cargarHorariosConDisponibilidadInmediata - Hora filtrada (ya pasó o muy próxima):', hora);
+            }
+            return esDisponible;
+        });
+        
+        horariosFiltrados.forEach(hora => {
             const option = document.createElement('option');
             option.value = hora;
             option.textContent = hora;
