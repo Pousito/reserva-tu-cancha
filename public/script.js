@@ -6,6 +6,79 @@ let complejoSeleccionado = null;
 let tipoCanchaSeleccionado = null;
 let canchaSeleccionada = null;
 
+// Sistema de logs visibles para debugging móvil
+function crearLogVisible() {
+    const logContainer = document.createElement('div');
+    logContainer.id = 'debug-logs';
+    logContainer.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 300px;
+        max-height: 400px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 9999;
+        overflow-y: auto;
+        font-family: monospace;
+        display: none;
+    `;
+    document.body.appendChild(logContainer);
+    return logContainer;
+}
+
+function logVisible(message) {
+    const logContainer = document.getElementById('debug-logs') || crearLogVisible();
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement('div');
+    logEntry.style.cssText = 'margin: 2px 0; padding: 2px; border-bottom: 1px solid #333;';
+    logEntry.textContent = `[${timestamp}] ${message}`;
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+    logContainer.style.display = 'block';
+    
+    // Limpiar logs antiguos (mantener solo los últimos 20)
+    const logs = logContainer.children;
+    if (logs.length > 20) {
+        logContainer.removeChild(logs[0]);
+    }
+    
+    // También loggear en consola
+    console.log(`📱 DEBUG: ${message}`);
+}
+
+// Crear botón para mostrar/ocultar logs
+function crearBotonLogs() {
+    const boton = document.createElement('button');
+    boton.id = 'debug-toggle';
+    boton.textContent = 'DEBUG';
+    boton.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        z-index: 10000;
+        cursor: pointer;
+    `;
+    
+    boton.addEventListener('click', () => {
+        const logContainer = document.getElementById('debug-logs');
+        if (logContainer) {
+            logContainer.style.display = logContainer.style.display === 'none' ? 'block' : 'none';
+        }
+    });
+    
+    document.body.appendChild(boton);
+}
+
 // API Base URL - Detecta automáticamente el entorno
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:3000/api'  // Desarrollo local
@@ -935,19 +1008,23 @@ async function preRellenarDesdeURL() {
 // NUEVA FUNCIÓN MEJORADA: Pre-rellenado con Promise y eventos
 async function preRellenarDesdeURLMejorado() {
     console.log('🚀 === PRE-RELLENADO MEJORADO INICIADO ===');
+    logVisible('🚀 PRE-RELLENADO MEJORADO INICIADO');
     const { ciudad, complejo } = leerParametrosURL();
     
     if (!ciudad && !complejo) {
         console.log('🔍 No hay parámetros URL, saltando pre-rellenado');
+        logVisible('🔍 No hay parámetros URL, saltando pre-rellenado');
         return;
     }
     
     console.log('🔍 Parámetros URL detectados:', { ciudad, complejo });
+    logVisible(`🔍 Parámetros: ciudad=${ciudad}, complejo=${complejo}`);
     
     try {
         // 1. Preseleccionar ciudad
         if (ciudad) {
             console.log('🏙️ Preseleccionando ciudad:', ciudad);
+            logVisible(`🏙️ Preseleccionando ciudad: ${ciudad}`);
             const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
             
             if (ciudadEncontrada) {
@@ -956,16 +1033,20 @@ async function preRellenarDesdeURLMejorado() {
                     ciudadSelect.value = ciudadEncontrada.id;
                     ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
                     console.log('✅ Ciudad preseleccionada:', ciudad, 'ID:', ciudadEncontrada.id);
+                    logVisible(`✅ Ciudad preseleccionada: ${ciudad} (ID: ${ciudadEncontrada.id})`);
                     
                     // 2. Cargar complejos y esperar a que terminen
                     if (complejo) {
                         console.log('🏢 Cargando complejos para preseleccionar:', complejo);
+                        logVisible(`🏢 Cargando complejos para: ${complejo}`);
                         
                         // Usar Promise para esperar a que se carguen los complejos
                         await cargarComplejos(ciudadEncontrada.id);
+                        logVisible(`🏢 Complejos cargados: ${complejos.length} encontrados`);
                         
                         // 3. Preseleccionar complejo después de que se carguen
                         console.log('🏢 Preseleccionando complejo:', complejo);
+                        logVisible(`🏢 Preseleccionando complejo: ${complejo}`);
                         const complejoEncontrado = complejos.find(c => c.nombre === complejo);
                         
                         if (complejoEncontrado) {
@@ -987,6 +1068,7 @@ async function preRellenarDesdeURLMejorado() {
                                 }, 2000);
                                 
                                 console.log('✅ Complejo preseleccionado:', complejo, 'ID:', complejoEncontrado.id);
+                                logVisible(`✅ Complejo preseleccionado: ${complejo} (ID: ${complejoEncontrado.id})`);
                                 
                                 // 4. Si es MagnaSports, seleccionar fútbol automáticamente
                                 if (complejoEncontrado.nombre === 'MagnaSports') {
@@ -1078,6 +1160,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM cargado, inicializando aplicación');
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
+    
+    // Crear botón de debug para móviles
+    crearBotonLogs();
+    logVisible('🚀 APLICACIÓN INICIADA');
     
     try {
         // Cargar ciudades y esperar a que se completen
@@ -2006,6 +2092,7 @@ async function cargarComplejos(ciudadId) {
         try {
             intento++;
             console.log(`🔄 Intento ${intento}/${maxIntentos} - Cargando complejos para ciudad ID:`, ciudadId);
+            logVisible(`🔄 Intento ${intento}/${maxIntentos} - Cargando complejos para ciudad ID: ${ciudadId}`);
             
             const response = await fetch(`${API_BASE}/complejos/${ciudadId}`, {
                 method: 'GET',
@@ -2018,6 +2105,7 @@ async function cargarComplejos(ciudadId) {
             });
             
             console.log('📡 Response status:', response.status);
+            logVisible(`📡 Response status: ${response.status}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -2025,6 +2113,7 @@ async function cargarComplejos(ciudadId) {
             
             complejos = await response.json();
             console.log('🏢 Complejos recibidos:', complejos);
+            logVisible(`🏢 Complejos recibidos: ${complejos.length} complejos`);
             
             if (!Array.isArray(complejos)) {
                 throw new Error('Los datos recibidos no son un array de complejos');
