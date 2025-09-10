@@ -11,13 +11,47 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
   ? 'http://localhost:3000/api'  // Desarrollo local
   : `${window.location.protocol}//${window.location.host}/api`;  // Producción (Render)
 
-// Función para leer parámetros URL
+// Función para leer parámetros URL - Compatible con móviles
 function leerParametrosURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const ciudad = urlParams.get('ciudad');
-    const complejo = urlParams.get('complejo');
+    let ciudad = null;
+    let complejo = null;
+    
+    try {
+        // Método moderno con URLSearchParams
+        if (window.URLSearchParams) {
+            const urlParams = new URLSearchParams(window.location.search);
+            ciudad = urlParams.get('ciudad');
+            complejo = urlParams.get('complejo');
+        } else {
+            // Fallback para navegadores antiguos (móviles)
+            const queryString = window.location.search.substring(1);
+            const params = queryString.split('&');
+            
+            for (let i = 0; i < params.length; i++) {
+                const pair = params[i].split('=');
+                if (pair.length === 2) {
+                    const key = decodeURIComponent(pair[0]);
+                    const value = decodeURIComponent(pair[1]);
+                    
+                    if (key === 'ciudad') ciudad = value;
+                    if (key === 'complejo') complejo = value;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error leyendo parámetros URL:', error);
+        // Fallback manual
+        const url = window.location.href;
+        const ciudadMatch = url.match(/[?&]ciudad=([^&]+)/);
+        const complejoMatch = url.match(/[?&]complejo=([^&]+)/);
+        
+        if (ciudadMatch) ciudad = decodeURIComponent(ciudadMatch[1]);
+        if (complejoMatch) complejo = decodeURIComponent(complejoMatch[1]);
+    }
     
     console.log('🔍 Parámetros URL encontrados:', { ciudad, complejo });
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('📱 Es móvil:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     
     return { ciudad, complejo };
 }
@@ -31,10 +65,15 @@ async function preRellenarDesdeURL() {
         console.log('🏙️ Pre-rellenando ciudad:', ciudad);
         console.log('📊 Ciudades disponibles:', ciudades);
         
-        // Esperar a que las ciudades se carguen
+        // Esperar a que las ciudades se carguen - Mejorado para móviles
         await new Promise(resolve => {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 segundos máximo
+            
             const checkCiudades = () => {
-                console.log('🔍 Verificando ciudades...', ciudades.length);
+                attempts++;
+                console.log('🔍 Verificando ciudades...', ciudades.length, 'Intento:', attempts);
+                
                 if (ciudades.length > 0) {
                     const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
                     console.log('🔍 Ciudad encontrada:', ciudadEncontrada);
@@ -44,8 +83,21 @@ async function preRellenarDesdeURL() {
                         console.log('🔍 Elemento ciudad:', ciudadSelect);
                         
                         if (ciudadSelect) {
+                            // Forzar el valor y disparar eventos múltiples para móviles
                             ciudadSelect.value = ciudadEncontrada.id;
-                            ciudadSelect.dispatchEvent(new Event('change'));
+                            
+                            // Disparar múltiples eventos para asegurar compatibilidad
+                            ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            // Forzar actualización visual en móviles
+                            setTimeout(() => {
+                                ciudadSelect.style.backgroundColor = '#e8f5e8';
+                                setTimeout(() => {
+                                    ciudadSelect.style.backgroundColor = '';
+                                }, 1000);
+                            }, 100);
+                            
                             console.log('✅ Ciudad pre-rellenada:', ciudad, 'ID:', ciudadEncontrada.id);
                         } else {
                             console.error('❌ Elemento ciudad no encontrado');
@@ -53,6 +105,9 @@ async function preRellenarDesdeURL() {
                     } else {
                         console.error('❌ Ciudad no encontrada:', ciudad);
                     }
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    console.error('❌ Timeout esperando ciudades');
                     resolve();
                 } else {
                     console.log('⏳ Esperando ciudades...');
@@ -67,10 +122,15 @@ async function preRellenarDesdeURL() {
         console.log('🏢 Pre-rellenando complejo:', complejo);
         console.log('📊 Complejos disponibles:', complejos);
         
-        // Esperar a que los complejos se carguen
+        // Esperar a que los complejos se carguen - Mejorado para móviles
         await new Promise(resolve => {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 segundos máximo
+            
             const checkComplejos = () => {
-                console.log('🔍 Verificando complejos...', complejos.length);
+                attempts++;
+                console.log('🔍 Verificando complejos...', complejos.length, 'Intento:', attempts);
+                
                 if (complejos.length > 0) {
                     const complejoEncontrado = complejos.find(c => c.nombre === complejo);
                     console.log('🔍 Complejo encontrado:', complejoEncontrado);
@@ -80,8 +140,21 @@ async function preRellenarDesdeURL() {
                         console.log('🔍 Elemento complejo:', complejoSelect);
                         
                         if (complejoSelect) {
+                            // Forzar el valor y disparar eventos múltiples para móviles
                             complejoSelect.value = complejoEncontrado.id;
-                            complejoSelect.dispatchEvent(new Event('change'));
+                            
+                            // Disparar múltiples eventos para asegurar compatibilidad
+                            complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            // Forzar actualización visual en móviles
+                            setTimeout(() => {
+                                complejoSelect.style.backgroundColor = '#e8f5e8';
+                                setTimeout(() => {
+                                    complejoSelect.style.backgroundColor = '';
+                                }, 1000);
+                            }, 100);
+                            
                             console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
                             
                             // NO cargar canchas automáticamente - solo se cargan cuando se selecciona una hora
@@ -92,6 +165,9 @@ async function preRellenarDesdeURL() {
                     } else {
                         console.error('❌ Complejo no encontrado:', complejo);
                     }
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    console.error('❌ Timeout esperando complejos');
                     resolve();
                 } else {
                     console.log('⏳ Esperando complejos...');
@@ -149,10 +225,15 @@ document.addEventListener('DOMContentLoaded', async function() {
              console.log('✅ Paso 4 mostrado');
              
              // Scroll suave y único
+        // Timing adaptativo para móviles
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const scrollDelay = isMobile ? 1200 : 800; // Más tiempo en móviles
+        
         setTimeout(() => {
             console.log('🔄 Ejecutando scroll ultra suave al paso 4...');
+            console.log('📱 Delay adaptativo:', scrollDelay, 'ms');
             scrollToStep4();
-        }, 800); // Delay más largo para scroll más suave
+        }, scrollDelay);
             
         } else {
             console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
@@ -1680,10 +1761,11 @@ function scrollSuave(elemento) {
     requestAnimationFrame(animation);
 }
 
-// Función específica para hacer scroll suave a la sección "Reserva tu Cancha"
+// Función específica para hacer scroll suave a la sección "Reserva tu Cancha" - Compatible con móviles
 function scrollToStep4() {
     console.log('=== FUNCIÓN SCROLLTOSTEP4 LLAMADA ===');
     console.log('Timestamp:', new Date().toISOString());
+    console.log('📱 Es móvil:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     
     // Hacer scroll a la sección "Reserva tu Cancha" en lugar del paso 4
     const reservarSection = document.getElementById('reservar');
@@ -1694,7 +1776,8 @@ function scrollToStep4() {
         
         // Calcular la posición del elemento con offset para el navbar
         const elementPosition = reservarSection.offsetTop;
-        const offsetPosition = elementPosition - 60; // 60px de offset para el navbar (ultra suave)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const offsetPosition = elementPosition - (isMobile ? 40 : 60); // Menos offset en móviles
         
         console.log('Posición del elemento reservar:', elementPosition);
         console.log('Posición con offset:', offsetPosition);
@@ -1715,9 +1798,38 @@ function scrollToStep4() {
                     top: offsetPosition,
                     behavior: 'smooth'
                 });
-            }, 400); // Timing más suave y lento
+            }, isMobile ? 600 : 400); // Timing más largo en móviles
             
-            // NO hacer verificación final para evitar el "sube y baja"
+            // Método 3: Fallback adicional para móviles
+            if (isMobile) {
+                setTimeout(() => {
+                    console.log('Aplicando fallback adicional para móviles...');
+                    // Forzar scroll en móviles con método alternativo
+                    const currentScroll = window.pageYOffset;
+                    const targetScroll = offsetPosition;
+                    const distance = targetScroll - currentScroll;
+                    const duration = 800; // Más lento en móviles
+                    
+                    let startTime = null;
+                    function animateScroll(currentTime) {
+                        if (startTime === null) startTime = currentTime;
+                        const timeElapsed = currentTime - startTime;
+                        const progress = Math.min(timeElapsed / duration, 1);
+                        
+                        // Función de easing suave
+                        const ease = progress < 0.5 
+                            ? 2 * progress * progress 
+                            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                        
+                        window.scrollTo(0, currentScroll + (distance * ease));
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animateScroll);
+                        }
+                    }
+                    requestAnimationFrame(animateScroll);
+                }, 1000);
+            }
             
             console.log('Scroll suave a "Reserva tu Cancha" completado exitosamente');
             
