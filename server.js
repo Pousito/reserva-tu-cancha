@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // ===== MIDDLEWARE DE AUTENTICACIÓN =====
-// Fix: Asegurar que las consultas usen fecha_creacion en lugar de created_at
+// Fix: Asegurar que las consultas usen fecha_creacion en lugar de created_at - VERSIÓN 2
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
