@@ -1811,6 +1811,29 @@ app.get('/api/debug/sync-database', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA SINCRONIZACIÓN FORZADA =====
+app.get('/api/debug/force-sync-database', async (req, res) => {
+  try {
+    console.log('🔄 Iniciando sincronización forzada de base de datos...');
+    
+    const { forceSyncProduction } = require('./scripts/maintenance/force-sync-production');
+    await forceSyncProduction();
+    
+    res.json({
+      success: true,
+      message: 'Base de datos sincronizada forzadamente exitosamente',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en sincronización forzada:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ===== ENDPOINT PARA OPTIMIZAR BASE DE DATOS =====
 app.get('/api/debug/optimize-database', async (req, res) => {
   try {

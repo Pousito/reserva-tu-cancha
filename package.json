@@ -28,6 +28,7 @@
     "fix-magnasports-courts": "node scripts/maintenance/fix-magnasports-courts.js",
     "sync-databases": "node scripts/maintenance/sync-databases.js",
     "sync-production-db": "node scripts/maintenance/sync-production-db.js",
+    "force-sync-production": "node scripts/maintenance/force-sync-production.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0"
   },
