@@ -130,7 +130,7 @@ async function populateSampleData() {
       console.log('🏙️ Insertando ciudades:', ciudadesData);
       for (const ciudad of ciudadesData) {
         try {
-          if (db.getDbType() === 'PostgreSQL') {
+          if (db.getDatabaseInfo().type === 'PostgreSQL') {
             const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
             console.log(`✅ Ciudad insertada: ${ciudad}`, result);
           } else {
@@ -154,7 +154,7 @@ async function populateSampleData() {
       for (const complejo of complejosData) {
         const ciudadId = await db.get('SELECT id FROM ciudades WHERE nombre = $1', [complejo.ciudad]);
         if (ciudadId) {
-          if (db.getDbType() === 'PostgreSQL') {
+          if (db.getDatabaseInfo().type === 'PostgreSQL') {
             await db.run(
               'INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (nombre) DO NOTHING',
               [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
@@ -183,7 +183,7 @@ async function populateSampleData() {
       for (const cancha of canchasData) {
         const complejoId = await db.get('SELECT id FROM complejos WHERE nombre = $1', [cancha.complejo]);
         if (complejoId) {
-          if (db.getDbType() === 'PostgreSQL') {
+          if (db.getDatabaseInfo().type === 'PostgreSQL') {
             await db.run(
               'INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES ($1, $2, $3, $4) ON CONFLICT (nombre) DO NOTHING',
               [complejoId.id, cancha.nombre, cancha.tipo, cancha.precio]
@@ -205,7 +205,7 @@ async function populateSampleData() {
       ];
       
       for (const usuario of usuariosData) {
-        if (db.getDbType() === 'PostgreSQL') {
+        if (db.getDatabaseInfo().type === 'PostgreSQL') {
           await db.run(
             'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, true) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, nombre = EXCLUDED.nombre, rol = EXCLUDED.rol',
             [usuario.email, usuario.password, usuario.nombre, usuario.rol]
