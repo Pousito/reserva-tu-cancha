@@ -1690,6 +1690,10 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     await db.run('DELETE FROM canchas');
     console.log('✅ Canchas eliminadas');
     
+    // Eliminar usuarios
+    await db.run('DELETE FROM usuarios');
+    console.log('✅ Usuarios eliminados');
+    
     // Eliminar complejos
     await db.run('DELETE FROM complejos');
     console.log('✅ Complejos eliminados');
@@ -1697,10 +1701,6 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     // Eliminar ciudades
     await db.run('DELETE FROM ciudades');
     console.log('✅ Ciudades eliminadas');
-    
-    // Eliminar usuarios
-    await db.run('DELETE FROM usuarios');
-    console.log('✅ Usuarios eliminados');
     
     // PASO 2: Insertar datos correctos
     console.log('PASO 2: Insertando datos correctos...');
