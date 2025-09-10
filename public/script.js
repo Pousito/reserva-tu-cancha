@@ -345,53 +345,137 @@ function preRellenarPC(ciudad, complejo) {
     console.log('💻 === PRE-RELLENADO PC COMPLETADO ===');
 }
 
-// SOLUCIÓN MÓVIL: Función directa e inmediata para móvil
-function preRellenarMovilDirecto(ciudad, complejo) {
-    console.log('📱 PRE-RELLENADO MÓVIL DIRECTO INICIADO');
+// SISTEMA INTELIGENTE: Detección automática del estado de datos
+function detectarEstadoDatos() {
+    const estado = {
+        ciudadesCargadas: ciudades && ciudades.length > 0,
+        complejosCargados: complejos && complejos.length > 0,
+        ciudadSelectDisponible: !!document.getElementById('ciudadSelect'),
+        complejoSelectDisponible: !!document.getElementById('complejoSelect'),
+        timestamp: Date.now()
+    };
     
-    // Pre-rellenar ciudad de forma directa
+    console.log('🔍 Estado de datos detectado:', estado);
+    return estado;
+}
+
+// SISTEMA INTELIGENTE: Pre-rellenado adaptativo
+function preRellenarInteligente(ciudad, complejo) {
+    console.log('🧠 PRE-RELLENADO INTELIGENTE INICIADO');
+    
+    const estado = detectarEstadoDatos();
+    
+    // Estrategia 1: Si todo está listo, proceder inmediatamente
+    if (estado.ciudadesCargadas && estado.ciudadSelectDisponible) {
+        console.log('✅ Estrategia 1: Datos listos, procediendo inmediatamente');
+        preRellenarInmediato(ciudad, complejo);
+        return;
+    }
+    
+    // Estrategia 2: Si faltan datos, esperar y reintentar
+    console.log('⏳ Estrategia 2: Esperando datos...');
+    let intentos = 0;
+    const maxIntentos = 20; // 10 segundos máximo
+    
+    const verificarYProceder = () => {
+        intentos++;
+        const nuevoEstado = detectarEstadoDatos();
+        
+        if (nuevoEstado.ciudadesCargadas && nuevoEstado.ciudadSelectDisponible) {
+            console.log(`✅ Datos listos en intento ${intentos}, procediendo`);
+            preRellenarInmediato(ciudad, complejo);
+        } else if (intentos < maxIntentos) {
+            console.log(`⏳ Intento ${intentos}/${maxIntentos}, reintentando en 500ms`);
+            setTimeout(verificarYProceder, 500);
+        } else {
+            console.log('❌ Timeout: Datos no disponibles después de 10 segundos');
+            // Último recurso: forzar carga
+            preRellenarForzado(ciudad, complejo);
+        }
+    };
+    
+    verificarYProceder();
+}
+
+// FUNCIÓN: Pre-rellenado inmediato cuando datos están listos
+function preRellenarInmediato(ciudad, complejo) {
+    console.log('⚡ PRE-RELLENADO INMEDIATO');
+    
     if (ciudad) {
         const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
         if (ciudadEncontrada) {
             const ciudadSelect = document.getElementById('ciudadSelect');
             if (ciudadSelect) {
-                console.log('📱 Asignando ciudad directamente:', ciudad, 'ID:', ciudadEncontrada.id);
+                console.log('🏙️ Asignando ciudad:', ciudad, 'ID:', ciudadEncontrada.id);
                 
-                // Asignación directa sin timeouts
+                // Múltiples métodos de asignación
                 ciudadSelect.value = ciudadEncontrada.id;
                 ciudadSelect.selectedIndex = Array.from(ciudadSelect.options).findIndex(option => option.value == ciudadEncontrada.id);
                 
-                // Eventos inmediatos
-                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                // Forzar re-render
+                ciudadSelect.style.display = 'none';
+                ciudadSelect.offsetHeight; // Forzar reflow
+                ciudadSelect.style.display = '';
                 
-                console.log('📱 Ciudad asignada directamente:', ciudadSelect.value);
+                // Eventos múltiples
+                ['change', 'input', 'blur'].forEach(eventType => {
+                    ciudadSelect.dispatchEvent(new Event(eventType, { bubbles: true }));
+                });
                 
-                // Cargar complejos inmediatamente
-                if (complejo) {
-                    const complejoEncontrado = complejos.find(c => c.nombre === complejo);
-                    if (complejoEncontrado) {
-                        const complejoSelect = document.getElementById('complejoSelect');
-                        if (complejoSelect) {
-                            console.log('📱 Asignando complejo directamente:', complejo, 'ID:', complejoEncontrado.id);
-                            
-                            // Asignación directa sin timeouts
-                            complejoSelect.value = complejoEncontrado.id;
-                            complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
-                            
-                            // Eventos inmediatos
-                            complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                            complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
-                            
-                            console.log('📱 Complejo asignado directamente:', complejoSelect.value);
+                console.log('✅ Ciudad asignada:', ciudadSelect.value);
+                
+                // Cargar complejos si es necesario
+                if (complejo && (!complejos || complejos.length === 0)) {
+                    console.log('🔄 Cargando complejos...');
+                    cargarComplejos(ciudadEncontrada.id);
+                }
+                
+                // Asignar complejo después de un breve delay
+                setTimeout(() => {
+                    if (complejo) {
+                        const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                        if (complejoEncontrado) {
+                            const complejoSelect = document.getElementById('complejoSelect');
+                            if (complejoSelect) {
+                                console.log('🏢 Asignando complejo:', complejo, 'ID:', complejoEncontrado.id);
+                                
+                                // Múltiples métodos de asignación
+                                complejoSelect.value = complejoEncontrado.id;
+                                complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
+                                
+                                // Forzar re-render
+                                complejoSelect.style.display = 'none';
+                                complejoSelect.offsetHeight; // Forzar reflow
+                                complejoSelect.style.display = '';
+                                
+                                // Eventos múltiples
+                                ['change', 'input', 'blur'].forEach(eventType => {
+                                    complejoSelect.dispatchEvent(new Event(eventType, { bubbles: true }));
+                                });
+                                
+                                console.log('✅ Complejo asignado:', complejoSelect.value);
+                            }
                         }
                     }
-                }
+                }, 100);
             }
         }
     }
+}
+
+// FUNCIÓN: Pre-rellenado forzado como último recurso
+function preRellenarForzado(ciudad, complejo) {
+    console.log('🚨 PRE-RELLENADO FORZADO - ÚLTIMO RECURSO');
     
-    console.log('📱 PRE-RELLENADO MÓVIL DIRECTO COMPLETADO');
+    // Forzar recarga de datos
+    if (typeof cargarCiudades === 'function') {
+        cargarCiudades();
+    }
+    
+    // Intentar asignación directa
+    setTimeout(() => {
+        preRellenarInmediato(ciudad, complejo);
+    }, 1000);
 }
 
 // SOLUCIÓN MÓVIL: Función ultra agresiva específica para móvil
@@ -559,23 +643,16 @@ async function preRellenarDesdeURL() {
     console.log('📱 Es móvil:', isMobile);
     
     if (isMobile) {
-        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema directo e inmediato');
+        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema inteligente adaptativo');
         
-        // Método 1: Intento inmediato SIN timeout
-        console.log('🚀 Móvil - Método 1: Intento inmediato');
-        preRellenarMovilDirecto(ciudad, complejo);
+        // Sistema inteligente que detecta el estado de los datos
+        preRellenarInteligente(ciudad, complejo);
         
-        // Método 2: Intento rápido para móvil
+        // Backup: Sistema agresivo como respaldo
         setTimeout(() => {
-            console.log('🚀 Móvil - Método 2: Intento rápido');
-            preRellenarMovilDirecto(ciudad, complejo);
-        }, 300);
-        
-        // Método 3: Último recurso para móvil
-        setTimeout(() => {
-            console.log('🚀 Móvil - Método 3: Último recurso');
+            console.log('🚀 Móvil - Backup: Sistema agresivo');
             preRellenarUltraAgresivo(ciudad, complejo);
-        }, 800);
+        }, 3000);
     } else {
         console.log('🚀 OPTIMIZACIÓN PC: Sistema estándar');
         
@@ -2450,34 +2527,50 @@ function scrollSuave(elemento) {
 
 // Función específica para hacer scroll suave a la sección "Reserva tu Cancha" - Compatible con móviles
 function scrollToStep4() {
-    console.log('🚀 SCROLL SIMPLE INICIADO');
+    console.log('🚀 SCROLL INTELIGENTE INICIADO');
     
     // Detectar si es móvil para optimizar scroll
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     console.log('📱 Scroll optimizado para móvil:', isMobile);
     
-    // Método simple y directo
-    const reservarSection = document.getElementById('reservar');
-    if (reservarSection) {
-        console.log('🚀 Haciendo scroll simple a "Reserva tu Cancha"');
-        
-        if (isMobile) {
-            // Scroll instantáneo para móvil
-            reservarSection.scrollIntoView({ 
-                behavior: 'auto', 
-                block: 'start' 
-            });
+    // Función de scroll inteligente con reintentos
+    const ejecutarScroll = () => {
+        const reservarSection = document.getElementById('reservar');
+        if (reservarSection) {
+            console.log('🚀 Ejecutando scroll inteligente');
+            
+            if (isMobile) {
+                // Scroll instantáneo para móvil
+                reservarSection.scrollIntoView({ 
+                    behavior: 'auto', 
+                    block: 'start' 
+                });
+            } else {
+                // Scroll suave para PC
+                reservarSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+            
+            console.log('✅ Scroll completado');
+            return true;
         } else {
-            // Scroll suave para PC
-            reservarSection.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
+            console.log('❌ Elemento reservar no encontrado');
+            return false;
         }
-        
-        console.log('✅ Scroll completado');
-    } else {
-        console.log('❌ No se encontró elemento reservar');
+    };
+    
+    // Intentar scroll inmediatamente
+    if (!ejecutarScroll()) {
+        // Si falla, reintentar con delay
+        console.log('⏳ Reintentando scroll en 100ms...');
+        setTimeout(() => {
+            if (!ejecutarScroll()) {
+                console.log('⏳ Último intento de scroll en 500ms...');
+                setTimeout(ejecutarScroll, 500);
+            }
+        }, 100);
     }
 }
 
