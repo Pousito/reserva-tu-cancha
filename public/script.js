@@ -1343,19 +1343,21 @@ async function verificarDisponibilidadTiempoReal() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    if (!fecha || !hora || !canchas.length) {
+    if (!fecha || !canchas.length) {
         return;
     }
     
-    console.log('Verificando disponibilidad en tiempo real para:', fecha, hora);
+    console.log('Verificando disponibilidad en tiempo real para:', fecha, hora || 'todas las horas');
     
-    // Verificar disponibilidad de todas las canchas
-    for (const cancha of canchas) {
-        const estaDisponible = await verificarDisponibilidadCancha(cancha.id, fecha, hora);
-        actualizarEstadoCancha(cancha.id, estaDisponible);
+    // Si hay hora seleccionada, verificar disponibilidad de todas las canchas para esa hora
+    if (hora) {
+        for (const cancha of canchas) {
+            const estaDisponible = await verificarDisponibilidadCancha(cancha.id, fecha, hora);
+            actualizarEstadoCancha(cancha.id, estaDisponible);
+        }
     }
     
-    // Actualizar horarios con disponibilidad
+    // SIEMPRE actualizar horarios con disponibilidad para TODAS las horas
     await actualizarHorariosConDisponibilidad();
 }
 
