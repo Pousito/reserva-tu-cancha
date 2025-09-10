@@ -1433,21 +1433,33 @@ function configurarEventListeners() {
 
     // Selección de complejo
     document.getElementById('complejoSelect').addEventListener('change', async function() {
+        console.log('🔄 COMPLEJO SELECT CAMBIADO - Iniciando procesamiento...');
         const complejoId = this.value;
+        console.log('🔄 Complejo ID seleccionado:', complejoId);
+        
         if (complejoId) {
             complejoSeleccionado = complejos.find(c => c.id == complejoId);
+            console.log('🔄 Complejo seleccionado:', complejoSeleccionado);
+            
             await cargarHorariosComplejo(complejoSeleccionado);
+            console.log('🔄 Horarios cargados para:', complejoSeleccionado.nombre);
             
             // Si es MagnaSports, automáticamente seleccionar fútbol y ocultar opciones de padel
             if (complejoSeleccionado.nombre === 'MagnaSports') {
+                console.log('⚽ MagnaSports detectado - Configurando automáticamente...');
+                
                 // Seleccionar automáticamente fútbol
                 const futbolRadio = document.getElementById('futbol');
+                console.log('⚽ Radio button fútbol encontrado:', futbolRadio);
+                
                 futbolRadio.checked = true;
                 tipoCanchaSeleccionado = 'futbol';
+                console.log('⚽ Fútbol seleccionado, tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
                 
                 // Ocultar opción de padel
                 document.getElementById('padel').parentElement.style.display = 'none';
                 document.getElementById('futbol').parentElement.style.display = 'block';
+                console.log('⚽ Opciones de padel ocultadas, fútbol mostrado');
                 
                 // Centrar la opción de fútbol
                 const step3CardBody = document.getElementById('step3').querySelector('.card-body');
@@ -1455,6 +1467,7 @@ function configurarEventListeners() {
                 step3CardBody.style.justifyContent = 'center';
                 step3CardBody.style.alignItems = 'center';
                 step3CardBody.style.textAlign = 'center';
+                console.log('⚽ Paso 3 centrado para fútbol');
                 
                 // Asegurar que el radio button y el label estén alineados
                 const futbolLabel = document.querySelector('label[for="futbol"]');
@@ -1465,10 +1478,23 @@ function configurarEventListeners() {
                     futbolLabel.style.gap = '15px';
                     futbolLabel.style.margin = '0 auto';
                     futbolLabel.style.width = 'fit-content';
+                    console.log('⚽ Label de fútbol configurado');
                 }
                 
                 // IMPORTANTE: Disparar evento change para activar la lógica del paso 4
+                console.log('⚽ Disparando evento change en radio button fútbol...');
                 futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('⚽ Evento change disparado');
+                
+                // Verificar si el paso 4 se muestra
+                setTimeout(() => {
+                    const step4 = document.getElementById('step4');
+                    console.log('⚽ Verificando paso 4 después de 100ms:', step4.style.display);
+                    if (step4.style.display === 'none') {
+                        console.log('⚠️ Paso 4 no se mostró automáticamente, forzando...');
+                        mostrarPaso(4);
+                    }
+                }, 100);
                 
                 validarHorariosSegunFecha();
             } else {
@@ -1510,13 +1536,25 @@ function configurarEventListeners() {
     // Selección de tipo de cancha
     document.querySelectorAll('input[name="tipoCancha"]').forEach(radio => {
         radio.addEventListener('change', function() {
+            console.log('🎯 RADIO BUTTON CAMBIADO:', this.value);
+            console.log('🎯 Complejo seleccionado:', complejoSeleccionado);
+            
             // Solo permitir selección si no es MagnaSports o si es MagnaSports y se selecciona fútbol
             if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports' && this.value !== 'futbol') {
+                console.log('🚫 Padel no permitido para MagnaSports');
                 return; // No permitir selección de padel para MagnaSports
             }
             
             tipoCanchaSeleccionado = this.value;
+            console.log('🎯 Tipo de cancha seleccionado:', tipoCanchaSeleccionado);
+            console.log('🎯 Llamando a mostrarPaso(4)...');
             mostrarPaso(4);
+            
+            // Verificar que el paso 4 se mostró
+            setTimeout(() => {
+                const step4 = document.getElementById('step4');
+                console.log('🎯 Verificando paso 4 después de 50ms:', step4.style.display);
+            }, 50);
         });
     });
 
@@ -1810,25 +1848,38 @@ function configurarEventListeners() {
 
 // Funciones de navegación
 function mostrarPaso(numero) {
+    console.log(`📋 MOSTRAR PASO ${numero} - Iniciando...`);
+    
     // Detectar si es móvil para optimizar
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log(`📋 Es móvil: ${isMobile}`);
     
     for (let i = 1; i <= 4; i++) {
         const paso = document.getElementById(`step${i}`);
+        console.log(`📋 Procesando paso ${i}, elemento:`, paso);
+        
         if (i <= numero) {
+            console.log(`📋 Mostrando paso ${i}`);
             paso.style.display = 'block';
             if (isMobile) {
                 // En móvil, mostrar inmediatamente sin animaciones
                 paso.style.opacity = '1';
                 paso.style.transition = 'none';
+                console.log(`📋 Paso ${i} configurado para móvil`);
             } else {
                 // En PC, usar animaciones
                 paso.classList.add('fade-in');
+                console.log(`📋 Paso ${i} configurado para PC con animación`);
             }
         } else {
+            console.log(`📋 Ocultando paso ${i}`);
             paso.style.display = 'none';
         }
     }
+    
+    // Verificar el estado final del paso solicitado
+    const pasoFinal = document.getElementById(`step${numero}`);
+    console.log(`📋 Estado final del paso ${numero}:`, pasoFinal.style.display);
 }
 
 function ocultarPaso(numero) {
