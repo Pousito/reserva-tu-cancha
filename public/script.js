@@ -83,20 +83,64 @@ async function preRellenarDesdeURL() {
                         console.log('🔍 Elemento ciudad:', ciudadSelect);
                         
                         if (ciudadSelect) {
-                            // Forzar el valor y disparar eventos múltiples para móviles
+                            console.log('🔧 Configurando ciudad en móvil...');
+                            
+                            // Método 1: Asignación directa
                             ciudadSelect.value = ciudadEncontrada.id;
+                            console.log('📱 Valor asignado directamente:', ciudadSelect.value);
                             
-                            // Disparar múltiples eventos para asegurar compatibilidad
-                            ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                            ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                            // Método 2: Forzar actualización del DOM
+                            ciudadSelect.setAttribute('value', ciudadEncontrada.id);
                             
-                            // Forzar actualización visual en móviles
+                            // Método 3: Disparar eventos múltiples con diferentes métodos
+                            try {
+                                // Evento change estándar
+                                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+                                ciudadSelect.dispatchEvent(changeEvent);
+                                
+                                // Evento input para móviles
+                                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+                                ciudadSelect.dispatchEvent(inputEvent);
+                                
+                                // Evento personalizado para forzar actualización
+                                const customEvent = new CustomEvent('forceUpdate', { 
+                                    detail: { value: ciudadEncontrada.id },
+                                    bubbles: true 
+                                });
+                                ciudadSelect.dispatchEvent(customEvent);
+                                
+                                console.log('📱 Eventos disparados correctamente');
+                            } catch (error) {
+                                console.error('❌ Error disparando eventos:', error);
+                            }
+                            
+                            // Método 4: Forzar actualización visual y funcional
                             setTimeout(() => {
+                                // Verificar que el valor se mantuvo
+                                if (ciudadSelect.value !== ciudadEncontrada.id) {
+                                    console.log('🔄 Re-asignando valor...');
+                                    ciudadSelect.value = ciudadEncontrada.id;
+                                }
+                                
+                                // Indicador visual
                                 ciudadSelect.style.backgroundColor = '#e8f5e8';
+                                ciudadSelect.style.border = '2px solid #28a745';
+                                
                                 setTimeout(() => {
                                     ciudadSelect.style.backgroundColor = '';
-                                }, 1000);
-                            }, 100);
+                                    ciudadSelect.style.border = '';
+                                }, 2000);
+                                
+                                console.log('📱 Valor final ciudad:', ciudadSelect.value);
+                            }, 200);
+                            
+                            // Método 5: Llamar manualmente a la función de cambio si existe
+                            setTimeout(() => {
+                                if (typeof cargarComplejos === 'function') {
+                                    console.log('🔄 Llamando cargarComplejos manualmente...');
+                                    cargarComplejos(ciudadEncontrada.id);
+                                }
+                            }, 300);
                             
                             console.log('✅ Ciudad pre-rellenada:', ciudad, 'ID:', ciudadEncontrada.id);
                         } else {
@@ -140,20 +184,65 @@ async function preRellenarDesdeURL() {
                         console.log('🔍 Elemento complejo:', complejoSelect);
                         
                         if (complejoSelect) {
-                            // Forzar el valor y disparar eventos múltiples para móviles
+                            console.log('🔧 Configurando complejo en móvil...');
+                            
+                            // Método 1: Asignación directa
                             complejoSelect.value = complejoEncontrado.id;
+                            console.log('📱 Valor asignado directamente:', complejoSelect.value);
                             
-                            // Disparar múltiples eventos para asegurar compatibilidad
-                            complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                            complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                            // Método 2: Forzar actualización del DOM
+                            complejoSelect.setAttribute('value', complejoEncontrado.id);
                             
-                            // Forzar actualización visual en móviles
+                            // Método 3: Disparar eventos múltiples con diferentes métodos
+                            try {
+                                // Evento change estándar
+                                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+                                complejoSelect.dispatchEvent(changeEvent);
+                                
+                                // Evento input para móviles
+                                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+                                complejoSelect.dispatchEvent(inputEvent);
+                                
+                                // Evento personalizado para forzar actualización
+                                const customEvent = new CustomEvent('forceUpdate', { 
+                                    detail: { value: complejoEncontrado.id },
+                                    bubbles: true 
+                                });
+                                complejoSelect.dispatchEvent(customEvent);
+                                
+                                console.log('📱 Eventos disparados correctamente');
+                            } catch (error) {
+                                console.error('❌ Error disparando eventos:', error);
+                            }
+                            
+                            // Método 4: Forzar actualización visual y funcional
                             setTimeout(() => {
+                                // Verificar que el valor se mantuvo
+                                if (complejoSelect.value !== complejoEncontrado.id) {
+                                    console.log('🔄 Re-asignando valor...');
+                                    complejoSelect.value = complejoEncontrado.id;
+                                }
+                                
+                                // Indicador visual
                                 complejoSelect.style.backgroundColor = '#e8f5e8';
+                                complejoSelect.style.border = '2px solid #28a745';
+                                
                                 setTimeout(() => {
                                     complejoSelect.style.backgroundColor = '';
-                                }, 1000);
-                            }, 100);
+                                    complejoSelect.style.border = '';
+                                }, 2000);
+                                
+                                console.log('📱 Valor final complejo:', complejoSelect.value);
+                            }, 200);
+                            
+                            // Método 5: Llamar manualmente a la función de cambio si existe
+                            setTimeout(() => {
+                                // Simular el cambio de complejo para cargar horarios
+                                if (typeof validarHorariosSegunFecha === 'function') {
+                                    console.log('🔄 Llamando validarHorariosSegunFecha manualmente...');
+                                    validarHorariosSegunFecha();
+                                }
+                            }, 300);
                             
                             console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
                             
@@ -177,6 +266,33 @@ async function preRellenarDesdeURL() {
             checkComplejos();
         });
     }
+    
+    // Verificación final y forzar actualización en móviles
+    setTimeout(() => {
+        const ciudadSelect = document.getElementById('ciudadSelect');
+        const complejoSelect = document.getElementById('complejoSelect');
+        
+        console.log('🔍 Verificación final móvil:');
+        console.log('📱 Ciudad select value:', ciudadSelect?.value);
+        console.log('📱 Complejo select value:', complejoSelect?.value);
+        
+        // Forzar actualización visual en móviles si es necesario
+        if (ciudadSelect && ciudadSelect.value) {
+            // Forzar re-render del select
+            ciudadSelect.style.display = 'none';
+            ciudadSelect.offsetHeight; // Trigger reflow
+            ciudadSelect.style.display = '';
+            console.log('📱 Ciudad select forzado a re-render');
+        }
+        
+        if (complejoSelect && complejoSelect.value) {
+            // Forzar re-render del select
+            complejoSelect.style.display = 'none';
+            complejoSelect.offsetHeight; // Trigger reflow
+            complejoSelect.style.display = '';
+            console.log('📱 Complejo select forzado a re-render');
+        }
+    }, 500);
     
     console.log('✅ preRellenarDesdeURL completado');
     console.log('🔍 Estado final - Ciudad seleccionada:', document.getElementById('ciudadSelect')?.value);
