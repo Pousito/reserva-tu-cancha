@@ -320,6 +320,12 @@ app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
   }
 });
 
+// Función auxiliar para convertir tiempo a minutos
+function timeToMinutes(timeStr) {
+  const [hours, minutes] = timeStr.split(':');
+  return parseInt(hours) * 60 + parseInt(minutes);
+}
+
 // Endpoint de debug para verificar lógica de superposición
 app.get('/api/debug/verificar-superposicion/:canchaId/:fecha/:hora', async (req, res) => {
   try {
@@ -341,13 +347,25 @@ app.get('/api/debug/verificar-superposicion/:canchaId/:fecha/:hora', async (req,
     
     // Verificar superposición para cada reserva
     const resultados = reservas.map(reserva => {
-      const haySuperposicion = reserva.hora_inicio < horaFin && reserva.hora_fin > hora;
+      // Convertir a minutos para comparación precisa
+      const reservaInicioMin = timeToMinutes(reserva.hora_inicio);
+      const reservaFinMin = timeToMinutes(reserva.hora_fin);
+      const horaInicioMin = timeToMinutes(hora);
+      const horaFinMin = timeToMinutes(horaFin);
+      
+      const haySuperposicion = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
       return {
         reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
         solicitada: `${hora}-${horaFin}`,
         haySuperposicion,
-        logica: `${reserva.hora_inicio} < ${horaFin} && ${reserva.hora_fin} > ${hora}`,
-        disponible: !haySuperposicion
+        logica: `${reservaInicioMin} < ${horaFinMin} && ${reservaFinMin} > ${horaInicioMin}`,
+        disponible: !haySuperposicion,
+        minutos: {
+          reservaInicio: reservaInicioMin,
+          reservaFin: reservaFinMin,
+          horaInicio: horaInicioMin,
+          horaFin: horaFinMin
+        }
       };
     });
     
