@@ -1747,6 +1747,8 @@ function configurarEventListeners() {
                     console.log('⚽ Label de fútbol configurado');
                 }
                 
+                console.log('✅ Llegando a la parte de carga de canchas...');
+                
                 // NUEVA LÓGICA: Cargar canchas directamente sin depender del event listener
                 console.log('⚽ Cargando canchas directamente para MagnaSports...');
                 console.log('⚽ DEBUG AUTOMÁTICO - complejoSeleccionado:', complejoSeleccionado);
