@@ -1785,6 +1785,9 @@ function configurarEventListeners() {
                 }, 100);
                 
                 await validarHorariosSegunFecha();
+                
+                // NUEVA FUNCIÓN: Cargar horarios con disponibilidad inmediatamente
+                await cargarHorariosConDisponibilidadInmediata();
             } else {
                 // Para otros complejos, mostrar ambas opciones
                 document.getElementById('padel').parentElement.style.display = 'block';
@@ -2605,6 +2608,109 @@ async function cargarHorariosComplejo(complejo) {
         }
     } else {
         // Si no hay fecha, cargar horarios normalmente
+        horarios.forEach(hora => {
+            const option = document.createElement('option');
+            option.value = hora;
+            option.textContent = hora;
+            horaSelect.appendChild(option);
+        });
+    }
+}
+
+// NUEVA FUNCIÓN: Cargar horarios con disponibilidad inmediatamente cuando se muestra el paso 4
+async function cargarHorariosConDisponibilidadInmediata() {
+    console.log('🚀 cargarHorariosConDisponibilidadInmediata - INICIANDO...');
+    
+    if (!complejoSeleccionado) {
+        console.log('❌ cargarHorariosConDisponibilidadInmediata - No hay complejo seleccionado');
+        return;
+    }
+    
+    const fecha = document.getElementById('fechaSelect').value;
+    if (!fecha) {
+        console.log('❌ cargarHorariosConDisponibilidadInmediata - No hay fecha seleccionada');
+        return;
+    }
+    
+    const horaSelect = document.getElementById('horaSelect');
+    if (!horaSelect) {
+        console.log('❌ cargarHorariosConDisponibilidadInmediata - No se encontró horaSelect');
+        return;
+    }
+    
+    console.log('🚀 cargarHorariosConDisponibilidadInmediata - Complejo:', complejoSeleccionado.nombre, 'Fecha:', fecha);
+    
+    // Determinar horarios según el complejo y día
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const diaSemana = fechaObj.getDay();
+    let horarios = [];
+    
+    if (complejoSeleccionado.nombre === 'MagnaSports') {
+        if (diaSemana === 0 || diaSemana === 6) {
+            // Fines de semana: 12:00-23:00
+            horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        } else {
+            // Entre semana: 16:00-23:00
+            horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        }
+    } else {
+        // Otros complejos: horario estándar
+        horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+    }
+    
+    console.log('🚀 cargarHorariosConDisponibilidadInmediata - Horarios a verificar:', horarios);
+    
+    try {
+        // Obtener disponibilidad completa
+        console.log('🚀 cargarHorariosConDisponibilidadInmediata - Llamando a verificarDisponibilidadCompleta...');
+        const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoSeleccionado.id, fecha);
+        console.log('✅ cargarHorariosConDisponibilidadInmediata - Disponibilidad obtenida para', Object.keys(disponibilidadCompleta).length, 'canchas');
+        
+        // Limpiar horarios actuales
+        horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+        
+        // Cargar cada horario con verificación de disponibilidad
+        for (const hora of horarios) {
+            const option = document.createElement('option');
+            option.value = hora;
+            
+            // Verificar si todas las canchas están ocupadas
+            let todasOcupadas = true;
+            let canchasVerificadas = 0;
+            
+            for (const canchaId in disponibilidadCompleta) {
+                const estaDisponible = verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadCompleta);
+                canchasVerificadas++;
+                if (estaDisponible) {
+                    todasOcupadas = false;
+                    break;
+                }
+            }
+            
+            console.log('🕐 cargarHorariosConDisponibilidadInmediata - Horario', hora, '- Canchas verificadas:', canchasVerificadas, '- Todas ocupadas:', todasOcupadas);
+            
+            if (todasOcupadas && canchasVerificadas > 0) {
+                option.textContent = `${hora} (Todas ocupadas)`;
+                option.classList.add('hora-todas-ocupadas');
+                option.style.textDecoration = 'line-through';
+                option.style.color = '#dc3545';
+                console.log('✅ cargarHorariosConDisponibilidadInmediata - Marcado como ocupado:', hora);
+            } else {
+                option.textContent = hora;
+                console.log('✅ cargarHorariosConDisponibilidadInmediata - Marcado como disponible:', hora);
+            }
+            
+            horaSelect.appendChild(option);
+        }
+        
+        console.log('✅ cargarHorariosConDisponibilidadInmediata - COMPLETADO exitosamente');
+        
+    } catch (error) {
+        console.error('❌ cargarHorariosConDisponibilidadInmediata - Error:', error);
+        console.error('❌ cargarHorariosConDisponibilidadInmediata - Error details:', error.message);
+        
+        // Fallback: cargar horarios básicos
+        horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
         horarios.forEach(hora => {
             const option = document.createElement('option');
             option.value = hora;
