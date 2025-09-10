@@ -1736,7 +1736,9 @@ function configurarEventListeners() {
                 console.log('⚽ Paso 3 centrado para fútbol');
                 
                 // Asegurar que el radio button y el label estén alineados
+                console.log('🔍 Buscando label de fútbol...');
                 const futbolLabel = document.querySelector('label[for="futbol"]');
+                console.log('🔍 Label de fútbol encontrado:', futbolLabel);
                 if (futbolLabel) {
                     futbolLabel.style.display = 'flex';
                     futbolLabel.style.alignItems = 'center';
