@@ -1608,8 +1608,11 @@ function configurarEventListeners() {
             // NUEVA LÓGICA: Cargar canchas automáticamente si hay complejo y tipo seleccionado
             if (complejoSeleccionado && tipoCanchaSeleccionado) {
                 console.log('📅 Fecha seleccionada, cargando canchas automáticamente...');
-                setTimeout(() => {
-                    cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                setTimeout(async () => {
+                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                    // Verificar disponibilidad inmediatamente después de cargar canchas
+                    console.log('🕐 Verificando disponibilidad inmediatamente después de seleccionar fecha...');
+                    await actualizarHorariosConDisponibilidad();
                 }, 200);
             }
             
@@ -1816,8 +1819,14 @@ function configurarEventListeners() {
             // NUEVA LÓGICA: Cargar canchas automáticamente cuando se selecciona tipo de cancha
             if (complejoSeleccionado && tipoCanchaSeleccionado) {
                 console.log('⚽ Cargando canchas automáticamente para verificar disponibilidad...');
-                setTimeout(() => {
-                    cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                setTimeout(async () => {
+                    await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                    // Verificar disponibilidad inmediatamente después de cargar canchas
+                    const fecha = document.getElementById('fechaSelect').value;
+                    if (fecha) {
+                        console.log('🕐 Verificando disponibilidad inmediatamente después de cargar canchas...');
+                        await actualizarHorariosConDisponibilidad();
+                    }
                 }, 100);
             }
             
@@ -2513,6 +2522,24 @@ async function cargarHorariosComplejo(complejo) {
             }
             
             horaSelect.appendChild(option);
+        }
+    } else if (fecha && canchas.length === 0) {
+        // Si hay fecha pero no hay canchas cargadas, cargar horarios y verificar disponibilidad después
+        console.log('📅 Hay fecha pero no hay canchas, cargando horarios básicos...');
+        horarios.forEach(hora => {
+            const option = document.createElement('option');
+            option.value = hora;
+            option.textContent = hora;
+            horaSelect.appendChild(option);
+        });
+        
+        // Verificar disponibilidad después de cargar canchas
+        if (complejoSeleccionado && tipoCanchaSeleccionado) {
+            console.log('🔄 Cargando canchas para verificar disponibilidad...');
+            setTimeout(async () => {
+                await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                await actualizarHorariosConDisponibilidad();
+            }, 100);
         }
     } else {
         // Si no hay fecha o canchas, cargar horarios normalmente
