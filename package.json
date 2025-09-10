@@ -23,6 +23,11 @@
     "clean-local-db": "node scripts/clean-database.js",
     "check-prod-db": "node scripts/clean-production-db.js check",
     "clean-prod-db": "node scripts/clean-production-db.js clean",
+    "check-duplicates": "node scripts/maintenance/check-duplicates.js",
+    "clean-duplicates": "node scripts/maintenance/clean-duplicates.js",
+    "fix-magnasports-courts": "node scripts/maintenance/fix-magnasports-courts.js",
+    "sync-databases": "node scripts/maintenance/sync-databases.js",
+    "sync-production-db": "node scripts/maintenance/sync-production-db.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0"
   },

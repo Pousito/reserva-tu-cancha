@@ -1788,6 +1788,29 @@ app.get('/api/debug/test-simple', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====
+app.get('/api/debug/sync-database', async (req, res) => {
+  try {
+    console.log('🔄 Iniciando sincronización de base de datos...');
+    
+    const { syncProductionDatabase } = require('./scripts/maintenance/sync-production-db');
+    await syncProductionDatabase();
+    
+    res.json({
+      success: true,
+      message: 'Base de datos sincronizada exitosamente',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error sincronizando base de datos:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ===== ENDPOINT PARA OPTIMIZAR BASE DE DATOS =====
 app.get('/api/debug/optimize-database', async (req, res) => {
   try {
