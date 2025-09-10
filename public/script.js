@@ -1441,7 +1441,8 @@ function configurarEventListeners() {
             // Si es MagnaSports, automáticamente seleccionar fútbol y ocultar opciones de padel
             if (complejoSeleccionado.nombre === 'MagnaSports') {
                 // Seleccionar automáticamente fútbol
-                document.getElementById('futbol').checked = true;
+                const futbolRadio = document.getElementById('futbol');
+                futbolRadio.checked = true;
                 tipoCanchaSeleccionado = 'futbol';
                 
                 // Ocultar opción de padel
@@ -1466,8 +1467,10 @@ function configurarEventListeners() {
                     futbolLabel.style.width = 'fit-content';
                 }
                 
+                // IMPORTANTE: Disparar evento change para activar la lógica del paso 4
+                futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                
                 validarHorariosSegunFecha();
-                mostrarPaso(4); // Ir directamente al paso 4
             } else {
                 // Para otros complejos, mostrar ambas opciones
                 document.getElementById('padel').parentElement.style.display = 'block';
