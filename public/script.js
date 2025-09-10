@@ -349,6 +349,11 @@ function preRellenarPC(ciudad, complejo) {
 function preRellenarSimple(ciudad, complejo) {
     console.log('🚀 PRE-RELLENADO SIMPLE INICIADO');
     
+    // Detectar si es móvil para optimizar timing
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const delay = isMobile ? 300 : 1000; // Móvil más rápido
+    console.log('📱 Timing optimizado para móvil:', isMobile, 'Delay:', delay);
+    
     // Pre-rellenar ciudad
     if (ciudad) {
         const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
@@ -359,7 +364,7 @@ function preRellenarSimple(ciudad, complejo) {
                 ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 console.log('✅ Ciudad asignada:', ciudad, 'ID:', ciudadEncontrada.id);
                 
-                // Cargar complejos después de seleccionar ciudad
+                // Cargar complejos después de seleccionar ciudad (timing optimizado)
                 setTimeout(() => {
                     if (complejo) {
                         const complejoEncontrado = complejos.find(c => c.nombre === complejo);
@@ -372,7 +377,7 @@ function preRellenarSimple(ciudad, complejo) {
                             }
                         }
                     }
-                }, 1000);
+                }, delay);
             }
         }
     }
@@ -431,25 +436,51 @@ async function preRellenarDesdeURL() {
         return;
     }
     
-    console.log('🚀 SOLUCIÓN INGENIOSA: Sistema de diagnóstico automático');
+    // Detectar si es móvil
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('📱 Es móvil:', isMobile);
     
-    // Método 1: Intento rápido y simple
-    setTimeout(() => {
-        console.log('🚀 Método 1: Intento rápido');
-        preRellenarSimple(ciudad, complejo);
-    }, 500);
-    
-    // Método 2: Intento con más tiempo
-    setTimeout(() => {
-        console.log('🚀 Método 2: Intento con más tiempo');
-        preRellenarSimple(ciudad, complejo);
-    }, 2000);
-    
-    // Método 3: Intento final ultra agresivo
-    setTimeout(() => {
-        console.log('🚀 Método 3: Intento final ultra agresivo');
-        preRellenarUltraAgresivo(ciudad, complejo);
-    }, 4000);
+    if (isMobile) {
+        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema rápido y directo');
+        
+        // Método 1: Intento inmediato para móvil
+        setTimeout(() => {
+            console.log('🚀 Móvil - Método 1: Intento inmediato');
+            preRellenarSimple(ciudad, complejo);
+        }, 100);
+        
+        // Método 2: Intento rápido para móvil
+        setTimeout(() => {
+            console.log('🚀 Móvil - Método 2: Intento rápido');
+            preRellenarSimple(ciudad, complejo);
+        }, 800);
+        
+        // Método 3: Último recurso para móvil
+        setTimeout(() => {
+            console.log('🚀 Móvil - Método 3: Último recurso');
+            preRellenarUltraAgresivo(ciudad, complejo);
+        }, 1500);
+    } else {
+        console.log('🚀 OPTIMIZACIÓN PC: Sistema estándar');
+        
+        // Método 1: Intento rápido y simple
+        setTimeout(() => {
+            console.log('🚀 PC - Método 1: Intento rápido');
+            preRellenarSimple(ciudad, complejo);
+        }, 500);
+        
+        // Método 2: Intento con más tiempo
+        setTimeout(() => {
+            console.log('🚀 PC - Método 2: Intento con más tiempo');
+            preRellenarSimple(ciudad, complejo);
+        }, 2000);
+        
+        // Método 3: Intento final ultra agresivo
+        setTimeout(() => {
+            console.log('🚀 PC - Método 3: Intento final ultra agresivo');
+            preRellenarUltraAgresivo(ciudad, complejo);
+        }, 4000);
+    }
     
     if (ciudad) {
         console.log('🏙️ Pre-rellenando ciudad:', ciudad);
@@ -2295,14 +2326,29 @@ function scrollSuave(elemento) {
 function scrollToStep4() {
     console.log('🚀 SCROLL SIMPLE INICIADO');
     
+    // Detectar si es móvil para optimizar scroll
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('📱 Scroll optimizado para móvil:', isMobile);
+    
     // Método simple y directo
     const reservarSection = document.getElementById('reservar');
     if (reservarSection) {
         console.log('🚀 Haciendo scroll simple a "Reserva tu Cancha"');
-        reservarSection.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
+        
+        if (isMobile) {
+            // Scroll más rápido para móvil
+            reservarSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        } else {
+            // Scroll estándar para PC
+            reservarSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+        
         console.log('✅ Scroll completado');
     } else {
         console.log('❌ No se encontró elemento reservar');
