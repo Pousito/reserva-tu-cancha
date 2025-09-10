@@ -342,22 +342,111 @@ function preRellenarPC(ciudad, complejo) {
     console.log('💻 === PRE-RELLENADO PC COMPLETADO ===');
 }
 
+// SOLUCIÓN INGENIOSA: Función simple y robusta
+function preRellenarSimple(ciudad, complejo) {
+    console.log('🚀 PRE-RELLENADO SIMPLE INICIADO');
+    
+    // Pre-rellenar ciudad
+    if (ciudad) {
+        const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+        if (ciudadEncontrada) {
+            const ciudadSelect = document.getElementById('ciudadSelect');
+            if (ciudadSelect) {
+                ciudadSelect.value = ciudadEncontrada.id;
+                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('✅ Ciudad asignada:', ciudad, 'ID:', ciudadEncontrada.id);
+                
+                // Cargar complejos después de seleccionar ciudad
+                setTimeout(() => {
+                    if (complejo) {
+                        const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                        if (complejoEncontrado) {
+                            const complejoSelect = document.getElementById('complejoSelect');
+                            if (complejoSelect) {
+                                complejoSelect.value = complejoEncontrado.id;
+                                complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('✅ Complejo asignado:', complejo, 'ID:', complejoEncontrado.id);
+                            }
+                        }
+                    }
+                }, 1000);
+            }
+        }
+    }
+    
+    console.log('🚀 PRE-RELLENADO SIMPLE COMPLETADO');
+}
+
+// SOLUCIÓN INGENIOSA: Función ultra agresiva como último recurso
+function preRellenarUltraAgresivo(ciudad, complejo) {
+    console.log('🚀 PRE-RELLENADO ULTRA AGRESIVO INICIADO');
+    
+    // Forzar re-render de todos los selects
+    const ciudadSelect = document.getElementById('ciudadSelect');
+    const complejoSelect = document.getElementById('complejoSelect');
+    
+    if (ciudad && ciudadSelect) {
+        const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+        if (ciudadEncontrada) {
+            // Método ultra agresivo: toggle display
+            ciudadSelect.style.display = 'none';
+            setTimeout(() => {
+                ciudadSelect.style.display = '';
+                ciudadSelect.value = ciudadEncontrada.id;
+                ciudadSelect.selectedIndex = Array.from(ciudadSelect.options).findIndex(option => option.value == ciudadEncontrada.id);
+                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('🚀 Ciudad ULTRA AGRESIVO:', ciudad, 'ID:', ciudadEncontrada.id);
+            }, 100);
+        }
+    }
+    
+    if (complejo && complejoSelect) {
+        const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+        if (complejoEncontrado) {
+            // Método ultra agresivo: toggle display
+            complejoSelect.style.display = 'none';
+            setTimeout(() => {
+                complejoSelect.style.display = '';
+                complejoSelect.value = complejoEncontrado.id;
+                complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
+                complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                console.log('🚀 Complejo ULTRA AGRESIVO:', complejo, 'ID:', complejoEncontrado.id);
+            }, 100);
+        }
+    }
+    
+    console.log('🚀 PRE-RELLENADO ULTRA AGRESIVO COMPLETADO');
+}
+
 // Función para pre-rellenar campos desde URL
 async function preRellenarDesdeURL() {
     console.log('🔍 Iniciando preRellenarDesdeURL...');
     const { ciudad, complejo } = leerParametrosURL();
     
-    // Detectar si es móvil y usar función específica
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-        console.log('📱 Dispositivo móvil detectado, usando pre-rellenado móvil');
-        preRellenarMovil(ciudad, complejo);
+    if (!ciudad && !complejo) {
+        console.log('🔍 No hay parámetros URL, saltando pre-rellenado');
         return;
     }
     
-    console.log('💻 Dispositivo PC detectado, usando pre-rellenado PC mejorado');
-    preRellenarPC(ciudad, complejo);
-    return;
+    console.log('🚀 SOLUCIÓN INGENIOSA: Sistema de diagnóstico automático');
+    
+    // Método 1: Intento rápido y simple
+    setTimeout(() => {
+        console.log('🚀 Método 1: Intento rápido');
+        preRellenarSimple(ciudad, complejo);
+    }, 500);
+    
+    // Método 2: Intento con más tiempo
+    setTimeout(() => {
+        console.log('🚀 Método 2: Intento con más tiempo');
+        preRellenarSimple(ciudad, complejo);
+    }, 2000);
+    
+    // Método 3: Intento final ultra agresivo
+    setTimeout(() => {
+        console.log('🚀 Método 3: Intento final ultra agresivo');
+        preRellenarUltraAgresivo(ciudad, complejo);
+    }, 4000);
     
     if (ciudad) {
         console.log('🏙️ Pre-rellenando ciudad:', ciudad);
@@ -2201,231 +2290,18 @@ function scrollSuave(elemento) {
 
 // Función específica para hacer scroll suave a la sección "Reserva tu Cancha" - Compatible con móviles
 function scrollToStep4() {
-    console.log('=== FUNCIÓN SCROLLTOSTEP4 LLAMADA ===');
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('📱 Es móvil:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    console.log('🚀 SCROLL SIMPLE INICIADO');
     
-    // Hacer scroll a la sección "Reserva tu Cancha" en lugar del paso 4
+    // Método simple y directo
     const reservarSection = document.getElementById('reservar');
-    console.log('Elemento reservar encontrado:', reservarSection);
-    
     if (reservarSection) {
-        console.log('Intentando hacer scroll suave a "Reserva tu Cancha"');
-        
-        // Calcular la posición del elemento con offset para el navbar
-        const elementPosition = reservarSection.offsetTop;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const offsetPosition = elementPosition - (isMobile ? 40 : 60); // Menos offset en móviles
-        
-        console.log('Posición del elemento reservar:', elementPosition);
-        console.log('Posición con offset:', offsetPosition);
-        console.log('Posición actual del scroll:', window.pageYOffset);
-        
-        try {
-            // Método 1: scrollIntoView moderno con configuración ultra suave
-            console.log('Usando scrollIntoView ultra suave para sección reservar');
-            reservarSection.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start' // Mostrar desde el inicio de la sección
-            });
-            
-            // Método 2: scrollTo como respaldo con timing ultra suave
-            setTimeout(() => {
-                console.log('Aplicando scrollTo ultra suave como respaldo...');
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: 'smooth'
-                });
-            }, isMobile ? 600 : 400); // Timing más largo en móviles
-            
-            // Método 3: Fallback adicional para móviles
-            if (isMobile) {
-                setTimeout(() => {
-                    console.log('Aplicando fallback adicional para móviles...');
-                    // Forzar scroll en móviles con método alternativo
-                    const currentScroll = window.pageYOffset;
-                    const targetScroll = offsetPosition;
-                    const distance = targetScroll - currentScroll;
-                    const duration = 800; // Más lento en móviles
-                    
-                    let startTime = null;
-                    function animateScroll(currentTime) {
-                        if (startTime === null) startTime = currentTime;
-                        const timeElapsed = currentTime - startTime;
-                        const progress = Math.min(timeElapsed / duration, 1);
-                        
-                        // Función de easing suave
-                        const ease = progress < 0.5 
-                            ? 2 * progress * progress 
-                            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                        
-                        window.scrollTo(0, currentScroll + (distance * ease));
-                        
-                        if (progress < 1) {
-                            requestAnimationFrame(animateScroll);
-                        }
-                    }
-                    requestAnimationFrame(animateScroll);
-                }, 1000);
-            }
-            
-            console.log('Scroll suave a "Reserva tu Cancha" completado exitosamente');
-            
-        } catch (error) {
-            console.error('Error durante el scroll suave:', error);
-            // Fallback: scroll simple
-            console.log('Usando fallback de scroll simple');
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-            });
-        }
-    } else {
-        console.error('No se encontró la sección reservar');
-        // Fallback: scroll al paso 4
-        const step4Element = document.getElementById('step4');
-        if (step4Element) {
-            console.log('Usando fallback: scroll a paso 4');
-            step4Element.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-    
-    console.log('=== FIN FUNCIÓN SCROLLTOSTEP4 ===');
-}
-
-// Mejorar la función scrollToReservar con fallback
-function scrollToReservar() {
-    console.log('=== FUNCIÓN SCROLLTORESERVAR LLAMADA ===');
-    console.log('Timestamp:', new Date().toISOString());
-    
-    const reservarSection = document.getElementById('reservar');
-    console.log('Elemento reservar encontrado:', reservarSection);
-    console.log('Elemento reservar HTML:', reservarSection ? reservarSection.outerHTML.substring(0, 100) + '...' : 'NO ENCONTRADO');
-    
-    if (reservarSection) {
-        console.log('Intentando hacer scroll a la sección de reserva');
-        
-        // Calcular la posición del elemento
-        const elementPosition = reservarSection.offsetTop;
-        const offsetPosition = elementPosition - 100; // 100px de offset para el navbar
-        
-        console.log('Posición del elemento:', elementPosition);
-        console.log('Posición con offset:', offsetPosition);
-        console.log('Posición actual del scroll:', window.pageYOffset);
-        
-        try {
-            // Intentar primero con scrollIntoView moderno
-            if ('scrollBehavior' in document.documentElement.style) {
-                console.log('Usando scrollIntoView moderno');
-                reservarSection.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            } else {
-                // Navegadores antiguos
-                console.log('Usando scroll suave alternativo');
-                scrollSuave(reservarSection);
-            }
-            
-            console.log('Scroll completado exitosamente');
-            
-            // Verificar que el scroll funcionó
-            setTimeout(() => {
-                console.log('Posición después del scroll:', window.pageYOffset);
-            }, 1000);
-            
-        } catch (error) {
-            console.error('Error durante el scroll:', error);
-            // Fallback: scroll simple
-            console.log('Usando fallback de scroll simple');
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-            });
-        }
-    } else {
-        console.error('No se encontró la sección de reserva');
-        // Fallback: buscar por clase o intentar scroll manual
-        const sections = document.querySelectorAll('section');
-        console.log('Secciones encontradas:', sections.length);
-        
-        sections.forEach((section, index) => {
-            console.log(`Sección ${index}:`, section.id, section.className);
+        console.log('🚀 Haciendo scroll simple a "Reserva tu Cancha"');
+        reservarSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
         });
-        
-        if (sections.length > 1) {
-            // Asumir que la segunda sección es la de reserva
-            console.log('Usando segunda sección como fallback');
-            sections[1].scrollIntoView({ behavior: 'smooth' });
-        }
+        console.log('✅ Scroll completado');
+    } else {
+        console.log('❌ No se encontró elemento reservar');
     }
-    
-    console.log('=== FIN FUNCIÓN SCROLLTORESERVAR ===');
-}
-
-// Funciones de validación
-function validarRUT(rut) {
-    // Limpiar el RUT (quitar puntos, guiones y espacios)
-    rut = rut.replace(/[.\-\s]/g, '');
-    
-    // Verificar que tenga al menos 8 caracteres
-    if (rut.length < 8) return false;
-    
-    // Separar número y dígito verificador
-    const numero = rut.slice(0, -1);
-    const dv = rut.slice(-1).toUpperCase();
-    
-    // Verificar que el número solo contenga dígitos
-    if (!/^\d+$/.test(numero)) return false;
-    
-    // Verificar que el dígito verificador sea válido
-    if (!/^[0-9K]$/.test(dv)) return false;
-    
-    // Calcular dígito verificador
-    let suma = 0;
-    let multiplicador = 2;
-    
-    for (let i = numero.length - 1; i >= 0; i--) {
-        suma += parseInt(numero[i]) * multiplicador;
-        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
-    }
-    
-    const resto = suma % 11;
-    const dvCalculado = resto === 0 ? '0' : resto === 1 ? 'K' : (11 - resto).toString();
-    
-    return dv === dvCalculado;
-}
-
-function formatearRUT(rut) {
-    // Limpiar el RUT (quitar puntos, guiones y espacios)
-    rut = rut.replace(/[.\-\s]/g, '');
-    
-    // Si tiene menos de 2 caracteres, no formatear
-    if (rut.length < 2) return rut;
-    
-    // Si tiene menos de 8 caracteres, solo agregar puntos
-    if (rut.length < 8) {
-        return rut.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    }
-    
-    // Si tiene 8 o más caracteres, formatear completamente
-    const numero = rut.slice(0, -1);
-    const dv = rut.slice(-1).toUpperCase();
-    
-    const numeroFormateado = numero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    
-    return `${numeroFormateado}-${dv}`;
-}
-
-function validarEmail(email) {
-    // Expresión regular para validar email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
-    // Verificar que no esté vacío y que cumpla el formato
-    return email.trim() !== '' && emailRegex.test(email.trim());
-}
-
-function validarNombre(nombre) {
-    // Solo verificar que no esté vacío
-    return nombre && nombre.trim() !== '';
 }
