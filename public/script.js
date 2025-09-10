@@ -345,6 +345,55 @@ function preRellenarPC(ciudad, complejo) {
     console.log('💻 === PRE-RELLENADO PC COMPLETADO ===');
 }
 
+// SOLUCIÓN MÓVIL: Función directa e inmediata para móvil
+function preRellenarMovilDirecto(ciudad, complejo) {
+    console.log('📱 PRE-RELLENADO MÓVIL DIRECTO INICIADO');
+    
+    // Pre-rellenar ciudad de forma directa
+    if (ciudad) {
+        const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+        if (ciudadEncontrada) {
+            const ciudadSelect = document.getElementById('ciudadSelect');
+            if (ciudadSelect) {
+                console.log('📱 Asignando ciudad directamente:', ciudad, 'ID:', ciudadEncontrada.id);
+                
+                // Asignación directa sin timeouts
+                ciudadSelect.value = ciudadEncontrada.id;
+                ciudadSelect.selectedIndex = Array.from(ciudadSelect.options).findIndex(option => option.value == ciudadEncontrada.id);
+                
+                // Eventos inmediatos
+                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                console.log('📱 Ciudad asignada directamente:', ciudadSelect.value);
+                
+                // Cargar complejos inmediatamente
+                if (complejo) {
+                    const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                    if (complejoEncontrado) {
+                        const complejoSelect = document.getElementById('complejoSelect');
+                        if (complejoSelect) {
+                            console.log('📱 Asignando complejo directamente:', complejo, 'ID:', complejoEncontrado.id);
+                            
+                            // Asignación directa sin timeouts
+                            complejoSelect.value = complejoEncontrado.id;
+                            complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
+                            
+                            // Eventos inmediatos
+                            complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            console.log('📱 Complejo asignado directamente:', complejoSelect.value);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    console.log('📱 PRE-RELLENADO MÓVIL DIRECTO COMPLETADO');
+}
+
 // SOLUCIÓN MÓVIL: Función ultra agresiva específica para móvil
 function preRellenarMovilAgresivo(ciudad, complejo) {
     console.log('📱 PRE-RELLENADO MÓVIL AGRESIVO INICIADO');
@@ -510,25 +559,23 @@ async function preRellenarDesdeURL() {
     console.log('📱 Es móvil:', isMobile);
     
     if (isMobile) {
-        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema ultra agresivo');
+        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema directo e inmediato');
         
-        // Método 1: Intento inmediato para móvil
-        setTimeout(() => {
-            console.log('🚀 Móvil - Método 1: Intento inmediato');
-            preRellenarMovilAgresivo(ciudad, complejo);
-        }, 50);
+        // Método 1: Intento inmediato SIN timeout
+        console.log('🚀 Móvil - Método 1: Intento inmediato');
+        preRellenarMovilDirecto(ciudad, complejo);
         
         // Método 2: Intento rápido para móvil
         setTimeout(() => {
             console.log('🚀 Móvil - Método 2: Intento rápido');
-            preRellenarMovilAgresivo(ciudad, complejo);
-        }, 500);
+            preRellenarMovilDirecto(ciudad, complejo);
+        }, 300);
         
         // Método 3: Último recurso para móvil
         setTimeout(() => {
             console.log('🚀 Móvil - Método 3: Último recurso');
             preRellenarUltraAgresivo(ciudad, complejo);
-        }, 1000);
+        }, 800);
     } else {
         console.log('🚀 OPTIMIZACIÓN PC: Sistema estándar');
         
@@ -1565,11 +1612,21 @@ function configurarEventListeners() {
 
 // Funciones de navegación
 function mostrarPaso(numero) {
+    // Detectar si es móvil para optimizar
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     for (let i = 1; i <= 4; i++) {
         const paso = document.getElementById(`step${i}`);
         if (i <= numero) {
             paso.style.display = 'block';
-            paso.classList.add('fade-in');
+            if (isMobile) {
+                // En móvil, mostrar inmediatamente sin animaciones
+                paso.style.opacity = '1';
+                paso.style.transition = 'none';
+            } else {
+                // En PC, usar animaciones
+                paso.classList.add('fade-in');
+            }
         } else {
             paso.style.display = 'none';
         }
@@ -2405,13 +2462,13 @@ function scrollToStep4() {
         console.log('🚀 Haciendo scroll simple a "Reserva tu Cancha"');
         
         if (isMobile) {
-            // Scroll más rápido para móvil
+            // Scroll instantáneo para móvil
             reservarSection.scrollIntoView({ 
-                behavior: 'smooth', 
+                behavior: 'auto', 
                 block: 'start' 
             });
         } else {
-            // Scroll estándar para PC
+            // Scroll suave para PC
             reservarSection.scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'start' 
