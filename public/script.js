@@ -1817,9 +1817,14 @@ function configurarEventListeners() {
             mostrarPaso(4);
             
             // NUEVA LÓGICA: Cargar canchas automáticamente cuando se selecciona tipo de cancha
+            console.log('🔍 DEBUG: Verificando condiciones para cargar canchas...');
+            console.log('🔍 DEBUG: complejoSeleccionado:', complejoSeleccionado);
+            console.log('🔍 DEBUG: tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
+            
             if (complejoSeleccionado && tipoCanchaSeleccionado) {
                 console.log('⚽ Cargando canchas automáticamente para verificar disponibilidad...');
                 setTimeout(async () => {
+                    console.log('🚀 Ejecutando cargarCanchas...');
                     await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
                     // Verificar disponibilidad inmediatamente después de cargar canchas
                     const fecha = document.getElementById('fechaSelect').value;
@@ -1828,6 +1833,10 @@ function configurarEventListeners() {
                         await actualizarHorariosConDisponibilidad();
                     }
                 }, 100);
+            } else {
+                console.log('❌ No se pueden cargar canchas - condiciones no cumplidas');
+                console.log('❌ complejoSeleccionado existe:', !!complejoSeleccionado);
+                console.log('❌ tipoCanchaSeleccionado existe:', !!tipoCanchaSeleccionado);
             }
             
             // Verificar que el paso 4 se mostró
@@ -2381,10 +2390,23 @@ async function cargarComplejos(ciudadId) {
 }
 
 async function cargarCanchas(complejoId, tipo) {
+    console.log('🏟️ === CARGAR CANCHAS INICIADO ===');
+    console.log('🏟️ Complejo ID:', complejoId);
+    console.log('🏟️ Tipo:', tipo);
+    console.log('🏟️ API_BASE:', API_BASE);
+    
     try {
-        const response = await fetch(`${API_BASE}/canchas/${complejoId}/${tipo}`);
+        const url = `${API_BASE}/canchas/${complejoId}/${tipo}`;
+        console.log('🏟️ URL de la petición:', url);
+        
+        const response = await fetch(url);
+        console.log('🏟️ Response status:', response.status);
+        
         canchas = await response.json();
+        console.log('🏟️ Canchas recibidas:', canchas);
+        
         renderizarCanchas();
+        console.log('🏟️ Canchas renderizadas');
         
         // Actualizar horarios con disponibilidad si hay fecha seleccionada
         const fecha = document.getElementById('fechaSelect').value;
@@ -2392,7 +2414,10 @@ async function cargarCanchas(complejoId, tipo) {
             console.log('🕐 Actualizando horarios con disponibilidad optimizada...');
             await actualizarHorariosConDisponibilidad();
         }
+        
+        console.log('🏟️ === CARGAR CANCHAS COMPLETADO ===');
     } catch (error) {
+        console.error('❌ Error en cargarCanchas:', error);
         mostrarNotificacion('Error al cargar las canchas', 'danger');
     }
 }
