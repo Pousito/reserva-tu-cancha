@@ -84,14 +84,8 @@ async function preRellenarDesdeURL() {
                             complejoSelect.dispatchEvent(new Event('change'));
                             console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
                             
-                            // Cargar canchas automáticamente para MagnaSports (fútbol)
-                            if (complejoEncontrado.nombre === 'MagnaSports') {
-                                console.log('🔄 Cargando canchas automáticamente para MagnaSports...');
-                                setTimeout(async () => {
-                                    await cargarCanchas(complejoEncontrado.id, 'futbol');
-                                    console.log('✅ Canchas cargadas automáticamente');
-                                }, 500);
-                            }
+                            // NO cargar canchas automáticamente - solo se cargan cuando se selecciona una hora
+                            console.log('✅ Complejo pre-rellenado, canchas se cargarán al seleccionar hora');
                         } else {
                             console.error('❌ Elemento complejo no encontrado');
                         }
@@ -155,10 +149,10 @@ document.addEventListener('DOMContentLoaded', async function() {
              console.log('✅ Paso 4 mostrado');
              
              // Scroll suave y único
-             setTimeout(() => {
-                 console.log('🔄 Ejecutando scroll al paso 4...');
-                 scrollToStep4();
-             }, 500); // Un solo delay para que el DOM se actualice
+        setTimeout(() => {
+            console.log('🔄 Ejecutando scroll ultra suave al paso 4...');
+            scrollToStep4();
+        }, 800); // Delay más largo para scroll más suave
             
         } else {
             console.log('🔍 No hay parámetros URL, no se ejecutará scroll automático');
@@ -1686,75 +1680,63 @@ function scrollSuave(elemento) {
     requestAnimationFrame(animation);
 }
 
-// Función específica para hacer scroll al paso 4 - Versión robusta para producción
+// Función específica para hacer scroll suave a la sección "Reserva tu Cancha"
 function scrollToStep4() {
     console.log('=== FUNCIÓN SCROLLTOSTEP4 LLAMADA ===');
     console.log('Timestamp:', new Date().toISOString());
     
-    const step4Element = document.getElementById('step4');
-    console.log('Elemento step4 encontrado:', step4Element);
+    // Hacer scroll a la sección "Reserva tu Cancha" en lugar del paso 4
+    const reservarSection = document.getElementById('reservar');
+    console.log('Elemento reservar encontrado:', reservarSection);
     
-    if (step4Element) {
-        console.log('Intentando hacer scroll al paso 4');
+    if (reservarSection) {
+        console.log('Intentando hacer scroll suave a "Reserva tu Cancha"');
         
         // Calcular la posición del elemento con offset para el navbar
-        const elementPosition = step4Element.offsetTop;
-        const offsetPosition = elementPosition - 120; // 120px de offset para el navbar
+        const elementPosition = reservarSection.offsetTop;
+        const offsetPosition = elementPosition - 60; // 60px de offset para el navbar (ultra suave)
         
-        console.log('Posición del elemento:', elementPosition);
+        console.log('Posición del elemento reservar:', elementPosition);
         console.log('Posición con offset:', offsetPosition);
         console.log('Posición actual del scroll:', window.pageYOffset);
         
         try {
-            // Método 1: scrollIntoView moderno
-            console.log('Usando scrollIntoView moderno para paso 4');
-            step4Element.scrollIntoView({ 
+            // Método 1: scrollIntoView moderno con configuración ultra suave
+            console.log('Usando scrollIntoView ultra suave para sección reservar');
+            reservarSection.scrollIntoView({ 
                 behavior: 'smooth',
-                block: 'center'
+                block: 'start' // Mostrar desde el inicio de la sección
             });
             
-            // Método 2: scrollTo como respaldo inmediato
+            // Método 2: scrollTo como respaldo con timing ultra suave
             setTimeout(() => {
-                console.log('Aplicando scrollTo como respaldo...');
+                console.log('Aplicando scrollTo ultra suave como respaldo...');
                 window.scrollTo({
                     top: offsetPosition,
                     behavior: 'smooth'
                 });
-            }, 100);
+            }, 400); // Timing más suave y lento
             
-            // Método 3: Verificación y corrección final
-            setTimeout(() => {
-                const currentPosition = window.pageYOffset;
-                console.log('Posición después del scroll al paso 4:', currentPosition);
-                
-                // Si no se movió lo suficiente, forzar scroll
-                if (Math.abs(currentPosition - offsetPosition) > 50) {
-                    console.log('Scroll insuficiente, forzando scroll final...');
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            }, 1000);
+            // NO hacer verificación final para evitar el "sube y baja"
             
-            console.log('Scroll al paso 4 completado exitosamente');
+            console.log('Scroll suave a "Reserva tu Cancha" completado exitosamente');
             
         } catch (error) {
-            console.error('Error durante el scroll al paso 4:', error);
+            console.error('Error durante el scroll suave:', error);
             // Fallback: scroll simple
-            console.log('Usando fallback de scroll simple para paso 4');
+            console.log('Usando fallback de scroll simple');
             window.scrollTo({
                 top: offsetPosition,
                 behavior: 'smooth'
             });
         }
     } else {
-        console.error('No se encontró el paso 4');
-        // Fallback: scroll a la sección de reservas
-        const reservarSection = document.getElementById('reservar');
-        if (reservarSection) {
-            console.log('Usando fallback: scroll a sección de reservas');
-            reservarSection.scrollIntoView({ behavior: 'smooth' });
+        console.error('No se encontró la sección reservar');
+        // Fallback: scroll al paso 4
+        const step4Element = document.getElementById('step4');
+        if (step4Element) {
+            console.log('Usando fallback: scroll a paso 4');
+            step4Element.scrollIntoView({ behavior: 'smooth' });
         }
     }
     
