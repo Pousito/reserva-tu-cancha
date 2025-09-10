@@ -345,6 +345,75 @@ function preRellenarPC(ciudad, complejo) {
     console.log('💻 === PRE-RELLENADO PC COMPLETADO ===');
 }
 
+// SOLUCIÓN MÓVIL: Función ultra agresiva específica para móvil
+function preRellenarMovilAgresivo(ciudad, complejo) {
+    console.log('📱 PRE-RELLENADO MÓVIL AGRESIVO INICIADO');
+    
+    // Pre-rellenar ciudad con múltiples métodos
+    if (ciudad) {
+        const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
+        if (ciudadEncontrada) {
+            const ciudadSelect = document.getElementById('ciudadSelect');
+            if (ciudadSelect) {
+                console.log('📱 Asignando ciudad en móvil:', ciudad, 'ID:', ciudadEncontrada.id);
+                
+                // Método 1: Asignación directa
+                ciudadSelect.value = ciudadEncontrada.id;
+                ciudadSelect.selectedIndex = Array.from(ciudadSelect.options).findIndex(option => option.value == ciudadEncontrada.id);
+                
+                // Método 2: Forzar re-render
+                ciudadSelect.style.display = 'none';
+                setTimeout(() => {
+                    ciudadSelect.style.display = '';
+                    ciudadSelect.value = ciudadEncontrada.id;
+                    ciudadSelect.selectedIndex = Array.from(ciudadSelect.options).findIndex(option => option.value == ciudadEncontrada.id);
+                }, 10);
+                
+                // Método 3: Eventos múltiples
+                ciudadSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                ciudadSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                ciudadSelect.dispatchEvent(new Event('blur', { bubbles: true }));
+                
+                console.log('📱 Ciudad asignada en móvil:', ciudadSelect.value);
+                
+                // Cargar complejos después de seleccionar ciudad (timing ultra rápido para móvil)
+                setTimeout(() => {
+                    if (complejo) {
+                        const complejoEncontrado = complejos.find(c => c.nombre === complejo);
+                        if (complejoEncontrado) {
+                            const complejoSelect = document.getElementById('complejoSelect');
+                            if (complejoSelect) {
+                                console.log('📱 Asignando complejo en móvil:', complejo, 'ID:', complejoEncontrado.id);
+                                
+                                // Método 1: Asignación directa
+                                complejoSelect.value = complejoEncontrado.id;
+                                complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
+                                
+                                // Método 2: Forzar re-render
+                                complejoSelect.style.display = 'none';
+                                setTimeout(() => {
+                                    complejoSelect.style.display = '';
+                                    complejoSelect.value = complejoEncontrado.id;
+                                    complejoSelect.selectedIndex = Array.from(complejoSelect.options).findIndex(option => option.value == complejoEncontrado.id);
+                                }, 10);
+                                
+                                // Método 3: Eventos múltiples
+                                complejoSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                complejoSelect.dispatchEvent(new Event('input', { bubbles: true }));
+                                complejoSelect.dispatchEvent(new Event('blur', { bubbles: true }));
+                                
+                                console.log('📱 Complejo asignado en móvil:', complejoSelect.value);
+                            }
+                        }
+                    }
+                }, 200); // Timing ultra rápido para móvil
+            }
+        }
+    }
+    
+    console.log('📱 PRE-RELLENADO MÓVIL AGRESIVO COMPLETADO');
+}
+
 // SOLUCIÓN INGENIOSA: Función simple y robusta
 function preRellenarSimple(ciudad, complejo) {
     console.log('🚀 PRE-RELLENADO SIMPLE INICIADO');
@@ -441,25 +510,25 @@ async function preRellenarDesdeURL() {
     console.log('📱 Es móvil:', isMobile);
     
     if (isMobile) {
-        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema rápido y directo');
+        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema ultra agresivo');
         
         // Método 1: Intento inmediato para móvil
         setTimeout(() => {
             console.log('🚀 Móvil - Método 1: Intento inmediato');
-            preRellenarSimple(ciudad, complejo);
-        }, 100);
+            preRellenarMovilAgresivo(ciudad, complejo);
+        }, 50);
         
         // Método 2: Intento rápido para móvil
         setTimeout(() => {
             console.log('🚀 Móvil - Método 2: Intento rápido');
-            preRellenarSimple(ciudad, complejo);
-        }, 800);
+            preRellenarMovilAgresivo(ciudad, complejo);
+        }, 500);
         
         // Método 3: Último recurso para móvil
         setTimeout(() => {
             console.log('🚀 Móvil - Método 3: Último recurso');
             preRellenarUltraAgresivo(ciudad, complejo);
-        }, 1500);
+        }, 1000);
     } else {
         console.log('🚀 OPTIMIZACIÓN PC: Sistema estándar');
         
