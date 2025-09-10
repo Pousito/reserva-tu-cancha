@@ -1604,6 +1604,15 @@ function configurarEventListeners() {
     if (fechaSelect) {
         fechaSelect.addEventListener('change', function() {
             verificarDisponibilidadTiempoReal();
+            
+            // NUEVA LÓGICA: Cargar canchas automáticamente si hay complejo y tipo seleccionado
+            if (complejoSeleccionado && tipoCanchaSeleccionado) {
+                console.log('📅 Fecha seleccionada, cargando canchas automáticamente...');
+                setTimeout(() => {
+                    cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                }, 200);
+            }
+            
             // Cerrar el calendario después de seleccionar una fecha
             setTimeout(() => {
                 fechaSelect.blur();
@@ -1803,6 +1812,14 @@ function configurarEventListeners() {
             console.log('🎯 Tipo de cancha seleccionado:', tipoCanchaSeleccionado);
             console.log('🎯 Llamando a mostrarPaso(4)...');
             mostrarPaso(4);
+            
+            // NUEVA LÓGICA: Cargar canchas automáticamente cuando se selecciona tipo de cancha
+            if (complejoSeleccionado && tipoCanchaSeleccionado) {
+                console.log('⚽ Cargando canchas automáticamente para verificar disponibilidad...');
+                setTimeout(() => {
+                    cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado);
+                }, 100);
+            }
             
             // Verificar que el paso 4 se mostró
             setTimeout(() => {
@@ -2363,6 +2380,7 @@ async function cargarCanchas(complejoId, tipo) {
         // Actualizar horarios con disponibilidad si hay fecha seleccionada
         const fecha = document.getElementById('fechaSelect').value;
         if (fecha && complejoSeleccionado) {
+            console.log('🕐 Actualizando horarios con disponibilidad optimizada...');
             await actualizarHorariosConDisponibilidad();
         }
     } catch (error) {
