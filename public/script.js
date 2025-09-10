@@ -106,8 +106,16 @@ function leerParametrosURL() {
             complejo = urlParams.get('complejo');
             
             // Decodificar parámetros URL
-            if (ciudad) ciudad = decodeURIComponent(ciudad);
-            if (complejo) complejo = decodeURIComponent(complejo);
+            if (ciudad) {
+                const ciudadOriginal = ciudad;
+                ciudad = decodeURIComponent(ciudad);
+                console.log('📱 Ciudad decodificada:', ciudadOriginal, '→', ciudad);
+            }
+            if (complejo) {
+                const complejoOriginal = complejo;
+                complejo = decodeURIComponent(complejo);
+                console.log('📱 Complejo decodificado:', complejoOriginal, '→', complejo);
+            }
             
             console.log('📱 URLSearchParams resultado:', { ciudad, complejo });
         }
@@ -1161,7 +1169,7 @@ async function preRellenarDesdeURLMejorado() {
 // Inicialización
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== INICIALIZACIÓN DE LA APLICACIÓN ===');
-    console.log('🚀 VERSIÓN CON DEBUGGING MEJORADO - ' + new Date().toISOString());
+    console.log('🚀 VERSIÓN CON DEBUGGING MEJORADO Y FIX ENCODING - ' + new Date().toISOString());
     console.log('DOM cargado, inicializando aplicación');
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
