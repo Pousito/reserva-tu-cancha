@@ -333,23 +333,44 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       fechaCondition = 'r.fecha = $2';
     }
     
-    // Para SQLite, usar ? en lugar de $1, $2
-    const disponibilidad = await db.query(`
-      SELECT 
-        c.id as cancha_id, 
-        c.nombre as cancha_nombre,
-        c.tipo as cancha_tipo,
-        r.hora_inicio, 
-        r.hora_fin, 
-        r.estado,
-        r.codigo_reserva
-      FROM canchas c
-      LEFT JOIN reservas r ON c.id = r.cancha_id 
-        AND r.fecha = ?
-        AND r.estado IN ('confirmada', 'pendiente')
-      WHERE c.complejo_id = ?
-      ORDER BY c.id, r.hora_inicio
-    `, [fecha, complejoId]);
+    // Usar parámetros correctos según el tipo de base de datos
+    let disponibilidad;
+    if (dbInfo.type === 'PostgreSQL') {
+      disponibilidad = await db.query(`
+        SELECT 
+          c.id as cancha_id, 
+          c.nombre as cancha_nombre,
+          c.tipo as cancha_tipo,
+          r.hora_inicio, 
+          r.hora_fin, 
+          r.estado,
+          r.codigo_reserva
+        FROM canchas c
+        LEFT JOIN reservas r ON c.id = r.cancha_id 
+          AND DATE(r.fecha) = $2
+          AND r.estado IN ('confirmada', 'pendiente')
+        WHERE c.complejo_id = $1
+        ORDER BY c.id, r.hora_inicio
+      `, [complejoId, fecha]);
+    } else {
+      // SQLite
+      disponibilidad = await db.query(`
+        SELECT 
+          c.id as cancha_id, 
+          c.nombre as cancha_nombre,
+          c.tipo as cancha_tipo,
+          r.hora_inicio, 
+          r.hora_fin, 
+          r.estado,
+          r.codigo_reserva
+        FROM canchas c
+        LEFT JOIN reservas r ON c.id = r.cancha_id 
+          AND r.fecha = ?
+          AND r.estado IN ('confirmada', 'pendiente')
+        WHERE c.complejo_id = ?
+        ORDER BY c.id, r.hora_inicio
+      `, [fecha, complejoId]);
+    }
     
     // Procesar los datos para agrupar por cancha
     const resultado = {};
