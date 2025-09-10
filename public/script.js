@@ -149,12 +149,12 @@ document.addEventListener('DOMContentLoaded', async function() {
          if (ciudad || complejo) {
              console.log('🔄 Haciendo scroll automático al paso 4...');
              
-             // Mostrar paso 4 (que contiene el botón "Ver disponibilidad")
+             // Mostrar paso 4 (Ver disponibilidad) inmediatamente
              console.log('🔄 Mostrando paso 4...');
              mostrarPaso(4);
              console.log('✅ Paso 4 mostrado');
              
-             // Scroll suave al paso 4
+             // Scroll suave y único
              setTimeout(() => {
                  console.log('🔄 Ejecutando scroll al paso 4...');
                  scrollToStep4();
@@ -1686,7 +1686,7 @@ function scrollSuave(elemento) {
     requestAnimationFrame(animation);
 }
 
-// Función específica para hacer scroll al paso 4
+// Función específica para hacer scroll al paso 4 - Versión robusta para producción
 function scrollToStep4() {
     console.log('=== FUNCIÓN SCROLLTOSTEP4 LLAMADA ===');
     console.log('Timestamp:', new Date().toISOString());
@@ -1697,27 +1697,52 @@ function scrollToStep4() {
     if (step4Element) {
         console.log('Intentando hacer scroll al paso 4');
         
+        // Calcular la posición del elemento con offset para el navbar
+        const elementPosition = step4Element.offsetTop;
+        const offsetPosition = elementPosition - 120; // 120px de offset para el navbar
+        
+        console.log('Posición del elemento:', elementPosition);
+        console.log('Posición con offset:', offsetPosition);
+        console.log('Posición actual del scroll:', window.pageYOffset);
+        
         try {
-            // Usar scrollIntoView moderno
+            // Método 1: scrollIntoView moderno
             console.log('Usando scrollIntoView moderno para paso 4');
             step4Element.scrollIntoView({ 
                 behavior: 'smooth',
                 block: 'center'
             });
             
-            console.log('Scroll al paso 4 completado exitosamente');
-            
-            // Verificar que el scroll funcionó
+            // Método 2: scrollTo como respaldo inmediato
             setTimeout(() => {
-                console.log('Posición después del scroll al paso 4:', window.pageYOffset);
+                console.log('Aplicando scrollTo como respaldo...');
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }, 100);
+            
+            // Método 3: Verificación y corrección final
+            setTimeout(() => {
+                const currentPosition = window.pageYOffset;
+                console.log('Posición después del scroll al paso 4:', currentPosition);
+                
+                // Si no se movió lo suficiente, forzar scroll
+                if (Math.abs(currentPosition - offsetPosition) > 50) {
+                    console.log('Scroll insuficiente, forzando scroll final...');
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
             }, 1000);
+            
+            console.log('Scroll al paso 4 completado exitosamente');
             
         } catch (error) {
             console.error('Error durante el scroll al paso 4:', error);
             // Fallback: scroll simple
             console.log('Usando fallback de scroll simple para paso 4');
-            const elementPosition = step4Element.offsetTop;
-            const offsetPosition = elementPosition - 120; // 120px de offset para el navbar
             window.scrollTo({
                 top: offsetPosition,
                 behavior: 'smooth'
