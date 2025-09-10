@@ -1089,7 +1089,7 @@ async function preRellenarDesdeURLMejorado() {
                                     const futbolRadio = document.getElementById('futbol');
                                     if (futbolRadio) {
                                         futbolRadio.checked = true;
-                                        tipoCanchaSeleccionado = 'futbol';
+                                        tipoCanchaSeleccionado = 'Fútbol';
                                         
                                         // Ocultar opción de padel para MagnaSports
                                         const padelRadio = document.getElementById('padel');
@@ -1690,7 +1690,7 @@ function configurarEventListeners() {
                 console.log('⚽ Radio button fútbol encontrado:', futbolRadio);
                 
                 futbolRadio.checked = true;
-                tipoCanchaSeleccionado = 'futbol';
+                tipoCanchaSeleccionado = 'Fútbol';
                 console.log('⚽ Fútbol seleccionado, tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
                 
                 // Ocultar opción de padel
@@ -2815,7 +2815,7 @@ async function renderizarCanchasConDisponibilidad() {
             canchaCard.dataset.canchaId = cancha.id;
             canchaCard.dataset.precio = cancha.precio_hora;
             
-            const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+            const iconClass = tipoCanchaSeleccionado === 'Fútbol' ? 'fa-futbol' : 'fa-table-tennis';
             
             // Verificar disponibilidad si hay fecha y hora
             let estaDisponible = true;
@@ -2884,7 +2884,7 @@ async function renderizarCanchasConDisponibilidad() {
             canchaCard.dataset.canchaId = cancha.id;
             canchaCard.dataset.precio = cancha.precio_hora;
             
-            const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+            const iconClass = tipoCanchaSeleccionado === 'Fútbol' ? 'fa-futbol' : 'fa-table-tennis';
             
             // Verificar disponibilidad si hay fecha y hora
             let estaDisponible = true;
@@ -2980,7 +2980,7 @@ async function renderizarCanchasConDisponibilidad() {
              canchaCard.dataset.canchaId = cancha.id;
              canchaCard.dataset.precio = cancha.precio_hora;
              
-             const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+             const iconClass = tipoCanchaSeleccionado === 'Fútbol' ? 'fa-futbol' : 'fa-table-tennis';
              
              canchaCard.innerHTML = `
                  <div class="cancha-icon">
@@ -3014,7 +3014,7 @@ async function renderizarCanchasConDisponibilidad() {
              canchaCard.dataset.canchaId = cancha.id;
              canchaCard.dataset.precio = cancha.precio_hora;
              
-             const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+             const iconClass = tipoCanchaSeleccionado === 'Fútbol' ? 'fa-futbol' : 'fa-table-tennis';
              
              canchaCard.innerHTML = `
                  <div class="cancha-icon">
