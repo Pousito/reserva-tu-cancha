@@ -3491,6 +3491,38 @@ async function confirmarReserva() {
                     codigo_reserva: result.codigo_reserva
                 };
                 
+                // NUEVO: Enviar email de confirmación
+                try {
+                    console.log('📧 Enviando email de confirmación...');
+                    const emailResponse = await fetch(`${API_BASE}/send-confirmation-email`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            codigo_reserva: result.codigo_reserva,
+                            email_cliente: formData.email_cliente,
+                            nombre_cliente: formData.nombre_cliente,
+                            complejo: complejoSeleccionado.nombre,
+                            cancha: canchaSeleccionada.nombre,
+                            fecha: formData.fecha,
+                            hora_inicio: formData.hora_inicio,
+                            hora_fin: formData.hora_fin,
+                            precio_total: formData.precio_total
+                        })
+                    });
+                    
+                    const emailResult = await emailResponse.json();
+                    if (emailResult.success) {
+                        console.log('✅ Email de confirmación enviado exitosamente');
+                    } else {
+                        console.log('⚠️ Email no enviado, pero reserva creada:', emailResult.error);
+                    }
+                } catch (emailError) {
+                    console.error('❌ Error enviando email:', emailError);
+                    // No fallar la reserva por error de email
+                }
+                
                 // Generar y descargar ticket con el código de reserva
                 const ticket = window.webPaySimulator.generatePaymentTicket(paymentResult, paymentDataWithCode);
                 window.webPaySimulator.downloadTicket(ticket, paymentDataWithCode);

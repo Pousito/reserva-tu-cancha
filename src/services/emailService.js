@@ -1,0 +1,483 @@
+const nodemailer = require('nodemailer');
+
+class EmailService {
+  constructor() {
+    this.transporter = null;
+    this.isConfigured = false;
+    this.initializeTransporter();
+  }
+
+  initializeTransporter() {
+    try {
+      // Asegurar que dotenv esté cargado
+      require('dotenv').config();
+      
+      // Cargar configuración dinámicamente
+      const config = require('../config/config');
+      
+      // Verificar si las credenciales de email están configuradas
+      if (!config.email.user || !config.email.pass) {
+        console.log('⚠️ Email no configurado - usando modo simulación');
+        this.isConfigured = false;
+        return;
+      }
+
+      this.transporter = nodemailer.createTransport({
+        host: config.email.host,
+        port: config.email.port,
+        secure: config.email.secure,
+        auth: {
+          user: config.email.user,
+          pass: config.email.pass
+        }
+      });
+
+      // Configurar como disponible inmediatamente
+      this.isConfigured = true;
+      console.log('✅ Servicio de email configurado correctamente');
+
+      // Verificar conexión en segundo plano
+      this.transporter.verify((error, success) => {
+        if (error) {
+          console.error('❌ Error verificando conexión email:', error.message);
+          // No cambiar isConfigured aquí, solo mostrar el error
+        } else {
+          console.log('✅ Conexión email verificada exitosamente');
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error inicializando email service:', error.message);
+      this.isConfigured = false;
+    }
+  }
+
+  // Generar plantilla HTML para confirmación de reserva
+  generateReservationEmailHTML(reservaData) {
+    const { 
+      codigo_reserva, 
+      nombre_cliente, 
+      email_cliente, 
+      complejo, 
+      cancha, 
+      fecha, 
+      hora_inicio, 
+      hora_fin, 
+      precio_total 
+    } = reservaData;
+
+    // Formatear fecha
+    const fechaFormateada = new Date(fecha).toLocaleDateString('es-CL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirmación de Reserva - Reserva Tu Cancha</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+            .container {
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .header {
+                text-align: center;
+                border-bottom: 3px solid #007bff;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }
+            .header h1 {
+                color: #007bff;
+                margin: 0;
+                font-size: 28px;
+            }
+            .reservation-details {
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 10px 0;
+                padding: 8px 0;
+                border-bottom: 1px solid #e9ecef;
+            }
+            .detail-label {
+                font-weight: bold;
+                color: #495057;
+            }
+            .detail-value {
+                color: #212529;
+            }
+            .code-highlight {
+                background-color: #007bff;
+                color: white;
+                padding: 10px 15px;
+                border-radius: 5px;
+                font-size: 18px;
+                font-weight: bold;
+                text-align: center;
+                margin: 20px 0;
+                letter-spacing: 2px;
+            }
+            .instructions {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                border-radius: 5px;
+                padding: 15px;
+                margin: 20px 0;
+            }
+            .instructions h3 {
+                color: #155724;
+                margin-top: 0;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #e9ecef;
+                color: #6c757d;
+                font-size: 14px;
+            }
+            .success-icon {
+                color: #28a745;
+                font-size: 24px;
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🏟️ Reserva Tu Cancha</h1>
+                <p>Confirmación de Reserva</p>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <span class="success-icon">✅</span>
+                <strong>¡Reserva Confirmada Exitosamente!</strong>
+            </div>
+
+            <div class="code-highlight">
+                Código de Reserva: ${codigo_reserva}
+            </div>
+
+            <div class="reservation-details">
+                <h3>📋 Detalles de la Reserva</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Cliente:</span>
+                    <span class="detail-value">${nombre_cliente}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">${email_cliente}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Complejo:</span>
+                    <span class="detail-value">${complejo}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cancha:</span>
+                    <span class="detail-value">${cancha}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-value">${fechaFormateada}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Horario:</span>
+                    <span class="detail-value">${hora_inicio} - ${hora_fin}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Total Pagado:</span>
+                    <span class="detail-value">$${precio_total.toLocaleString()}</span>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>📝 Instrucciones Importantes</h3>
+                <ul>
+                    <li><strong>Guarda este email</strong> como comprobante de tu reserva</li>
+                    <li><strong>Presenta el código de reserva</strong> al llegar al complejo</li>
+                    <li><strong>Llega 10 minutos antes</strong> de tu horario reservado</li>
+                    <li>Para consultas o cambios, usa el código de reserva en nuestro sitio web</li>
+                </ul>
+            </div>
+
+            <div class="footer">
+                <p>Gracias por elegir Reserva Tu Cancha</p>
+                <p>Para consultas: usa el código de reserva en nuestro sitio web</p>
+                <p><small>Este es un email automático, por favor no responder</small></p>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+  }
+
+  // Enviar email de confirmación de reserva al cliente
+  async sendReservationConfirmation(reservaData) {
+    if (!this.isConfigured) {
+      console.log('📧 Email no configurado - simulando envío de confirmación al cliente');
+      console.log('📧 Datos que se habrían enviado:', {
+        from: 'reservas@reservatuscanchas.cl',
+        to: reservaData.email_cliente,
+        subject: `Confirmación de Reserva - ${reservaData.codigo_reserva}`,
+        complejo: reservaData.complejo,
+        cancha: reservaData.cancha,
+        fecha: reservaData.fecha
+      });
+      return { success: true, simulated: true };
+    }
+
+    try {
+      const mailOptions = {
+        from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
+        to: reservaData.email_cliente,
+        subject: `✅ Confirmación de Reserva - ${reservaData.codigo_reserva}`,
+        html: this.generateReservationEmailHTML(reservaData),
+        text: `
+Confirmación de Reserva - Reserva Tu Cancha
+
+¡Hola ${reservaData.nombre_cliente}!
+
+Tu reserva ha sido confirmada exitosamente.
+
+Código de Reserva: ${reservaData.codigo_reserva}
+
+Detalles:
+- Complejo: ${reservaData.complejo}
+- Cancha: ${reservaData.cancha}
+- Fecha: ${reservaData.fecha}
+- Horario: ${reservaData.hora_inicio} - ${reservaData.hora_fin}
+- Total: $${reservaData.precio_total.toLocaleString()}
+
+Instrucciones:
+1. Guarda este email como comprobante
+2. Presenta el código de reserva al llegar al complejo
+3. Llega 10 minutos antes de tu horario
+
+Gracias por elegir Reserva Tu Cancha!
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Email de confirmación enviado al cliente:', result.messageId);
+      return { success: true, messageId: result.messageId };
+
+    } catch (error) {
+      console.error('❌ Error enviando email de confirmación al cliente:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Obtener email del administrador del complejo
+  getComplexAdminEmail(complejoNombre) {
+    const adminEmails = {
+      'MagnaSports': 'naxiin320@gmail.com',
+      'Complejo Deportivo Central': 'naxiin_320@hotmail.com',
+      'Padel Club Premium': 'naxiin_320@hotmail.com',
+      'Centro Deportivo Costero': 'naxiin_320@hotmail.com',
+      'Club Deportivo Norte': 'naxiin_320@hotmail.com'
+    };
+    
+    return adminEmails[complejoNombre] || 'admin@reservatuscanchas.cl';
+  }
+
+  // Enviar notificaciones a administradores
+  async sendAdminNotifications(reservaData) {
+    if (!this.isConfigured) {
+      console.log('📧 Email no configurado - simulando notificaciones a administradores');
+      return { success: true, simulated: true };
+    }
+
+    const results = [];
+
+    try {
+      // 1. Notificación al administrador del complejo específico
+      const complexAdminEmail = this.getComplexAdminEmail(reservaData.complejo);
+      
+      const complexAdminResult = await this.sendComplexAdminNotification(reservaData, complexAdminEmail);
+      results.push({ type: 'complex_admin', email: complexAdminEmail, result: complexAdminResult });
+
+      // 2. Notificación al super admin (dueño de la plataforma)
+      const superAdminResult = await this.sendSuperAdminNotification(reservaData);
+      results.push({ type: 'super_admin', email: 'admin@reservatuscanchas.cl', result: superAdminResult });
+
+      console.log('✅ Notificaciones a administradores enviadas:', results);
+      return { success: true, results: results };
+
+    } catch (error) {
+      console.error('❌ Error enviando notificaciones a administradores:', error.message);
+      return { success: false, error: error.message, results: results };
+    }
+  }
+
+  // Notificación al administrador del complejo
+  async sendComplexAdminNotification(reservaData, adminEmail) {
+    try {
+      const mailOptions = {
+        from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
+        to: adminEmail,
+        subject: `🔔 Nueva Reserva en ${reservaData.complejo} - ${reservaData.codigo_reserva}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #007bff;">🔔 Nueva Reserva en tu Complejo</h2>
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #495057; margin-top: 0;">Detalles de la Reserva</h3>
+              <p><strong>Código:</strong> <span style="background-color: #007bff; color: white; padding: 4px 8px; border-radius: 4px;">${reservaData.codigo_reserva}</span></p>
+              <p><strong>Cliente:</strong> ${reservaData.nombre_cliente}</p>
+              <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
+              <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
+              <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
+              <p><strong>Fecha:</strong> ${reservaData.fecha}</p>
+              <p><strong>Horario:</strong> ${reservaData.hora_inicio} - ${reservaData.hora_fin}</p>
+              <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
+            </div>
+            <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 30px;">
+              Este email fue generado automáticamente por el sistema Reserva Tu Cancha
+            </p>
+          </div>
+        `,
+        text: `
+Nueva Reserva en tu Complejo - Reserva Tu Cancha
+
+Código: ${reservaData.codigo_reserva}
+Cliente: ${reservaData.nombre_cliente}
+Email: ${reservaData.email_cliente}
+Complejo: ${reservaData.complejo}
+Cancha: ${reservaData.cancha}
+Fecha: ${reservaData.fecha}
+Horario: ${reservaData.hora_inicio} - ${reservaData.hora_fin}
+Total: $${reservaData.precio_total.toLocaleString()}
+
+Este email fue generado automáticamente por el sistema Reserva Tu Cancha
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Notificación enviada al admin del complejo (${adminEmail}):`, result.messageId);
+      return { success: true, messageId: result.messageId };
+
+    } catch (error) {
+      console.error(`❌ Error enviando notificación al admin del complejo (${adminEmail}):`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Notificación al super admin
+  async sendSuperAdminNotification(reservaData) {
+    try {
+      const mailOptions = {
+        from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
+        to: 'admin@reservatuscanchas.cl',
+        subject: `📊 Nueva Reserva - ${reservaData.codigo_reserva}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #28a745;">📊 Nueva Reserva - Control General</h2>
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #495057; margin-top: 0;">Detalles de la Reserva</h3>
+              <p><strong>Código:</strong> <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px;">${reservaData.codigo_reserva}</span></p>
+              <p><strong>Cliente:</strong> ${reservaData.nombre_cliente}</p>
+              <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
+              <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
+              <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
+              <p><strong>Fecha:</strong> ${reservaData.fecha}</p>
+              <p><strong>Horario:</strong> ${reservaData.hora_inicio} - ${reservaData.hora_fin}</p>
+              <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
+            </div>
+            <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 30px;">
+              Este email fue generado automáticamente por el sistema Reserva Tu Cancha
+            </p>
+          </div>
+        `,
+        text: `
+Nueva Reserva - Control General - Reserva Tu Cancha
+
+Código: ${reservaData.codigo_reserva}
+Cliente: ${reservaData.nombre_cliente}
+Email: ${reservaData.email_cliente}
+Complejo: ${reservaData.complejo}
+Cancha: ${reservaData.cancha}
+Fecha: ${reservaData.fecha}
+Horario: ${reservaData.hora_inicio} - ${reservaData.hora_fin}
+Total: $${reservaData.precio_total.toLocaleString()}
+
+Este email fue generado automáticamente por el sistema Reserva Tu Cancha
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Notificación enviada al super admin:', result.messageId);
+      return { success: true, messageId: result.messageId };
+
+    } catch (error) {
+      console.error('❌ Error enviando notificación al super admin:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Método principal para enviar emails de confirmación
+  async sendConfirmationEmails(reservaData) {
+    console.log('📧 Enviando emails de confirmación para reserva:', reservaData.codigo_reserva);
+    
+    const results = {
+      cliente: false,
+      admin_complejo: false,
+      super_admin: false,
+      codigo: reservaData.codigo_reserva
+    };
+
+    try {
+      // 1. Enviar email de confirmación al cliente
+      const clienteResult = await this.sendReservationConfirmation(reservaData);
+      results.cliente = clienteResult.success;
+
+      // 2. Enviar notificaciones a administradores
+      const adminResults = await this.sendAdminNotifications(reservaData);
+      if (adminResults.success) {
+        if (adminResults.simulated) {
+          // En modo simulación, marcar como exitoso
+          results.admin_complejo = true;
+          results.super_admin = true;
+        } else if (adminResults.results) {
+          adminResults.results.forEach(result => {
+            if (result.type === 'complex_admin') {
+              results.admin_complejo = result.result.success;
+            } else if (result.type === 'super_admin') {
+              results.super_admin = result.result.success;
+            }
+          });
+        }
+      }
+
+      console.log('✅ Emails de confirmación procesados:', results);
+      return results;
+
+    } catch (error) {
+      console.error('❌ Error procesando emails de confirmación:', error.message);
+      return { ...results, error: error.message };
+    }
+  }
+}
+
+module.exports = EmailService;

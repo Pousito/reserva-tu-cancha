@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 // PostgreSQL + SQLite Hybrid Database System - Persistence Test
 const DatabaseManager = require('./src/config/database');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
+const EmailService = require('./src/services/emailService');
 require('dotenv').config();
 
 const app = express();
@@ -91,6 +92,9 @@ const requireComplexAccess = (req, res, next) => {
 
 // Sistema de base de datos híbrido (PostgreSQL + SQLite)
 const db = new DatabaseManager();
+
+// Sistema de emails
+const emailService = new EmailService();
 
 // Inicializar base de datos
 async function initializeDatabase() {
@@ -199,9 +203,9 @@ async function populateSampleData() {
       
       // Insertar usuarios administradores
       const usuariosData = [
-        { email: 'admin@reservatucancha.com', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
-        { email: 'admin@magnasports.cl', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
-        { email: 'admin@complejocentral.cl', password: 'complejo2024', nombre: 'Administrador Complejo Central', rol: 'admin' }
+        { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
+        { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
+        { email: 'naxiin_320@hotmail.com', password: 'complejo2024', nombre: 'Dueño MagnaSports', rol: 'admin' }
       ];
       
       for (const usuario of usuariosData) {
@@ -601,7 +605,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
       LIMIT 10
     `, params);
     
@@ -664,7 +668,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
@@ -1328,7 +1332,7 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE r.codigo_reserva = $1 OR r.nombre_cliente ILIKE $2
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
       LIMIT 1
     `, [busqueda, `%${busqueda}%`]);
     
@@ -1373,6 +1377,64 @@ app.post('/api/reservas', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== ENDPOINT PARA ENVÍO DE EMAILS =====
+app.post('/api/send-confirmation-email', async (req, res) => {
+  try {
+    const { 
+      codigo_reserva, 
+      email_cliente, 
+      nombre_cliente, 
+      complejo, 
+      cancha, 
+      fecha, 
+      hora_inicio, 
+      hora_fin, 
+      precio_total 
+    } = req.body;
+
+    console.log('📧 Enviando email de confirmación para reserva:', codigo_reserva);
+
+    // Validar datos requeridos
+    if (!codigo_reserva || !email_cliente || !nombre_cliente) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Datos requeridos faltantes para envío de email' 
+      });
+    }
+
+    // Preparar datos para el email
+    const emailData = {
+      codigo_reserva,
+      email_cliente,
+      nombre_cliente,
+      complejo: complejo || 'Complejo Deportivo',
+      cancha: cancha || 'Cancha',
+      fecha: fecha || new Date().toISOString().split('T')[0],
+      hora_inicio: hora_inicio || '18:00',
+      hora_fin: hora_fin || '19:00',
+      precio_total: precio_total || 0
+    };
+
+    // Enviar emails de confirmación (cliente + administradores)
+    const emailResults = await emailService.sendConfirmationEmails(emailData);
+
+    console.log('✅ Emails de confirmación procesados:', emailResults);
+
+    res.json({
+      success: true,
+      message: 'Emails de confirmación enviados exitosamente',
+      details: emailResults
+    });
+
+  } catch (error) {
+    console.error('❌ Error enviando email de confirmación:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno enviando email de confirmación' 
+    });
   }
 });
 
@@ -1719,9 +1781,9 @@ app.post('/api/debug/insert-admin-users', async (req, res) => {
     console.log('👥 Insertando usuarios administradores...');
     
     const usuariosData = [
-      { email: 'admin@reservatucancha.com', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
-      { email: 'admin@magnasports.cl', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
-      { email: 'admin@complejocentral.cl', password: 'complejo2024', nombre: 'Administrador Complejo Central', rol: 'admin' }
+      { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
+      { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
+      { email: 'naxiin_320@hotmail.com', password: 'complejo2024', nombre: 'Dueño MagnaSports', rol: 'admin' }
     ];
     
     const insertedUsers = [];
@@ -1829,7 +1891,7 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     const superAdminPassword = await bcrypt.hash('superadmin123', 10);
     await db.run(
       'INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      ['superadmin@reservatucancha.com', superAdminPassword, 'Super Administrador', 'super_admin', true, null]
+      ['admin@reservatuscanchas.cl', superAdminPassword, 'Super Administrador', 'super_admin', true, null]
     );
     console.log('✅ Super administrador creado');
     
@@ -1845,7 +1907,7 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     const adminPassword = await bcrypt.hash('admin123', 10);
     await db.run(
       'INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      ['admin@magnasports.cl', adminPassword, 'Administrador MagnaSports', 'admin', true, complejoId]
+      ['naxiin320@gmail.com', adminPassword, 'Administrador MagnaSports', 'admin', true, complejoId]
     );
     console.log('✅ Administrador MagnaSports creado');
 
@@ -1879,9 +1941,9 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
         }
       },
       credentials: {
-        superAdmin: 'superadmin@reservatucancha.com / superadmin123',
-        dueno: 'dueno@magnasports.cl / dueno123',
-        admin: 'admin@magnasports.cl / admin123'
+        superAdmin: 'admin@reservatuscanchas.cl / admin123',
+        dueno: 'naxiin_320@hotmail.com / complejo2024',
+        admin: 'naxiin320@gmail.com / magnasports2024'
       }
     });
     
@@ -2266,7 +2328,7 @@ app.get('/api/debug/create-role-users', async (req, res) => {
     // Usuarios de ejemplo
     const usuariosEjemplo = [
       {
-        email: 'superadmin@reservatucancha.com',
+        email: 'admin@reservatuscanchas.cl',
         password: 'superadmin123',
         nombre: 'Super Administrador',
         rol: 'super_admin',
@@ -2280,7 +2342,7 @@ app.get('/api/debug/create-role-users', async (req, res) => {
         complejo_id: complejoId
       },
       {
-        email: 'admin@magnasports.cl',
+        email: 'naxiin320@gmail.com',
         password: 'admin123',
         nombre: 'Administrador MagnaSports',
         rol: 'manager',
