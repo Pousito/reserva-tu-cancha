@@ -2442,6 +2442,13 @@ async function cargarCanchas(complejoId, tipo) {
             await actualizarHorariosConDisponibilidad();
         }
         
+        // Actualizar disponibilidad de canchas si hay fecha y hora seleccionadas
+        const hora = document.getElementById('horaSelect').value;
+        if (fecha && hora) {
+            console.log('🏟️ Actualizando disponibilidad de canchas...');
+            await actualizarDisponibilidad();
+        }
+        
         console.log('🏟️ === CARGAR CANCHAS COMPLETADO ===');
     } catch (error) {
         console.error('❌ Error en cargarCanchas:', error);
