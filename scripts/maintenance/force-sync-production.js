@@ -46,6 +46,10 @@ async function forceSyncProduction() {
         await db.run('DELETE FROM canchas');
         console.log('✅ Canchas eliminadas');
         
+        // Actualizar usuarios para que no referencien complejos
+        await db.run('UPDATE usuarios SET complejo_id = NULL WHERE complejo_id IS NOT NULL');
+        console.log('✅ Referencias de usuarios a complejos eliminadas');
+        
         await db.run('DELETE FROM complejos');
         console.log('✅ Complejos eliminados');
         
