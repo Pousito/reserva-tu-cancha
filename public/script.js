@@ -1785,9 +1785,6 @@ function configurarEventListeners() {
                 }, 100);
                 
                 await validarHorariosSegunFecha();
-                
-                // NUEVA FUNCIÓN: Cargar horarios con disponibilidad inmediatamente
-                await cargarHorariosConDisponibilidadInmediata();
             } else {
                 // Para otros complejos, mostrar ambas opciones
                 document.getElementById('padel').parentElement.style.display = 'block';
@@ -2759,71 +2756,10 @@ async function validarHorariosSegunFecha() {
     
     // Actualizar opciones disponibles según el día CON VERIFICACIÓN DE DISPONIBILIDAD
     if (complejoSeleccionado.nombre === 'MagnaSports') {
-        horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
+        console.log('🚀 validarHorariosSegunFecha - MagnaSports detectado, usando nueva lógica con disponibilidad...');
         
-        let horarios = [];
-        if (diaSemana === 0 || diaSemana === 6) {
-            // Fines de semana: 12:00-23:00
-            console.log('Actualizando opciones para fin de semana (12:00-23:00)');
-            horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
-        } else {
-            // Entre semana: 16:00-23:00
-            console.log('Actualizando opciones para entre semana (16:00-23:00)');
-            horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
-        }
-        
-        // NUEVA LÓGICA: Verificar disponibilidad para cada horario
-        console.log('🚀 validarHorariosSegunFecha - Verificando disponibilidad para', horarios.length, 'horarios...');
-        console.log('🚀 validarHorariosSegunFecha - Complejo ID:', complejoSeleccionado.id, 'Fecha:', fecha);
-        
-        try {
-            console.log('🚀 validarHorariosSegunFecha - Llamando a verificarDisponibilidadCompleta...');
-            const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoSeleccionado.id, fecha);
-            console.log('✅ validarHorariosSegunFecha - Disponibilidad obtenida para', Object.keys(disponibilidadCompleta).length, 'canchas');
-            console.log('✅ validarHorariosSegunFecha - Datos de disponibilidad:', disponibilidadCompleta);
-            
-            for (const hora of horarios) {
-                const option = document.createElement('option');
-                option.value = hora;
-                
-                // Verificar si todas las canchas están ocupadas usando datos precargados
-                let todasOcupadas = true;
-                let canchasVerificadas = 0;
-                
-                // Verificar todas las canchas del complejo desde la disponibilidad
-                for (const canchaId in disponibilidadCompleta) {
-                    const estaDisponible = verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadCompleta);
-                    canchasVerificadas++;
-                    if (estaDisponible) {
-                        todasOcupadas = false;
-                        break;
-                    }
-                }
-                
-                console.log('🕐 validarHorariosSegunFecha - Horario', hora, '- Canchas verificadas:', canchasVerificadas, '- Todas ocupadas:', todasOcupadas);
-                
-                if (todasOcupadas && canchasVerificadas > 0) {
-                    option.textContent = `${hora} (Todas ocupadas)`;
-                    option.classList.add('hora-todas-ocupadas');
-                    option.style.textDecoration = 'line-through';
-                    option.style.color = '#dc3545';
-                } else {
-                    option.textContent = hora;
-                }
-                
-                horaSelect.appendChild(option);
-            }
-        } catch (error) {
-            console.error('❌ validarHorariosSegunFecha - Error obteniendo disponibilidad, cargando horarios básicos:', error);
-            console.error('❌ validarHorariosSegunFecha - Error details:', error.message, error.stack);
-            // Fallback: cargar horarios básicos si hay error
-            horarios.forEach(hora => {
-                const option = document.createElement('option');
-                option.value = hora;
-                option.textContent = hora;
-                horaSelect.appendChild(option);
-            });
-        }
+        // Llamar a la función que carga horarios con disponibilidad
+        await cargarHorariosConDisponibilidadInmediata();
     } else {
         // Otros complejos: cargar horarios estándar
         cargarHorariosComplejo(complejoSeleccionado);
