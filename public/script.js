@@ -2471,6 +2471,10 @@ async function actualizarHorariosConDisponibilidad() {
     console.log('🚀 Usando método optimizado para verificar disponibilidad...');
     const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoSeleccionado.id, fecha);
     
+    // Guardar datos en variable global para uso posterior en renderizado
+    window.disponibilidadCompleta = disponibilidadCompleta;
+    console.log('💾 Datos de disponibilidad guardados en window.disponibilidadCompleta');
+    
     for (const option of opcionesActuales) {
         if (option.value && option.value !== '') {
             console.log('🕐 Verificando horario:', option.value);
@@ -2732,6 +2736,10 @@ async function cargarHorariosConDisponibilidadInmediata() {
         const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoSeleccionado.id, fecha);
         console.log('✅ cargarHorariosConDisponibilidadInmediata - Disponibilidad obtenida para', Object.keys(disponibilidadCompleta).length, 'canchas');
         
+        // Guardar datos en variable global para uso posterior en renderizado
+        window.disponibilidadCompleta = disponibilidadCompleta;
+        console.log('💾 cargarHorariosConDisponibilidadInmediata - Datos guardados en window.disponibilidadCompleta');
+        
         // Limpiar horarios actuales
         horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
         
@@ -2902,24 +2910,34 @@ async function renderizarCanchasConDisponibilidad() {
                     console.log('🔴 Cancha marcada como ocupada porque la hora está "Todas ocupadas":', cancha.nombre);
                 } else {
                     // Si no es "Todas ocupadas", verificar disponibilidad individual
-                    try {
-                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
-                        const reservas = await response.json();
-                        
-                        estaDisponible = !reservas.some(r => 
-                            r.hora_inicio <= hora && r.hora_fin > hora
-                        );
-                        
-                        if (estaDisponible) {
-                            cardClass = 'cancha-card disponible';
-                            estadoBadge = '<span class="badge bg-success">Disponible</span>';
-                        } else {
-                            cardClass = 'cancha-card ocupada';
-                            estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                    // Usar datos precargados si están disponibles, sino hacer fetch individual
+                    if (window.disponibilidadCompleta && window.disponibilidadCompleta[cancha.id]) {
+                        // Usar datos precargados (más eficiente y confiable)
+                        estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, window.disponibilidadCompleta);
+                        console.log('🎨 MagnaSports - Usando datos precargados para cancha', cancha.id, '- Disponible:', estaDisponible);
+                    } else {
+                        // Fallback: hacer fetch individual
+                        try {
+                            const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                            const reservas = await response.json();
+                            
+                            estaDisponible = !reservas.some(r => 
+                                r.hora_inicio <= hora && r.hora_fin > hora
+                            );
+                            console.log('🎨 MagnaSports - Fetch individual para cancha', cancha.id, '- Disponible:', estaDisponible);
+                        } catch (error) {
+                            console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
+                            // En caso de error, asumir disponible
+                            estaDisponible = true;
                         }
-                    } catch (error) {
-                        console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
-                        // En caso de error, asumir disponible
+                    }
+                    
+                    if (estaDisponible) {
+                        cardClass = 'cancha-card disponible';
+                        estadoBadge = '<span class="badge bg-success">Disponible</span>';
+                    } else {
+                        cardClass = 'cancha-card ocupada';
+                        estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
                     }
                 }
             }
