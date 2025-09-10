@@ -18,7 +18,8 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // ===== MIDDLEWARE DE AUTENTICACIÓN =====
-// Fix: Asegurar que las consultas usen fecha_creacion en lugar de created_at - VERSIÓN 2
+// Fix: Asegurar que las consultas usen fecha_creacion en lugar de created_at - VERSIÓN 3
+// IMPORTANTE: Este fix resuelve el error 500 en producción para la sección de reservas
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
