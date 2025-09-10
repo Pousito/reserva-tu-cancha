@@ -139,6 +139,11 @@ async function preRellenarDesdeURL() {
                                 if (typeof cargarComplejos === 'function') {
                                     console.log('🔄 Llamando cargarComplejos manualmente...');
                                     cargarComplejos(ciudadEncontrada.id);
+                                    
+                                    // Esperar un poco más para que los complejos se carguen
+                                    setTimeout(() => {
+                                        console.log('📊 Complejos cargados después de seleccionar ciudad:', complejos.length);
+                                    }, 500);
                                 }
                             }, 300);
                             
@@ -169,11 +174,12 @@ async function preRellenarDesdeURL() {
         // Esperar a que los complejos se carguen - Mejorado para móviles
         await new Promise(resolve => {
             let attempts = 0;
-            const maxAttempts = 50; // 5 segundos máximo
+            const maxAttempts = 100; // 10 segundos máximo para complejos
             
             const checkComplejos = () => {
                 attempts++;
                 console.log('🔍 Verificando complejos...', complejos.length, 'Intento:', attempts);
+                console.log('📊 Complejos disponibles:', complejos);
                 
                 if (complejos.length > 0) {
                     const complejoEncontrado = complejos.find(c => c.nombre === complejo);
@@ -184,7 +190,7 @@ async function preRellenarDesdeURL() {
                         console.log('🔍 Elemento complejo:', complejoSelect);
                         
                         if (complejoSelect) {
-                            console.log('🔧 Configurando complejo en móvil...');
+                            console.log('🔧 Configurando complejo...');
                             
                             // Método 1: Asignación directa
                             complejoSelect.value = complejoEncontrado.id;
@@ -244,6 +250,18 @@ async function preRellenarDesdeURL() {
                                 }
                             }, 300);
                             
+                            // Método 6: Forzar carga de complejos si no se cargaron automáticamente
+                            setTimeout(() => {
+                                if (complejos.length === 0) {
+                                    console.log('🔄 Forzando carga de complejos...');
+                                    const ciudadSelect = document.getElementById('ciudadSelect');
+                                    if (ciudadSelect && ciudadSelect.value) {
+                                        console.log('🔄 Cargando complejos para ciudad:', ciudadSelect.value);
+                                        cargarComplejos(ciudadSelect.value);
+                                    }
+                                }
+                            }, 500);
+                            
                             console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
                             
                             // NO cargar canchas automáticamente - solo se cargan cuando se selecciona una hora
@@ -253,13 +271,14 @@ async function preRellenarDesdeURL() {
                         }
                     } else {
                         console.error('❌ Complejo no encontrado:', complejo);
+                        console.log('📊 Complejos disponibles para comparar:', complejos.map(c => c.nombre));
                     }
                     resolve();
                 } else if (attempts >= maxAttempts) {
-                    console.error('❌ Timeout esperando complejos');
+                    console.error('❌ Timeout esperando complejos después de', maxAttempts, 'intentos');
                     resolve();
                 } else {
-                    console.log('⏳ Esperando complejos...');
+                    console.log('⏳ Esperando complejos... (intento', attempts, 'de', maxAttempts, ')');
                     setTimeout(checkComplejos, 100);
                 }
             };
@@ -316,23 +335,28 @@ document.addEventListener('DOMContentLoaded', async function() {
         configurarEventListeners();
         configurarFechaMinima();
         
-        // Pre-rellenar campos desde URL después de cargar datos
-        console.log('🔄 Iniciando pre-rellenado desde URL...');
-        console.log('🔍 URL actual:', window.location.href);
-        console.log('🔍 Parámetros URL:', window.location.search);
-        
-        await preRellenarDesdeURL();
-        console.log('✅ Pre-rellenado completado');
-        
-        // Scroll automático y mostrar paso 3 si hay parámetros URL
-        console.log('🔍 Verificando parámetros URL para scroll...');
+        // Verificar si hay parámetros URL para pre-rellenado
         const urlParams = new URLSearchParams(window.location.search);
-        const ciudad = urlParams.get('ciudad');
-        const complejo = urlParams.get('complejo');
+        const ciudadParam = urlParams.get('ciudad');
+        const complejoParam = urlParams.get('complejo');
         
-        console.log('🔍 Parámetros encontrados para scroll:', { ciudad, complejo });
+        if (ciudadParam || complejoParam) {
+            console.log('🔄 Parámetros URL detectados, iniciando pre-rellenado...');
+            console.log('🔍 URL actual:', window.location.href);
+            console.log('🔍 Parámetros URL:', window.location.search);
+            
+            // Pre-rellenar campos desde URL después de cargar datos
+            await preRellenarDesdeURL();
+            console.log('✅ Pre-rellenado completado');
+        } else {
+            console.log('🔍 No hay parámetros URL, saltando pre-rellenado');
+        }
         
-         if (ciudad || complejo) {
+        // Scroll automático y mostrar paso 4 si hay parámetros URL
+        console.log('🔍 Verificando parámetros URL para scroll...');
+        console.log('🔍 Parámetros encontrados para scroll:', { ciudad: ciudadParam, complejo: complejoParam });
+        
+         if (ciudadParam || complejoParam) {
              console.log('🔄 Haciendo scroll automático al paso 4...');
              
              // Mostrar paso 4 (Ver disponibilidad) inmediatamente
