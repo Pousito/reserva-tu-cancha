@@ -1,7 +1,8 @@
-// API Base URL - Dinámico para desarrollo y producción
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000/api' 
-    : 'https://www.reservatuscanchas.cl/api';
+// API Base URL - Usa configuración centralizada
+const API_BASE = window.URL_CONFIG ? window.URL_CONFIG.API_URL : 
+    (window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/api' 
+        : 'https://www.reservatuscanchas.cl/api');
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {

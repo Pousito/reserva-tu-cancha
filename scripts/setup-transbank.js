@@ -35,8 +35,8 @@ const transbankConfig = `
 TRANSBANK_API_KEY=579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C
 TRANSBANK_COMMERCE_CODE=597055555532
 TRANSBANK_ENVIRONMENT=integration
-TRANSBANK_RETURN_URL=http://localhost:3000/payment.html
-TRANSBANK_FINAL_URL=http://localhost:3000/?payment=success
+TRANSBANK_RETURN_URL=https://www.reservatuscanchas.cl/payment.html
+TRANSBANK_FINAL_URL=https://www.reservatuscanchas.cl/?payment=success
 `;
 
 // Verificar si ya existen las variables de Transbank

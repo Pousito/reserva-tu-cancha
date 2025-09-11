@@ -44,14 +44,14 @@ Configurar en Render Dashboard:
 NODE_ENV=production
 PORT=10000
 JWT_SECRET=tu_secret_super_seguro_aqui
-CORS_ORIGIN=https://reserva-tu-cancha.onrender.com
+CORS_ORIGIN=https://www.reservatuscanchas.cl
 ```
 
 ### **Paso 5: Desplegar**
 
 1. **Click en "Create Web Service"**
 2. **Esperar que termine el build** (5-10 minutos)
-3. **Tu app estará disponible en:** `https://reserva-tu-cancha.onrender.com`
+3. **Tu app estará disponible en:** `https://www.reservatuscanchas.cl`
 
 ## 🔒 Configuración de Seguridad
 
@@ -73,9 +73,9 @@ CORS_ORIGIN=https://reserva-tu-cancha.onrender.com
 
 ### **URLs de Acceso:**
 
-- **🌐 Aplicación principal:** `https://reserva-tu-cancha.onrender.com`
-- **📊 Panel admin:** `https://reserva-tu-cancha.onrender.com/admin-login.html`
-- **📈 Reportes:** `https://reserva-tu-cancha.onrender.com/reports.html`
+- **🌐 Aplicación principal:** `https://www.reservatuscanchas.cl`
+- **📊 Panel admin:** `https://www.reservatuscanchas.cl/admin-login.html`
+- **📈 Reportes:** `https://www.reservatuscanchas.cl/reports.html`
 
 ### **Credenciales de Prueba:**
 
