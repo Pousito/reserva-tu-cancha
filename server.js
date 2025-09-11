@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // ===== MIDDLEWARE DE AUTENTICACIÓN =====
-// Fix: Asegurar que las consultas usen fecha_creacion en lugar de created_at - VERSIÓN 3
+// Fix: Asegurar que las consultas usen created_at en lugar de fecha_creacion - VERSIÓN 3
 // IMPORTANTE: Este fix resuelve el error 500 en producción para la sección de reservas
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -607,7 +607,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY r.created_at DESC
       LIMIT 10
     `, params);
     
@@ -670,7 +670,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY r.created_at DESC
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
@@ -1334,7 +1334,7 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE r.codigo_reserva = $1 OR r.nombre_cliente ILIKE $2
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY r.created_at DESC
       LIMIT 1
     `, [busqueda, `%${busqueda}%`]);
     
