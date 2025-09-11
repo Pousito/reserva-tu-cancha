@@ -40,7 +40,15 @@ function obtenerHoraMinimaDisponible() {
 // Función auxiliar para convertir tiempo a minutos (igual que en el servidor)
 function timeToMinutes(timeStr) {
     const [hours, minutes] = timeStr.split(':');
-    return parseInt(hours) * 60 + parseInt(minutes);
+    const h = parseInt(hours);
+    const m = parseInt(minutes);
+    
+    // Si la hora es 00:xx, significa que es medianoche del día siguiente (24:xx)
+    if (h === 0 && timeStr.includes('00:00')) {
+        return 24 * 60 + m; // 1440 + minutos
+    }
+    
+    return h * 60 + m;
 }
 
 // Sistema de logs visibles para debugging móvil
