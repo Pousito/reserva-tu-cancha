@@ -52,8 +52,8 @@ async function verifyChartJS() {
     console.log('🔍 Verificando Chart.js...');
     
     try {
-        // Verificar versión 4.3.0
-        const cdnUrl = 'https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.js';
+        // Verificar versión 3.9.1
+        const cdnUrl = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
         const response = await makeRequest(cdnUrl);
         
         if (response.statusCode === 200) {
@@ -79,10 +79,10 @@ async function verifyChartJS() {
             });
             
             if (functionsFound >= 3) {
-                console.log('✅ Chart.js 4.3.0 funciona correctamente');
+                console.log('✅ Chart.js 3.9.1 funciona correctamente');
                 return true;
             } else {
-                console.log('❌ Chart.js 4.3.0 no funciona correctamente');
+                console.log('❌ Chart.js 3.9.1 no funciona correctamente');
                 return false;
             }
         } else {
@@ -106,11 +106,11 @@ async function verifyReportsHTML() {
             const html = response.body;
             
             // Verificar versión de Chart.js
-            if (html.includes('chart.js@4.3.0')) {
-                console.log('✅ Chart.js 4.3.0 incluido en HTML');
+            if (html.includes('chart.js@3.9.1')) {
+                console.log('✅ Chart.js 3.9.1 incluido en HTML');
                 return true;
-            } else if (html.includes('chart.js@4.4.0')) {
-                console.log('❌ Chart.js 4.4.0 aún incluido (versión problemática)');
+            } else if (html.includes('chart.js@4.3.0') || html.includes('chart.js@4.4.0')) {
+                console.log('❌ Versión problemática de Chart.js aún incluida');
                 return false;
             } else {
                 console.log('❌ Versión de Chart.js no identificada');
@@ -165,7 +165,7 @@ async function verifyChartsFix() {
     };
     
     console.log('\n📋 === RESULTADOS DE VERIFICACIÓN ===');
-    console.log(`Chart.js 4.3.0: ${results.chartJS ? '✅' : '❌'}`);
+    console.log(`Chart.js 3.9.1: ${results.chartJS ? '✅' : '❌'}`);
     console.log(`HTML actualizado: ${results.reportsHTML ? '✅' : '❌'}`);
     console.log(`JavaScript actualizado: ${results.reportsJS ? '✅' : '❌'}`);
     
