@@ -1359,8 +1359,8 @@ app.post('/api/reservas', async (req, res) => {
     // Usar teléfono por defecto si no se proporciona
     const telefono = telefono_cliente || 'No proporcionado';
     
-    // Generar código de reserva único
-    const codigo_reserva = 'RES' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
+    // Generar código de reserva único (6 caracteres alfanuméricos)
+    const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
     
     const result = await db.run(
       'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
@@ -1525,7 +1525,7 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
     
     for (const reserva of reservasPrueba) {
       try {
-        const codigo_reserva = 'RES' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
+        const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
         await db.run(
           'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente']

@@ -245,7 +245,7 @@ class EmailService {
                     <li><strong>Guarda este email</strong> como comprobante de tu reserva</li>
                     <li><strong>Presenta el código de reserva</strong> al llegar al complejo</li>
                     <li><strong>Llega 10 minutos antes</strong> de tu horario reservado</li>
-                    <li>Para consultas o cambios, usa el código de reserva en nuestro sitio web</li>
+                    <li><strong>Las cancelaciones o cambios se deben realizar con 24 horas de anticipación.</strong> Para esto contactar a <a href="mailto:soporte@reservatuscanchas.cl">soporte@reservatuscanchas.cl</a></li>
                 </ul>
             </div>
 
@@ -301,6 +301,7 @@ Instrucciones:
 1. Guarda este email como comprobante
 2. Presenta el código de reserva al llegar al complejo
 3. Llega 10 minutos antes de tu horario
+4. Las cancelaciones o cambios se deben realizar con 24 horas de anticipación. Para esto contactar a soporte@reservatuscanchas.cl
 
 Gracias por elegir Reserva Tu Cancha!
         `
