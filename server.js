@@ -2080,6 +2080,85 @@ app.get('/api/debug/test-simple', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA PROBAR CONFIGURACIÓN DE EMAIL =====
+app.get('/api/debug/test-email-config', async (req, res) => {
+  try {
+    console.log('📧 Probando configuración de email...');
+    
+    const emailService = new EmailService();
+    
+    // Verificar configuración
+    const config = require('./src/config/config');
+    const emailConfig = {
+      host: config.email.host,
+      port: config.email.port,
+      secure: config.email.secure,
+      user: config.email.user ? 'Configurado' : 'No configurado',
+      pass: config.email.pass ? 'Configurado' : 'No configurado'
+    };
+    
+    // Verificar si el servicio está configurado
+    const isConfigured = emailService.isConfigured;
+    
+    res.json({
+      success: true,
+      message: 'Configuración de email verificada',
+      config: emailConfig,
+      isConfigured: isConfigured,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error probando configuración de email:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// ===== ENDPOINT PARA PROBAR ENVÍO DE EMAIL =====
+app.post('/api/debug/test-email-send', async (req, res) => {
+  try {
+    console.log('📧 Probando envío de email...');
+    
+    const emailService = new EmailService();
+    
+    // Datos de prueba
+    const testData = {
+      codigo_reserva: 'TEST' + Date.now(),
+      nombre_cliente: 'Cliente de Prueba',
+      email_cliente: 'ignacio.araya.lillo@gmail.com',
+      complejo: 'MagnaSports',
+      cancha: 'Cancha Techada 1',
+      fecha: '2025-09-12',
+      hora_inicio: '18:00',
+      hora_fin: '19:00',
+      precio_total: 28000
+    };
+    
+    // Intentar enviar email
+    const result = await emailService.sendConfirmationEmails(testData);
+    
+    res.json({
+      success: true,
+      message: 'Prueba de envío de email completada',
+      testData: testData,
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error probando envío de email:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====
 app.get('/api/debug/sync-database', async (req, res) => {
   try {
