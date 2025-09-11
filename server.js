@@ -1502,6 +1502,56 @@ app.get('/api/debug/check-blocking-table', async (req, res) => {
   }
 });
 
+// Endpoint para verificar canchas existentes
+app.get('/api/debug/check-canchas', async (req, res) => {
+  try {
+    console.log('🔍 Verificando canchas existentes...');
+    
+    // Obtener todas las canchas
+    const canchas = await db.query(`
+      SELECT c.*, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      FROM canchas c
+      LEFT JOIN complejos co ON c.complejo_id = co.id
+      LEFT JOIN ciudades ci ON co.ciudad_id = ci.id
+      ORDER BY c.id
+    `);
+    
+    // Obtener todos los complejos
+    const complejos = await db.query(`
+      SELECT co.*, ci.nombre as ciudad_nombre
+      FROM complejos co
+      LEFT JOIN ciudades ci ON co.ciudad_id = ci.id
+      ORDER BY co.id
+    `);
+    
+    // Obtener todas las ciudades
+    const ciudades = await db.query(`
+      SELECT * FROM ciudades ORDER BY id
+    `);
+    
+    res.json({
+      success: true,
+      canchas: canchas,
+      complejos: complejos,
+      ciudades: ciudades,
+      counts: {
+        canchas: canchas.length,
+        complejos: complejos.length,
+        ciudades: ciudades.length
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando canchas:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Endpoint para insertar reservas de prueba
 app.get('/api/debug/insert-test-reservations', async (req, res) => {
   try {
