@@ -2249,6 +2249,31 @@ app.get('/api/debug/email-service-status', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR USUARIOS ADMINISTRADORES =====
+app.get('/api/debug/admin-users', async (req, res) => {
+  try {
+    console.log('👑 Verificando usuarios administradores...');
+    
+    const usuarios = await db.all('SELECT id, email, nombre, rol, activo FROM usuarios ORDER BY rol, email');
+    
+    res.json({
+      success: true,
+      message: 'Usuarios administradores verificados',
+      usuarios: usuarios,
+      total: usuarios.length,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando usuarios administradores:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====
 app.get('/api/debug/sync-database', async (req, res) => {
   try {
