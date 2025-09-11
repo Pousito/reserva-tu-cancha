@@ -2116,17 +2116,28 @@ function configurarEventListeners() {
         }, 100);
     });
     document.getElementById('horaSelect').addEventListener('change', async function() {
+        const horaSeleccionada = this.value;
+        console.log('🕐 === HORA SELECCIONADA ===');
+        console.log('🕐 Hora seleccionada:', horaSeleccionada);
+        console.log('🕐 Canchas cargadas:', canchas.length);
+        console.log('🕐 Complejo seleccionado:', complejoSeleccionado?.nombre);
+        console.log('🕐 Tipo seleccionado:', tipoCanchaSeleccionado);
+        
         verificarDisponibilidadTiempoReal();
         
         // Si ya hay canchas cargadas, renderizar visualmente (Fase 5)
         if (canchas.length > 0) {
             console.log('🕐 Hora seleccionada - renderizando canchas visualmente (Fase 5)');
+            console.log('🕐 Ejecutando renderizarCanchasConDisponibilidad()...');
             await renderizarCanchasConDisponibilidad();
+            console.log('🕐 renderizarCanchasConDisponibilidad() completado');
         } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
             // Si no hay canchas, cargarlas y renderizar visualmente (Fase 5)
             console.log('🕐 Hora seleccionada - cargando y renderizando canchas (Fase 5)');
             await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, true);
         }
+        
+        console.log('🕐 === FIN HORA SELECCIONADA ===');
     });
 
     // Búsqueda de reserva
@@ -3136,10 +3147,24 @@ async function renderizarCanchasConDisponibilidad() {
     console.log('🎨 Complejo seleccionado:', complejoSeleccionado?.nombre);
     
     const grid = document.getElementById('canchasGrid');
+    if (!grid) {
+        console.error('❌ No se encontró el elemento canchasGrid');
+        return;
+    }
     grid.innerHTML = '';
     
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
+    
+    console.log('🎨 Fecha:', fecha);
+    console.log('🎨 Hora:', hora);
+    
+    if (!fecha) {
+        console.log('⚠️ No hay fecha seleccionada, renderizando canchas sin verificar disponibilidad');
+    }
+    if (!hora) {
+        console.log('⚠️ No hay hora seleccionada, renderizando canchas sin verificar disponibilidad');
+    }
     
     // Si es MagnaSports, crear estructura especial del galpón
     if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports') {
@@ -3190,31 +3215,40 @@ async function renderizarCanchasConDisponibilidad() {
                     console.log('🔴 Cancha marcada como ocupada porque la hora está "Todas ocupadas":', cancha.nombre);
                 } else {
                     // Si no es "Todas ocupadas", verificar disponibilidad individual
-                    // Usar datos precargados si están disponibles, sino hacer fetch individual
-                    if (window.disponibilidadCompleta && window.disponibilidadCompleta[cancha.id]) {
-                        // Usar datos precargados (más eficiente y confiable)
-                        estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, window.disponibilidadCompleta);
-                        console.log('🎨 MagnaSports - Usando datos precargados para cancha', cancha.id, '- Disponible:', estaDisponible);
-                    } else {
-                        // Fallback: hacer fetch individual
-                        try {
-                            const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
-                            const reservas = await response.json();
-                            
-                            estaDisponible = !reservas.some(r => {
-                                const horaFin = calcularHoraFin(hora);
-                                const reservaInicioMin = timeToMinutes(r.hora_inicio);
-                                const reservaFinMin = timeToMinutes(r.hora_fin);
-                                const horaInicioMin = timeToMinutes(hora);
-                                const horaFinMin = timeToMinutes(horaFin);
-                                return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
-                            });
-                            console.log('🎨 MagnaSports - Fetch individual para cancha', cancha.id, '- Disponible:', estaDisponible);
-                        } catch (error) {
-                            console.error('Error verificando disponibilidad de cancha:', cancha.id, error);
-                            // En caso de error, asumir disponible
-                            estaDisponible = true;
+                    // CORRECCIÓN CRÍTICA: Siempre hacer fetch individual para asegurar datos actualizados
+                    console.log('🔍 Verificando disponibilidad individual para cancha', cancha.id, 'hora', hora);
+                    try {
+                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
+                        const reservas = await response.json();
+                        console.log('📊 Reservas obtenidas para cancha', cancha.id, ':', reservas.length);
+                        
+                        estaDisponible = !reservas.some(r => {
+                            const horaFin = calcularHoraFin(hora);
+                            const reservaInicioMin = timeToMinutes(r.hora_inicio);
+                            const reservaFinMin = timeToMinutes(r.hora_fin);
+                            const horaInicioMin = timeToMinutes(hora);
+                            const horaFinMin = timeToMinutes(horaFin);
+                            
+                            const hayConflicto = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
+                            if (hayConflicto) {
+                                console.log('🔴 CONFLICTO detectado:', {
+                                    cancha: cancha.id,
+                                    horaSolicitada: `${hora}-${horaFin}`,
+                                    reserva: `${r.hora_inicio}-${r.hora_fin}`,
+                                    codigo: r.codigo_reserva
+                                });
+                            }
+                            return hayConflicto;
+                        });
+                        console.log('🎨 MagnaSports - Fetch individual para cancha', cancha.id, '- Disponible:', estaDisponible);
+                    } catch (error) {
+                        console.error('❌ Error verificando disponibilidad de cancha:', cancha.id, error);
+                        // En caso de error, asumir disponible para no bloquear al usuario
+                        estaDisponible = true;
+                        console.log('⚠️ Asumiendo disponible debido a error');
                     }
                     
                     if (estaDisponible) {
