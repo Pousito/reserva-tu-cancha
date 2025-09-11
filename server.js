@@ -1316,8 +1316,8 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         JOIN complejos co ON c.complejo_id = co.id
-        WHERE date(r.fecha) BETWEEN ? AND ?
-        AND co.id = (SELECT id FROM complejos WHERE nombre = ?)
+        WHERE date(r.fecha) BETWEEN $1 AND $2
+        AND co.id = (SELECT id FROM complejos WHERE nombre = $3)
         AND r.estado IN ('confirmada', 'pendiente')
       `, [dateFrom, dateTo, complejo.complejo]);
       
