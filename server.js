@@ -140,7 +140,7 @@ async function populateSampleData() {
             const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
             console.log(`✅ Ciudad insertada: ${ciudad}`, result);
           } else {
-            const result = await db.run('INSERT OR IGNORE INTO ciudades (nombre) VALUES (?)', [ciudad]);
+            const result = await db.run('INSERT INTO ciudades (nombre) VALUES ($1) ON CONFLICT (nombre) DO NOTHING', [ciudad]);
             console.log(`✅ Ciudad insertada: ${ciudad}`, result);
           }
         } catch (error) {
@@ -340,7 +340,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
 
         // Buscar el bloqueo temporal
         const bloqueoData = await db.get(
-            'SELECT * FROM bloqueos_temporales WHERE session_id = ?',
+            'SELECT * FROM bloqueos_temporales WHERE session_id = $1',
             [reservationCode]
         );
 
@@ -381,7 +381,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         console.log('✅ Reserva creada con ID:', reservaId);
 
         // Eliminar el bloqueo temporal
-        await db.run('DELETE FROM bloqueos_temporales WHERE id = ?', [bloqueoData.id]);
+        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueoData.id]);
         console.log('🗑️ Bloqueo temporal eliminado');
 
         // Obtener información del complejo y cancha
@@ -389,7 +389,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             SELECT c.nombre as cancha_nombre, co.nombre as complejo_nombre 
             FROM canchas c 
             JOIN complejos co ON c.complejo_id = co.id 
-            WHERE c.id = ?
+            WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
         // Enviar emails de confirmación (cliente + administradores)
@@ -446,7 +446,7 @@ app.post('/api/simulate-payment-cancelled', async (req, res) => {
 
         // Eliminar el bloqueo temporal
         const result = await db.run(
-            'DELETE FROM bloqueos_temporales WHERE session_id = ?',
+            'DELETE FROM bloqueos_temporales WHERE session_id = $1',
             [reservationCode]
         );
 
@@ -485,7 +485,7 @@ app.get('/api/bloqueos-temporales/:codigo', async (req, res) => {
       FROM bloqueos_temporales bt
       JOIN canchas c ON bt.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      WHERE bt.session_id = ? OR bt.id = ?
+      WHERE bt.session_id = $1 OR bt.id = $2
       ORDER BY bt.created_at DESC
       LIMIT 1
     `, [codigo, codigo]);
@@ -738,7 +738,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
         LEFT JOIN reservas r ON c.id = r.cancha_id 
           AND r.fecha = ?
           AND r.estado IN ('confirmada', 'pendiente')
-        WHERE c.complejo_id = ?
+        WHERE c.complejo_id = $1
         ORDER BY c.id, r.hora_inicio
       `, [fecha, complejoId]);
     }
@@ -791,7 +791,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       
       // Limpiar bloqueos expirados
       await db.run(
-        'DELETE FROM bloqueos_temporales WHERE expira_en <= ?',
+        'DELETE FROM bloqueos_temporales WHERE expira_en <= $1',
         [new Date().toISOString()]
       );
     }
@@ -2108,7 +2108,7 @@ app.post('/api/admin/login', async (req, res) => {
         SELECT u.*, c.nombre as complejo_nombre, c.id as complejo_id
         FROM usuarios u
         LEFT JOIN complejos c ON u.complejo_id = c.id
-        WHERE u.email = ? AND u.activo = 1
+        WHERE u.email = $1 AND u.activo = 1
       `, [email]);
     }
     
