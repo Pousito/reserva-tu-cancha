@@ -477,7 +477,10 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
     }
 
     try {
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-reset-password.html?token=${resetToken}`;
+      // Determinar URL del frontend automáticamente
+      const frontendUrl = process.env.FRONTEND_URL || 
+                         (process.env.NODE_ENV === 'production' ? 'https://www.reservatuscanchas.cl' : 'http://localhost:3000');
+      const resetUrl = `${frontendUrl}/admin-reset-password.html?token=${resetToken}`;
       
       const mailOptions = {
         from: `"Reserva Tu Cancha - Soporte" <soporte@reservatuscanchas.cl>`,
@@ -569,7 +572,7 @@ Este es un email automático, por favor no responder
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-login.html" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              <a href="${frontendUrl}/admin-login.html" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Acceder al Panel de Administración
               </a>
             </div>
@@ -593,7 +596,7 @@ Contraseña Restablecida Exitosamente - Reserva Tu Cancha
 Tu contraseña ha sido restablecida exitosamente.
 Ahora puedes acceder al panel de administración con tu nueva contraseña.
 
-Acceder al Panel: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-login.html
+Acceder al Panel: ${frontendUrl}/admin-login.html
 
 IMPORTANTE: Si no realizaste este cambio, contacta inmediatamente al administrador del sistema.
 

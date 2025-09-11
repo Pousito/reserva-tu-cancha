@@ -26,6 +26,8 @@ services:
         value: soporte@reservatuscanchas.cl
       - key: SMTP_PASS
         value: KWAX CS8q 61cN
+      - key: FRONTEND_URL
+        value: https://www.reservatuscanchas.cl
     healthCheckPath: /health
     autoDeploy: true
     # Forzar redeploy para código de reserva corto - Versión 4
