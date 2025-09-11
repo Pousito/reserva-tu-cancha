@@ -3162,7 +3162,7 @@ app.post('/api/reservas/bloquear', async (req, res) => {
 });
 
 // ===== ENDPOINT PARA VERIFICAR DISPONIBILIDAD CON BLOQUEOS =====
-app.get('/api/disponibilidad-completa/:cancha_id/:fecha', async (req, res) => {
+app.get('/api/disponibilidad/:cancha_id/:fecha', async (req, res) => {
   try {
     const { cancha_id, fecha } = req.params;
     
