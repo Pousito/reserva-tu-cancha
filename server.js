@@ -2222,6 +2222,33 @@ app.get('/api/debug/env-vars', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR EMAIL SERVICE =====
+app.get('/api/debug/email-service-status', async (req, res) => {
+  try {
+    console.log('📧 Verificando estado del servicio de email...');
+    
+    const emailService = new EmailService();
+    
+    res.json({
+      success: true,
+      message: 'Estado del servicio de email verificado',
+      emailService: {
+        isConfigured: emailService.isConfigured,
+        hasTransporter: !!emailService.transporter
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando servicio de email:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====
 app.get('/api/debug/sync-database', async (req, res) => {
   try {
