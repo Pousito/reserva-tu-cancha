@@ -2159,6 +2159,38 @@ app.post('/api/debug/test-email-send', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR VARIABLES DE ENTORNO =====
+app.get('/api/debug/env-vars', async (req, res) => {
+  try {
+    console.log('🔍 Verificando variables de entorno...');
+    
+    const envVars = {
+      NODE_ENV: process.env.NODE_ENV,
+      SMTP_HOST: process.env.SMTP_HOST ? 'Definido' : 'No definido',
+      SMTP_PORT: process.env.SMTP_PORT ? 'Definido' : 'No definido',
+      SMTP_USER: process.env.SMTP_USER ? 'Definido' : 'No definido',
+      SMTP_PASS: process.env.SMTP_PASS ? 'Definido' : 'No definido',
+      DATABASE_URL: process.env.DATABASE_URL ? 'Definido' : 'No definido',
+      JWT_SECRET: process.env.JWT_SECRET ? 'Definido' : 'No definido'
+    };
+    
+    res.json({
+      success: true,
+      message: 'Variables de entorno verificadas',
+      envVars: envVars,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando variables de entorno:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====
 app.get('/api/debug/sync-database', async (req, res) => {
   try {
