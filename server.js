@@ -1308,8 +1308,8 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
         SELECT SUM(
           CASE 
             WHEN r.hora_fin > r.hora_inicio THEN 
-              (CAST(SUBSTR(r.hora_fin, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_fin, 4, 2) AS INTEGER)) - 
-              (CAST(SUBSTR(r.hora_inicio, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_inicio, 4, 2) AS INTEGER))
+              (CAST(SUBSTR(r.hora_fin::text, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_fin::text, 4, 2) AS INTEGER)) - 
+              (CAST(SUBSTR(r.hora_inicio::text, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_inicio::text, 4, 2) AS INTEGER))
             ELSE 0
           END
         ) / 60.0 as horas_totales
