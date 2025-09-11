@@ -3970,6 +3970,27 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
   }
 });
 
+// Endpoint temporal para debug de usuarios admin
+app.get('/api/debug/admin-users', async (req, res) => {
+  try {
+    const users = await db.query(`
+      SELECT id, email, rol, created_at 
+      FROM usuarios 
+      WHERE rol IN ('super_admin', 'owner', 'manager')
+      ORDER BY id
+    `);
+    res.json({ users });
+  } catch (error) {
+    console.error('Error obteniendo usuarios admin:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
