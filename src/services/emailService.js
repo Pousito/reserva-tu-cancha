@@ -36,9 +36,22 @@ class EmailService {
       
       // Verificar si las credenciales de email están configuradas
       if (!emailConfig.user || !emailConfig.pass) {
-        console.log('⚠️ Email no configurado - usando modo simulación');
-        this.isConfigured = false;
-        return;
+        console.log('⚠️ Email no configurado - intentando configuración de producción');
+        
+        // Configuración de fallback para producción
+        if (process.env.NODE_ENV === 'production') {
+          emailConfig.host = 'smtp.zoho.com';
+          emailConfig.port = 587;
+          emailConfig.user = 'soporte@reservatuscanchas.cl';
+          emailConfig.pass = 'KWAX CS8q 61cN';
+          emailConfig.secure = false;
+          
+          console.log('📧 Usando configuración de fallback para producción');
+        } else {
+          console.log('⚠️ Email no configurado - usando modo simulación');
+          this.isConfigured = false;
+          return;
+        }
       }
 
       this.transporter = nodemailer.createTransport({
