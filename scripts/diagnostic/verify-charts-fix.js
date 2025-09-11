@@ -106,8 +106,11 @@ async function verifyReportsHTML() {
             const html = response.body;
             
             // Verificar versión de Chart.js
-            if (html.includes('chart.js@3.9.1')) {
-                console.log('✅ Chart.js 3.9.1 incluido en HTML');
+            if (html.includes('/js/chart.min.js')) {
+                console.log('✅ Chart.js local incluido en HTML');
+                return true;
+            } else if (html.includes('chart.js@3.9.1')) {
+                console.log('✅ Chart.js 3.9.1 CDN incluido en HTML');
                 return true;
             } else if (html.includes('chart.js@4.3.0') || html.includes('chart.js@4.4.0')) {
                 console.log('❌ Versión problemática de Chart.js aún incluida');
@@ -165,7 +168,7 @@ async function verifyChartsFix() {
     };
     
     console.log('\n📋 === RESULTADOS DE VERIFICACIÓN ===');
-    console.log(`Chart.js 3.9.1: ${results.chartJS ? '✅' : '❌'}`);
+    console.log(`Chart.js (local/CDN): ${results.chartJS ? '✅' : '❌'}`);
     console.log(`HTML actualizado: ${results.reportsHTML ? '✅' : '❌'}`);
     console.log(`JavaScript actualizado: ${results.reportsJS ? '✅' : '❌'}`);
     
