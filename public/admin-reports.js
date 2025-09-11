@@ -11,6 +11,15 @@ let hoursChart = null;
 
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar que Chart.js esté disponible
+    if (typeof Chart === 'undefined') {
+        console.error('❌ Chart.js no está disponible');
+        showNotification('Error: Chart.js no está disponible. Recarga la página.', 'error');
+        return;
+    }
+    
+    console.log('✅ Chart.js disponible, versión:', Chart.version);
+    
     // Inicializar sistema de roles
     if (!AdminUtils.initializeRoleSystem()) {
         return;
@@ -257,7 +266,15 @@ function updateCharts() {
 // Actualizar gráfico de ingresos
 function updateIncomeChart(data) {
     const canvas = document.getElementById('revenueChart');
-    if (!canvas || !data) return;
+    if (!canvas || !data) {
+        console.error('❌ Canvas o datos no disponibles para gráfico de ingresos');
+        return;
+    }
+    
+    if (typeof Chart === 'undefined') {
+        console.error('❌ Chart.js no está disponible para crear gráfico de ingresos');
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
     

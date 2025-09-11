@@ -35,6 +35,8 @@
     "clean-duplicate-courts": "node scripts/maintenance/clean-duplicate-courts.js",
     "auto-backup": "node scripts/maintenance/auto-backup.js",
     "check-charts": "node scripts/diagnostic/check-charts-production.js",
+    "verify-charts-fix": "node scripts/diagnostic/verify-charts-fix.js",
+    "verify-charts-auto": "node scripts/diagnostic/verify-charts-fix.js --retry",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js"
