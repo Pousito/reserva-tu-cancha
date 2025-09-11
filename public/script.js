@@ -1561,11 +1561,14 @@ async function verificarDisponibilidadTiempoReal() {
         
         // Si hay hora seleccionada, verificar disponibilidad de todas las canchas para esa hora
         if (hora) {
+            console.log('🕐 Verificando disponibilidad en tiempo real para hora:', hora);
             for (const cancha of canchas) {
                 const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
                 console.log('🏟️ Tiempo real - Cancha', cancha.id, '(', cancha.nombre, ') - Disponible:', estaDisponible);
                 actualizarEstadoCancha(cancha.id, estaDisponible);
             }
+        } else {
+            console.log('⚠️ No hay hora seleccionada para verificación en tiempo real');
         }
         
         // SIEMPRE actualizar horarios con disponibilidad para TODAS las horas
@@ -2131,6 +2134,13 @@ function configurarEventListeners() {
             console.log('🕐 Ejecutando renderizarCanchasConDisponibilidad()...');
             await renderizarCanchasConDisponibilidad();
             console.log('🕐 renderizarCanchasConDisponibilidad() completado');
+            
+            // VERIFICACIÓN ADICIONAL: Forzar actualización visual
+            console.log('🔄 Verificación adicional: forzando actualización visual...');
+            setTimeout(async () => {
+                console.log('🔄 Re-ejecutando renderizarCanchasConDisponibilidad después de 500ms...');
+                await renderizarCanchasConDisponibilidad();
+            }, 500);
         } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
             // Si no hay canchas, cargarlas y renderizar visualmente (Fase 5)
             console.log('🕐 Hora seleccionada - cargando y renderizando canchas (Fase 5)');
@@ -3254,9 +3264,11 @@ async function renderizarCanchasConDisponibilidad() {
                     if (estaDisponible) {
                         cardClass = 'cancha-card disponible';
                         estadoBadge = '<span class="badge bg-success">Disponible</span>';
+                        console.log('✅ Cancha', cancha.id, 'marcada como DISPONIBLE (verde)');
                     } else {
                         cardClass = 'cancha-card ocupada';
                         estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
+                        console.log('🔴 Cancha', cancha.id, 'marcada como OCUPADA (rojo)');
                     }
                 }
             }
@@ -3354,6 +3366,54 @@ async function renderizarCanchasConDisponibilidad() {
     
     console.log('🎨 === RENDERIZAR CANCHAS COMPLETADO ===');
     console.log('🎨 Elementos en el grid:', grid.children.length);
+    
+    // FUNCIÓN DE EMERGENCIA: Verificar disponibilidad después de renderizar
+    if (fecha && hora) {
+        console.log('🚨 FUNCIÓN DE EMERGENCIA: Verificando disponibilidad post-renderizado...');
+        setTimeout(async () => {
+            console.log('🚨 Ejecutando verificación de emergencia...');
+            for (const cancha of canchas) {
+                try {
+                    const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                    const reservas = await response.json();
+                    
+                    const horaFin = calcularHoraFin(hora);
+                    const estaDisponible = !reservas.some(r => {
+                        const reservaInicioMin = timeToMinutes(r.hora_inicio);
+                        const reservaFinMin = timeToMinutes(r.hora_fin);
+                        const horaInicioMin = timeToMinutes(hora);
+                        const horaFinMin = timeToMinutes(horaFin);
+                        return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
+                    });
+                    
+                    console.log(`🚨 Emergencia - Cancha ${cancha.id}: ${estaDisponible ? 'DISPONIBLE' : 'OCUPADA'}`);
+                    
+                    // Forzar actualización visual
+                    const canchaCard = document.querySelector(`[data-cancha-id="${cancha.id}"]`);
+                    if (canchaCard) {
+                        if (estaDisponible) {
+                            canchaCard.className = 'cancha-card disponible';
+                            const badge = canchaCard.querySelector('.badge');
+                            if (badge) {
+                                badge.className = 'badge bg-success';
+                                badge.textContent = 'Disponible';
+                            }
+                        } else {
+                            canchaCard.className = 'cancha-card ocupada';
+                            const badge = canchaCard.querySelector('.badge');
+                            if (badge) {
+                                badge.className = 'badge bg-danger';
+                                badge.textContent = 'Ocupada';
+                            }
+                        }
+                        console.log(`🚨 Cancha ${cancha.id} actualizada visualmente: ${estaDisponible ? 'VERDE' : 'ROJO'}`);
+                    }
+                } catch (error) {
+                    console.error(`🚨 Error en verificación de emergencia para cancha ${cancha.id}:`, error);
+                }
+            }
+        }, 1000);
+    }
 }
 
  // Renderizar canchas (función original mantenida para compatibilidad)
