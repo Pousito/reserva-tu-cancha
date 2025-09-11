@@ -39,7 +39,10 @@
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js",
     "setup-postgresql": "node scripts/setup-postgresql-local.js",
-    "dev-postgresql": "NODE_ENV=development DATABASE_URL=postgresql://postgres@localhost:5432/reserva_tu_cancha_local npm start"
+    "dev-postgresql": "NODE_ENV=development DATABASE_URL=postgresql://postgres@localhost:5432/reserva_tu_cancha_local npm start",
+    "migrate": "node scripts/migration/migration-manager.js",
+    "test-pre-deploy": "node scripts/testing/pre-deploy-tests.js",
+    "deploy-safe": "npm run test-pre-deploy && npm run migrate && git add . && git commit -m \"Safe deploy\" && git push origin main"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

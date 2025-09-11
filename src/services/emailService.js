@@ -12,15 +12,21 @@ class EmailService {
       // Asegurar que dotenv esté cargado
       require('dotenv').config();
       
-      // Cargar configuración dinámicamente
-      const config = require('../config/config');
+      // Usar variables de entorno directamente
+      const emailConfig = {
+        host: process.env.SMTP_HOST || 'smtp.zoho.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+        secure: false
+      };
       
       // Debug: Mostrar configuración de email
       console.log('📧 Configuración de email:', {
-        host: config.email.host,
-        port: config.email.port,
-        user: config.email.user ? 'Configurado' : 'No configurado',
-        pass: config.email.pass ? 'Configurado' : 'No configurado',
+        host: emailConfig.host,
+        port: emailConfig.port,
+        user: emailConfig.user ? 'Configurado' : 'No configurado',
+        pass: emailConfig.pass ? 'Configurado' : 'No configurado',
         env: {
           SMTP_HOST: process.env.SMTP_HOST ? 'Definido' : 'No definido',
           SMTP_USER: process.env.SMTP_USER ? 'Definido' : 'No definido',
@@ -29,32 +35,19 @@ class EmailService {
       });
       
       // Verificar si las credenciales de email están configuradas
-      if (!config.email.user || !config.email.pass) {
-        console.log('⚠️ Email no configurado - intentando usar credenciales hardcodeadas para producción');
-        
-        // Configuración temporal para producción
-        if (process.env.NODE_ENV === 'production') {
-          config.email.host = 'smtp.zoho.com';
-          config.email.port = 587;
-          config.email.user = 'reservas@reservatuscanchas.cl';
-          config.email.pass = 'L660mKFmcDBk';
-          config.email.secure = false;
-          
-          console.log('📧 Usando credenciales hardcodeadas para producción');
-        } else {
-          console.log('⚠️ Email no configurado - usando modo simulación');
-          this.isConfigured = false;
-          return;
-        }
+      if (!emailConfig.user || !emailConfig.pass) {
+        console.log('⚠️ Email no configurado - usando modo simulación');
+        this.isConfigured = false;
+        return;
       }
 
       this.transporter = nodemailer.createTransport({
-        host: config.email.host,
-        port: config.email.port,
-        secure: config.email.secure,
+        host: emailConfig.host,
+        port: emailConfig.port,
+        secure: emailConfig.secure,
         auth: {
-          user: config.email.user,
-          pass: config.email.pass
+          user: emailConfig.user,
+          pass: emailConfig.pass
         }
       });
 
