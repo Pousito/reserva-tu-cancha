@@ -2274,6 +2274,91 @@ app.get('/api/debug/admin-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA CREAR/ACTUALIZAR USUARIOS ADMINISTRADORES =====
+app.post('/api/debug/create-admin-users', async (req, res) => {
+  try {
+    console.log('👑 Creando/actualizando usuarios administradores...');
+    
+    const bcrypt = require('bcryptjs');
+    
+    // Usuarios administradores
+    const adminUsers = [
+      {
+        email: 'admin@reservatuscanchas.cl',
+        password: 'admin123',
+        nombre: 'Super Administrador',
+        rol: 'super_admin'
+      },
+      {
+        email: 'naxiin320@gmail.com',
+        password: 'magnasports2024',
+        nombre: 'Administrador MagnaSports',
+        rol: 'admin'
+      },
+      {
+        email: 'naxiin_320@hotmail.com',
+        password: 'complejo2024',
+        nombre: 'Dueño MagnaSports',
+        rol: 'admin'
+      }
+    ];
+    
+    const results = [];
+    
+    for (const usuario of adminUsers) {
+      try {
+        // Hashear la contraseña
+        const hashedPassword = await bcrypt.hash(usuario.password, 10);
+        
+        // Insertar o actualizar usuario
+        if (db.getDatabaseInfo().type === 'PostgreSQL') {
+          await db.run(
+            'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, true) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, nombre = EXCLUDED.nombre, rol = EXCLUDED.rol',
+            [usuario.email, hashedPassword, usuario.nombre, usuario.rol]
+          );
+        } else {
+          await db.run(
+            'INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)',
+            [usuario.email, hashedPassword, usuario.nombre, usuario.rol]
+          );
+        }
+        
+        results.push({
+          email: usuario.email,
+          nombre: usuario.nombre,
+          rol: usuario.rol,
+          status: 'success'
+        });
+        
+        console.log(`✅ Usuario creado/actualizado: ${usuario.email} (${usuario.rol})`);
+        
+      } catch (error) {
+        console.error(`❌ Error con usuario ${usuario.email}:`, error.message);
+        results.push({
+          email: usuario.email,
+          status: 'error',
+          error: error.message
+        });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Usuarios administradores creados/actualizados',
+      results: results,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando usuarios administradores:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====
 app.get('/api/debug/sync-database', async (req, res) => {
   try {
