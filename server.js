@@ -394,7 +394,8 @@ app.post('/api/simulate-payment-success', async (req, res) => {
 
         // Enviar emails de confirmación (cliente + administradores)
         try {
-            const emailService = require('./src/services/emailService');
+            const EmailService = require('./src/services/emailService');
+            const emailService = new EmailService();
             const emailData = {
                 codigo_reserva: reservationCode,
                 nombre_cliente: datosCliente.nombre_cliente,
@@ -1224,7 +1225,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
-    const reservasPorDiaRaw = await db.all(`
+    const reservasPorDiaRaw = await db.query(`
       SELECT r.fecha_creacion, r.precio_total
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -1255,10 +1256,10 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     
     
     // Reservas por complejo con ocupación real (solo confirmadas y pendientes)
-    const reservasPorComplejo = await db.all(`
-      SELECT 
-        co.nombre as complejo, 
-        COUNT(*) as cantidad, 
+    const reservasPorComplejo = await db.query(`
+      SELECT
+        co.nombre as complejo,
+        COUNT(*) as cantidad,
         COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN r.precio_total ELSE 0 END), 0) as ingresos,
         COUNT(DISTINCT c.id) as canchas_count
       FROM reservas r
@@ -1320,7 +1321,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
         AND r.estado IN ('confirmada', 'pendiente')
       `, [dateFrom, dateTo, complejo.complejo]);
       
-      const horasRealesOcupadas = parseFloat(horasOcupadas[0]?.horas_totales || 0);
+      const horasRealesOcupadas = parseFloat(horasOcupadas?.horas_totales || 0);
       
       // Calcular ocupación real - horas ocupadas / horas disponibles
       const ocupacionReal = horasDisponibles > 0 ? (horasRealesOcupadas / horasDisponibles * 100) : 0;
@@ -1334,7 +1335,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     }));
     
     // Reservas por tipo de cancha (solo confirmadas)
-    const reservasPorTipo = await db.all(`
+    const reservasPorTipo = await db.query(`
       SELECT c.tipo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -1345,7 +1346,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     // Top canchas más reservadas (solo confirmadas)
-    const topCanchas = await db.all(`
+    const topCanchas = await db.query(`
       SELECT c.nombre as cancha, co.nombre as complejo, COUNT(*) as reservas, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -1357,7 +1358,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     // Horarios más populares (solo confirmadas)
-    const horariosPopulares = await db.all(`
+    const horariosPopulares = await db.query(`
       SELECT r.hora_inicio as hora, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
