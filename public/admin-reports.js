@@ -223,21 +223,34 @@ function destroyCharts() {
 
 // Actualizar gráficos
 function updateCharts() {
+    console.log('🎨 Actualizando gráficos...');
+    console.log('📊 Datos de reportes:', reportsData);
+    
+    if (!reportsData || !reportsData.charts) {
+        console.error('❌ No hay datos de gráficos disponibles');
+        return;
+    }
+    
     const charts = reportsData.charts;
+    console.log('📈 Datos de gráficos:', charts);
     
     // Destruir gráficos existentes antes de crear nuevos
     destroyCharts();
     
     // Gráfico de ingresos por día
+    console.log('📊 Actualizando gráfico de ingresos:', charts.reservasPorDia);
     updateIncomeChart(charts.reservasPorDia);
     
     // Gráfico de reservas por tipo
+    console.log('📊 Actualizando gráfico de tipos:', charts.reservasPorTipo);
     updateReservationsChart(charts.reservasPorTipo);
     
     // Gráfico de ocupación por complejo
+    console.log('📊 Actualizando gráfico de ocupación:', charts.reservasPorComplejo);
     updateOccupancyChart(charts.reservasPorComplejo);
     
     // Gráfico de horarios populares
+    console.log('📊 Actualizando gráfico de horarios:', charts.horariosPopulares);
     updateHoursChart(charts.horariosPopulares);
 }
 
