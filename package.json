@@ -35,7 +35,8 @@
     "clean-duplicate-courts": "node scripts/maintenance/clean-duplicate-courts.js",
     "auto-backup": "node scripts/maintenance/auto-backup.js",
     "test": "echo \"No tests specified\" && exit 0",
-    "lint": "echo \"No linter configured\" && exit 0"
+    "lint": "echo \"No linter configured\" && exit 0",
+    "setup-transbank": "node scripts/setup-transbank.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -50,7 +51,8 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.4",
     "pg": "^8.11.3",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "transbank-sdk": "^6.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

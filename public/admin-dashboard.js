@@ -1,5 +1,7 @@
 // Variables globales
 let reservationsChart = null;
+let typeChart = null;
+let hoursChart = null;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -21,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarEstadisticas();
     cargarReservasRecientes();
     cargarReservasHoy();
-    inicializarGrafico();
+    inicializarGraficos();
 });
 
 function configurarInterfazPorRol(rol) {
@@ -64,10 +66,13 @@ async function cargarEstadisticas() {
             document.getElementById('totalCourts').textContent = stats.totalCanchas || 0;
             document.getElementById('totalComplexes').textContent = stats.totalComplejos || 0;
             
-            // Actualizar gráfico si hay datos
+            // Actualizar gráficos si hay datos
             if (stats.reservasPorDia && reservationsChart) {
-                actualizarGrafico(stats.reservasPorDia);
+                actualizarGraficoReservas(stats.reservasPorDia);
             }
+            
+            // Cargar datos adicionales para los otros gráficos
+            cargarDatosGraficos();
         } else {
             console.error('Error al cargar estadísticas');
         }
@@ -170,7 +175,18 @@ function mostrarReservasHoy(reservas) {
     container.innerHTML = html;
 }
 
-function inicializarGrafico() {
+function inicializarGraficos() {
+    // Inicializar gráfico de reservas por día
+    inicializarGraficoReservas();
+    
+    // Inicializar gráfico de tipos de cancha
+    inicializarGraficoTipos();
+    
+    // Inicializar gráfico de horarios
+    inicializarGraficoHorarios();
+}
+
+function inicializarGraficoReservas() {
     const ctx = document.getElementById('reservationsChart').getContext('2d');
     
     reservationsChart = new Chart(ctx, {
@@ -184,7 +200,12 @@ function inicializarGrafico() {
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
             }]
         },
         options: {
@@ -193,21 +214,153 @@ function inicializarGrafico() {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false
                 }
             },
             scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6b7280'
+                    }
+                },
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: 'rgba(102, 126, 234, 0.1)'
+                    },
                     ticks: {
-                        stepSize: 1
+                        color: '#6b7280'
                     }
                 }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
             }
         }
     });
 }
 
-function actualizarGrafico(datos) {
+function inicializarGraficoTipos() {
+    const ctx = document.getElementById('typeChart').getContext('2d');
+    
+    typeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#667eea',
+                    '#f093fb',
+                    '#4facfe',
+                    '#43e97b',
+                    '#fa709a',
+                    '#ffecd2'
+                ],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true
+                }
+            },
+            cutout: '60%'
+        }
+    });
+}
+
+function inicializarGraficoHorarios() {
+    const ctx = document.getElementById('hoursChart').getContext('2d');
+    
+    hoursChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Reservas',
+                data: [],
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: '#667eea',
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6b7280'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(102, 126, 234, 0.1)'
+                    },
+                    ticks: {
+                        color: '#6b7280'
+                    }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+function actualizarGraficoReservas(datos) {
     if (!reservationsChart) return;
     
     const labels = datos.map(item => formatearFechaCorta(item.dia));
@@ -216,6 +369,115 @@ function actualizarGrafico(datos) {
     reservationsChart.data.labels = labels;
     reservationsChart.data.datasets[0].data = values;
     reservationsChart.update();
+}
+
+// Cargar datos adicionales para los gráficos
+async function cargarDatosGraficos() {
+    try {
+        // Cargar datos de tipos de cancha
+        await cargarDatosTiposCancha();
+        
+        // Cargar datos de horarios populares
+        await cargarDatosHorarios();
+    } catch (error) {
+        console.error('Error cargando datos de gráficos:', error);
+    }
+}
+
+// Cargar datos de tipos de cancha
+async function cargarDatosTiposCancha() {
+    try {
+        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reports`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                dateTo: new Date().toISOString().split('T')[0]
+            })
+        });
+        
+        if (response && response.ok) {
+            const data = await response.json();
+            if (data.charts && data.charts.reservasPorTipo && typeChart) {
+                actualizarGraficoTipos(data.charts.reservasPorTipo);
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando tipos de cancha:', error);
+    }
+}
+
+// Cargar datos de horarios populares
+async function cargarDatosHorarios() {
+    try {
+        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reports`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                dateTo: new Date().toISOString().split('T')[0]
+            })
+        });
+        
+        if (response && response.ok) {
+            const data = await response.json();
+            if (data.charts && data.charts.horariosPopulares && hoursChart) {
+                actualizarGraficoHorarios(data.charts.horariosPopulares);
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando horarios:', error);
+    }
+}
+
+// Actualizar gráfico de tipos
+function actualizarGraficoTipos(datos) {
+    if (!typeChart || !datos) return;
+    
+    const labels = datos.map(item => item.tipo);
+    const values = datos.map(item => parseInt(item.cantidad));
+    
+    typeChart.data.labels = labels;
+    typeChart.data.datasets[0].data = values;
+    typeChart.update();
+}
+
+// Actualizar gráfico de horarios
+function actualizarGraficoHorarios(datos) {
+    if (!hoursChart || !datos) return;
+    
+    const labels = datos.map(item => item.hora);
+    const values = datos.map(item => parseInt(item.cantidad));
+    
+    hoursChart.data.labels = labels;
+    hoursChart.data.datasets[0].data = values;
+    hoursChart.update();
+}
+
+// Función para cambiar tipo de gráfico
+function toggleChartType(chartId) {
+    if (chartId === 'reservationsChart' && reservationsChart) {
+        const currentType = reservationsChart.config.type;
+        const newType = currentType === 'line' ? 'bar' : 'line';
+        
+        reservationsChart.config.type = newType;
+        reservationsChart.update();
+        
+        // Actualizar el ícono del botón
+        const button = document.querySelector(`[onclick="toggleChartType('${chartId}')"]`);
+        if (button) {
+            const icon = button.querySelector('i');
+            if (newType === 'bar') {
+                icon.className = 'fas fa-chart-line';
+            } else {
+                icon.className = 'fas fa-chart-bar';
+            }
+        }
+    }
 }
 
 function formatearFecha(fecha) {

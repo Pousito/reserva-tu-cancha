@@ -213,9 +213,7 @@ class DatabaseManager {
           installments_number INTEGER,
           transaction_date TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          bloqueo_id VARCHAR(50),
-          reservation_code VARCHAR(50)
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
@@ -229,9 +227,7 @@ class DatabaseManager {
           hora_fin TIME NOT NULL,
           session_id VARCHAR(255) NOT NULL,
           expira_en TIMESTAMP NOT NULL,
-          creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          datos_cliente TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
@@ -272,44 +268,6 @@ class DatabaseManager {
       } catch (error) {
         if (!error.message.includes('already exists')) {
           console.error('❌ Error agregando columna fecha_creacion:', error.message);
-        }
-      }
-
-      // Migración: Agregar columnas a tabla pagos si no existen
-      try {
-        await client.query(`ALTER TABLE pagos ADD COLUMN bloqueo_id VARCHAR(50)`);
-        console.log('✅ Columna bloqueo_id agregada a pagos (PostgreSQL)');
-      } catch (error) {
-        if (!error.message.includes('already exists')) {
-          console.error('❌ Error agregando columna bloqueo_id:', error.message);
-        }
-      }
-
-      try {
-        await client.query(`ALTER TABLE pagos ADD COLUMN reservation_code VARCHAR(50)`);
-        console.log('✅ Columna reservation_code agregada a pagos (PostgreSQL)');
-      } catch (error) {
-        if (!error.message.includes('already exists')) {
-          console.error('❌ Error agregando columna reservation_code:', error.message);
-        }
-      }
-
-      // Migración: Agregar columnas a tabla bloqueos_temporales si no existen
-      try {
-        await client.query(`ALTER TABLE bloqueos_temporales ADD COLUMN datos_cliente TEXT`);
-        console.log('✅ Columna datos_cliente agregada a bloqueos_temporales (PostgreSQL)');
-      } catch (error) {
-        if (!error.message.includes('already exists')) {
-          console.error('❌ Error agregando columna datos_cliente:', error.message);
-        }
-      }
-
-      try {
-        await client.query(`ALTER TABLE bloqueos_temporales ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
-        console.log('✅ Columna created_at agregada a bloqueos_temporales (PostgreSQL)');
-      } catch (error) {
-        if (!error.message.includes('already exists')) {
-          console.error('❌ Error agregando columna created_at:', error.message);
         }
       }
 
@@ -419,25 +377,23 @@ class DatabaseManager {
             return;
           }
           
-            // Crear tabla pagos
-            db.run(`CREATE TABLE IF NOT EXISTS pagos (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              reserva_id INTEGER,
-              transbank_token TEXT UNIQUE NOT NULL,
-              order_id TEXT NOT NULL,
-              amount INTEGER NOT NULL,
-              status TEXT DEFAULT 'pending',
-              authorization_code TEXT,
-              payment_type_code TEXT,
-              response_code INTEGER,
-              installments_number INTEGER,
-              transaction_date DATETIME,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              bloqueo_id TEXT,
-              reservation_code TEXT,
-              FOREIGN KEY (reserva_id) REFERENCES reservas (id)
-            )`, (err) => {
+          // Crear tabla pagos
+          db.run(`CREATE TABLE IF NOT EXISTS pagos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reserva_id INTEGER,
+            transbank_token TEXT UNIQUE NOT NULL,
+            order_id TEXT NOT NULL,
+            amount INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            authorization_code TEXT,
+            payment_type_code TEXT,
+            response_code INTEGER,
+            installments_number INTEGER,
+            transaction_date DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (reserva_id) REFERENCES reservas (id)
+          )`, (err) => {
             if (err) {
               console.error('❌ Error creando tabla pagos:', err.message);
               reject(err);
@@ -446,97 +402,60 @@ class DatabaseManager {
             
             // Crear tabla bloqueos temporales
             db.run(`CREATE TABLE IF NOT EXISTS bloqueos_temporales (
-              id TEXT PRIMARY KEY,
-              cancha_id INTEGER,
-              fecha DATE NOT NULL,
-              hora_inicio TIME NOT NULL,
-              hora_fin TIME NOT NULL,
-              session_id TEXT NOT NULL,
-              expira_en DATETIME NOT NULL,
-              creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
-              datos_cliente TEXT,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              FOREIGN KEY (cancha_id) REFERENCES canchas (id)
-            )`, (err) => {
-              if (err) {
-                console.error('❌ Error creando tabla bloqueos_temporales:', err.message);
-                reject(err);
-                return;
+            id TEXT PRIMARY KEY,
+            cancha_id INTEGER,
+            fecha DATE NOT NULL,
+            hora_inicio TIME NOT NULL,
+            hora_fin TIME NOT NULL,
+            session_id TEXT NOT NULL,
+            expira_en DATETIME NOT NULL,
+            creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (cancha_id) REFERENCES canchas (id)
+          )`, (err) => {
+            if (err) {
+              console.error('❌ Error creando tabla bloqueos_temporales:', err.message);
+              reject(err);
+              return;
+            }
+            
+            // Migración: Agregar columna complejo_id si no existe
+            db.run(`ALTER TABLE usuarios ADD COLUMN complejo_id INTEGER`, (err) => {
+              if (err && !err.message.includes('duplicate column name')) {
+                console.error('❌ Error agregando columna complejo_id:', err.message);
+              } else if (!err) {
+                console.log('✅ Columna complejo_id agregada a usuarios');
               }
-              
-              // Migración: Agregar columna complejo_id si no existe
-              db.run(`ALTER TABLE usuarios ADD COLUMN complejo_id INTEGER`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna complejo_id:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna complejo_id agregada a usuarios');
-                }
-              });
-
-              // Migración: Agregar columna rut_cliente si no existe
-              db.run(`ALTER TABLE reservas ADD COLUMN rut_cliente TEXT`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna rut_cliente:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna rut_cliente agregada a reservas');
-                }
-              });
-
-              // Migración: Agregar columna estado_pago si no existe
-              db.run(`ALTER TABLE reservas ADD COLUMN estado_pago TEXT DEFAULT 'pendiente'`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna estado_pago:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna estado_pago agregada a reservas');
-                }
-              });
-
-              // Migración: Agregar columna fecha_creacion si no existe
-              db.run(`ALTER TABLE reservas ADD COLUMN fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna fecha_creacion:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna fecha_creacion agregada a reservas');
-                }
-              });
-
-              // Migración: Agregar columnas a tabla pagos si no existen
-              db.run(`ALTER TABLE pagos ADD COLUMN bloqueo_id TEXT`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna bloqueo_id:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna bloqueo_id agregada a pagos');
-                }
-              });
-
-              db.run(`ALTER TABLE pagos ADD COLUMN reservation_code TEXT`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna reservation_code:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna reservation_code agregada a pagos');
-                }
-              });
-
-              // Migración: Agregar columnas a tabla bloqueos_temporales si no existen
-              db.run(`ALTER TABLE bloqueos_temporales ADD COLUMN datos_cliente TEXT`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna datos_cliente:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna datos_cliente agregada a bloqueos_temporales');
-                }
-              });
-
-              db.run(`ALTER TABLE bloqueos_temporales ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP`, (err) => {
-                if (err && !err.message.includes('duplicate column name')) {
-                  console.error('❌ Error agregando columna created_at:', err.message);
-                } else if (!err) {
-                  console.log('✅ Columna created_at agregada a bloqueos_temporales');
-                }
-              });
-              
-              console.log('✅ Tablas SQLite creadas exitosamente');
-              resolve();
             });
+
+            // Migración: Agregar columna rut_cliente si no existe
+            db.run(`ALTER TABLE reservas ADD COLUMN rut_cliente TEXT`, (err) => {
+              if (err && !err.message.includes('duplicate column name')) {
+                console.error('❌ Error agregando columna rut_cliente:', err.message);
+              } else if (!err) {
+                console.log('✅ Columna rut_cliente agregada a reservas');
+              }
+            });
+
+            // Migración: Agregar columna estado_pago si no existe
+            db.run(`ALTER TABLE reservas ADD COLUMN estado_pago TEXT DEFAULT 'pendiente'`, (err) => {
+              if (err && !err.message.includes('duplicate column name')) {
+                console.error('❌ Error agregando columna estado_pago:', err.message);
+              } else if (!err) {
+                console.log('✅ Columna estado_pago agregada a reservas');
+              }
+            });
+
+            // Migración: Agregar columna fecha_creacion si no existe
+            db.run(`ALTER TABLE reservas ADD COLUMN fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP`, (err) => {
+              if (err && !err.message.includes('duplicate column name')) {
+                console.error('❌ Error agregando columna fecha_creacion:', err.message);
+              } else if (!err) {
+                console.log('✅ Columna fecha_creacion agregada a reservas');
+              }
+            });
+            
+            console.log('✅ Tablas SQLite creadas exitosamente');
+            resolve();
           });
         });
       });

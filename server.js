@@ -304,6 +304,300 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
 const availabilityRoutes = require('./src/routes/availability');
 app.use('/api/availability', availabilityRoutes);
 
+// ===== RUTAS DE PAGOS =====
+const { router: paymentRoutes, setDatabase: setPaymentDatabase } = require('./src/routes/payments');
+setPaymentDatabase(db); // Pasar la instancia de la base de datos
+app.use('/api/payments', paymentRoutes);
+
+// Ruta de prueba para simular retorno de Transbank en desarrollo
+app.get('/test-payment-return', (req, res) => {
+    const { token_ws, TBK_TOKEN } = req.query;
+    
+    if (token_ws) {
+        // Simular pago exitoso
+        res.redirect(`/payment.html?code=${req.query.reservationCode}&status=success&token=${token_ws}`);
+    } else if (TBK_TOKEN) {
+        // Simular pago cancelado
+        res.redirect(`/payment.html?code=${req.query.reservationCode}&status=cancelled&token=${TBK_TOKEN}`);
+    } else {
+        res.redirect(`/payment.html?code=${req.query.reservationCode}&status=error`);
+    }
+});
+
+// Endpoint para simular pago exitoso completo (bypasea Transbank)
+app.post('/api/simulate-payment-success', async (req, res) => {
+    try {
+        const { reservationCode } = req.body;
+        
+        if (!reservationCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de reserva requerido'
+            });
+        }
+
+        console.log('🧪 Simulando pago exitoso para:', reservationCode);
+
+        // Buscar el bloqueo temporal
+        const bloqueoData = await db.get(
+            'SELECT * FROM bloqueos_temporales WHERE session_id = ?',
+            [reservationCode]
+        );
+
+        if (!bloqueoData) {
+            return res.status(404).json({
+                success: false,
+                error: 'Bloqueo temporal no encontrado'
+            });
+        }
+
+        console.log('📊 Bloqueo temporal encontrado:', bloqueoData.id);
+
+        const datosCliente = JSON.parse(bloqueoData.datos_cliente);
+
+        // Crear la reserva real
+        const reservaId = await db.run(`
+            INSERT INTO reservas (
+                cancha_id, nombre_cliente, email_cliente, 
+                rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
+                codigo_reserva, estado, estado_pago, fecha_creacion, es_dato_produccion
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            bloqueoData.cancha_id,
+            datosCliente.nombre_cliente,
+            datosCliente.email_cliente,
+            datosCliente.rut_cliente || 'No proporcionado',
+            bloqueoData.fecha,
+            bloqueoData.hora_inicio,
+            bloqueoData.hora_fin,
+            datosCliente.precio_total,
+            reservationCode,
+            'confirmada',
+            'pagado',
+            new Date().toISOString(),
+            1
+        ]);
+
+        console.log('✅ Reserva creada con ID:', reservaId);
+
+        // Eliminar el bloqueo temporal
+        await db.run('DELETE FROM bloqueos_temporales WHERE id = ?', [bloqueoData.id]);
+        console.log('🗑️ Bloqueo temporal eliminado');
+
+        // Obtener información del complejo y cancha
+        const canchaInfo = await db.get(`
+            SELECT c.nombre as cancha_nombre, co.nombre as complejo_nombre 
+            FROM canchas c 
+            JOIN complejos co ON c.complejo_id = co.id 
+            WHERE c.id = ?
+        `, [bloqueoData.cancha_id]);
+
+        // Enviar emails de confirmación (cliente + administradores)
+        try {
+            const emailService = require('./src/services/emailService');
+            const emailData = {
+                codigo_reserva: reservationCode,
+                nombre_cliente: datosCliente.nombre_cliente,
+                email_cliente: datosCliente.email_cliente,
+                fecha: bloqueoData.fecha,
+                hora_inicio: bloqueoData.hora_inicio,
+                hora_fin: bloqueoData.hora_fin,
+                precio_total: datosCliente.precio_total,
+                complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+                cancha: canchaInfo?.cancha_nombre || 'Cancha'
+            };
+            
+            const emailResults = await emailService.sendConfirmationEmails(emailData);
+            console.log('📧 Emails de confirmación enviados:', emailResults);
+        } catch (emailError) {
+            console.error('❌ Error enviando emails:', emailError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Pago simulado exitosamente',
+            reserva_id: reservaId,
+            codigo_reserva: reservationCode
+        });
+
+    } catch (error) {
+        console.error('❌ Error simulando pago:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Endpoint para simular pago cancelado
+app.post('/api/simulate-payment-cancelled', async (req, res) => {
+    try {
+        const { reservationCode } = req.body;
+        
+        if (!reservationCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de reserva requerido'
+            });
+        }
+
+        console.log('🧪 Simulando pago cancelado para:', reservationCode);
+
+        // Eliminar el bloqueo temporal
+        const result = await db.run(
+            'DELETE FROM bloqueos_temporales WHERE session_id = ?',
+            [reservationCode]
+        );
+
+        if (result.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Bloqueo temporal no encontrado'
+            });
+        }
+
+        console.log('🗑️ Bloqueo temporal eliminado por cancelación');
+
+        res.json({
+            success: true,
+            message: 'Pago cancelado exitosamente',
+            codigo_reserva: reservationCode
+        });
+
+    } catch (error) {
+        console.error('❌ Error simulando cancelación:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Endpoint para obtener datos de un bloqueo temporal
+app.get('/api/bloqueos-temporales/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    
+    // Buscar bloqueo temporal por session_id o por ID del bloqueo
+    const bloqueo = await db.get(`
+      SELECT bt.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+      FROM bloqueos_temporales bt
+      JOIN canchas c ON bt.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      WHERE bt.session_id = ? OR bt.id = ?
+      ORDER BY bt.created_at DESC
+      LIMIT 1
+    `, [codigo, codigo]);
+    
+    if (!bloqueo) {
+      return res.status(404).json({ error: 'Bloqueo temporal no encontrado' });
+    }
+    
+    // Verificar que no haya expirado
+    const ahora = new Date();
+    const expiraEn = new Date(bloqueo.expira_en);
+    
+    if (ahora > expiraEn) {
+      return res.status(410).json({ error: 'Bloqueo temporal expirado' });
+    }
+    
+    res.json(bloqueo);
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo bloqueo temporal:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Nuevo endpoint para crear bloqueo temporal y proceder al pago
+app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
+  try {
+    console.log('🔒 Iniciando creación de bloqueo temporal...');
+    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id } = req.body;
+    
+    console.log('📋 Datos recibidos:', { cancha_id, nombre_cliente, email_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id });
+    
+    // Verificar que todos los campos requeridos estén presentes
+    if (!cancha_id || !nombre_cliente || !email_cliente || !fecha || !hora_inicio || !hora_fin || !precio_total || !session_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Faltan campos requeridos para crear el bloqueo temporal' 
+      });
+    }
+    
+    // Verificar disponibilidad antes de bloquear
+    console.log('🔍 Verificando disponibilidad...');
+    const disponibilidad = await verificarDisponibilidadCancha(cancha_id, fecha, hora_inicio, hora_fin);
+    console.log('📊 Resultado disponibilidad:', disponibilidad);
+    
+    if (!disponibilidad.disponible) {
+      console.log('❌ No disponible:', disponibilidad.mensaje);
+      return res.status(409).json({ 
+        success: false, 
+        error: 'La cancha ya no está disponible en ese horario',
+        conflicto: disponibilidad.conflicto
+      });
+    }
+    
+    // Crear bloqueo temporal
+    console.log('💾 Creando registro en base de datos...');
+    const bloqueoId = 'BLOCK_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    
+    console.log('📝 Datos a insertar:', {
+      bloqueoId,
+      cancha_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      session_id,
+      expiraEn: expiraEn.toISOString(),
+      datos_cliente: JSON.stringify({
+        nombre_cliente,
+        email_cliente,
+        telefono_cliente: telefono_cliente || 'No proporcionado',
+        rut_cliente,
+        precio_total
+      })
+    });
+    
+    await db.run(`
+      INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [bloqueoId, cancha_id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), JSON.stringify({
+      nombre_cliente,
+      email_cliente,
+      telefono_cliente: telefono_cliente || 'No proporcionado',
+      rut_cliente,
+      precio_total
+    })]);
+    
+    console.log(`🔒 Bloqueo temporal creado: ${bloqueoId}`);
+    
+    // Invalidar cache de disponibilidad (opcional)
+    console.log('⚠️ Cache de disponibilidad no invalidado (funcionalidad opcional)');
+    
+    // Usar el session_id como código de reserva para mantener consistencia
+    const codigoReserva = session_id;
+    
+    res.json({
+      success: true,
+      bloqueo_id: bloqueoId,
+      codigo_reserva: codigoReserva,
+      expira_en: expiraEn.toISOString(),
+      message: 'Bloqueo temporal creado exitosamente. Procede al pago.'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando bloqueo temporal:', error);
+    console.error('❌ Stack trace:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor al crear bloqueo temporal: ' + error.message
+    });
+  }
+});
+
 // Endpoint para verificar disponibilidad de canchas (legacy - mantener compatibilidad)
 app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
   try {
@@ -456,7 +750,8 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
           cancha_id: item.cancha_id,
           cancha_nombre: item.cancha_nombre,
           cancha_tipo: item.cancha_tipo,
-          reservas: []
+          reservas: [],
+          bloqueos: []
         };
       }
       
@@ -469,6 +764,36 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
         });
       }
     });
+    
+    // Obtener bloqueos temporales para todas las canchas del complejo
+    const canchaIds = Object.keys(resultado).map(id => parseInt(id));
+    if (canchaIds.length > 0) {
+      const bloqueos = await db.query(`
+        SELECT cancha_id, hora_inicio, hora_fin, session_id, expira_en
+        FROM bloqueos_temporales 
+        WHERE cancha_id IN (${canchaIds.map(() => '?').join(',')}) 
+        AND fecha = ? 
+        AND expira_en > ?
+      `, [...canchaIds, fecha, new Date().toISOString()]);
+      
+      // Agregar bloqueos a cada cancha
+      bloqueos.forEach(bloqueo => {
+        if (resultado[bloqueo.cancha_id]) {
+          resultado[bloqueo.cancha_id].bloqueos.push({
+            hora_inicio: bloqueo.hora_inicio,
+            hora_fin: bloqueo.hora_fin,
+            session_id: bloqueo.session_id,
+            expira_en: bloqueo.expira_en
+          });
+        }
+      });
+      
+      // Limpiar bloqueos expirados
+      await db.run(
+        'DELETE FROM bloqueos_temporales WHERE expira_en <= ?',
+        [new Date().toISOString()]
+      );
+    }
     
     console.log(`✅ Disponibilidad completa obtenida para ${Object.keys(resultado).length} canchas en ${fecha}`);
     res.json(resultado);
@@ -506,6 +831,7 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       ${whereClause}
+      AND r.estado != 'cancelada'
     `, params);
     
     const totalCanchas = await db.get(`
@@ -544,6 +870,7 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         WHERE ${fechaCondition}
+        AND r.estado != 'cancelada'
         ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
         GROUP BY DATE(r.fecha)
         ORDER BY dia
@@ -555,6 +882,7 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         WHERE ${fechaCondition}
+        AND r.estado != 'cancelada'
         ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = ?'}
         GROUP BY date(r.fecha)
         ORDER BY dia
@@ -593,10 +921,10 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     
     if (userRole === 'super_admin') {
       // Super admin ve todo
-      whereClause = '';
+      whereClause = 'WHERE r.estado != \'cancelada\'';
     } else if (userRole === 'owner' || userRole === 'manager') {
       // Dueños y administradores solo ven su complejo
-      whereClause = 'WHERE c.complejo_id = $1';
+      whereClause = 'WHERE c.complejo_id = $1 AND r.estado != \'cancelada\'';
       params = [complexFilter];
     }
     
@@ -607,7 +935,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
       LIMIT 10
     `, params);
     
@@ -630,6 +958,7 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       WHERE date(r.fecha) = date('now')
+      AND r.estado != 'cancelada'
       ORDER BY r.hora_inicio
     `);
     
@@ -670,7 +999,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.created_at DESC
+      ORDER BY r.fecha_creacion DESC
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
@@ -772,6 +1101,40 @@ app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requi
     
     if (result.changes > 0) {
       console.log(`✅ Reserva ${codigoReserva} confirmada exitosamente`);
+      
+      // Enviar emails de confirmación después de confirmar manualmente
+      try {
+        // Obtener información completa de la reserva para el email
+        const reservaInfo = await db.get(`
+          SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+          FROM reservas r
+          JOIN canchas c ON r.cancha_id = c.id
+          JOIN complejos co ON c.complejo_id = co.id
+          WHERE r.codigo_reserva = $1
+        `, [codigoReserva]);
+
+        if (reservaInfo) {
+          const emailData = {
+            codigo_reserva: reservaInfo.codigo_reserva,
+            email_cliente: reservaInfo.email_cliente,
+            nombre_cliente: reservaInfo.nombre_cliente,
+            complejo: reservaInfo.complejo_nombre || 'Complejo Deportivo',
+            cancha: reservaInfo.cancha_nombre || 'Cancha',
+            fecha: reservaInfo.fecha,
+            hora_inicio: reservaInfo.hora_inicio,
+            hora_fin: reservaInfo.hora_fin,
+            precio_total: reservaInfo.precio_total
+          };
+
+          console.log('📧 Enviando emails de confirmación para reserva confirmada manualmente:', codigoReserva);
+          const emailResults = await emailService.sendConfirmationEmails(emailData);
+          console.log('✅ Emails de confirmación procesados:', emailResults);
+        }
+      } catch (emailError) {
+        console.error('❌ Error enviando emails de confirmación:', emailError);
+        // No fallar la confirmación si hay error en el email
+      }
+      
       res.json({ success: true, message: 'Reserva confirmada exitosamente' });
     } else {
       console.log(`❌ Reserva ${codigoReserva} no encontrada`);
@@ -860,28 +1223,48 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
       ${whereClause} AND r.estado = 'confirmada'
     `, params);
     
-    // Reservas por día (solo confirmadas)
-    const reservasPorDia = await db.query(`
-      SELECT date(r.fecha) as fecha, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+    // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
+    const reservasPorDiaRaw = await db.query(`
+      SELECT r.fecha_creacion, r.precio_total
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado = 'confirmada'
-      GROUP BY date(r.fecha)
-      ORDER BY date(r.fecha)
+      ORDER BY r.fecha_creacion
     `, params);
     
-    // Reservas por complejo con ocupación real (solo confirmadas)
+    // Convertir fechas a zona horaria de Chile y agrupar por día
+    const reservasPorDia = {};
+    reservasPorDiaRaw.forEach(row => {
+      const fechaUTC = new Date(row.fecha_creacion);
+      const fechaChile = new Date(fechaUTC.getTime() + (4 * 60 * 60 * 1000)); // UTC+4 (Chile está 4 horas adelante de UTC)
+      const fechaStr = fechaChile.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      if (!reservasPorDia[fechaStr]) {
+        reservasPorDia[fechaStr] = {
+          fecha: fechaStr,
+          cantidad: 0,
+          ingresos: 0
+        };
+      }
+      reservasPorDia[fechaStr].cantidad += 1;
+      reservasPorDia[fechaStr].ingresos += row.precio_total;
+    });
+    
+    const reservasPorDiaArray = Object.values(reservasPorDia).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    
+    
+    // Reservas por complejo con ocupación real (solo confirmadas y pendientes)
     const reservasPorComplejo = await db.query(`
       SELECT 
         co.nombre as complejo, 
         COUNT(*) as cantidad, 
-        COALESCE(SUM(r.precio_total), 0) as ingresos,
+        COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN r.precio_total ELSE 0 END), 0) as ingresos,
         COUNT(DISTINCT c.id) as canchas_count
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause} AND r.estado = 'confirmada'
+      ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
       GROUP BY co.id, co.nombre
       ORDER BY ingresos DESC
     `, params);
@@ -893,9 +1276,9 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
       const fechaFin = new Date(dateTo);
       const diasDiferencia = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
       
-      let slotsDisponibles = 0;
+      let horasDisponibles = 0;
       
-      // Calcular slots disponibles día por día según el complejo
+      // Calcular horas disponibles día por día según el complejo
       for (let i = 0; i < diasDiferencia; i++) {
         const fechaActual = new Date(fechaInicio);
         fechaActual.setDate(fechaInicio.getDate() + i);
@@ -916,20 +1299,37 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
           horasPorDia = 16;
         }
         
-        slotsDisponibles += complejo.canchas_count * horasPorDia;
+        horasDisponibles += complejo.canchas_count * horasPorDia;
       }
       
-      // Reservas reales en el período
-      const reservasReales = parseInt(complejo.cantidad);
+      // Calcular horas realmente ocupadas por reservas
+      const horasOcupadas = await db.query(`
+        SELECT SUM(
+          CASE 
+            WHEN r.hora_fin > r.hora_inicio THEN 
+              (CAST(SUBSTR(r.hora_fin, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_fin, 4, 2) AS INTEGER)) - 
+              (CAST(SUBSTR(r.hora_inicio, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_inicio, 4, 2) AS INTEGER))
+            ELSE 0
+          END
+        ) / 60.0 as horas_totales
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        JOIN complejos co ON c.complejo_id = co.id
+        WHERE date(r.fecha) BETWEEN ? AND ?
+        AND co.id = (SELECT id FROM complejos WHERE nombre = ?)
+        AND r.estado IN ('confirmada', 'pendiente')
+      `, [dateFrom, dateTo, complejo.complejo]);
       
-      // Calcular ocupación real
-      const ocupacionReal = slotsDisponibles > 0 ? (reservasReales / slotsDisponibles * 100) : 0;
+      const horasRealesOcupadas = parseFloat(horasOcupadas[0]?.horas_totales || 0);
+      
+      // Calcular ocupación real - horas ocupadas / horas disponibles
+      const ocupacionReal = horasDisponibles > 0 ? (horasRealesOcupadas / horasDisponibles * 100) : 0;
       
       return {
         ...complejo,
         ocupacion_real: ocupacionReal.toFixed(1),
-        slots_disponibles: slotsDisponibles,
-        slots_ocupados: reservasReales
+        horas_disponibles: horasDisponibles,
+        horas_ocupadas: horasRealesOcupadas.toFixed(1)
       };
     }));
     
@@ -968,15 +1368,21 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
       LIMIT 10
     `, params);
     
+    // Calcular ocupación promedio real
+    const ocupacionPromedio = reservasPorComplejoConOcupacion.length > 0 
+      ? (reservasPorComplejoConOcupacion.reduce((sum, complejo) => sum + parseFloat(complejo.ocupacion_real), 0) / reservasPorComplejoConOcupacion.length).toFixed(1)
+      : 0;
+
     const reportData = {
       metrics: {
         totalReservas: parseInt(totalReservas.count),
         ingresosTotales: parseInt(ingresosTotales.total),
         reservasConfirmadas: parseInt(reservasConfirmadas.count),
-        tasaConfirmacion: totalReservas.count > 0 ? (reservasConfirmadas.count / totalReservas.count * 100).toFixed(1) : 0
+        tasaConfirmacion: totalReservas.count > 0 ? (reservasConfirmadas.count / totalReservas.count * 100).toFixed(1) : 0,
+        ocupacionPromedio: parseFloat(ocupacionPromedio)
       },
       charts: {
-        reservasPorDia: reservasPorDia,
+        reservasPorDia: reservasPorDiaArray,
         reservasPorComplejo: reservasPorComplejoConOcupacion,
         reservasPorTipo: reservasPorTipo,
         horariosPopulares: horariosPopulares
@@ -1057,8 +1463,8 @@ app.get('/api/debug/insert-test-reservations', async (req, res) => {
     for (const reserva of reservasData) {
       try {
         const result = await db.run(
-          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-          [reserva.codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'confirmada']
+          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+          [reserva.codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'confirmada', new Date().toISOString()]
         );
         results.push({ reserva: `${reserva.nombre_cliente} - ${reserva.fecha}`, result });
         console.log(`✅ Reserva insertada: ${reserva.nombre_cliente}`, result);
@@ -1333,8 +1739,8 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE r.codigo_reserva = $1 OR r.nombre_cliente ILIKE $2
-      ORDER BY r.created_at DESC
+      WHERE r.codigo_reserva = $1 OR r.nombre_cliente LIKE $2
+      ORDER BY r.fecha_creacion DESC
       LIMIT 1
     `, [busqueda, `%${busqueda}%`]);
     
@@ -1354,53 +1760,47 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
 // Crear reserva
 app.post('/api/reservas', async (req, res) => {
   try {
-    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total } = req.body;
+    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id } = req.body;
     
     // Usar teléfono por defecto si no se proporciona
     const telefono = telefono_cliente || 'No proporcionado';
+    
+    // VERIFICAR DISPONIBILIDAD ANTES DE CREAR LA RESERVA
+    if (!bloqueo_id) {
+      // Si no hay bloqueo temporal, verificar disponibilidad
+      const disponibilidad = await verificarDisponibilidadCancha(cancha_id, fecha, hora_inicio, hora_fin);
+      if (!disponibilidad.disponible) {
+        return res.status(409).json({ 
+          success: false, 
+          error: 'La cancha ya no está disponible en ese horario',
+          conflicto: disponibilidad.conflicto
+        });
+      }
+    }
     
     // Generar código de reserva único (6 caracteres alfanuméricos)
     const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
     
     const result = await db.run(
-      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente']
+      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente', new Date().toISOString()]
     );
+    
+    // Liberar bloqueo temporal si existe
+    if (bloqueo_id) {
+      try {
+        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueo_id]);
+        console.log('🔓 Bloqueo temporal liberado:', bloqueo_id);
+      } catch (error) {
+        console.error('⚠️ Error liberando bloqueo temporal:', error.message);
+      }
+    }
     
     // Invalidar caché de disponibilidad
     const { invalidateCacheOnReservation } = require('./src/controllers/availabilityController');
     invalidateCacheOnReservation(cancha_id, fecha);
     
-    // Obtener información del complejo y cancha para el email
-    const canchaInfo = await db.get(`
-      SELECT c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
-      FROM canchas c
-      JOIN complejos co ON c.complejo_id = co.id
-      WHERE c.id = $1
-    `, [cancha_id]);
-    
-    // Enviar emails de confirmación automáticamente
-    try {
-      const emailData = {
-        codigo_reserva,
-        email_cliente,
-        nombre_cliente,
-        complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
-        cancha: canchaInfo?.cancha_nombre || 'Cancha',
-        fecha,
-        hora_inicio,
-        hora_fin,
-        precio_total
-      };
-      
-      console.log('📧 Enviando emails de confirmación para reserva:', codigo_reserva);
-      const emailResults = await emailService.sendConfirmationEmails(emailData);
-      console.log('✅ Emails de confirmación procesados:', emailResults);
-      
-    } catch (emailError) {
-      console.error('❌ Error enviando emails de confirmación:', emailError);
-      // No fallar la reserva si hay error en el email
-    }
+    // Los emails se enviarán después de confirmar el pago
     
     res.json({ 
       success: true, 
@@ -1527,8 +1927,8 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
       try {
         const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
         await db.run(
-          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente']
+          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente', new Date().toISOString()]
         );
         insertadas++;
       } catch (error) {
@@ -2254,7 +2654,7 @@ app.get('/api/debug/admin-users', async (req, res) => {
   try {
     console.log('👑 Verificando usuarios administradores...');
     
-    const usuarios = await db.all('SELECT id, email, nombre, rol, activo FROM usuarios ORDER BY rol, email');
+    const usuarios = await db.query('SELECT id, email, nombre, rol, activo FROM usuarios ORDER BY rol, email');
     
     res.json({
       success: true,
@@ -2266,6 +2666,245 @@ app.get('/api/debug/admin-users', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Error verificando usuarios administradores:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// ===== FUNCIÓN PARA VERIFICAR DISPONIBILIDAD DE CANCHA =====
+async function verificarDisponibilidadCancha(canchaId, fecha, horaInicio, horaFin) {
+  try {
+    console.log(`🔍 Verificando disponibilidad para cancha ${canchaId} en ${fecha} de ${horaInicio} a ${horaFin}`);
+    
+    // Obtener reservas existentes
+    const reservas = await db.query(`
+      SELECT hora_inicio, hora_fin 
+      FROM reservas 
+      WHERE cancha_id = $1 AND fecha = $2 AND estado != 'cancelada'
+    `, [canchaId, fecha]);
+    
+    console.log(`📊 Reservas encontradas: ${reservas.length}`);
+    
+    // Obtener bloqueos temporales activos
+    console.log(`🔍 Consultando bloqueos temporales para cancha ${canchaId} en ${fecha}`);
+    const bloqueos = await db.query(`
+      SELECT hora_inicio, hora_fin, session_id
+      FROM bloqueos_temporales 
+      WHERE cancha_id = $1 AND fecha = $2 AND expira_en > $3
+    `, [canchaId, fecha, new Date().toISOString()]);
+    
+    console.log(`📊 Bloqueos temporales encontrados: ${bloqueos.length}`);
+    
+    // Verificar conflictos con reservas existentes
+    console.log('🔍 Verificando conflictos con reservas existentes...');
+    for (const reserva of reservas) {
+      console.log(`🔍 Comparando ${horaInicio}-${horaFin} con reserva ${reserva.hora_inicio}-${reserva.hora_fin}`);
+      if (haySuperposicionHorarios(horaInicio, horaFin, reserva.hora_inicio, reserva.hora_fin)) {
+        console.log('❌ Conflicto encontrado con reserva existente');
+        return {
+          disponible: false,
+          conflicto: {
+            tipo: 'reserva_existente',
+            hora_inicio: reserva.hora_inicio,
+            hora_fin: reserva.hora_fin
+          }
+        };
+      }
+    }
+    
+    // Verificar conflictos con bloqueos temporales
+    for (const bloqueo of bloqueos) {
+      if (haySuperposicionHorarios(horaInicio, horaFin, bloqueo.hora_inicio, bloqueo.hora_fin)) {
+        return {
+          disponible: false,
+          conflicto: {
+            tipo: 'bloqueo_temporal',
+            hora_inicio: bloqueo.hora_inicio,
+            hora_fin: bloqueo.hora_fin,
+            session_id: bloqueo.session_id
+          }
+        };
+      }
+    }
+    
+    return { disponible: true };
+    
+  } catch (error) {
+    console.error('❌ Error verificando disponibilidad:', error);
+    return { disponible: false, error: error.message };
+  }
+}
+
+// ===== FUNCIÓN PARA VERIFICAR SUPERPOSICIÓN DE HORARIOS =====
+function haySuperposicionHorarios(inicio1, fin1, inicio2, fin2) {
+  const inicio1Min = timeToMinutes(inicio1);
+  const fin1Min = timeToMinutes(fin1);
+  const inicio2Min = timeToMinutes(inicio2);
+  const fin2Min = timeToMinutes(fin2);
+  
+  return inicio1Min < fin2Min && fin1Min > inicio2Min;
+}
+
+// ===== FUNCIÓN PARA CONVERTIR HORA A MINUTOS =====
+function timeToMinutes(time) {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+// ===== ENDPOINT PARA BLOQUEAR TEMPORALMENTE UNA RESERVA =====
+app.post('/api/reservas/bloquear', async (req, res) => {
+  try {
+    const { cancha_id, fecha, hora_inicio, hora_fin, session_id } = req.body;
+    
+    // Verificar que todos los campos requeridos estén presentes
+    if (!cancha_id || !fecha || !hora_inicio || !hora_fin || !session_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Faltan campos requeridos para bloquear la reserva' 
+      });
+    }
+    
+    // Verificar disponibilidad antes de bloquear
+    const disponibilidad = await verificarDisponibilidadCancha(cancha_id, fecha, hora_inicio, hora_fin);
+    if (!disponibilidad.disponible) {
+      return res.status(409).json({ 
+        success: false, 
+        error: 'La cancha ya no está disponible en ese horario',
+        conflicto: disponibilidad.conflicto
+      });
+    }
+    
+    // Crear bloqueo temporal (5 minutos)
+    const bloqueoId = 'BLOCK_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    const expiraEn = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
+    
+    // Insertar bloqueo en la base de datos
+    await db.run(
+      'INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, creado_en) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      [bloqueoId, cancha_id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), new Date().toISOString()]
+    );
+    
+    console.log('🔒 Bloqueo temporal creado:', {
+      bloqueoId,
+      cancha_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      session_id,
+      expiraEn: expiraEn.toISOString()
+    });
+    
+    res.json({
+      success: true,
+      bloqueoId,
+      expiraEn: expiraEn.toISOString(),
+      mensaje: 'Reserva bloqueada temporalmente por 5 minutos'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error bloqueando reserva:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    });
+  }
+});
+
+// ===== ENDPOINT PARA VERIFICAR DISPONIBILIDAD CON BLOQUEOS =====
+app.get('/api/disponibilidad-completa/:cancha_id/:fecha', async (req, res) => {
+  try {
+    const { cancha_id, fecha } = req.params;
+    
+    // Obtener reservas existentes
+    const reservas = await db.query(`
+      SELECT hora_inicio, hora_fin, estado 
+      FROM reservas 
+      WHERE cancha_id = $1 AND fecha = $2 AND estado != 'cancelada'
+    `, [cancha_id, fecha]);
+    
+    // Obtener bloqueos temporales activos
+    const bloqueos = await db.query(`
+      SELECT hora_inicio, hora_fin, session_id, expira_en
+      FROM bloqueos_temporales 
+      WHERE cancha_id = $1 AND fecha = $2 AND expira_en > $3
+    `, [cancha_id, fecha, new Date().toISOString()]);
+    
+    // Limpiar bloqueos expirados
+    await db.run(
+      'DELETE FROM bloqueos_temporales WHERE expira_en <= $1',
+      [new Date().toISOString()]
+    );
+    
+    res.json({
+      reservas: reservas,
+      bloqueos: bloqueos,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando disponibilidad:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error verificando disponibilidad' 
+    });
+  }
+});
+
+// ===== ENDPOINT PARA LIBERAR BLOQUEO TEMPORAL =====
+app.delete('/api/reservas/bloquear/:bloqueo_id', async (req, res) => {
+  try {
+    const { bloqueo_id } = req.params;
+    
+    const result = await db.run(
+      'DELETE FROM bloqueos_temporales WHERE id = $1',
+      [bloqueo_id]
+    );
+    
+    if (result.changes > 0) {
+      console.log('🔓 Bloqueo liberado:', bloqueo_id);
+      res.json({ 
+        success: true, 
+        mensaje: 'Bloqueo liberado exitosamente' 
+      });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        error: 'Bloqueo no encontrado' 
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error liberando bloqueo:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error liberando bloqueo' 
+    });
+  }
+});
+
+// ===== ENDPOINT DE DEBUG PARA PROBAR BLOQUEOS =====
+app.post('/api/debug/test-bloqueo', async (req, res) => {
+  try {
+    const { cancha_id, fecha, hora_inicio, hora_fin } = req.body;
+    
+    console.log('🧪 DEBUG: Probando bloqueo con datos:', { cancha_id, fecha, hora_inicio, hora_fin });
+    
+    // Verificar disponibilidad
+    const disponibilidad = await verificarDisponibilidadCancha(cancha_id, fecha, hora_inicio, hora_fin);
+    console.log('🧪 DEBUG: Resultado de verificación:', disponibilidad);
+    
+    res.json({
+      success: true,
+      datos_entrada: { cancha_id, fecha, hora_inicio, hora_fin },
+      verificacion: disponibilidad,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en debug de bloqueo:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message,
@@ -2939,21 +3578,21 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
       params.push(complexId);
     }
     
-    // Consulta simplificada para probar
+    // Análisis de clientes usando email como identificador único para evitar duplicados
     const clientesFrecuentes = await db.query(`
       SELECT 
         r.nombre_cliente,
         r.email_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
-        AVG(r.precio_total) as promedio_por_reserva,
+        ROUND(SUM(r.precio_total) / COUNT(*), 0) as promedio_por_reserva,
         MIN(r.fecha) as primera_reserva,
         MAX(r.fecha) as ultima_reserva
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause}
-      GROUP BY r.nombre_cliente, r.email_cliente
+      ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
+      GROUP BY r.email_cliente, r.nombre_cliente
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
     `, params);

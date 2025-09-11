@@ -5,6 +5,8 @@ let canchas = [];
 let complejoSeleccionado = null;
 let tipoCanchaSeleccionado = null;
 let canchaSeleccionada = null;
+let bloqueoTemporal = null;
+let sessionId = null;
 
 // Función para verificar si una hora está disponible según la hora actual
 function esHoraDisponibleParaReserva(hora, fecha) {
@@ -1209,6 +1211,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
     
+    // Generar session ID único para esta sesión
+    sessionId = 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    console.log('🆔 Session ID generado:', sessionId);
+    
     // Botón de debug removido para usuarios finales
     // crearBotonLogs();
     // logVisible('🚀 APLICACIÓN INICIADA');
@@ -1313,44 +1319,184 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== FIN INICIALIZACIÓN ===');
 });
 
-// Verificar disponibilidad de una cancha específica
+// Verificar disponibilidad de una cancha específica (incluyendo bloqueos temporales)
 async function verificarDisponibilidadCancha(canchaId, fecha, hora) {
     try {
-        const response = await fetch(`${API_BASE}/disponibilidad/${canchaId}/${fecha}`);
-        const reservas = await response.json();
+        const response = await fetch(`${API_BASE}/disponibilidad-completa/${canchaId}/${fecha}`);
+        const data = await response.json();
+        
+        const reservas = data.reservas || [];
+        const bloqueos = data.bloqueos || [];
         
         // Verificar si hay alguna reserva que se superponga con la hora seleccionada
         const horaInicio = hora;
         const horaFin = calcularHoraFin(hora);
         
+        // Verificar conflictos con reservas existentes
         for (const reserva of reservas) {
-            // Verificar si hay superposición de horarios usando comparación en minutos
-            // Una cancha está ocupada si la reserva se superpone con el horario solicitado
-            // Superposición ocurre cuando: reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio
-            
-            const reservaInicioMin = timeToMinutes(reserva.hora_inicio);
-            const reservaFinMin = timeToMinutes(reserva.hora_fin);
-            const horaInicioMin = timeToMinutes(horaInicio);
-            const horaFinMin = timeToMinutes(horaFin);
-            
-            const haySuperposicion = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
-            
-            if (haySuperposicion) {
-                console.log('🔴 verificarDisponibilidadCancha - Superposición detectada:', {
+            if (haySuperposicionHorarios(horaInicio, horaFin, reserva.hora_inicio, reserva.hora_fin)) {
+                console.log('🔴 verificarDisponibilidadCancha - Reserva existente detectada:', {
                     reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
                     solicitada: `${horaInicio}-${horaFin}`,
-                    canchaId: canchaId,
-                    logica: `${reservaInicioMin} < ${horaFinMin} && ${reservaFinMin} > ${horaInicioMin}`
+                    canchaId: canchaId
                 });
-                return false;
+                return { disponible: false, tipo: 'reserva_existente', conflicto: reserva };
             }
         }
         
-        return true;
+        // Verificar conflictos con bloqueos temporales
+        for (const bloqueo of bloqueos) {
+            if (haySuperposicionHorarios(horaInicio, horaFin, bloqueo.hora_inicio, bloqueo.hora_fin)) {
+                console.log('🔴 verificarDisponibilidadCancha - Bloqueo temporal detectado:', {
+                    bloqueo: `${bloqueo.hora_inicio}-${bloqueo.hora_fin}`,
+                    solicitada: `${horaInicio}-${horaFin}`,
+                    canchaId: canchaId,
+                    session_id: bloqueo.session_id
+                });
+                return { disponible: false, tipo: 'bloqueo_temporal', conflicto: bloqueo };
+            }
+        }
+        
+        return { disponible: true };
     } catch (error) {
         console.error('Error verificando disponibilidad:', error);
-        return false;
+        return { disponible: false, error: error.message };
     }
+}
+
+// Función para verificar superposición de horarios
+function haySuperposicionHorarios(inicio1, fin1, inicio2, fin2) {
+    const inicio1Min = timeToMinutes(inicio1);
+    const fin1Min = timeToMinutes(fin1);
+    const inicio2Min = timeToMinutes(inicio2);
+    const fin2Min = timeToMinutes(fin2);
+    
+    return inicio1Min < fin2Min && fin1Min > inicio2Min;
+}
+
+// ===== FUNCIONES DE BLOQUEO TEMPORAL =====
+
+// Bloquear temporalmente una reserva
+async function bloquearReservaTemporal(canchaId, fecha, horaInicio, horaFin) {
+    try {
+        console.log('🔒 Bloqueando reserva temporal:', { canchaId, fecha, horaInicio, horaFin, sessionId });
+        
+        const response = await fetch(`${API_BASE}/reservas/bloquear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cancha_id: canchaId,
+                fecha: fecha,
+                hora_inicio: horaInicio,
+                hora_fin: horaFin,
+                session_id: sessionId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            bloqueoTemporal = {
+                id: result.bloqueoId,
+                cancha_id: canchaId,
+                fecha: fecha,
+                hora_inicio: horaInicio,
+                hora_fin: horaFin,
+                expira_en: result.expiraEn
+            };
+            
+            console.log('✅ Bloqueo temporal creado:', bloqueoTemporal);
+            
+            // Configurar limpieza automática del bloqueo
+            configurarLimpiezaBloqueo();
+            
+            return { success: true, bloqueo: bloqueoTemporal };
+        } else {
+            console.error('❌ Error bloqueando reserva:', result.error);
+            return { success: false, error: result.error, conflicto: result.conflicto };
+        }
+    } catch (error) {
+        console.error('❌ Error en bloqueo temporal:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Liberar bloqueo temporal
+async function liberarBloqueoTemporal() {
+    if (!bloqueoTemporal) return;
+    
+    try {
+        console.log('🔓 Liberando bloqueo temporal:', bloqueoTemporal.id);
+        
+        const response = await fetch(`${API_BASE}/reservas/bloquear/${bloqueoTemporal.id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            console.log('✅ Bloqueo temporal liberado exitosamente');
+        } else {
+            console.error('⚠️ Error liberando bloqueo temporal');
+        }
+    } catch (error) {
+        console.error('❌ Error liberando bloqueo temporal:', error);
+    } finally {
+        bloqueoTemporal = null;
+    }
+}
+
+// Configurar limpieza automática del bloqueo
+function configurarLimpiezaBloqueo() {
+    if (!bloqueoTemporal) return;
+    
+    // Limpiar bloqueo al cerrar la página
+    window.addEventListener('beforeunload', liberarBloqueoTemporal);
+    
+    // Limpiar bloqueo después de 4.5 minutos (antes de que expire)
+    setTimeout(() => {
+        if (bloqueoTemporal) {
+            console.log('⏰ Limpieza automática del bloqueo temporal');
+            liberarBloqueoTemporal();
+        }
+    }, 4.5 * 60 * 1000); // 4.5 minutos
+}
+
+// Verificar si hay un bloqueo activo
+function tieneBloqueoActivo() {
+    return bloqueoTemporal !== null;
+}
+
+// Mostrar mensaje de error al usuario
+function mostrarError(mensaje) {
+    // Crear o actualizar elemento de error
+    let errorElement = document.getElementById('error-message');
+    if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.id = 'error-message';
+        errorElement.className = 'alert alert-danger alert-dismissible fade show';
+        errorElement.style.position = 'fixed';
+        errorElement.style.top = '20px';
+        errorElement.style.right = '20px';
+        errorElement.style.zIndex = '9999';
+        errorElement.style.maxWidth = '400px';
+        
+        document.body.appendChild(errorElement);
+    }
+    
+    errorElement.innerHTML = `
+        <strong>Error:</strong> ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Auto-ocultar después de 5 segundos
+    setTimeout(() => {
+        if (errorElement && errorElement.parentNode) {
+            errorElement.remove();
+        }
+    }, 5000);
+    
+    console.error('❌ Error mostrado al usuario:', mensaje);
 }
 
 // Actualizar el estado visual de una cancha
@@ -1394,16 +1540,30 @@ async function verificarDisponibilidadTiempoReal() {
     
     console.log('Verificando disponibilidad en tiempo real para:', fecha, hora || 'todas las horas');
     
-    // Si hay hora seleccionada, verificar disponibilidad de todas las canchas para esa hora
-    if (hora) {
-        for (const cancha of canchas) {
-            const estaDisponible = await verificarDisponibilidadCancha(cancha.id, fecha, hora);
-            actualizarEstadoCancha(cancha.id, estaDisponible);
-        }
+    // Obtener datos de disponibilidad del complejo
+    const complejoId = canchas[0]?.complejo_id;
+    if (!complejoId) {
+        console.error('No se pudo obtener el ID del complejo');
+        return;
     }
     
-    // SIEMPRE actualizar horarios con disponibilidad para TODAS las horas
-    await actualizarHorariosConDisponibilidad();
+    try {
+        const disponibilidadCompleta = await verificarDisponibilidadCompleta(complejoId, fecha);
+        
+        // Si hay hora seleccionada, verificar disponibilidad de todas las canchas para esa hora
+        if (hora) {
+            for (const cancha of canchas) {
+                const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
+                console.log('🏟️ Tiempo real - Cancha', cancha.id, '(', cancha.nombre, ') - Disponible:', estaDisponible);
+                actualizarEstadoCancha(cancha.id, estaDisponible);
+            }
+        }
+        
+        // SIEMPRE actualizar horarios con disponibilidad para TODAS las horas
+        await actualizarHorariosConDisponibilidad();
+    } catch (error) {
+        console.error('Error verificando disponibilidad en tiempo real:', error);
+    }
 }
 
 // Verificar si todas las canchas están ocupadas en un horario específico
@@ -1491,30 +1651,26 @@ function verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadD
     const horaInicio = hora;
     const horaFin = calcularHoraFin(hora);
     
-    for (const reserva of canchaData.reservas) {
-        // Verificar si hay superposición de horarios usando comparación en minutos
-        // Una cancha está ocupada si la reserva se superpone con el horario solicitado
-        // Superposición ocurre cuando: reserva.hora_inicio < horaFin && reserva.hora_fin > horaInicio
-        
-        const reservaInicioMin = timeToMinutes(reserva.hora_inicio);
-        const reservaFinMin = timeToMinutes(reserva.hora_fin);
-        const horaInicioMin = timeToMinutes(horaInicio);
-        const horaFinMin = timeToMinutes(horaFin);
-        
-        const haySuperposicion = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
-        
-        if (haySuperposicion) {
-            console.log('🔴 Cancha ocupada - Superposición detectada:', {
+    // Verificar conflictos con reservas existentes
+    for (const reserva of canchaData.reservas || []) {
+        if (haySuperposicionHorarios(horaInicio, horaFin, reserva.hora_inicio, reserva.hora_fin)) {
+            console.log('🔴 Cancha ocupada - Reserva existente:', {
                 reserva: `${reserva.hora_inicio}-${reserva.hora_fin}`,
                 solicitada: `${horaInicio}-${horaFin}`,
+                canchaId: canchaId
+            });
+            return false;
+        }
+    }
+    
+    // Verificar conflictos con bloqueos temporales
+    for (const bloqueo of canchaData.bloqueos || []) {
+        if (haySuperposicionHorarios(horaInicio, horaFin, bloqueo.hora_inicio, bloqueo.hora_fin)) {
+            console.log('🔴 Cancha ocupada - Bloqueo temporal:', {
+                bloqueo: `${bloqueo.hora_inicio}-${bloqueo.hora_fin}`,
+                solicitada: `${horaInicio}-${horaFin}`,
                 canchaId: canchaId,
-                logica: `${reservaInicioMin} < ${horaFinMin} && ${reservaFinMin} > ${horaInicioMin}`,
-                minutos: {
-                    reservaInicio: reservaInicioMin,
-                    reservaFin: reservaFinMin,
-                    horaInicio: horaInicioMin,
-                    horaFin: horaFinMin
-                }
+                session_id: bloqueo.session_id
             });
             return false;
         }
@@ -3470,43 +3626,39 @@ async function confirmarReserva() {
             cancha: canchaSeleccionada.nombre
         };
         
-        const paymentResult = await window.webPaySimulator.processPayment(paymentData);
+        // Crear bloqueo temporal y proceder al pago
+        console.log('🔒 Creando bloqueo temporal y procediendo al pago...');
+        const response = await fetch(`${API_BASE}/reservas/bloquear-y-pagar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                ...formData,
+                session_id: sessionId
+            })
+        });
         
-        if (paymentResult.success) {
-            // Crear reserva en la base de datos
-            const response = await fetch(`${API_BASE}/reservas`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
+        const result = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ Bloqueo temporal creado, redirigiendo a pago...', result);
             
-            const result = await response.json();
-            
-            if (response.ok) {
-                // Agregar el código de reserva a los datos del pago
-                const paymentDataWithCode = {
-                    ...paymentData,
-                    codigo_reserva: result.codigo_reserva
-                };
-                
-                // Los emails se envían automáticamente al crear la reserva
-                console.log('📧 Los emails de confirmación se enviarán automáticamente');
-                
-                // Generar y descargar ticket con el código de reserva
-                const ticket = window.webPaySimulator.generatePaymentTicket(paymentResult, paymentDataWithCode);
-                window.webPaySimulator.downloadTicket(ticket, paymentDataWithCode);
-                
-                mostrarConfirmacionReserva(result.codigo_reserva, paymentResult.transactionId);
-                bootstrap.Modal.getInstance(document.getElementById('reservaModal')).hide();
-            } else {
-                throw new Error(result.error || 'Error al crear la reserva');
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reservaModal'));
+            if (modal) {
+                modal.hide();
             }
+            
+            // Redirigir a la página de pago
+            window.location.href = `/payment.html?code=${result.codigo_reserva}`;
+            
         } else {
-            throw new Error('Error en el procesamiento del pago');
+            throw new Error(result.error || 'Error al crear el bloqueo temporal');
         }
     } catch (error) {
+        // Liberar bloqueo en caso de cualquier error
+        await liberarBloqueoTemporal();
         mostrarNotificacion(error.message, 'danger');
     } finally {
         // Restaurar botón

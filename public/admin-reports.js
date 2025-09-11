@@ -197,7 +197,7 @@ function updateMetrics() {
     
     if (totalRevenue) totalRevenue.textContent = `$${metrics.ingresosTotales.toLocaleString()}`;
     if (totalReservations) totalReservations.textContent = metrics.totalReservas;
-    if (occupancyRate) occupancyRate.textContent = `${Math.round(metrics.tasaConfirmacion)}%`;
+    if (occupancyRate) occupancyRate.textContent = `${metrics.ocupacionPromedio || 0}%`;
     if (uniqueCustomers) uniqueCustomers.textContent = metrics.reservasConfirmadas;
 }
 
@@ -247,24 +247,132 @@ function updateIncomeChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
+    
+    // Crear gradiente para el área
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
+    gradient.addColorStop(0.5, 'rgba(34, 197, 94, 0.1)');
+    gradient.addColorStop(1, 'rgba(34, 197, 94, 0.02)');
+    
     revenueChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.map(item => new Date(item.fecha).toLocaleDateString()),
+            labels: data.map(item => {
+                // Usar la fecha tal como viene del servidor (ya convertida a zona horaria de Chile)
+                const [año, mes, dia] = item.fecha.split('-');
+                return new Date(año, mes - 1, dia).toLocaleDateString('es-CL');
+            }),
             datasets: [{
                 label: 'Ingresos',
                 data: data.map(item => parseInt(item.ingresos)),
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                tension: 0.1
+                borderColor: '#22c55e',
+                backgroundColor: gradient,
+                borderWidth: 4,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#22c55e',
+                pointBorderWidth: 3,
+                pointRadius: 8,
+                pointHoverRadius: 12,
+                pointHoverBackgroundColor: '#22c55e',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 12,
+                shadowColor: 'rgba(34, 197, 94, 0.3)'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Ingresos por Día'
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f1f5f9',
+                    borderColor: '#22c55e',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    padding: 12,
+                    caretSize: 8,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4,
+                    shadowBlur: 12,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)',
+                    callbacks: {
+                        label: function(context) {
+                            return `Ingresos: $${context.parsed.y.toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 8
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false,
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 12,
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                line: {
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4,
+                    shadowBlur: 12,
+                    shadowColor: 'rgba(34, 197, 94, 0.2)'
                 }
             }
         }
@@ -284,22 +392,113 @@ function updateReservationsChart(data) {
             datasets: [{
                 data: data.map(item => parseInt(item.cantidad)),
                 backgroundColor: [
-                    '#FF6384',
-                    '#36A2EB',
-                    '#FFCE56',
-                    '#4BC0C0',
-                    '#9966FF'
-                ]
+                    'rgba(99, 102, 241, 0.9)',
+                    'rgba(236, 72, 153, 0.9)',
+                    'rgba(14, 165, 233, 0.9)',
+                    'rgba(34, 197, 94, 0.9)',
+                    'rgba(245, 158, 11, 0.9)',
+                    'rgba(168, 85, 247, 0.9)',
+                    'rgba(239, 68, 68, 0.9)',
+                    'rgba(6, 182, 212, 0.9)'
+                ],
+                borderColor: [
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff',
+                    '#ffffff'
+                ],
+                borderWidth: 3,
+                hoverOffset: 15,
+                hoverBorderWidth: 4,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 12,
+                shadowColor: 'rgba(0, 0, 0, 0.15)'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart',
+                animateRotate: true,
+                animateScale: true
+            },
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Reservas por Tipo'
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            size: 13,
+                            weight: '500'
+                        },
+                        color: '#374151',
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const dataset = data.datasets[0];
+                                    const value = dataset.data[i];
+                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    
+                                    return {
+                                        text: `${label} (${percentage}%)`,
+                                        fillStyle: dataset.backgroundColor[i],
+                                        strokeStyle: dataset.borderColor[i],
+                                        lineWidth: dataset.borderWidth,
+                                        pointStyle: 'circle',
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f1f5f9',
+                    borderColor: '#6366f1',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    padding: 12,
+                    caretSize: 8,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4,
+                    shadowBlur: 12,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)',
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} reservas (${percentage}%)`;
+                        }
+                    }
                 }
-            }
+            },
+            cutout: '65%',
+            radius: '85%'
         }
     });
 }
@@ -310,29 +509,119 @@ function updateOccupancyChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
+    
+    // Crear gradiente para las barras
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(245, 158, 11, 0.9)');
+    gradient.addColorStop(0.5, 'rgba(245, 158, 11, 0.7)');
+    gradient.addColorStop(1, 'rgba(245, 158, 11, 0.5)');
+    
     occupancyChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: data.map(item => item.complejo),
             datasets: [{
                 label: 'Ocupación (%)',
-                data: data.map(item => Math.round(parseFloat(item.ocupacion_real) * 100)),
-                backgroundColor: 'rgba(54, 162, 235, 0.8)'
+                data: data.map(item => Math.round(parseFloat(item.ocupacion_real))),
+                backgroundColor: gradient,
+                borderColor: '#f59e0b',
+                borderWidth: 2,
+                borderRadius: {
+                    topLeft: 12,
+                    topRight: 12,
+                    bottomLeft: 0,
+                    bottomRight: 0
+                },
+                borderSkipped: false,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 12,
+                shadowColor: 'rgba(245, 158, 11, 0.3)'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeOutBack'
+            },
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Ocupación por Complejo'
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f1f5f9',
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    padding: 12,
+                    caretSize: 8,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4,
+                    shadowBlur: 12,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)',
+                    callbacks: {
+                        label: function(context) {
+                            return `Ocupación: ${context.parsed.y}%`;
+                        }
+                    }
                 }
             },
             scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 8
+                    },
+                    border: {
+                        display: false
+                    }
+                },
                 y: {
                     beginAtZero: true,
-                    max: 100
+                    max: 100,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false,
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 12,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    border: {
+                        display: false
+                    }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
@@ -344,6 +633,13 @@ function updateHoursChart(data) {
     if (!canvas || !data) return;
     
     const ctx = canvas.getContext('2d');
+    
+    // Crear gradiente para las barras
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(236, 72, 153, 0.9)');
+    gradient.addColorStop(0.5, 'rgba(236, 72, 153, 0.7)');
+    gradient.addColorStop(1, 'rgba(236, 72, 153, 0.5)');
+    
     hoursChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -351,16 +647,102 @@ function updateHoursChart(data) {
             datasets: [{
                 label: 'Reservas',
                 data: data.map(item => parseInt(item.cantidad)),
-                backgroundColor: 'rgba(255, 99, 132, 0.8)'
+                backgroundColor: gradient,
+                borderColor: '#ec4899',
+                borderWidth: 2,
+                borderRadius: {
+                    topLeft: 12,
+                    topRight: 12,
+                    bottomLeft: 0,
+                    bottomRight: 0
+                },
+                borderSkipped: false,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 12,
+                shadowColor: 'rgba(236, 72, 153, 0.3)'
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeOutBack'
+            },
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Horarios Más Populares'
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#f1f5f9',
+                    borderColor: '#ec4899',
+                    borderWidth: 2,
+                    cornerRadius: 12,
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    padding: 12,
+                    caretSize: 8,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4,
+                    shadowBlur: 12,
+                    shadowColor: 'rgba(0, 0, 0, 0.2)',
+                    callbacks: {
+                        label: function(context) {
+                            return `Reservas: ${context.parsed.y}`;
+                        }
+                    }
                 }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 8
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false,
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        color: '#64748b',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        padding: 12,
+                        stepSize: 1
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
@@ -436,7 +818,7 @@ async function updateTopComplexesTable() {
                     <td><strong>${item.complejo}</strong></td>
                     <td><span class="badge bg-primary">${item.cantidad || 0}</span></td>
                     <td><span class="text-success">$${parseInt(item.ingresos || 0).toLocaleString()}</span></td>
-                    <td><span class="badge bg-info">${Math.round(parseFloat(item.ocupacion_real || 0) * 100)}%</span></td>
+                    <td><span class="badge bg-info">${Math.round(parseFloat(item.ocupacion_real || 0))}%</span></td>
                 </tr>
             `).join('');
         } else {
@@ -620,7 +1002,7 @@ async function updateCustomersTable() {
                         <span class="badge bg-primary">${customer.total_reservas}</span>
                     </td>
                     <td class="text-center">
-                        <span class="badge bg-success">$${customer.total_gastado.toLocaleString()}</span>
+                        <span class="badge bg-success">$${customer.promedio_por_reserva.toLocaleString()}</span>
                     </td>
                     <td class="text-center">
                         <small class="text-muted">${new Date(customer.ultima_reserva).toLocaleDateString()}</small>

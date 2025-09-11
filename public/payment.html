@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago - Reserva Tu Cancha</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .payment-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .payment-header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .reservation-summary {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .reservation-summary h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2c3e50;
+        }
+
+        .payment-methods {
+            margin-bottom: 2rem;
+        }
+
+        .payment-methods h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .payment-method.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+
+        .payment-method input[type="radio"] {
+            margin-right: 1rem;
+        }
+
+        .payment-method .method-info {
+            flex: 1;
+        }
+
+        .payment-method .method-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .payment-method .method-description {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .payment-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #27ae60;
+            color: white;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .transbank-info {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .transbank-info h4 {
+            color: #27ae60;
+            margin-bottom: 0.5rem;
+        }
+
+        .transbank-info p {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-header">
+            <h1>💳 Procesar Pago</h1>
+            <p>Confirma tu reserva completando el pago</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="reservation-summary" id="reservationSummary">
+            <h3>📋 Resumen de Reserva</h3>
+            <div class="summary-item">
+                <span>Código de Reserva:</span>
+                <span id="reservationCode">-</span>
+            </div>
+            <div class="summary-item">
+                <span>Cancha:</span>
+                <span id="courtName">-</span>
+            </div>
+            <div class="summary-item">
+                <span>Fecha:</span>
+                <span id="reservationDate">-</span>
+            </div>
+            <div class="summary-item">
+                <span>Horario:</span>
+                <span id="reservationTime">-</span>
+            </div>
+            <div class="summary-item">
+                <span>Cliente:</span>
+                <span id="clientName">-</span>
+            </div>
+            <div class="summary-item">
+                <span>Total a Pagar:</span>
+                <span id="totalAmount">-</span>
+            </div>
+        </div>
+
+        <div class="payment-methods">
+            <h3>💳 Métodos de Pago</h3>
+            
+            <div class="transbank-info">
+                <h4>🔒 Pago Seguro con Transbank</h4>
+                <p>Aceptamos todas las tarjetas de crédito y débito. Tu pago está protegido con la máxima seguridad.</p>
+                <div class="test-info" style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 0.5rem; margin-top: 0.5rem; font-size: 0.8rem; color: #856404;">
+                    <strong>⚠️ Modo Prueba:</strong> En desarrollo, la página de Transbank puede aparecer en blanco. Esto es normal para el entorno de integración.
+                </div>
+            </div>
+
+            <div class="payment-method selected" data-method="transbank">
+                <input type="radio" name="paymentMethod" value="transbank" checked>
+                <div class="method-info">
+                    <div class="method-name">💳 Tarjeta de Crédito/Débito</div>
+                    <div class="method-description">Visa, Mastercard, American Express - Procesado por Transbank</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Procesando pago...</p>
+        </div>
+
+        <div class="payment-actions">
+            <button class="btn btn-secondary" onclick="goBack()">← Volver</button>
+            <button class="btn btn-primary" id="payButton" onclick="processPayment()">
+                💳 Pagar Ahora
+            </button>
+        </div>
+
+        <!-- Botones de simulación para desarrollo -->
+        <div class="dev-tools" style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px dashed #6c757d;">
+            <h4 style="color: #6c757d; margin-bottom: 1rem;">🛠️ Herramientas de Desarrollo</h4>
+            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">
+                En modo desarrollo, puedes simular diferentes resultados de pago:
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn" style="background: #28a745; color: white; font-size: 0.9rem; padding: 0.5rem 1rem;" onclick="simulateSuccessfulPayment()">
+                    ✅ Simular Pago Exitoso
+                </button>
+                <button class="btn" style="background: #dc3545; color: white; font-size: 0.9rem; padding: 0.5rem 1rem;" onclick="simulateCancelledPayment()">
+                    ❌ Simular Pago Cancelado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let reservationData = null;
+        let paymentToken = null;
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReservationData();
+            setupPaymentMethodSelection();
+        });
+
+        // Cargar datos del bloqueo temporal desde la URL
+        async function loadReservationData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reservationCode = urlParams.get('code');
+            
+            if (!reservationCode) {
+                showError('Código de reserva no encontrado');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                
+                // Obtener datos del bloqueo temporal desde la API
+                const response = await fetch(`/api/bloqueos-temporales/${reservationCode}`);
+                
+                if (!response.ok) {
+                    throw new Error('Bloqueo temporal no encontrado');
+                }
+                
+                const bloqueo = await response.json();
+                const datosCliente = JSON.parse(bloqueo.datos_cliente);
+                
+                // Mapear datos del bloqueo a nuestro formato
+                reservationData = {
+                    code: reservationCode,
+                    courtName: `${bloqueo.cancha_nombre} - ${bloqueo.tipo}`,
+                    date: bloqueo.fecha,
+                    time: `${bloqueo.hora_inicio} - ${bloqueo.hora_fin}`,
+                    clientName: datosCliente.nombre_cliente,
+                    amount: datosCliente.precio_total
+                };
+
+                displayReservationData();
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('Error cargando datos del bloqueo temporal:', error);
+                showError('Error cargando datos del bloqueo temporal: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Mostrar datos de la reserva
+        function displayReservationData() {
+            if (!reservationData) return;
+
+            document.getElementById('reservationCode').textContent = reservationData.code;
+            document.getElementById('courtName').textContent = reservationData.courtName;
+            document.getElementById('reservationDate').textContent = formatDate(reservationData.date);
+            document.getElementById('reservationTime').textContent = reservationData.time;
+            document.getElementById('clientName').textContent = reservationData.clientName;
+            document.getElementById('totalAmount').textContent = formatCurrency(reservationData.amount);
+        }
+
+        // Configurar selección de método de pago
+        function setupPaymentMethodSelection() {
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    // Remover selección anterior
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    
+                    // Seleccionar método actual
+                    this.classList.add('selected');
+                    this.querySelector('input[type="radio"]').checked = true;
+                });
+            });
+        }
+
+        // Procesar pago
+        async function processPayment() {
+            if (!reservationData) {
+                showError('Datos de reserva no disponibles');
+                return;
+            }
+
+            const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            
+            if (selectedMethod === 'transbank') {
+                await processTransbankPayment();
+            } else {
+                showError('Método de pago no disponible');
+            }
+        }
+
+        // Procesar pago con Transbank
+        async function processTransbankPayment() {
+            try {
+                showLoading(true);
+                hideMessages();
+
+                // Usar el mismo sessionId que se usó para crear el bloqueo temporal
+                // (ahora el reservationCode es igual al sessionId)
+                const sessionId = reservationData.code;
+
+                // Iniciar transacción
+                const response = await fetch('/api/payments/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reservationCode: reservationData.code,
+                        amount: reservationData.amount,
+                        sessionId: sessionId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Error iniciando pago');
+                }
+
+                // Guardar token para confirmación
+                paymentToken = result.token;
+
+                // Mostrar mensaje informativo antes de redirigir
+                showSuccess('Redirigiendo a Transbank... En modo desarrollo, la página puede aparecer en blanco.');
+                
+                // Esperar un momento para que el usuario vea el mensaje
+                setTimeout(() => {
+                    // Redirigir a Transbank
+                    window.location.href = result.url;
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error procesando pago:', error);
+                showError('Error procesando pago: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Volver atrás
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        // Mostrar/ocultar loading
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const payButton = document.getElementById('payButton');
+            
+            if (show) {
+                loading.classList.add('show');
+                payButton.disabled = true;
+                payButton.textContent = 'Procesando...';
+            } else {
+                loading.classList.remove('show');
+                payButton.disabled = false;
+                payButton.textContent = '💳 Pagar Ahora';
+            }
+        }
+
+        // Mostrar error
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        // Mostrar éxito
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.add('show');
+            setTimeout(() => {
+                successDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        // Ocultar mensajes
+        function hideMessages() {
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('successMessage').classList.remove('show');
+        }
+
+        // Mostrar/ocultar loading
+        function showLoading(show) {
+            const loadingDiv = document.getElementById('loading');
+            if (show) {
+                loadingDiv.classList.add('show');
+            } else {
+                loadingDiv.classList.remove('show');
+            }
+        }
+
+        // Formatear fecha
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-CL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Formatear moneda
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-CL', {
+                style: 'currency',
+                currency: 'CLP'
+            }).format(amount);
+        }
+
+        // Manejar retorno de Transbank
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenWs = urlParams.get('token_ws');
+            const status = urlParams.get('status');
+
+            if (tokenWs) {
+                // Confirmar pago
+                confirmPayment(tokenWs);
+            } else if (status === 'error') {
+                showError('El pago fue cancelado o falló');
+            }
+        });
+
+        // Confirmar pago
+        async function confirmPayment(token) {
+            try {
+                showLoading(true);
+                hideMessages();
+
+                const response = await fetch('/api/payments/confirm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token_ws: token
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('¡Pago confirmado exitosamente! Tu reserva está activa.');
+                    setTimeout(() => {
+                        window.location.href = '/?payment=success&code=' + result.reservationCode;
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || 'Error confirmando pago');
+                }
+
+            } catch (error) {
+                console.error('Error confirmando pago:', error);
+                showError('Error confirmando pago: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Funciones de simulación para desarrollo
+        async function simulateSuccessfulPayment() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reservationCode = urlParams.get('code');
+            
+            if (!reservationCode) {
+                alert('Error: No se encontró código de reserva');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                
+                const response = await fetch('/api/simulate-payment-success', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reservationCode: reservationCode
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Pago simulado exitosamente!\n\n' +
+                          '📧 Email enviado\n' +
+                          '✅ Reserva confirmada\n' +
+                          '🆔 Código: ' + result.codigo_reserva);
+                    
+                    // Redirigir al panel de administrador para verificar
+                    window.location.href = '/admin-reservations.html';
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error simulando pago:', error);
+                alert('❌ Error simulando pago: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function simulateCancelledPayment() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const reservationCode = urlParams.get('code');
+            
+            if (!reservationCode) {
+                alert('Error: No se encontró código de reserva');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                
+                const response = await fetch('/api/simulate-payment-cancelled', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reservationCode: reservationCode
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('❌ Pago cancelado exitosamente!\n\n' +
+                          '🗑️ Bloqueo temporal eliminado\n' +
+                          '🆔 Código: ' + result.codigo_reserva);
+                    
+                    // Redirigir a la página principal
+                    window.location.href = '/';
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error simulando cancelación:', error);
+                alert('❌ Error simulando cancelación: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
