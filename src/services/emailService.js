@@ -15,6 +15,19 @@ class EmailService {
       // Cargar configuración dinámicamente
       const config = require('../config/config');
       
+      // Debug: Mostrar configuración de email
+      console.log('📧 Configuración de email:', {
+        host: config.email.host,
+        port: config.email.port,
+        user: config.email.user ? 'Configurado' : 'No configurado',
+        pass: config.email.pass ? 'Configurado' : 'No configurado',
+        env: {
+          SMTP_HOST: process.env.SMTP_HOST ? 'Definido' : 'No definido',
+          SMTP_USER: process.env.SMTP_USER ? 'Definido' : 'No definido',
+          SMTP_PASS: process.env.SMTP_PASS ? 'Definido' : 'No definido'
+        }
+      });
+      
       // Verificar si las credenciales de email están configuradas
       if (!config.email.user || !config.email.pass) {
         console.log('⚠️ Email no configurado - usando modo simulación');
