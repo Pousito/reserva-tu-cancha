@@ -1246,7 +1246,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     // Agrupar reservas por fecha de la reserva (no por fecha de creación)
     const reservasPorDia = {};
     reservasPorDiaRaw.forEach(row => {
-      const fechaStr = row.fecha; // Ya está en formato YYYY-MM-DD
+      const fechaStr = typeof row.fecha === 'string' ? row.fecha : row.fecha.toISOString().split('T')[0];
       
       if (!reservasPorDia[fechaStr]) {
         reservasPorDia[fechaStr] = {
@@ -1259,7 +1259,11 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
       reservasPorDia[fechaStr].ingresos += row.precio_total;
     });
     
-    const reservasPorDiaArray = Object.values(reservasPorDia).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const reservasPorDiaArray = Object.values(reservasPorDia).sort((a, b) => {
+      const fechaA = typeof a.fecha === 'string' ? a.fecha : a.fecha.toISOString().split('T')[0];
+      const fechaB = typeof b.fecha === 'string' ? b.fecha : b.fecha.toISOString().split('T')[0];
+      return fechaA.localeCompare(fechaB);
+    });
     
     
     // Reservas por complejo con ocupación real (solo confirmadas y pendientes)
