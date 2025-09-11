@@ -1371,6 +1371,37 @@ app.post('/api/reservas', async (req, res) => {
     const { invalidateCacheOnReservation } = require('./src/controllers/availabilityController');
     invalidateCacheOnReservation(cancha_id, fecha);
     
+    // Obtener información del complejo y cancha para el email
+    const canchaInfo = await db.get(`
+      SELECT c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+      FROM canchas c
+      JOIN complejos co ON c.complejo_id = co.id
+      WHERE c.id = $1
+    `, [cancha_id]);
+    
+    // Enviar emails de confirmación automáticamente
+    try {
+      const emailData = {
+        codigo_reserva,
+        email_cliente,
+        nombre_cliente,
+        complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+        cancha: canchaInfo?.cancha_nombre || 'Cancha',
+        fecha,
+        hora_inicio,
+        hora_fin,
+        precio_total
+      };
+      
+      console.log('📧 Enviando emails de confirmación para reserva:', codigo_reserva);
+      const emailResults = await emailService.sendConfirmationEmails(emailData);
+      console.log('✅ Emails de confirmación procesados:', emailResults);
+      
+    } catch (emailError) {
+      console.error('❌ Error enviando emails de confirmación:', emailError);
+      // No fallar la reserva si hay error en el email
+    }
+    
     res.json({ 
       success: true, 
       id: result.lastID,
