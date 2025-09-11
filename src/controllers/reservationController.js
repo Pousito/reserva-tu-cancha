@@ -120,7 +120,7 @@ function getAllReservas(req, res) {
     FROM reservas r
     JOIN canchas c ON r.cancha_id = c.id
     JOIN complejos comp ON c.complejo_id = comp.id
-    ORDER BY r.fecha_creacion DESC
+    ORDER BY r.created_at DESC
   `, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });

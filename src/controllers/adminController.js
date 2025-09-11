@@ -92,7 +92,7 @@ function getReservasRecientes(req, res) {
     params.push(req.admin.complejo_id);
   }
   
-  query += ' ORDER BY r.fecha_creacion DESC LIMIT 5';
+  query += ' ORDER BY r.created_at DESC LIMIT 5';
   
   db.all(query, params, (err, rows) => {
     if (err) {

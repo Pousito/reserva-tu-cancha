@@ -234,7 +234,7 @@ function verDetalles(codigoReserva) {
         <div class="row mt-3">
             <div class="col-12">
                 <h6>Información Adicional</h6>
-                <p><strong>Fecha de Creación:</strong> ${formatearFechaHora(reserva.fecha_creacion)}</p>
+                <p><strong>Fecha de Creación:</strong> ${formatearFechaHora(reserva.created_at)}</p>
                 <p><strong>ID de Transacción:</strong> ${reserva.transaction_id || 'N/A'}</p>
             </div>
         </div>
