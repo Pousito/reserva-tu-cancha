@@ -1224,7 +1224,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
-    const reservasPorDiaRaw = await db.query(`
+    const reservasPorDiaRaw = await db.all(`
       SELECT r.fecha_creacion, r.precio_total
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -1255,7 +1255,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     
     
     // Reservas por complejo con ocupación real (solo confirmadas y pendientes)
-    const reservasPorComplejo = await db.query(`
+    const reservasPorComplejo = await db.all(`
       SELECT 
         co.nombre as complejo, 
         COUNT(*) as cantidad, 
@@ -1303,7 +1303,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
       }
       
       // Calcular horas realmente ocupadas por reservas
-      const horasOcupadas = await db.query(`
+      const horasOcupadas = await db.get(`
         SELECT SUM(
           CASE 
             WHEN r.hora_fin > r.hora_inicio THEN 
@@ -1334,7 +1334,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     }));
     
     // Reservas por tipo de cancha (solo confirmadas)
-    const reservasPorTipo = await db.query(`
+    const reservasPorTipo = await db.all(`
       SELECT c.tipo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -1345,7 +1345,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     // Top canchas más reservadas (solo confirmadas)
-    const topCanchas = await db.query(`
+    const topCanchas = await db.all(`
       SELECT c.nombre as cancha, co.nombre as complejo, COUNT(*) as reservas, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -1357,7 +1357,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     // Horarios más populares (solo confirmadas)
-    const horariosPopulares = await db.query(`
+    const horariosPopulares = await db.all(`
       SELECT r.hora_inicio as hora, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
