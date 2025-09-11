@@ -266,6 +266,34 @@ class EmailService {
     `;
   }
 
+  // Método para crear transporter específico para reservas
+  createReservasTransporter() {
+    const reservasConfig = {
+      host: process.env.SMTP_HOST || 'smtp.zoho.com',
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      user: process.env.SMTP_RESERVAS_USER || 'reservas@reservatuscanchas.cl',
+      pass: process.env.SMTP_RESERVAS_PASS || 'L660mKFmcDBk',
+      secure: false
+    };
+
+    console.log('📧 Configuración de email para reservas:', {
+      host: reservasConfig.host,
+      port: reservasConfig.port,
+      user: reservasConfig.user ? 'Configurado' : 'No configurado',
+      pass: reservasConfig.pass ? 'Configurado' : 'No configurado'
+    });
+
+    return nodemailer.createTransport({
+      host: reservasConfig.host,
+      port: reservasConfig.port,
+      secure: reservasConfig.secure,
+      auth: {
+        user: reservasConfig.user,
+        pass: reservasConfig.pass
+      }
+    });
+  }
+
   // Enviar email de confirmación de reserva al cliente
   async sendReservationConfirmation(reservaData) {
     if (!this.isConfigured) {
@@ -282,6 +310,9 @@ class EmailService {
     }
 
     try {
+      // Crear transporter específico para reservas
+      const reservasTransporter = this.createReservasTransporter();
+      
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
         to: reservaData.email_cliente,
@@ -313,7 +344,7 @@ Gracias por elegir Reserva Tu Cancha!
         `
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await reservasTransporter.sendMail(mailOptions);
       console.log('✅ Email de confirmación enviado al cliente:', result.messageId);
       return { success: true, messageId: result.messageId };
 
@@ -368,6 +399,9 @@ Gracias por elegir Reserva Tu Cancha!
   // Notificación al administrador del complejo
   async sendComplexAdminNotification(reservaData, adminEmail) {
     try {
+      // Crear transporter específico para reservas
+      const reservasTransporter = this.createReservasTransporter();
+      
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
         to: adminEmail,
@@ -407,7 +441,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
         `
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await reservasTransporter.sendMail(mailOptions);
       console.log(`✅ Notificación enviada al admin del complejo (${adminEmail}):`, result.messageId);
       return { success: true, messageId: result.messageId };
 
@@ -420,6 +454,9 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
   // Notificación al super admin
   async sendSuperAdminNotification(reservaData) {
     try {
+      // Crear transporter específico para reservas
+      const reservasTransporter = this.createReservasTransporter();
+      
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
         to: 'admin@reservatuscanchas.cl',
@@ -459,7 +496,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
         `
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await reservasTransporter.sendMail(mailOptions);
       console.log('✅ Notificación enviada al super admin:', result.messageId);
       return { success: true, messageId: result.messageId };
 
