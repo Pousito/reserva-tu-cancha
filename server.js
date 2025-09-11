@@ -564,7 +564,7 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     
     await db.run(`
       INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [bloqueoId, cancha_id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), JSON.stringify({
       nombre_cliente,
       email_cliente,
@@ -1448,6 +1448,57 @@ app.get('/api/debug/check-reservas-structure', async (req, res) => {
   } catch (error) {
     console.error('❌ Error verificando estructura:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Endpoint para verificar estructura de tabla bloqueos_temporales
+app.get('/api/debug/check-blocking-table', async (req, res) => {
+  try {
+    console.log('🔍 Verificando estructura de tabla bloqueos_temporales...');
+    
+    // Verificar si la tabla existe
+    const tableExists = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'bloqueos_temporales'
+      );
+    `);
+    
+    if (!tableExists[0].exists) {
+      return res.json({
+        success: false,
+        error: 'Tabla bloqueos_temporales no existe',
+        tableExists: false
+      });
+    }
+    
+    // Obtener estructura de la tabla
+    const structure = await db.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'bloqueos_temporales'
+      ORDER BY ordinal_position;
+    `);
+    
+    // Contar registros
+    const count = await db.query('SELECT COUNT(*) as count FROM bloqueos_temporales');
+    
+    res.json({
+      success: true,
+      tableExists: true,
+      structure: structure,
+      recordCount: count[0].count,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando tabla:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
   }
 });
 
