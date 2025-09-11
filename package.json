@@ -34,6 +34,7 @@
     "sync-databases-improved": "node scripts/maintenance/sync-databases-improved.js",
     "clean-duplicate-courts": "node scripts/maintenance/clean-duplicate-courts.js",
     "auto-backup": "node scripts/maintenance/auto-backup.js",
+    "check-charts": "node scripts/diagnostic/check-charts-production.js",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js"
