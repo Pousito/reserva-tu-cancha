@@ -167,7 +167,7 @@ async function populateSampleData() {
             );
       } else {
             await db.run(
-              'INSERT OR IGNORE INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES (?, ?, ?, ?, ?)',
+              'INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (nombre) DO NOTHING',
               [complejo.nombre, ciudadId.id, complejo.direccion, complejo.telefono, complejo.email]
             );
           }
@@ -196,7 +196,7 @@ async function populateSampleData() {
             );
       } else {
             await db.run(
-              'INSERT OR IGNORE INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES (?, ?, ?, ?)',
+              'INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) VALUES ($1, $2, $3, $4) ON CONFLICT (complejo_id, nombre) DO NOTHING',
               [complejoId.id, cancha.nombre, cancha.tipo, cancha.precio]
             );
           }
@@ -218,7 +218,7 @@ async function populateSampleData() {
           );
         } else {
           await db.run(
-            'INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)',
+            'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, 1) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, nombre = EXCLUDED.nombre, rol = EXCLUDED.rol',
             [usuario.email, usuario.password, usuario.nombre, usuario.rol]
           );
         }
@@ -361,7 +361,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
                 cancha_id, nombre_cliente, email_cliente, 
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
                 codigo_reserva, estado, estado_pago, fecha_creacion, es_dato_produccion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
@@ -2029,7 +2029,7 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
       try {
         const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
         await db.run(
-          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
           [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente', new Date().toISOString()]
         );
         insertadas++;
@@ -3059,7 +3059,7 @@ app.post('/api/debug/create-admin-users', async (req, res) => {
           );
         } else {
           await db.run(
-            'INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) VALUES (?, ?, ?, ?, 1)',
+            'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, 1) ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, nombre = EXCLUDED.nombre, rol = EXCLUDED.rol',
             [usuario.email, hashedPassword, usuario.nombre, usuario.rol]
           );
         }
