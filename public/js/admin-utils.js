@@ -3,7 +3,7 @@
 // API Base URL - Dinámico para desarrollo y producción
 const API_BASE = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api' 
-    : 'https://reserva-tu-cancha.onrender.com/api';
+    : 'https://www.reservatuscanchas.cl/api';
 
 // ===== FUNCIONES DE AUTENTICACIÓN =====
 
