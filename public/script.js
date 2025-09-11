@@ -1561,14 +1561,10 @@ async function verificarDisponibilidadTiempoReal() {
         
         // Si hay hora seleccionada, verificar disponibilidad de todas las canchas para esa hora
         if (hora) {
-            console.log('🕐 Verificando disponibilidad en tiempo real para hora:', hora);
             for (const cancha of canchas) {
                 const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
-                console.log('🏟️ Tiempo real - Cancha', cancha.id, '(', cancha.nombre, ') - Disponible:', estaDisponible);
                 actualizarEstadoCancha(cancha.id, estaDisponible);
             }
-        } else {
-            console.log('⚠️ No hay hora seleccionada para verificación en tiempo real');
         }
         
         // SIEMPRE actualizar horarios con disponibilidad para TODAS las horas
@@ -2120,34 +2116,17 @@ function configurarEventListeners() {
     });
     document.getElementById('horaSelect').addEventListener('change', async function() {
         const horaSeleccionada = this.value;
-        console.log('🕐 === HORA SELECCIONADA ===');
         console.log('🕐 Hora seleccionada:', horaSeleccionada);
-        console.log('🕐 Canchas cargadas:', canchas.length);
-        console.log('🕐 Complejo seleccionado:', complejoSeleccionado?.nombre);
-        console.log('🕐 Tipo seleccionado:', tipoCanchaSeleccionado);
         
         verificarDisponibilidadTiempoReal();
         
-        // Si ya hay canchas cargadas, renderizar visualmente (Fase 5)
+        // Si ya hay canchas cargadas, renderizar visualmente
         if (canchas.length > 0) {
-            console.log('🕐 Hora seleccionada - renderizando canchas visualmente (Fase 5)');
-            console.log('🕐 Ejecutando renderizarCanchasConDisponibilidad()...');
             await renderizarCanchasConDisponibilidad();
-            console.log('🕐 renderizarCanchasConDisponibilidad() completado');
-            
-            // VERIFICACIÓN ADICIONAL: Forzar actualización visual
-            console.log('🔄 Verificación adicional: forzando actualización visual...');
-            setTimeout(async () => {
-                console.log('🔄 Re-ejecutando renderizarCanchasConDisponibilidad después de 500ms...');
-                await renderizarCanchasConDisponibilidad();
-            }, 500);
         } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
-            // Si no hay canchas, cargarlas y renderizar visualmente (Fase 5)
-            console.log('🕐 Hora seleccionada - cargando y renderizando canchas (Fase 5)');
+            // Si no hay canchas, cargarlas y renderizar visualmente
             await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, true);
         }
-        
-        console.log('🕐 === FIN HORA SELECCIONADA ===');
     });
 
     // Búsqueda de reserva
@@ -3152,10 +3131,6 @@ async function validarHorariosSegunFecha() {
 
 // NUEVA FUNCIÓN: Renderizar canchas con disponibilidad correcta
 async function renderizarCanchasConDisponibilidad() {
-    console.log('🎨 === RENDERIZAR CANCHAS INICIADO ===');
-    console.log('🎨 Canchas a renderizar:', canchas.length, canchas.map(c => c.nombre));
-    console.log('🎨 Complejo seleccionado:', complejoSeleccionado?.nombre);
-    
     const grid = document.getElementById('canchasGrid');
     if (!grid) {
         console.error('❌ No se encontró el elemento canchasGrid');
@@ -3165,16 +3140,6 @@ async function renderizarCanchasConDisponibilidad() {
     
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
-    
-    console.log('🎨 Fecha:', fecha);
-    console.log('🎨 Hora:', hora);
-    
-    if (!fecha) {
-        console.log('⚠️ No hay fecha seleccionada, renderizando canchas sin verificar disponibilidad');
-    }
-    if (!hora) {
-        console.log('⚠️ No hay hora seleccionada, renderizando canchas sin verificar disponibilidad');
-    }
     
     // Si es MagnaSports, crear estructura especial del galpón
     if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports') {
@@ -3225,15 +3190,12 @@ async function renderizarCanchasConDisponibilidad() {
                     console.log('🔴 Cancha marcada como ocupada porque la hora está "Todas ocupadas":', cancha.nombre);
                 } else {
                     // Si no es "Todas ocupadas", verificar disponibilidad individual
-                    // CORRECCIÓN CRÍTICA: Siempre hacer fetch individual para asegurar datos actualizados
-                    console.log('🔍 Verificando disponibilidad individual para cancha', cancha.id, 'hora', hora);
                     try {
                         const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         const reservas = await response.json();
-                        console.log('📊 Reservas obtenidas para cancha', cancha.id, ':', reservas.length);
                         
                         estaDisponible = !reservas.some(r => {
                             const horaFin = calcularHoraFin(hora);
@@ -3242,33 +3204,20 @@ async function renderizarCanchasConDisponibilidad() {
                             const horaInicioMin = timeToMinutes(hora);
                             const horaFinMin = timeToMinutes(horaFin);
                             
-                            const hayConflicto = reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
-                            if (hayConflicto) {
-                                console.log('🔴 CONFLICTO detectado:', {
-                                    cancha: cancha.id,
-                                    horaSolicitada: `${hora}-${horaFin}`,
-                                    reserva: `${r.hora_inicio}-${r.hora_fin}`,
-                                    codigo: r.codigo_reserva
-                                });
-                            }
-                            return hayConflicto;
+                            return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
                         });
-                        console.log('🎨 MagnaSports - Fetch individual para cancha', cancha.id, '- Disponible:', estaDisponible);
                     } catch (error) {
                         console.error('❌ Error verificando disponibilidad de cancha:', cancha.id, error);
                         // En caso de error, asumir disponible para no bloquear al usuario
                         estaDisponible = true;
-                        console.log('⚠️ Asumiendo disponible debido a error');
                     }
                     
                     if (estaDisponible) {
                         cardClass = 'cancha-card disponible';
                         estadoBadge = '<span class="badge bg-success">Disponible</span>';
-                        console.log('✅ Cancha', cancha.id, 'marcada como DISPONIBLE (verde)');
                     } else {
                         cardClass = 'cancha-card ocupada';
                         estadoBadge = '<span class="badge bg-danger">Ocupada</span>';
-                        console.log('🔴 Cancha', cancha.id, 'marcada como OCUPADA (rojo)');
                     }
                 }
             }
@@ -3366,54 +3315,6 @@ async function renderizarCanchasConDisponibilidad() {
     
     console.log('🎨 === RENDERIZAR CANCHAS COMPLETADO ===');
     console.log('🎨 Elementos en el grid:', grid.children.length);
-    
-    // FUNCIÓN DE EMERGENCIA: Verificar disponibilidad después de renderizar
-    if (fecha && hora) {
-        console.log('🚨 FUNCIÓN DE EMERGENCIA: Verificando disponibilidad post-renderizado...');
-        setTimeout(async () => {
-            console.log('🚨 Ejecutando verificación de emergencia...');
-            for (const cancha of canchas) {
-                try {
-                    const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
-                    const reservas = await response.json();
-                    
-                    const horaFin = calcularHoraFin(hora);
-                    const estaDisponible = !reservas.some(r => {
-                        const reservaInicioMin = timeToMinutes(r.hora_inicio);
-                        const reservaFinMin = timeToMinutes(r.hora_fin);
-                        const horaInicioMin = timeToMinutes(hora);
-                        const horaFinMin = timeToMinutes(horaFin);
-                        return reservaInicioMin < horaFinMin && reservaFinMin > horaInicioMin;
-                    });
-                    
-                    console.log(`🚨 Emergencia - Cancha ${cancha.id}: ${estaDisponible ? 'DISPONIBLE' : 'OCUPADA'}`);
-                    
-                    // Forzar actualización visual
-                    const canchaCard = document.querySelector(`[data-cancha-id="${cancha.id}"]`);
-                    if (canchaCard) {
-                        if (estaDisponible) {
-                            canchaCard.className = 'cancha-card disponible';
-                            const badge = canchaCard.querySelector('.badge');
-                            if (badge) {
-                                badge.className = 'badge bg-success';
-                                badge.textContent = 'Disponible';
-                            }
-                        } else {
-                            canchaCard.className = 'cancha-card ocupada';
-                            const badge = canchaCard.querySelector('.badge');
-                            if (badge) {
-                                badge.className = 'badge bg-danger';
-                                badge.textContent = 'Ocupada';
-                            }
-                        }
-                        console.log(`🚨 Cancha ${cancha.id} actualizada visualmente: ${estaDisponible ? 'VERDE' : 'ROJO'}`);
-                    }
-                } catch (error) {
-                    console.error(`🚨 Error en verificación de emergencia para cancha ${cancha.id}:`, error);
-                }
-            }
-        }, 1000);
-    }
 }
 
  // Renderizar canchas (función original mantenida para compatibilidad)
