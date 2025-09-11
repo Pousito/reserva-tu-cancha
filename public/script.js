@@ -1212,8 +1212,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('🌍 Hostname:', window.location.hostname);
     console.log('🔗 API_BASE configurado como:', API_BASE);
     
-    // Generar session ID único para esta sesión
-    sessionId = 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    // Generar session ID único para esta sesión (máximo 6 caracteres)
+    sessionId = Math.random().toString(36).substr(2, 6).toUpperCase();
     console.log('🆔 Session ID generado:', sessionId);
     
     // Botón de debug removido para usuarios finales

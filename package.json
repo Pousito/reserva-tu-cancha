@@ -35,11 +35,11 @@
     "clean-duplicate-courts": "node scripts/maintenance/clean-duplicate-courts.js",
     "auto-backup": "node scripts/maintenance/auto-backup.js",
     "check-charts": "node scripts/diagnostic/check-charts-production.js",
-    "verify-charts-fix": "node scripts/diagnostic/verify-charts-fix.js",
-    "verify-charts-auto": "node scripts/diagnostic/verify-charts-fix.js --retry",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0",
-    "setup-transbank": "node scripts/setup-transbank.js"
+    "setup-transbank": "node scripts/setup-transbank.js",
+    "setup-postgresql": "node scripts/setup-postgresql-local.js",
+    "dev-postgresql": "NODE_ENV=development DATABASE_URL=postgresql://postgres@localhost:5432/reserva_tu_cancha_local npm start"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

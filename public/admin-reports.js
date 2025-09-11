@@ -271,6 +271,8 @@ function updateIncomeChart(data) {
         return;
     }
     
+    console.log('📊 Datos para gráfico de ingresos:', data);
+    
     if (typeof Chart === 'undefined') {
         console.error('❌ Chart.js no está disponible para crear gráfico de ingresos');
         return;
@@ -288,9 +290,28 @@ function updateIncomeChart(data) {
         type: 'line',
         data: {
             labels: data.map(item => {
-                // Usar la fecha tal como viene del servidor (ya convertida a zona horaria de Chile)
-                const [año, mes, dia] = item.fecha.split('-');
-                return new Date(año, mes - 1, dia).toLocaleDateString('es-CL');
+                // Manejar fechas de forma más robusta
+                if (!item.fecha) return 'Sin fecha';
+                
+                try {
+                    // Si la fecha ya está en formato YYYY-MM-DD, usarla directamente
+                    if (typeof item.fecha === 'string' && item.fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        const [año, mes, dia] = item.fecha.split('-');
+                        const fechaObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+                        return fechaObj.toLocaleDateString('es-CL');
+                    }
+                    
+                    // Si es una fecha ISO, convertirla
+                    const fechaObj = new Date(item.fecha);
+                    if (isNaN(fechaObj.getTime())) {
+                        console.error('Fecha inválida:', item.fecha);
+                        return 'Fecha inválida';
+                    }
+                    return fechaObj.toLocaleDateString('es-CL');
+                } catch (error) {
+                    console.error('Error procesando fecha:', error, 'Fecha original:', item.fecha);
+                    return 'Error fecha';
+                }
             }),
             datasets: [{
                 label: 'Ingresos',
@@ -1025,6 +1046,7 @@ async function updateCustomersTable() {
                             <div>
                                 <div class="fw-bold">${customer.nombre_cliente}</div>
                                 <small class="text-muted">${customer.email_cliente}</small>
+                                ${customer.rut_cliente ? `<br><small class="text-info"><i class="fas fa-id-card me-1"></i>${customer.rut_cliente}</small>` : ''}
                             </div>
                         </div>
                     </td>

@@ -7,7 +7,14 @@ const bcrypt = require('bcryptjs');
 const DatabaseManager = require('./src/config/database');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
 const EmailService = require('./src/services/emailService');
-require('dotenv').config();
+// Configuración de entorno - desarrollo vs producción
+if (process.env.NODE_ENV === 'production') {
+  // En producción, usar variables de entorno de Render
+  require('dotenv').config();
+} else {
+  // En desarrollo, usar archivo específico
+  require('dotenv').config({ path: './env.postgresql' });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -356,6 +363,9 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         const datosCliente = JSON.parse(bloqueoData.datos_cliente);
 
         // Crear la reserva real
+        // Generar código de reserva corto (6 caracteres)
+        const codigoReserva = Math.random().toString(36).substr(2, 6).toUpperCase();
+        
         const reservaId = await db.run(`
             INSERT INTO reservas (
                 cancha_id, nombre_cliente, email_cliente, 
@@ -371,7 +381,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             bloqueoData.hora_inicio,
             bloqueoData.hora_fin,
             datosCliente.precio_total,
-            reservationCode,
+            codigoReserva,
             'confirmada',
             'pagado',
             new Date().toISOString()
@@ -396,7 +406,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             const EmailService = require('./src/services/emailService');
             const emailService = new EmailService();
             const emailData = {
-                codigo_reserva: reservationCode,
+                codigo_reserva: codigoReserva,
                 nombre_cliente: datosCliente.nombre_cliente,
                 email_cliente: datosCliente.email_cliente,
                 fecha: bloqueoData.fecha,
@@ -417,7 +427,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             success: true,
             message: 'Pago simulado exitosamente',
             reserva_id: reservaId,
-            codigo_reserva: reservationCode
+            codigo_reserva: codigoReserva
         });
 
     } catch (error) {
@@ -461,7 +471,7 @@ app.post('/api/simulate-payment-cancelled', async (req, res) => {
         res.json({
             success: true,
             message: 'Pago cancelado exitosamente',
-            codigo_reserva: reservationCode
+            codigo_reserva: codigoReserva
         });
 
     } catch (error) {
@@ -608,7 +618,7 @@ app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
     const reservas = await db.query(`
       SELECT hora_inicio, hora_fin, estado
     FROM reservas 
-      WHERE cancha_id = $1 AND date(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
+      WHERE cancha_id = $1 AND fecha::date = $2 AND estado IN ('confirmada', 'pendiente')
       ORDER BY hora_inicio
     `, [canchaId, fecha]);
     
@@ -636,7 +646,7 @@ app.get('/api/debug/verificar-superposicion/:canchaId/:fecha/:hora', async (req,
     const reservas = await db.query(`
       SELECT hora_inicio, hora_fin, estado
       FROM reservas 
-      WHERE cancha_id = $1 AND date(fecha) = $2 AND estado IN ('confirmada', 'pendiente')
+      WHERE cancha_id = $1 AND fecha::date = $2 AND estado IN ('confirmada', 'pendiente')
       ORDER BY hora_inicio
     `, [canchaId, fecha]);
     
@@ -698,7 +708,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
     let fechaCondition;
     
     if (dbInfo.type === 'PostgreSQL') {
-      fechaCondition = 'date(r.fecha) = $2';
+      fechaCondition = 'r.fecha::date = $2';
     } else {
       fechaCondition = 'r.fecha = $2';
     }
@@ -717,7 +727,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
           r.codigo_reserva
         FROM canchas c
         LEFT JOIN reservas r ON c.id = r.cancha_id 
-          AND date(r.fecha) = $2
+          AND r.fecha::date = $2
           AND r.estado IN ('confirmada', 'pendiente')
         WHERE c.complejo_id = $1
         ORDER BY c.id, r.hora_inicio
@@ -771,9 +781,9 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       const bloqueos = await db.query(`
         SELECT cancha_id, hora_inicio, hora_fin, session_id, expira_en
         FROM bloqueos_temporales 
-        WHERE cancha_id IN (${canchaIds.map(() => '?').join(',')}) 
-        AND fecha = ? 
-        AND expira_en > ?
+        WHERE cancha_id IN (${canchaIds.map((_, i) => `$${i + 1}`).join(',')}) 
+        AND fecha = $${canchaIds.length + 1} 
+        AND expira_en > $${canchaIds.length + 2}
       `, [...canchaIds, fecha, new Date().toISOString()]);
       
       // Agregar bloqueos a cada cancha
@@ -866,13 +876,13 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
     if (dbInfo.type === 'PostgreSQL') {
       fechaCondition = 'r.fecha >= CURRENT_DATE - INTERVAL \'7 days\'';
       reservasPorDia = await db.query(`
-        SELECT DATE(r.fecha) as dia, COUNT(*) as cantidad
+        SELECT r.fecha::date as dia, COUNT(*) as cantidad
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         WHERE ${fechaCondition}
         AND r.estado != 'cancelada'
         ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
-        GROUP BY DATE(r.fecha)
+        GROUP BY r.fecha::date
         ORDER BY dia
       `, userRole === 'super_admin' ? [] : [complexFilter]);
     } else {
@@ -957,7 +967,7 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE date(r.fecha) = date('now')
+      WHERE r.fecha::date = CURRENT_DATE
       AND r.estado != 'cancelada'
       ORDER BY r.hora_inicio
     `);
@@ -1182,7 +1192,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     const userComplexFilter = req.complexFilter;
     
     // Construir filtros SQL según el rol
-    let whereClause = `WHERE date(r.fecha) BETWEEN $1 AND $2`;
+    let whereClause = `WHERE r.fecha::date BETWEEN $1 AND $2`;
     let params = [dateFrom, dateTo];
     
     // Aplicar filtro de complejo según el rol
@@ -1225,20 +1235,18 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
     const reservasPorDiaRaw = await db.query(`
-      SELECT r.fecha_creacion, r.precio_total
+      SELECT r.fecha, r.precio_total
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado = 'confirmada'
-      ORDER BY r.fecha_creacion
+      ORDER BY r.fecha
     `, params);
     
-    // Convertir fechas a zona horaria de Chile y agrupar por día
+    // Agrupar reservas por fecha de la reserva (no por fecha de creación)
     const reservasPorDia = {};
     reservasPorDiaRaw.forEach(row => {
-      const fechaUTC = new Date(row.fecha_creacion);
-      const fechaChile = new Date(fechaUTC.getTime() + (4 * 60 * 60 * 1000)); // UTC+4 (Chile está 4 horas adelante de UTC)
-      const fechaStr = fechaChile.toISOString().split('T')[0]; // YYYY-MM-DD
+      const fechaStr = row.fecha; // Ya está en formato YYYY-MM-DD
       
       if (!reservasPorDia[fechaStr]) {
         reservasPorDia[fechaStr] = {
@@ -1315,7 +1323,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (r
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         JOIN complejos co ON c.complejo_id = co.id
-        WHERE date(r.fecha) BETWEEN $1 AND $2
+        WHERE r.fecha::date BETWEEN $1 AND $2
         AND co.id = (SELECT id FROM complejos WHERE nombre = $3)
         AND r.estado IN ('confirmada', 'pendiente')
       `, [dateFrom, dateTo, complejo.complejo]);
@@ -2218,6 +2226,241 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
+// ===== ENDPOINTS DE RESTABLECIMIENTO DE CONTRASEÑA =====
+
+// Endpoint para solicitar restablecimiento de contraseña
+app.post('/api/auth/request-password-reset', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email es requerido' });
+    }
+
+    console.log('🔐 Solicitud de restablecimiento de contraseña para:', email);
+
+    // Buscar usuario por email
+    const user = await db.query('SELECT id, email, nombre, rol FROM usuarios WHERE email = $1 AND activo = true', [email]);
+    
+    if (user.length === 0) {
+      // Por seguridad, no revelamos si el email existe o no
+      return res.json({ 
+        success: true, 
+        message: 'Si el email existe en nuestro sistema, recibirás un enlace de restablecimiento' 
+      });
+    }
+
+    const userData = user[0];
+    
+    // Verificar que sea un administrador
+    if (!['super_admin', 'admin', 'complejo_admin'].includes(userData.rol)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Solo los administradores pueden restablecer contraseñas' 
+      });
+    }
+
+    // Generar token único
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // Token expira en 15 minutos
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    
+    // Limpiar tokens anteriores del usuario
+    await db.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userData.id]);
+    
+    // Crear nuevo token
+    await db.query(`
+      INSERT INTO password_reset_tokens (user_id, token, email, expires_at)
+      VALUES ($1, $2, $3, $4)
+    `, [userData.id, token, email, expiresAt]);
+
+    // Enviar email con enlace de restablecimiento
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-reset-password?token=${token}`;
+    
+    const emailData = {
+      to: email,
+      subject: 'Restablecimiento de Contraseña - Reserva Tu Cancha',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Restablecimiento de Contraseña</h2>
+          <p>Hola ${userData.nombre},</p>
+          <p>Has solicitado restablecer tu contraseña para el panel de administración de Reserva Tu Cancha.</p>
+          <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Restablecer Contraseña
+            </a>
+          </div>
+          <p><strong>Este enlace expira en 1 hora.</strong></p>
+          <p>Si no solicitaste este restablecimiento, puedes ignorar este email.</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">
+            Reserva Tu Cancha - Sistema de Administración<br>
+            Este es un email automático, por favor no responder.
+          </p>
+        </div>
+      `
+    };
+
+    try {
+      const emailService = new EmailService();
+      await emailService.sendPasswordResetEmail(email, token);
+      console.log('✅ Email de restablecimiento enviado a:', email);
+    } catch (emailError) {
+      console.error('❌ Error enviando email de restablecimiento:', emailError.message);
+      // No fallar la operación si el email no se puede enviar
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Si el email existe en nuestro sistema, recibirás un enlace de restablecimiento' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error en solicitud de restablecimiento:', error.message);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
+// Endpoint para verificar token de restablecimiento
+app.get('/api/auth/verify-reset-token/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    console.log('🔍 Verificando token de restablecimiento:', token);
+
+    // Buscar token válido
+    const tokenData = await db.query(`
+      SELECT prt.*, u.nombre, u.rol 
+      FROM password_reset_tokens prt
+      JOIN usuarios u ON prt.user_id = u.id
+      WHERE prt.token = $1 AND prt.used = false AND prt.expires_at > NOW()
+    `, [token]);
+
+    if (tokenData.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token inválido o expirado' 
+      });
+    }
+
+    const tokenInfo = tokenData[0];
+    
+    res.json({ 
+      success: true, 
+      message: 'Token válido',
+      user: {
+        email: tokenInfo.email,
+        nombre: tokenInfo.nombre,
+        rol: tokenInfo.rol
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error verificando token:', error.message);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
+// Endpoint para restablecer contraseña
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token y nueva contraseña son requeridos' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'La contraseña debe tener al menos 6 caracteres' 
+      });
+    }
+
+    console.log('🔐 Restableciendo contraseña con token:', token);
+
+    // Buscar token válido
+    const tokenData = await db.query(`
+      SELECT prt.*, u.id, u.email, u.nombre, u.rol 
+      FROM password_reset_tokens prt
+      JOIN usuarios u ON prt.user_id = u.id
+      WHERE prt.token = $1 AND prt.used = false AND prt.expires_at > NOW()
+    `, [token]);
+
+    if (tokenData.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token inválido o expirado' 
+      });
+    }
+
+    const tokenInfo = tokenData[0];
+    
+    // Hash de la nueva contraseña
+    const bcrypt = require('bcrypt');
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Actualizar contraseña del usuario
+    await db.query('UPDATE usuarios SET password = $1 WHERE id = $2', [hashedPassword, tokenInfo.id]);
+    
+    // Marcar token como usado
+    await db.query('UPDATE password_reset_tokens SET used = true WHERE id = $1', [tokenInfo.id]);
+    
+    // Limpiar tokens expirados del usuario
+    await db.query('DELETE FROM password_reset_tokens WHERE user_id = $1 AND expires_at <= NOW()', [tokenInfo.id]);
+
+    console.log('✅ Contraseña restablecida exitosamente para:', tokenInfo.email);
+
+    // Enviar email de confirmación
+    const emailData = {
+      to: tokenInfo.email,
+      subject: 'Contraseña Restablecida - Reserva Tu Cancha',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Contraseña Restablecida Exitosamente</h2>
+          <p>Hola ${tokenInfo.nombre},</p>
+          <p>Tu contraseña ha sido restablecida exitosamente.</p>
+          <p>Ahora puedes acceder al panel de administración con tu nueva contraseña.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-login.html" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Acceder al Panel de Administración
+            </a>
+          </div>
+          <p><strong>Si no realizaste este cambio, contacta inmediatamente al administrador del sistema.</strong></p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">
+            Reserva Tu Cancha - Sistema de Administración<br>
+            Este es un email automático, por favor no responder.
+          </p>
+        </div>
+      `
+    };
+
+    try {
+      const emailService = new EmailService();
+      await emailService.sendPasswordChangeConfirmation(tokenInfo.email);
+      console.log('✅ Email de confirmación enviado a:', tokenInfo.email);
+    } catch (emailError) {
+      console.error('❌ Error enviando email de confirmación:', emailError.message);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Contraseña restablecida exitosamente' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error restableciendo contraseña:', error.message);
+    res.status(500).json({ success: false, message: 'Error interno del servidor' });
+  }
+});
+
 // ===== ENDPOINT DE DEBUG PARA LOGIN =====
 app.get('/api/debug/login-test', async (req, res) => {
   try {
@@ -2659,7 +2902,7 @@ app.post('/api/debug/test-email-send', async (req, res) => {
     
     // Datos de prueba
     const testData = {
-      codigo_reserva: 'TEST' + Date.now(),
+      codigo_reserva: Math.random().toString(36).substr(2, 6).toUpperCase(),
       nombre_cliente: 'Cliente de Prueba',
       email_cliente: 'ignacio.araya.lillo@gmail.com',
       complejo: 'MagnaSports',
@@ -3671,7 +3914,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
     console.log('👥 Generando análisis de clientes...', { dateFrom, dateTo, complexId });
     
     // Construir filtros SQL
-    let whereClause = `WHERE date(r.fecha) BETWEEN $1 AND $2`;
+    let whereClause = `WHERE r.fecha::date BETWEEN $1 AND $2`;
     let params = [dateFrom, dateTo];
     
     if (complexId) {
@@ -3679,11 +3922,16 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
       params.push(complexId);
     }
     
-    // Análisis de clientes usando email como identificador único para evitar duplicados
+    // Análisis de clientes agrupando por RUT para evitar duplicados y conservar nombre más completo
     const clientesFrecuentes = await db.query(`
       SELECT 
-        r.nombre_cliente,
+        CASE 
+          WHEN LENGTH(MAX(r.nombre_cliente)) > LENGTH(MIN(r.nombre_cliente)) 
+          THEN MAX(r.nombre_cliente)
+          ELSE MIN(r.nombre_cliente)
+        END as nombre_cliente,
         r.email_cliente,
+        r.rut_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         ROUND(SUM(r.precio_total) / COUNT(*), 0) as promedio_por_reserva,
@@ -3693,7 +3941,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
-      GROUP BY r.email_cliente, r.nombre_cliente
+      GROUP BY r.rut_cliente, r.email_cliente
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
     `, params);

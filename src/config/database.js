@@ -17,11 +17,11 @@ class DatabaseManager {
     console.log('📊 Base de datos:', this.databaseUrl ? 'PostgreSQL' : 'SQLite');
     console.log('🔗 DATABASE_URL:', this.databaseUrl ? 'Definido' : 'No definido');
     
-    if (this.isProduction && this.databaseUrl) {
-      console.log('🐘 Usando PostgreSQL en producción');
+    if (this.databaseUrl) {
+      console.log('🐘 Usando PostgreSQL');
       await this.connectPostgreSQL();
     } else {
-      console.log('📁 Usando SQLite en desarrollo');
+      console.log('📁 Usando SQLite');
       await this.connectSQLite();
     }
     
@@ -232,6 +232,20 @@ class DatabaseManager {
           creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           datos_cliente TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Crear tabla de tokens de restablecimiento de contraseña
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          token VARCHAR(255) NOT NULL UNIQUE,
+          email VARCHAR(255) NOT NULL,
+          expires_at TIMESTAMP NOT NULL,
+          used BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES usuarios (id) ON DELETE CASCADE
         )
       `);
 

@@ -463,6 +463,149 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
     }
   }
 
+  // Enviar email de restablecimiento de contraseña
+  async sendPasswordResetEmail(email, resetToken) {
+    if (!this.isConfigured) {
+      console.log('📧 Email no configurado - simulando envío de restablecimiento de contraseña');
+      return { success: true, simulated: true };
+    }
+
+    try {
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-reset-password.html?token=${resetToken}`;
+      
+      const mailOptions = {
+        from: `"Reserva Tu Cancha - Soporte" <soporte@reservatuscanchas.cl>`,
+        to: email,
+        subject: '🔐 Restablecimiento de Contraseña - Reserva Tu Cancha',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; border-bottom: 3px solid #007bff; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="color: #007bff; margin: 0;">🔐 Restablecimiento de Contraseña</h1>
+              <p style="color: #666; margin: 10px 0 0 0;">Reserva Tu Cancha - Panel de Administración</p>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #495057; margin-top: 0;">Solicitud de Restablecimiento</h3>
+              <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta de administrador.</p>
+              <p>Si solicitaste este cambio, haz clic en el botón de abajo para crear una nueva contraseña:</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                  Restablecer Contraseña
+                </a>
+              </div>
+              
+              <p style="color: #dc3545; font-weight: bold;">⚠️ Este enlace expirará en 15 minutos por seguridad.</p>
+            </div>
+            
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin: 20px 0;">
+              <h4 style="color: #856404; margin-top: 0;">¿No solicitaste este cambio?</h4>
+              <p style="color: #856404; margin-bottom: 0;">Si no solicitaste el restablecimiento de contraseña, puedes ignorar este email. Tu cuenta permanecerá segura.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 12px;">
+              <p>Reserva Tu Cancha - Sistema de Administración</p>
+              <p>Este es un email automático, por favor no responder</p>
+            </div>
+          </div>
+        `,
+        text: `
+Restablecimiento de Contraseña - Reserva Tu Cancha
+
+Hemos recibido una solicitud para restablecer la contraseña de tu cuenta de administrador.
+
+Si solicitaste este cambio, visita el siguiente enlace:
+${resetUrl}
+
+Este enlace expirará en 15 minutos por seguridad.
+
+¿No solicitaste este cambio?
+Si no solicitaste el restablecimiento de contraseña, puedes ignorar este email. Tu cuenta permanecerá segura.
+
+Reserva Tu Cancha - Sistema de Administración
+Este es un email automático, por favor no responder
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Email de restablecimiento enviado a:', email);
+      return { success: true, messageId: result.messageId };
+
+    } catch (error) {
+      console.error('❌ Error enviando email de restablecimiento:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Enviar email de confirmación de cambio de contraseña
+  async sendPasswordChangeConfirmation(email) {
+    if (!this.isConfigured) {
+      console.log('📧 Email no configurado - simulando envío de confirmación de cambio de contraseña');
+      return { success: true, simulated: true };
+    }
+
+    try {
+      const mailOptions = {
+        from: `"Reserva Tu Cancha - Soporte" <soporte@reservatuscanchas.cl>`,
+        to: email,
+        subject: '✅ Contraseña Restablecida Exitosamente - Reserva Tu Cancha',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; border-bottom: 3px solid #28a745; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="color: #28a745; margin: 0;">✅ Contraseña Restablecida</h1>
+              <p style="color: #666; margin: 10px 0 0 0;">Reserva Tu Cancha - Panel de Administración</p>
+            </div>
+            
+            <div style="background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #155724; margin-top: 0;">¡Cambio Exitoso!</h3>
+              <p>Tu contraseña ha sido restablecida exitosamente.</p>
+              <p>Ahora puedes acceder al panel de administración con tu nueva contraseña.</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-login.html" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Acceder al Panel de Administración
+              </a>
+            </div>
+            
+            <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; padding: 15px; margin: 20px 0;">
+              <h4 style="color: #721c24; margin-top: 0;">⚠️ Importante</h4>
+              <p style="color: #721c24; margin-bottom: 0;">Si no realizaste este cambio, contacta inmediatamente al administrador del sistema.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 12px;">
+              <p>Reserva Tu Cancha - Sistema de Administración</p>
+              <p>Este es un email automático, por favor no responder</p>
+            </div>
+          </div>
+        `,
+        text: `
+Contraseña Restablecida Exitosamente - Reserva Tu Cancha
+
+¡Cambio Exitoso!
+
+Tu contraseña ha sido restablecida exitosamente.
+Ahora puedes acceder al panel de administración con tu nueva contraseña.
+
+Acceder al Panel: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin-login.html
+
+IMPORTANTE: Si no realizaste este cambio, contacta inmediatamente al administrador del sistema.
+
+Reserva Tu Cancha - Sistema de Administración
+Este es un email automático, por favor no responder
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Email de confirmación de cambio enviado a:', email);
+      return { success: true, messageId: result.messageId };
+
+    } catch (error) {
+      console.error('❌ Error enviando email de confirmación de cambio:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Método principal para enviar emails de confirmación
   async sendConfirmationEmails(reservaData) {
     console.log('📧 Enviando emails de confirmación para reserva:', reservaData.codigo_reserva);
@@ -504,6 +647,12 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
       console.error('❌ Error procesando emails de confirmación:', error.message);
       return { ...results, error: error.message };
     }
+  }
+
+  // Método estático para enviar emails (para compatibilidad con el código existente)
+  static async sendEmail(emailData) {
+    const emailService = new EmailService();
+    return await emailService.sendPasswordResetEmail(emailData.to, emailData.token);
   }
 }
 

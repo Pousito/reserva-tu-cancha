@@ -240,7 +240,11 @@ function inicializarGraficoReservas() {
                         color: 'rgba(102, 126, 234, 0.1)'
                     },
                     ticks: {
-                        color: '#6b7280'
+                        color: '#6b7280',
+                        stepSize: 1,
+                        callback: function(value) {
+                            return Number.isInteger(value) ? value : null;
+                        }
                     }
                 }
             },

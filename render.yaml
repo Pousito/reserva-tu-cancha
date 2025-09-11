@@ -23,9 +23,9 @@ services:
       - key: SMTP_PORT
         value: 587
       - key: SMTP_USER
-        value: reservas@reservatuscanchas.cl
+        value: soporte@reservatuscanchas.cl
       - key: SMTP_PASS
-        value: L660mKFmcDBk
+        value: KWAX CS8q 61cN
     healthCheckPath: /health
     autoDeploy: true
     # Forzar redeploy para código de reserva corto - Versión 4
