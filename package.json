@@ -42,7 +42,8 @@
     "dev-postgresql": "NODE_ENV=development DATABASE_URL=postgresql://postgres@localhost:5432/reserva_tu_cancha_local npm start",
     "migrate": "node scripts/migration/migration-manager.js",
     "test-pre-deploy": "node scripts/testing/pre-deploy-tests.js",
-    "deploy-safe": "npm run test-pre-deploy && npm run migrate && git add . && git commit -m \"Safe deploy\" && git push origin main"
+    "deploy-safe": "npm run test-pre-deploy && npm run migrate && git add . && git commit -m \"Safe deploy\" && git push origin main",
+    "sync-dev-to-prod": "node scripts/migration/sync-dev-to-prod.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
