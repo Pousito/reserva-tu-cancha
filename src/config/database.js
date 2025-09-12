@@ -64,14 +64,10 @@ class DatabaseManager {
         } else {
           console.log('✅ SQLite conectado exitosamente');
           this.createSQLiteTables().then(() => {
-            // En producción, intentar restaurar datos de respaldos
+            // En producción, NO restaurar automáticamente para evitar problemas de esquema
             if (this.isProduction) {
-              this.restoreFromBackups().then(() => {
-                resolve();
-              }).catch(() => {
-                console.log('⚠️ No se pudieron restaurar respaldos, continuando...');
-                resolve();
-              });
+              console.log('🏭 Modo producción: No restaurando respaldos automáticamente');
+              resolve();
             } else {
               resolve();
             }
@@ -512,6 +508,39 @@ class DatabaseManager {
                   console.error('❌ Error agregando columna fecha_creacion:', err.message);
                 } else if (!err) {
                   console.log('✅ Columna fecha_creacion agregada a reservas');
+                }
+              });
+
+              // Migración: Agregar columnas faltantes para el calendario
+              db.run(`ALTER TABLE reservas ADD COLUMN tipo_reserva TEXT DEFAULT 'directa'`, (err) => {
+                if (err && !err.message.includes('duplicate column name')) {
+                  console.error('❌ Error agregando columna tipo_reserva:', err.message);
+                } else if (!err) {
+                  console.log('✅ Columna tipo_reserva agregada a reservas');
+                }
+              });
+
+              db.run(`ALTER TABLE reservas ADD COLUMN creada_por_admin INTEGER DEFAULT 0`, (err) => {
+                if (err && !err.message.includes('duplicate column name')) {
+                  console.error('❌ Error agregando columna creada_por_admin:', err.message);
+                } else if (!err) {
+                  console.log('✅ Columna creada_por_admin agregada a reservas');
+                }
+              });
+
+              db.run(`ALTER TABLE reservas ADD COLUMN metodo_contacto TEXT DEFAULT 'web'`, (err) => {
+                if (err && !err.message.includes('duplicate column name')) {
+                  console.error('❌ Error agregando columna metodo_contacto:', err.message);
+                } else if (!err) {
+                  console.log('✅ Columna metodo_contacto agregada a reservas');
+                }
+              });
+
+              db.run(`ALTER TABLE reservas ADD COLUMN comision_aplicada INTEGER DEFAULT 0`, (err) => {
+                if (err && !err.message.includes('duplicate column name')) {
+                  console.error('❌ Error agregando columna comision_aplicada:', err.message);
+                } else if (!err) {
+                  console.log('✅ Columna comision_aplicada agregada a reservas');
                 }
               });
 
