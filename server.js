@@ -4528,10 +4528,19 @@ app.post('/debug/test-reservation-insert', async (req, res) => {
     
     console.log('🧪 Probando inserción de reserva...');
     
+    // Obtener una cancha existente
+    const canchas = await db.query('SELECT id FROM canchas LIMIT 1');
+    if (canchas.length === 0) {
+      return res.json({
+        success: false,
+        message: 'No hay canchas disponibles para la prueba'
+      });
+    }
+    
     // Datos de prueba
     const testData = {
       codigo_reserva: 'TEST123',
-      cancha_id: 1,
+      cancha_id: canchas[0].id,
       fecha: '2025-09-13',
       hora_inicio: '10:00:00',
       hora_fin: '11:00:00',
