@@ -4521,6 +4521,74 @@ app.post('/debug/create-blocking-table', async (req, res) => {
   }
 });
 
+// Endpoint para probar inserción de reserva
+app.post('/debug/test-reservation-insert', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    console.log('🧪 Probando inserción de reserva...');
+    
+    // Datos de prueba
+    const testData = {
+      codigo_reserva: 'TEST123',
+      cancha_id: 1,
+      fecha: '2025-09-13',
+      hora_inicio: '10:00:00',
+      hora_fin: '11:00:00',
+      nombre_cliente: 'Cliente Test',
+      email_cliente: 'test@test.com',
+      telefono_cliente: '123456789',
+      rut_cliente: '12345678-9',
+      precio_total: 28000,
+      estado: 'confirmada',
+      tipo_reserva: 'administrativa',
+      creada_por_admin: true,
+      admin_id: 1,
+      comision_aplicada: 0
+    };
+    
+    // Probar la consulta de inserción
+    const insertQuery = `
+      INSERT INTO reservas (
+        codigo_reserva, cancha_id, fecha, hora_inicio, hora_fin,
+        nombre_cliente, email_cliente, telefono_cliente, rut_cliente,
+        precio_total, estado, tipo_reserva, creada_por_admin, admin_id,
+        comision_aplicada
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING *
+    `;
+    
+    const insertParams = [
+      testData.codigo_reserva, testData.cancha_id, testData.fecha, testData.hora_inicio, testData.hora_fin,
+      testData.nombre_cliente, testData.email_cliente, testData.telefono_cliente, testData.rut_cliente,
+      testData.precio_total, testData.estado, testData.tipo_reserva, testData.creada_por_admin, testData.admin_id,
+      testData.comision_aplicada
+    ];
+    
+    console.log('🔍 Ejecutando consulta de prueba...');
+    const result = await db.query(insertQuery, insertParams);
+    console.log('🔍 Resultado:', result);
+    
+    // Limpiar el registro de prueba
+    await db.run('DELETE FROM reservas WHERE codigo_reserva = $1', [testData.codigo_reserva]);
+    
+    res.json({
+      success: true,
+      message: 'Inserción de reserva exitosa',
+      result: result,
+      database: dbInfo
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en prueba de inserción:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
