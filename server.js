@@ -4384,6 +4384,124 @@ app.get('/debug/database-structure', async (req, res) => {
   }
 });
 
+// Endpoint para agregar columnas faltantes en PostgreSQL
+app.post('/debug/fix-database-columns', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    if (dbInfo.type !== 'PostgreSQL') {
+      return res.json({
+        success: false,
+        message: 'Este endpoint solo funciona con PostgreSQL',
+        databaseType: dbInfo.type
+      });
+    }
+    
+    console.log('🔧 Agregando columnas faltantes en PostgreSQL...');
+    
+    // Columnas que necesitamos agregar
+    const columnsToAdd = [
+      {
+        name: 'tipo_reserva',
+        definition: 'VARCHAR(50) DEFAULT \'directa\''
+      },
+      {
+        name: 'creada_por_admin',
+        definition: 'BOOLEAN DEFAULT false'
+      },
+      {
+        name: 'metodo_contacto',
+        definition: 'VARCHAR(50) DEFAULT \'web\''
+      },
+      {
+        name: 'comision_aplicada',
+        definition: 'INTEGER DEFAULT 0'
+      }
+    ];
+    
+    const results = [];
+    
+    // Verificar columnas existentes
+    const existingColumns = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas'
+    `);
+    
+    const existingColumnNames = existingColumns.map(row => row.column_name);
+    
+    // Agregar columnas faltantes
+    for (const column of columnsToAdd) {
+      if (existingColumnNames.includes(column.name)) {
+        results.push({
+          column: column.name,
+          status: 'already_exists',
+          message: 'Columna ya existe'
+        });
+      } else {
+        try {
+          await db.query(`ALTER TABLE reservas ADD COLUMN ${column.name} ${column.definition}`);
+          results.push({
+            column: column.name,
+            status: 'added',
+            message: 'Columna agregada exitosamente'
+          });
+        } catch (error) {
+          results.push({
+            column: column.name,
+            status: 'error',
+            message: error.message
+          });
+        }
+      }
+    }
+    
+    // Probar consulta del calendario
+    let testResult = null;
+    try {
+      const testQuery = `
+        SELECT 
+          r.id,
+          r.codigo_reserva as codigo,
+          r.fecha,
+          r.hora_inicio,
+          r.hora_fin,
+          r.precio_total,
+          r.estado,
+          r.tipo_reserva,
+          r.creada_por_admin,
+          r.metodo_contacto,
+          r.comision_aplicada,
+          r.nombre_cliente,
+          r.email_cliente,
+          r.telefono_cliente
+        FROM reservas r
+        LIMIT 1
+      `;
+      
+      testResult = await db.query(testQuery);
+    } catch (error) {
+      testResult = { error: error.message, code: error.code };
+    }
+    
+    res.json({
+      success: true,
+      message: 'Columnas procesadas',
+      results: results,
+      testQuery: testResult,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
