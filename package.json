@@ -45,7 +45,9 @@
     "deploy-safe": "npm run test-pre-deploy && npm run migrate && git add . && git commit -m \"Safe deploy\" && git push origin main",
     "sync-dev-to-prod": "node scripts/migration/sync-dev-to-prod.js",
     "clean-all-reservations": "node scripts/cleanup/clean-all-reservations.js",
-    "setup-unified-db": "node scripts/setup/unified-database-setup.js"
+    "setup-unified-db": "node scripts/setup/unified-database-setup.js",
+    "clean-to-essential": "node scripts/cleanup/clean-to-essential.js",
+    "clean-production-essential": "node scripts/cleanup/clean-production-essential.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
