@@ -60,7 +60,6 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.4",
     "pg": "^8.11.3",
-    "sqlite3": "^5.1.6",
     "transbank-sdk": "^6.1.0"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ const {
   requireCourtManagement, 
   requireReportsAccess 
 } = require('./middleware/role-permissions');
-// PostgreSQL + SQLite Hybrid Database System - Persistence Test
+// PostgreSQL Database System - Unified for Development and Production
 const DatabaseManager = require('./src/config/database');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
 const EmailService = require('./src/services/emailService');
@@ -113,7 +113,7 @@ const requireComplexAccess = (req, res, next) => {
   });
 };
 
-// Sistema de base de datos híbrido (PostgreSQL + SQLite)
+// Sistema de base de datos PostgreSQL unificado
 const db = new DatabaseManager();
 
 // Sistema de emails
@@ -770,21 +770,8 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
     const { complejoId, fecha } = req.params;
     console.log(`🚀 Verificando disponibilidad completa - Complejo: ${complejoId}, Fecha: ${fecha}`);
     
-    // Una sola consulta que obtiene todas las reservas del complejo para la fecha
-    // Compatible con SQLite y PostgreSQL
-    const dbInfo = db.getDatabaseInfo();
-    let fechaCondition;
-    
-    if (dbInfo.type === 'PostgreSQL') {
-      fechaCondition = 'r.fecha::date = $2';
-    } else {
-      fechaCondition = 'r.fecha = $2';
-    }
-    
-    // Usar parámetros correctos según el tipo de base de datos
-    let disponibilidad;
-    if (dbInfo.type === 'PostgreSQL') {
-      disponibilidad = await db.query(`
+    // Consulta PostgreSQL unificada
+    const disponibilidad = await db.query(`
         SELECT 
           c.id as cancha_id, 
           c.nombre as cancha_nombre,
@@ -800,25 +787,6 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
         WHERE c.complejo_id = $1
         ORDER BY c.id, r.hora_inicio
       `, [complejoId, fecha]);
-    } else {
-      // SQLite
-      disponibilidad = await db.query(`
-        SELECT 
-          c.id as cancha_id, 
-          c.nombre as cancha_nombre,
-          c.tipo as cancha_tipo,
-          r.hora_inicio, 
-          r.hora_fin, 
-          r.estado,
-          r.codigo_reserva
-        FROM canchas c
-        LEFT JOIN reservas r ON c.id = r.cancha_id 
-          AND r.fecha = ?
-          AND r.estado IN ('confirmada', 'pendiente')
-        WHERE c.complejo_id = $1
-        ORDER BY c.id, r.hora_inicio
-      `, [fecha, complejoId]);
-    }
     
     // Procesar los datos para agrupar por cancha
     const resultado = {};
@@ -944,36 +912,17 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, requ
       `, userRole === 'super_admin' ? [] : [complexFilter]);
     }
     
-    // Reservas por día (últimos 7 días) - Compatible con PostgreSQL y SQLite
-    const dbInfo = db.getDatabaseInfo();
-    let fechaCondition;
-    let reservasPorDia;
-    
-    if (dbInfo.type === 'PostgreSQL') {
-      fechaCondition = 'r.fecha >= CURRENT_DATE - INTERVAL \'7 days\'';
-      reservasPorDia = await db.query(`
-        SELECT r.fecha::date as dia, COUNT(*) as cantidad
-        FROM reservas r
-        JOIN canchas c ON r.cancha_id = c.id
-        WHERE ${fechaCondition}
-        AND r.estado != 'cancelada'
-        ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
-        GROUP BY r.fecha::date
-        ORDER BY dia
-      `, userRole === 'super_admin' ? [] : [complexFilter]);
-    } else {
-      fechaCondition = 'r.fecha >= date(\'now\', \'-7 days\')';
-      reservasPorDia = await db.query(`
-        SELECT date(r.fecha) as dia, COUNT(*) as cantidad
-        FROM reservas r
-        JOIN canchas c ON r.cancha_id = c.id
-        WHERE ${fechaCondition}
-        AND r.estado != 'cancelada'
-        ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = ?'}
-        GROUP BY date(r.fecha)
-        ORDER BY dia
-      `, userRole === 'super_admin' ? [] : [complexFilter]);
-    }
+    // Reservas por día (últimos 7 días) - PostgreSQL unificado
+    const reservasPorDia = await db.query(`
+      SELECT r.fecha::date as dia, COUNT(*) as cantidad
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
+      AND r.estado != 'cancelada'
+      ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
+      GROUP BY r.fecha::date
+      ORDER BY dia
+    `, userRole === 'super_admin' ? [] : [complexFilter]);
     
     const stats = {
       totalReservas: totalReservas.count,
@@ -2428,14 +2377,25 @@ async function createBackup() {
     
     // Generar nombre de archivo con timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFileName = `database_backup_${timestamp}.sqlite`;
+    const backupFileName = `postgresql_backup_${timestamp}.json`;
     const backupPath = path.join(backupDir, backupFileName);
     
-    // Copiar base de datos actual al respaldo
-    const currentDbPath = process.env.DB_PATH || './database.sqlite';
-    if (fs.existsSync(currentDbPath)) {
-      fs.copyFileSync(currentDbPath, backupPath);
-      console.log(`💾 Respaldo creado: ${backupFileName}`);
+    // Crear respaldo de PostgreSQL usando el sistema de backup
+    try {
+      const { PostgreSQLBackupSystem } = require('./scripts/database/backup-system');
+      const backupSystem = new PostgreSQLBackupSystem();
+      await backupSystem.connectDb();
+      const result = await backupSystem.createBackup();
+      
+      if (result.success) {
+        console.log(`✅ Respaldo PostgreSQL creado: ${result.path}`);
+      } else {
+        console.log('⚠️ Error creando respaldo PostgreSQL');
+      }
+      
+      await backupSystem.close();
+    } catch (error) {
+      console.error('❌ Error en sistema de backup:', error.message);
     }
     
   } catch (error) {
@@ -4326,17 +4286,13 @@ app.get('/debug/database-structure', async (req, res) => {
   try {
     const dbInfo = db.getDatabaseInfo();
     
-    let schema = [];
-    if (dbInfo.type === 'SQLite') {
-      schema = await db.query("PRAGMA table_info(reservas)");
-    } else {
-      schema = await db.query(`
-        SELECT column_name, data_type, is_nullable, column_default
-        FROM information_schema.columns 
-        WHERE table_name = 'reservas'
-        ORDER BY ordinal_position
-      `);
-    }
+    // Schema PostgreSQL unificado
+    const schema = await db.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas'
+      ORDER BY ordinal_position
+    `);
     
     // Probar consulta específica del calendario
     let testResult = null;
@@ -4393,31 +4349,21 @@ app.get('/debug/check-blocking-table', async (req, res) => {
     let tableSchema = [];
     let testQuery = null;
     
-    if (dbInfo.type === 'SQLite') {
-      // Verificar si la tabla existe en SQLite
-      const tables = await db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='bloqueos_temporales'");
-      tableExists = tables.length > 0;
-      
-      if (tableExists) {
-        tableSchema = await db.query("PRAGMA table_info(bloqueos_temporales)");
-      }
-    } else {
-      // Verificar si la tabla existe en PostgreSQL
-      const tables = await db.query(`
-        SELECT table_name 
-        FROM information_schema.tables 
+    // Verificar si la tabla existe en PostgreSQL
+    const tables = await db.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_name = 'bloqueos_temporales'
+    `);
+    const tableExists = tables.length > 0;
+    
+    if (tableExists) {
+      tableSchema = await db.query(`
+        SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns 
         WHERE table_name = 'bloqueos_temporales'
+        ORDER BY ordinal_position
       `);
-      tableExists = tables.length > 0;
-      
-      if (tableExists) {
-        tableSchema = await db.query(`
-          SELECT column_name, data_type, is_nullable, column_default
-          FROM information_schema.columns 
-          WHERE table_name = 'bloqueos_temporales'
-          ORDER BY ordinal_position
-        `);
-      }
     }
     
     // Probar consulta de inserción (sin ejecutar)

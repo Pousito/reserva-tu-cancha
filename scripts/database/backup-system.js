@@ -1,14 +1,18 @@
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+require('dotenv').config();
 
-class BackupSystem {
-  constructor(dbPath = process.env.DB_PATH || './database.sqlite', backupDir = './backups', maxBackups = 10) {
-    this.dbPath = dbPath;
+/**
+ * Sistema de respaldo para PostgreSQL
+ * Reemplaza el sistema anterior de SQLite
+ */
+class PostgreSQLBackupSystem {
+  constructor(backupDir = './backups', maxBackups = 10) {
     this.backupDir = backupDir;
     this.maxBackups = maxBackups;
-    this.db = null;
+    this.pgPool = null;
     this.ensureBackupDirExists();
   }
 
@@ -20,86 +24,149 @@ class BackupSystem {
   }
 
   async connectDb() {
-    return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database(this.dbPath, (err) => {
-        if (err) reject(err);
-        else resolve(this.db);
-      });
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL no está configurado');
+    }
+
+    this.pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      }
     });
+
+    const client = await this.pgPool.connect();
+    console.log('✅ Conectado a PostgreSQL para respaldos');
+    client.release();
   }
 
   async checkDatabaseIntegrity() {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        return reject(new Error('Database not connected for integrity check.'));
-      }
-      this.db.get("PRAGMA integrity_check", (err, row) => {
-        if (err) reject(err);
-        else resolve(row.integrity_check === 'ok');
-      });
-    });
+    const client = await this.pgPool.connect();
+    try {
+      // Verificar integridad de las tablas principales
+      const result = await client.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM ciudades) as ciudades_count,
+          (SELECT COUNT(*) FROM complejos) as complejos_count,
+          (SELECT COUNT(*) FROM canchas) as canchas_count,
+          (SELECT COUNT(*) FROM usuarios) as usuarios_count,
+          (SELECT COUNT(*) FROM reservas) as reservas_count
+      `);
+      
+      console.log('📊 Estado de las tablas:');
+      console.log(`   - Ciudades: ${result.rows[0].ciudades_count}`);
+      console.log(`   - Complejos: ${result.rows[0].complejos_count}`);
+      console.log(`   - Canchas: ${result.rows[0].canchas_count}`);
+      console.log(`   - Usuarios: ${result.rows[0].usuarios_count}`);
+      console.log(`   - Reservas: ${result.rows[0].reservas_count}`);
+      
+      return true;
+    } finally {
+      client.release();
+    }
   }
 
   async checkDatabaseHasData() {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        return reject(new Error('Database not connected for data check.'));
-      }
-      this.db.get("SELECT COUNT(*) as count FROM reservas", (err, row) => {
-        if (err) {
-          // If table doesn't exist, it's considered empty
-          if (err.message.includes('no such table')) {
-            return resolve(false);
-          }
-          return reject(err);
-        }
-        resolve(row.count > 0);
-      });
-    });
+    const client = await this.pgPool.connect();
+    try {
+      const result = await client.query('SELECT COUNT(*) as count FROM reservas');
+      return result.rows[0].count > 0;
+    } finally {
+      client.release();
+    }
   }
 
-  generateHash(filePath) {
-    const fileBuffer = fs.readFileSync(filePath);
+  generateHash(data) {
     const hash = crypto.createHash('md5');
-    hash.update(fileBuffer);
+    hash.update(data);
     return hash.digest('hex');
   }
 
   async createBackup() {
-    console.log('💾 CREANDO RESPALDO');
-    console.log('==================');
+    console.log('💾 CREANDO RESPALDO POSTGRESQL');
+    console.log('==============================');
 
     this.ensureBackupDirExists();
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFileName = `database_backup_${timestamp}.sqlite`;
+    const backupFileName = `postgresql_backup_${timestamp}.json`;
     const backupFilePath = path.join(this.backupDir, backupFileName);
     const hashFilePath = backupFilePath + '.hash';
 
     try {
-      if (!fs.existsSync(this.dbPath)) {
-        console.log('⚠️  BD original no existe, no se puede crear respaldo');
-        return { success: false, message: 'BD original no existe' };
+      const client = await this.pgPool.connect();
+      
+      try {
+        // Exportar datos de todas las tablas
+        const backupData = {
+          timestamp: timestamp,
+          tables: {}
+        };
+
+        // Exportar ciudades
+        const ciudades = await client.query('SELECT * FROM ciudades ORDER BY id');
+        backupData.tables.ciudades = ciudades.rows;
+
+        // Exportar complejos
+        const complejos = await client.query('SELECT * FROM complejos ORDER BY id');
+        backupData.tables.complejos = complejos.rows;
+
+        // Exportar canchas
+        const canchas = await client.query('SELECT * FROM canchas ORDER BY id');
+        backupData.tables.canchas = canchas.rows;
+
+        // Exportar usuarios
+        const usuarios = await client.query('SELECT * FROM usuarios ORDER BY id');
+        backupData.tables.usuarios = usuarios.rows;
+
+        // Exportar reservas
+        const reservas = await client.query('SELECT * FROM reservas ORDER BY id');
+        backupData.tables.reservas = reservas.rows;
+
+        // Exportar pagos
+        const pagos = await client.query('SELECT * FROM pagos ORDER BY id');
+        backupData.tables.pagos = pagos.rows;
+
+        // Escribir archivo de respaldo
+        const jsonData = JSON.stringify(backupData, null, 2);
+        fs.writeFileSync(backupFilePath, jsonData);
+        
+        const stats = fs.statSync(backupFilePath);
+        const hash = this.generateHash(jsonData);
+        fs.writeFileSync(hashFilePath, hash);
+
+        console.log(`✅ Respaldo creado: ${backupFilePath}`);
+        console.log(`📊 Tamaño: ${stats.size} bytes`);
+        console.log(`🔐 Hash: ${hash}`);
+        console.log(`📋 Registros respaldados:`);
+        console.log(`   - Ciudades: ${ciudades.rows.length}`);
+        console.log(`   - Complejos: ${complejos.rows.length}`);
+        console.log(`   - Canchas: ${canchas.rows.length}`);
+        console.log(`   - Usuarios: ${usuarios.rows.length}`);
+        console.log(`   - Reservas: ${reservas.rows.length}`);
+        console.log(`   - Pagos: ${pagos.rows.length}`);
+
+        this.cleanOldBackups();
+
+        return {
+          success: true,
+          path: backupFilePath,
+          size: stats.size,
+          hash: hash,
+          timestamp: timestamp,
+          records: {
+            ciudades: ciudades.rows.length,
+            complejos: complejos.rows.length,
+            canchas: canchas.rows.length,
+            usuarios: usuarios.rows.length,
+            reservas: reservas.rows.length,
+            pagos: pagos.rows.length
+          }
+        };
+
+      } finally {
+        client.release();
       }
-
-      fs.copyFileSync(this.dbPath, backupFilePath);
-      const stats = fs.statSync(backupFilePath);
-      const hash = this.generateHash(backupFilePath);
-      fs.writeFileSync(hashFilePath, hash);
-
-      console.log(`✅ Respaldo creado: ${backupFilePath}`);
-      console.log(`📊 Tamaño: ${stats.size} bytes`);
-      console.log(`🔐 Hash: ${hash}`);
-
-      this.cleanOldBackups();
-
-      return {
-        success: true,
-        path: backupFilePath,
-        size: stats.size,
-        hash: hash,
-        timestamp: timestamp
-      };
     } catch (error) {
       console.error('❌ Error creando respaldo:', error.message);
       return { success: false, error: error.message };
@@ -110,7 +177,7 @@ class BackupSystem {
     this.ensureBackupDirExists();
     const files = fs.readdirSync(this.backupDir);
     const backups = files
-      .filter(file => file.endsWith('.sqlite'))
+      .filter(file => file.startsWith('postgresql_backup_') && file.endsWith('.json'))
       .map(file => {
         const filePath = path.join(this.backupDir, file);
         const hashFilePath = filePath + '.hash';
@@ -120,7 +187,7 @@ class BackupSystem {
           const stats = fs.statSync(filePath);
           if (fs.existsSync(hashFilePath)) {
             const storedHash = fs.readFileSync(hashFilePath, 'utf8');
-            const currentHash = this.generateHash(filePath);
+            const currentHash = this.generateHash(fs.readFileSync(filePath, 'utf8'));
             valid = (storedHash === currentHash);
             hash = storedHash;
           }
@@ -160,8 +227,8 @@ class BackupSystem {
   }
 
   async restoreFromLatestBackup() {
-    console.log('🔄 RESTAURANDO DESDE EL ÚLTIMO RESPALDO');
-    console.log('======================================');
+    console.log('🔄 RESTAURANDO DESDE EL ÚLTIMO RESPALDO POSTGRESQL');
+    console.log('================================================');
 
     const backups = this.listBackups();
     if (backups.length === 0) {
@@ -177,52 +244,107 @@ class BackupSystem {
     }
 
     try {
-      // Cerrar la conexión actual a la BD antes de restaurar
-      if (this.db) {
-        await new Promise((resolve, reject) => this.db.close(err => err ? reject(err) : resolve()));
-        this.db = null;
-      }
-
-      fs.copyFileSync(latestValidBackup.path, this.dbPath);
-      console.log(`✅ BD restaurada desde: ${latestValidBackup.name}`);
+      const backupData = JSON.parse(fs.readFileSync(latestValidBackup.path, 'utf8'));
+      const client = await this.pgPool.connect();
       
-      // Volver a conectar la BD
-      await this.connectDb();
-      const hasData = await this.checkDatabaseHasData();
-      console.log(`✅ BD restaurada y verificada. Contiene datos: ${hasData}`);
-      return true;
+      try {
+        // Limpiar tablas existentes
+        await client.query('DELETE FROM pagos');
+        await client.query('DELETE FROM reservas');
+        await client.query('DELETE FROM usuarios');
+        await client.query('DELETE FROM canchas');
+        await client.query('DELETE FROM complejos');
+        await client.query('DELETE FROM ciudades');
+
+        // Restaurar ciudades
+        for (const ciudad of backupData.tables.ciudades) {
+          await client.query('INSERT INTO ciudades (id, nombre) VALUES ($1, $2)', [ciudad.id, ciudad.nombre]);
+        }
+
+        // Restaurar complejos
+        for (const complejo of backupData.tables.complejos) {
+          await client.query(`
+            INSERT INTO complejos (id, nombre, ciudad_id, direccion, telefono, email) 
+            VALUES ($1, $2, $3, $4, $5, $6)
+          `, [complejo.id, complejo.nombre, complejo.ciudad_id, complejo.direccion, complejo.telefono, complejo.email]);
+        }
+
+        // Restaurar canchas
+        for (const cancha of backupData.tables.canchas) {
+          await client.query(`
+            INSERT INTO canchas (id, complejo_id, nombre, tipo, precio_hora) 
+            VALUES ($1, $2, $3, $4, $5)
+          `, [cancha.id, cancha.complejo_id, cancha.nombre, cancha.tipo, cancha.precio_hora]);
+        }
+
+        // Restaurar usuarios
+        for (const usuario of backupData.tables.usuarios) {
+          await client.query(`
+            INSERT INTO usuarios (id, email, password, nombre, rol, activo, complejo_id, created_at) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          `, [usuario.id, usuario.email, usuario.password, usuario.nombre, usuario.rol, usuario.activo, usuario.complejo_id, usuario.created_at]);
+        }
+
+        // Restaurar reservas
+        for (const reserva of backupData.tables.reservas) {
+          await client.query(`
+            INSERT INTO reservas (id, codigo_reserva, cancha_id, usuario_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, estado, estado_pago, precio_total, created_at, fecha_creacion) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          `, [reserva.id, reserva.codigo_reserva, reserva.cancha_id, reserva.usuario_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.rut_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.estado, reserva.estado_pago, reserva.precio_total, reserva.created_at, reserva.fecha_creacion]);
+        }
+
+        // Restaurar pagos
+        for (const pago of backupData.tables.pagos) {
+          await client.query(`
+            INSERT INTO pagos (id, reserva_id, transbank_token, order_id, amount, status, authorization_code, payment_type_code, response_code, installments_number, transaction_date, created_at, updated_at, bloqueo_id, reservation_code) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          `, [pago.id, pago.reserva_id, pago.transbank_token, pago.order_id, pago.amount, pago.status, pago.authorization_code, pago.payment_type_code, pago.response_code, pago.installments_number, pago.transaction_date, pago.created_at, pago.updated_at, pago.bloqueo_id, pago.reservation_code]);
+        }
+
+        console.log(`✅ BD restaurada desde: ${latestValidBackup.name}`);
+        console.log(`📋 Registros restaurados:`);
+        console.log(`   - Ciudades: ${backupData.tables.ciudades.length}`);
+        console.log(`   - Complejos: ${backupData.tables.complejos.length}`);
+        console.log(`   - Canchas: ${backupData.tables.canchas.length}`);
+        console.log(`   - Usuarios: ${backupData.tables.usuarios.length}`);
+        console.log(`   - Reservas: ${backupData.tables.reservas.length}`);
+        console.log(`   - Pagos: ${backupData.tables.pagos.length}`);
+        
+        return true;
+
+      } finally {
+        client.release();
+      }
     } catch (error) {
       console.error('❌ Error restaurando BD:', error.message);
       return false;
     }
   }
+
+  async close() {
+    if (this.pgPool) {
+      await this.pgPool.end();
+      console.log('✅ Conexión PostgreSQL cerrada');
+    }
+  }
 }
 
 // Función para inicializar el sistema de respaldo
-async function initializeBackupSystem() {
-  const backupSystem = new BackupSystem();
+async function initializePostgreSQLBackupSystem() {
+  const backupSystem = new PostgreSQLBackupSystem();
   await backupSystem.connectDb();
 
-  console.log('🔍 VERIFICANDO ESTADO DE LA BD');
-  console.log('==============================');
+  console.log('🔍 VERIFICANDO ESTADO DE LA BD POSTGRESQL');
+  console.log('=========================================');
   const hasData = await backupSystem.checkDatabaseHasData();
   const integrityOk = await backupSystem.checkDatabaseIntegrity();
 
   if (!integrityOk) {
-    console.error('❌ Integridad de la base de datos COMPROMETIDA. Intentando restaurar...');
-    const restored = await backupSystem.restoreFromLatestBackup();
-    if (restored) {
-      console.log('✅ BD restaurada exitosamente.');
-    } else {
-      console.error('❌ Fallo al restaurar la BD. Se recomienda intervención manual.');
-    }
+    console.error('❌ Problemas de integridad detectados en PostgreSQL');
   } else if (!hasData) {
-    console.log('⚠️  BD vacía o sin reservas. Creando respaldo inicial...');
-    await backupSystem.createBackup();
+    console.log('⚠️  BD PostgreSQL vacía - no hay reservas');
   } else {
-    console.log(`✅ BD OK - ${hasData ? 'con reservas' : 'sin reservas'} encontradas`);
-    // NO crear respaldo automático al inicio para preservar respaldos existentes
-    console.log('💾 Preservando respaldos existentes - no creando respaldo automático');
+    console.log(`✅ BD PostgreSQL OK - con datos encontrados`);
   }
 
   // Programar respaldos automáticos cada 6 horas (en producción)
@@ -237,9 +359,9 @@ async function initializeBackupSystem() {
   return backupSystem;
 }
 
-module.exports = { BackupSystem, initializeBackupSystem };
+module.exports = { PostgreSQLBackupSystem, initializePostgreSQLBackupSystem };
 
 // Si se ejecuta directamente
 if (require.main === module) {
-  initializeBackupSystem().catch(console.error);
+  initializePostgreSQLBackupSystem().catch(console.error);
 }
