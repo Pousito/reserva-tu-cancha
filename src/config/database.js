@@ -48,6 +48,7 @@ class DatabaseManager {
     } catch (error) {
       console.error('❌ Error conectando a PostgreSQL:', error.message);
       console.log('🔄 Fallback a SQLite...');
+      this.pgPool = null; // Limpiar el pool de PostgreSQL
       await this.connectSQLite();
     }
   }
