@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Filtros Duplicados</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .success { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .error { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .info { background-color: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiar Filtros Duplicados</h1>
+        
+        <div class="info">
+            <strong>Instrucciones:</strong>
+            <ol>
+                <li>Abre el dashboard: <a href="admin-dashboard.html" target="_blank">admin-dashboard.html</a></li>
+                <li>Regresa a esta página</li>
+                <li>Haz clic en "Limpiar Filtros Duplicados"</li>
+                <li>Regresa al dashboard para verificar</li>
+            </ol>
+        </div>
+        
+        <button onclick="cleanDuplicateFilters()">Limpiar Filtros Duplicados</button>
+        <button onclick="checkFilters()">Verificar Filtros</button>
+        <button onclick="clearLog()">Limpiar Log</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#721c24' : type === 'success' ? '#155724' : '#0c5460';
+            log.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function checkFilters() {
+            addLog('🔍 Verificando filtros en el dashboard...');
+            
+            // Abrir el dashboard en una nueva ventana para verificar
+            const dashboardWindow = window.open('admin-dashboard.html', '_blank');
+            
+            // Esperar un poco y luego verificar
+            setTimeout(() => {
+                try {
+                    const filters = dashboardWindow.document.querySelectorAll('.chart-filters');
+                    addLog(`📊 Filtros encontrados: ${filters.length}`);
+                    
+                    if (filters.length === 0) {
+                        addLog('✅ No hay filtros duplicados', 'success');
+                    } else if (filters.length === 1) {
+                        addLog('✅ Solo hay un panel de filtros (correcto)', 'success');
+                    } else {
+                        addLog(`❌ Hay ${filters.length} paneles de filtros (duplicados)`, 'error');
+                    }
+                } catch (error) {
+                    addLog('⚠️ No se pudo verificar (ventana bloqueada por el navegador)', 'error');
+                }
+            }, 3000);
+        }
+
+        function cleanDuplicateFilters() {
+            addLog('🧹 Iniciando limpieza de filtros duplicados...');
+            
+            // Abrir el dashboard en una nueva ventana
+            const dashboardWindow = window.open('admin-dashboard.html', '_blank');
+            
+            // Esperar a que se cargue y luego limpiar
+            setTimeout(() => {
+                try {
+                    const filters = dashboardWindow.document.querySelectorAll('.chart-filters');
+                    addLog(`📊 Filtros encontrados: ${filters.length}`);
+                    
+                    if (filters.length > 1) {
+                        // Mantener solo el primero y eliminar los demás
+                        for (let i = 1; i < filters.length; i++) {
+                            filters[i].remove();
+                            addLog(`🗑️ Eliminado filtro duplicado #${i + 1}`);
+                        }
+                        addLog('✅ Filtros duplicados eliminados', 'success');
+                    } else if (filters.length === 1) {
+                        addLog('✅ Solo hay un panel de filtros (no hay duplicados)', 'success');
+                    } else {
+                        addLog('⚠️ No se encontraron filtros', 'error');
+                    }
+                    
+                    // Limpiar también el objeto chartFilters si existe
+                    if (dashboardWindow.chartFilters) {
+                        delete dashboardWindow.chartFilters;
+                        addLog('🗑️ Objeto chartFilters eliminado');
+                    }
+                    
+                } catch (error) {
+                    addLog(`❌ Error: ${error.message}`, 'error');
+                }
+            }, 3000);
+        }
+
+        // Verificar automáticamente al cargar
+        window.addEventListener('load', function() {
+            addLog('🚀 Página de limpieza cargada');
+            addLog('💡 Haz clic en "Verificar Filtros" para ver el estado actual');
+        });
+    </script>
+</body>
+</html>

@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
     currentUser = AdminUtils.getCurrentUser();
     document.getElementById('adminWelcome').textContent = `Bienvenido, ${currentUser.nombre}`;
     
+    // Aplicar permisos según el rol
+    aplicarPermisosPorRol();
+    
     loadComplexes();
     setupEventListeners();
     setDefaultDates();
@@ -62,6 +65,56 @@ function setupEventListeners() {
     if (complexFilter) {
         complexFilter.addEventListener('change', function() {
             generateReports();
+        });
+    }
+}
+
+// Aplicar permisos según el rol del usuario
+function aplicarPermisosPorRol() {
+    console.log('🔐 Aplicando permisos en reportes...');
+    
+    const user = AdminUtils.getCurrentUser();
+    if (!user) {
+        console.log('❌ No se pudo obtener el usuario');
+        return;
+    }
+    
+    const userRole = user.rol;
+    console.log('🔐 Aplicando permisos para rol:', userRole);
+    
+    // Ocultar elementos según el rol
+    if (userRole === 'manager') {
+        // Managers no pueden ver reportes
+        const managerElements = document.querySelectorAll('.hide-for-manager');
+        console.log(`🔍 Encontrados ${managerElements.length} elementos para ocultar para manager`);
+        managerElements.forEach(element => {
+            element.style.display = 'none';
+        });
+        console.log('✅ Elementos ocultados para manager');
+    } else if (userRole === 'owner') {
+        // Owners no pueden ver filtro de complejos (solo ven su complejo)
+        const ownerElements = document.querySelectorAll('.hide-for-owner');
+        console.log(`🔍 Encontrados ${ownerElements.length} elementos para ocultar para owner`);
+        ownerElements.forEach(element => {
+            element.style.display = 'none';
+        });
+        console.log('✅ Elementos ocultados para owner');
+    } else if (userRole === 'super_admin') {
+        // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
+        console.log('✅ Super admin - acceso completo');
+        
+        // Asegurar que todos los elementos estén visibles
+        const allHiddenElements = document.querySelectorAll('.hide-for-manager, .hide-for-owner');
+        console.log(`🔍 Asegurando visibilidad de ${allHiddenElements.length} elementos para super admin`);
+        
+        allHiddenElements.forEach((element, index) => {
+            // Remover todas las clases de ocultación
+            element.classList.remove('hide-for-manager');
+            element.classList.remove('hide-for-owner');
+            // Forzar visibilidad
+            element.style.display = '';
+            element.style.visibility = '';
+            console.log(`✅ Elemento ${index + 1} configurado como visible para super admin`);
         });
     }
 }
@@ -1047,6 +1100,7 @@ async function updateCustomersTable() {
                                 <div class="fw-bold">${customer.nombre_cliente}</div>
                                 <small class="text-muted">${customer.email_cliente}</small>
                                 ${customer.rut_cliente ? `<br><small class="text-info"><i class="fas fa-id-card me-1"></i>${customer.rut_cliente}</small>` : ''}
+                                ${customer.telefono_cliente ? `<br><small class="text-success"><i class="fas fa-phone me-1"></i>${customer.telefono_cliente}</small>` : ''}
                             </div>
                         </div>
                     </td>

@@ -92,7 +92,7 @@
                                                         <td><code>${r.codigo_reserva}</code></td>
                                                         <td>${r.nombre_cliente}</td>
                                                         <td>${r.fecha}</td>
-                                                        <td>${r.hora_inicio}</td>
+                                                        <td>${formatearHora(r.hora_inicio)}</td>
                                                         <td>$${r.precio_total.toLocaleString()}</td>
                                                         <td><span class="badge bg-${r.estado === 'pendiente' ? 'warning' : 'success'}">${r.estado}</span></td>
                                                     </tr>
@@ -138,5 +138,6 @@
                 });
         }
     </script>
+    <script src="js/time-utils.js?v=1.0"></script>
 </body>
 </html>

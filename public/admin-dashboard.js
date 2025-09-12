@@ -1,193 +1,398 @@
 // Variables globales
-let reservationsChart = null;
-let typeChart = null;
-let hoursChart = null;
+let reservationsChart;
+let currentPeriod = '7d'; // Período actual seleccionado
 
-// Inicialización
+// Inicialización cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== ADMIN DASHBOARD INICIALIZADO ===');
+    console.log('=== ADMIN DASHBOARD SIMPLE INICIALIZADO ===');
     
-    // Inicializar sistema de roles
-    if (!AdminUtils.initializeRoleSystem()) {
+    // Verificar que las dependencias estén cargadas
+    if (typeof AdminUtils === 'undefined') {
+        console.error('❌ AdminUtils no está cargado');
         return;
     }
     
-    // Configurar logout
-    AdminUtils.setupLogout();
+    if (typeof Chart === 'undefined') {
+        console.error('❌ Chart.js no está cargado');
+        return;
+    }
     
-    // Mostrar información del usuario
-    const adminUser = AdminUtils.getCurrentUser();
-    document.getElementById('adminWelcome').textContent = `Bienvenido, ${adminUser.nombre || 'Admin'}`;
+    console.log('✅ Dependencias cargadas correctamente');
+    console.log('🔧 API_BASE:', API_BASE);
+    
+    // Verificar autenticación
+    if (!AdminUtils.isAuthenticated()) {
+        window.location.href = 'admin-login.html';
+        return;
+    }
+    
+    // Mostrar información del usuario (con delay para asegurar que el usuario esté cargado)
+    setTimeout(() => {
+        mostrarInfoUsuario();
+    }, 100);
+    
+    // Aplicar permisos según el rol (con delay para asegurar que el usuario esté cargado)
+    setTimeout(() => {
+        aplicarPermisosPorRol();
+    }, 100);
+    
+    // Actualizar hora actual
+    actualizarHoraActual();
+    setInterval(actualizarHoraActual, 1000);
     
     // Cargar datos del dashboard
     cargarEstadisticas();
     cargarReservasRecientes();
     cargarReservasHoy();
+    
+    // Inicializar gráficos
     inicializarGraficos();
+    
+    // Aplicar permisos y actualizar info del usuario después de cargar datos (por si acaso)
+    setTimeout(() => {
+        mostrarInfoUsuario();
+        aplicarPermisosPorRol();
+        asegurarVisibilidadReportes();
+    }, 1000);
+    
+    // Agregar event listener para cuando se hace clic en el dashboard
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('a[href="admin-dashboard.html"]')) {
+            setTimeout(() => {
+                mostrarInfoUsuario();
+                aplicarPermisosPorRol();
+                asegurarVisibilidadReportes();
+            }, 100);
+        }
+    });
 });
 
-function configurarInterfazPorRol(rol) {
-    const sidebar = document.querySelector('.sidebar .nav');
-    
-    if (rol === 'complex_owner') {
-        // Ocultar opciones que solo puede ver el super admin
-        const opcionesSuperAdmin = [
-            'admin-complexes.html',
-            'admin-courts.html',
-            'admin-reports.html'
-        ];
+function mostrarInfoUsuario() {
+    const user = AdminUtils.getCurrentUser();
+    if (user) {
+        // Actualizar nombre en el header
+        document.getElementById('adminName').textContent = user.nombre || user.email;
         
-        opcionesSuperAdmin.forEach(opcion => {
-            const link = sidebar.querySelector(`a[href="${opcion}"]`);
-            if (link) {
-                link.style.display = 'none';
-            }
+        // Actualizar información del usuario en el sidebar
+        const nameElement = document.querySelector('[data-user="name"]');
+        const roleElement = document.querySelector('[data-user="role"]');
+        const complexElement = document.querySelector('[data-user="complex"]');
+        
+        if (nameElement) {
+            nameElement.textContent = user.nombre || 'Admin';
+        }
+        if (roleElement) {
+            roleElement.textContent = AdminUtils.getRoleDisplayName(user.rol);
+        }
+        if (complexElement) {
+            complexElement.textContent = user.complejo_nombre || 'Todos los complejos';
+        }
+        
+        console.log('✅ Información del usuario actualizada:', {
+            nombre: user.nombre,
+            rol: user.rol,
+            complejo: user.complejo_nombre
+        });
+    }
+}
+
+function asegurarVisibilidadReportes() {
+    const user = AdminUtils.getCurrentUser();
+    if (user && (user.rol === 'owner' || user.rol === 'super_admin')) {
+        const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
+        console.log(`🔧 Asegurando visibilidad de ${reportElements.length} enlaces de reportes para ${user.rol}`);
+        
+        reportElements.forEach((element, index) => {
+            // Remover clases de ocultación
+            element.classList.remove('hide-for-manager');
+            element.classList.remove('hide-for-owner');
+            // Forzar visibilidad
+            element.style.display = 'block';
+            element.style.visibility = 'visible';
+            console.log(`✅ Enlace de reportes ${index + 1} configurado como visible para ${user.rol}`);
+        });
+    }
+}
+
+function aplicarPermisosPorRol() {
+    console.log('🔐 Iniciando aplicación de permisos...');
+    
+    const user = AdminUtils.getCurrentUser();
+    console.log('👤 Usuario obtenido:', user);
+    
+    if (!user) {
+        console.log('❌ No se pudo obtener el usuario, reintentando en 500ms...');
+        setTimeout(aplicarPermisosPorRol, 500);
+        return;
+    }
+    
+    const userRole = user.rol;
+    console.log('🔐 Aplicando permisos para rol:', userRole);
+    console.log('📧 Email del usuario:', user.email);
+    
+    // Ocultar elementos según el rol
+    if (userRole === 'manager') {
+        // Managers no pueden ver información financiera ni gestionar complejos/reportes
+        const managerElements = document.querySelectorAll('.hide-for-manager');
+        console.log(`🔍 Encontrados ${managerElements.length} elementos para ocultar para manager`);
+        managerElements.forEach(element => {
+            element.style.display = 'none';
+        });
+        console.log('✅ Elementos ocultados para manager');
+    } else if (userRole === 'owner') {
+        // Owners no pueden gestionar complejos (solo ver su complejo)
+        const ownerElements = document.querySelectorAll('.hide-for-owner');
+        console.log(`🔍 Encontrados ${ownerElements.length} elementos para ocultar para owner`);
+        ownerElements.forEach(element => {
+            element.style.display = 'none';
+        });
+        console.log('✅ Elementos ocultados para owner');
+        
+        // Asegurar que los elementos de reportes estén visibles para owners
+        const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
+        console.log(`📊 Enlaces de reportes encontrados: ${reportElements.length}`);
+        reportElements.forEach((element, index) => {
+            console.log(`📊 Enlace ${index + 1} antes:`, {
+                display: element.style.display,
+                visibility: element.style.visibility,
+                classes: element.className,
+                computedDisplay: window.getComputedStyle(element).display,
+                computedVisibility: window.getComputedStyle(element).visibility
+            });
+            
+            // Remover clase hide-for-manager y forzar visibilidad
+            element.classList.remove('hide-for-manager');
+            element.style.display = 'block';
+            element.style.visibility = 'visible';
+            
+            console.log(`📊 Enlace ${index + 1} después:`, {
+                display: element.style.display,
+                visibility: element.style.visibility,
+                classes: element.className,
+                computedDisplay: window.getComputedStyle(element).display,
+                computedVisibility: window.getComputedStyle(element).visibility
+            });
         });
         
-        // Cambiar el título del dashboard
-        document.querySelector('.main-content h5').textContent = 'Mi Complejo - Dashboard';
-    } else if (rol === 'super_admin') {
-        // Mostrar todas las opciones
-        document.querySelector('.main-content h5').textContent = 'Dashboard - Super Administrador';
+        // Asegurar visibilidad de reportes después de aplicar permisos
+        asegurarVisibilidadReportes();
+    } else if (userRole === 'super_admin') {
+        // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
+        console.log('✅ Super admin - acceso completo');
+        
+        // Asegurar que todos los elementos estén visibles
+        const allHiddenElements = document.querySelectorAll('.hide-for-manager, .hide-for-owner');
+        console.log(`🔍 Asegurando visibilidad de ${allHiddenElements.length} elementos para super admin`);
+        
+        allHiddenElements.forEach((element, index) => {
+            // Remover todas las clases de ocultación
+            element.classList.remove('hide-for-manager');
+            element.classList.remove('hide-for-owner');
+            // Forzar visibilidad
+            element.style.display = '';
+            element.style.visibility = '';
+            console.log(`✅ Elemento ${index + 1} configurado como visible para super admin`);
+        });
+        
+        // Asegurar visibilidad de reportes
+        asegurarVisibilidadReportes();
     }
+}
+
+function actualizarHoraActual() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    document.getElementById('currentTime').textContent = timeString;
 }
 
 async function cargarEstadisticas() {
     try {
-        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/estadisticas`);
-        if (!response) return;
+        // Construir URL con parámetros de período
+        const url = new URL(`${API_BASE}/admin/estadisticas`);
         
-        if (response.ok) {
-            const stats = await response.json();
+        // Agregar parámetros según el período seleccionado
+        const now = new Date();
+        let dateFrom, dateTo;
+        
+        switch (currentPeriod) {
+            case '7d':
+                dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case '30d':
+                dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                break;
+            case 'month':
+                dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+            case 'all':
+                // No agregar parámetros de fecha para "todos los tiempos"
+                break;
+            default:
+                dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        }
+        
+        if (dateFrom) {
+            url.searchParams.append('dateFrom', dateFrom.toISOString().split('T')[0]);
+        }
+        if (dateTo) {
+            url.searchParams.append('dateTo', dateTo.toISOString().split('T')[0]);
+        }
+        
+        console.log('📊 Cargando estadísticas para período:', currentPeriod, 'URL:', url.toString());
+        
+        const response = await AdminUtils.authenticatedFetch(url.toString());
+        
+        if (response && response.ok) {
+            const data = await response.json();
             
-            // Actualizar estadísticas
-            document.getElementById('totalReservations').textContent = stats.totalReservas || 0;
-            document.getElementById('totalRevenue').textContent = `$${(stats.ingresosTotales || 0).toLocaleString()}`;
-            document.getElementById('totalCourts').textContent = stats.totalCanchas || 0;
-            document.getElementById('totalComplexes').textContent = stats.totalComplejos || 0;
+            // Actualizar tarjetas de estadísticas
+            document.getElementById('totalReservas').textContent = data.totalReservas || '0';
+            document.getElementById('totalCanchas').textContent = data.totalCanchas || '0';
+            document.getElementById('totalComplejos').textContent = data.totalComplejos || '0';
+            document.getElementById('ingresosTotales').textContent = `$${data.ingresosTotales?.toLocaleString() || '0'}`;
             
-            // Actualizar gráficos si hay datos
-            if (stats.reservasPorDia && reservationsChart) {
-                actualizarGraficoReservas(stats.reservasPorDia);
+            // Actualizar gráfico de reservas por día
+            if (data.reservasPorDia && data.reservasPorDia.length > 0) {
+                actualizarGraficoReservas(data.reservasPorDia);
             }
             
-            // Cargar datos adicionales para los otros gráficos
-            cargarDatosGraficos();
+            console.log('✅ Estadísticas cargadas para período', currentPeriod, ':', data);
         } else {
-            console.error('Error al cargar estadísticas');
+            console.error('Error cargando estadísticas:', response?.status);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error cargando estadísticas:', error);
     }
 }
 
 async function cargarReservasRecientes() {
     try {
         const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reservas-recientes`);
-        if (!response) return;
         
-        if (response.ok) {
+        if (response && response.ok) {
             const reservas = await response.json();
             mostrarReservasRecientes(reservas);
+            console.log('✅ Reservas recientes cargadas:', reservas.length);
         } else {
-            document.getElementById('recentReservationsList').innerHTML = 
-                '<div class="text-center text-muted">No se pudieron cargar las reservas recientes</div>';
+            console.error('Error cargando reservas recientes:', response?.status);
         }
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('recentReservationsList').innerHTML = 
-            '<div class="text-center text-muted">Error al cargar las reservas</div>';
+        console.error('Error cargando reservas recientes:', error);
     }
 }
 
 async function cargarReservasHoy() {
     try {
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_BASE}/admin/reservas-hoy`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reservas-hoy`);
         
-        if (response.ok) {
+        if (response && response.ok) {
             const reservas = await response.json();
             mostrarReservasHoy(reservas);
+            console.log('✅ Reservas de hoy cargadas:', reservas.length);
         } else {
-            document.getElementById('todayReservationsList').innerHTML = 
-                '<div class="text-center text-muted">No se pudieron cargar las reservas de hoy</div>';
+            console.error('Error cargando reservas de hoy:', response?.status);
         }
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('todayReservationsList').innerHTML = 
-            '<div class="text-center text-muted">Error al cargar las reservas</div>';
+        console.error('Error cargando reservas de hoy:', error);
     }
 }
 
 function mostrarReservasRecientes(reservas) {
-    const container = document.getElementById('recentReservationsList');
+    const container = document.getElementById('recentReservations');
     
     if (!reservas || reservas.length === 0) {
-        container.innerHTML = '<div class="text-center text-muted">No hay reservas recientes</div>';
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                <p>No hay reservas recientes</p>
+            </div>
+        `;
         return;
     }
     
-    const html = reservas.map(reserva => `
+    // Mostrar solo las primeras 10 reservas
+    const reservasLimitadas = reservas.slice(0, 10);
+    
+    container.innerHTML = reservasLimitadas.map((reserva, index) => `
         <div class="reservation-item">
             <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h6 class="mb-1">${reserva.nombre_cliente || 'Sin nombre'}</h6>
-                    <p class="text-muted mb-1 small">${reserva.complejo_nombre || 'Sin complejo'}</p>
-                    <p class="text-muted mb-0 small">${formatearFecha(reserva.fecha)} - ${reserva.hora_inicio}</p>
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-light text-dark me-2">#${index + 1}</span>
+                        <h6 class="mb-0">${reserva.nombre_cliente || 'Sin nombre'}</h6>
+                    </div>
+                    <p class="text-muted mb-1 small">
+                        <i class="fas fa-building me-1"></i>${reserva.complejo_nombre || 'Sin complejo'}
+                    </p>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-calendar me-1"></i>${formatearFechaCorta(reserva.fecha)} - ${formatearHora(reserva.hora_inicio)}
+                    </p>
                 </div>
-                <span class="badge bg-primary">$${reserva.precio_total}</span>
+                <div class="text-end">
+                    ${reserva.precio_total ? `<span class="badge bg-primary fs-6">$${reserva.precio_total}</span><br>` : ''}
+                    <small class="text-muted">${reserva.codigo_reserva || 'Sin código'}</small>
+                </div>
             </div>
         </div>
     `).join('');
-    
-    container.innerHTML = html;
 }
 
 function mostrarReservasHoy(reservas) {
-    const container = document.getElementById('todayReservationsList');
+    const container = document.getElementById('todayReservations');
     
     if (!reservas || reservas.length === 0) {
-        container.innerHTML = '<div class="text-center text-muted">No hay reservas para hoy</div>';
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-calendar-day fa-2x mb-3"></i>
+                <p>No hay reservas programadas para hoy</p>
+            </div>
+        `;
         return;
     }
     
-    const html = reservas.map(reserva => `
+    container.innerHTML = reservas.map(reserva => `
         <div class="reservation-item">
             <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h6 class="mb-1">${reserva.nombre_cliente || 'Sin nombre'}</h6>
-                    <p class="text-muted mb-1 small">${reserva.complejo_nombre || 'Sin complejo'} - ${reserva.cancha_nombre || 'Sin cancha'}</p>
-                    <p class="text-muted mb-0 small">${reserva.hora_inicio} - ${reserva.hora_fin}</p>
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge bg-success me-2">HOY</span>
+                        <h6 class="mb-0">${reserva.nombre_cliente || 'Sin nombre'}</h6>
+                    </div>
+                    <p class="text-muted mb-1 small">
+                        <i class="fas fa-building me-1"></i>${reserva.complejo_nombre || 'Sin complejo'}
+                    </p>
+                    <p class="text-muted mb-1 small">
+                        <i class="fas fa-futbol me-1"></i>Cancha ${reserva.numero_cancha || 'N/A'}
+                    </p>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-clock me-1"></i>${formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin)}
+                    </p>
                 </div>
                 <div class="text-end">
-                    <span class="badge bg-success">$${reserva.precio_total}</span>
-                    <br>
-                    <small class="text-muted">Código: ${reserva.codigo_reserva}</small>
+                    ${reserva.precio_total ? `<span class="badge bg-success fs-6">$${reserva.precio_total}</span><br>` : ''}
+                    <small class="text-muted">${reserva.codigo_reserva || 'Sin código'}</small>
                 </div>
             </div>
         </div>
     `).join('');
-    
-    container.innerHTML = html;
 }
 
 function inicializarGraficos() {
-    // Inicializar gráfico de reservas por día
+    // Solo inicializar gráfico de reservas (el único que existe en el HTML)
     inicializarGraficoReservas();
     
-    // Inicializar gráfico de tipos de cancha
-    inicializarGraficoTipos();
-    
-    // Inicializar gráfico de horarios
-    inicializarGraficoHorarios();
+    console.log('✅ Gráfico de reservas inicializado');
 }
 
 function inicializarGraficoReservas() {
-    const ctx = document.getElementById('reservationsChart').getContext('2d');
+    const canvas = document.getElementById('reservationsChart');
+    const loading = document.getElementById('chartLoading');
+    
+    const ctx = canvas.getContext('2d');
     
     reservationsChart = new Chart(ctx, {
         type: 'line',
@@ -205,43 +410,75 @@ function inicializarGraficoReservas() {
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
                 pointRadius: 6,
-                pointHoverRadius: 8
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#667eea',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
                     display: false
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: '#667eea',
                     borderWidth: 1,
                     cornerRadius: 8,
-                    displayColors: false
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    padding: 12,
+                    callbacks: {
+                        title: function(context) {
+                            return `📅 ${context[0].label}`;
+                        },
+                        label: function(context) {
+                            return `📊 ${context.parsed.y} reserva${context.parsed.y !== 1 ? 's' : ''}`;
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
                     grid: {
-                        display: false
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
                     },
                     ticks: {
-                        color: '#6b7280'
+                        color: '#6b7280',
+                        font: {
+                            size: 12
+                        }
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(102, 126, 234, 0.1)'
+                        color: 'rgba(102, 126, 234, 0.1)',
+                        drawBorder: false
                     },
                     ticks: {
                         color: '#6b7280',
                         stepSize: 1,
+                        font: {
+                            size: 12
+                        },
                         callback: function(value) {
                             return Number.isInteger(value) ? value : null;
                         }
@@ -249,268 +486,115 @@ function inicializarGraficoReservas() {
                 }
             },
             animation: {
-                duration: 1000,
+                duration: 1200,
                 easing: 'easeInOutQuart'
+            },
+            elements: {
+                line: {
+                    borderJoinStyle: 'round',
+                    borderCapStyle: 'round'
+                }
             }
         }
     });
 }
 
-function inicializarGraficoTipos() {
-    const ctx = document.getElementById('typeChart').getContext('2d');
-    
-    typeChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: [],
-            datasets: [{
-                data: [],
-                backgroundColor: [
-                    '#667eea',
-                    '#f093fb',
-                    '#4facfe',
-                    '#43e97b',
-                    '#fa709a',
-                    '#ffecd2'
-                ],
-                borderWidth: 0,
-                hoverOffset: 10
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    borderColor: '#667eea',
-                    borderWidth: 1,
-                    cornerRadius: 8,
-                    displayColors: true
-                }
-            },
-            cutout: '60%'
-        }
-    });
-}
-
-function inicializarGraficoHorarios() {
-    const ctx = document.getElementById('hoursChart').getContext('2d');
-    
-    hoursChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Reservas',
-                data: [],
-                backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                borderColor: '#667eea',
-                borderWidth: 1,
-                borderRadius: 8,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    borderColor: '#667eea',
-                    borderWidth: 1,
-                    cornerRadius: 8,
-                    displayColors: false
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#6b7280'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(102, 126, 234, 0.1)'
-                    },
-                    ticks: {
-                        color: '#6b7280'
-                    }
-                }
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeInOutQuart'
-            }
-        }
-    });
-}
+// Funciones de gráficos adicionales removidas - solo mantenemos el gráfico de reservas
 
 function actualizarGraficoReservas(datos) {
     if (!reservationsChart) return;
     
+    if (!datos || datos.length === 0) {
+        // Mostrar mensaje cuando no hay datos
+        reservationsChart.data.labels = ['Sin datos'];
+        reservationsChart.data.datasets[0].data = [0];
+        reservationsChart.update();
+        return;
+    }
+    
     const labels = datos.map(item => formatearFechaCorta(item.dia));
-    const values = datos.map(item => item.cantidad);
+    const values = datos.map(item => parseInt(item.cantidad));
     
     reservationsChart.data.labels = labels;
     reservationsChart.data.datasets[0].data = values;
     reservationsChart.update();
-}
-
-// Cargar datos adicionales para los gráficos
-async function cargarDatosGraficos() {
-    try {
-        // Cargar datos de tipos de cancha
-        await cargarDatosTiposCancha();
-        
-        // Cargar datos de horarios populares
-        await cargarDatosHorarios();
-    } catch (error) {
-        console.error('Error cargando datos de gráficos:', error);
-    }
-}
-
-// Cargar datos de tipos de cancha
-async function cargarDatosTiposCancha() {
-    try {
-        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reports`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                dateTo: new Date().toISOString().split('T')[0]
-            })
-        });
-        
-        if (response && response.ok) {
-            const data = await response.json();
-            if (data.charts && data.charts.reservasPorTipo && typeChart) {
-                actualizarGraficoTipos(data.charts.reservasPorTipo);
-            }
-        }
-    } catch (error) {
-        console.error('Error cargando tipos de cancha:', error);
-    }
-}
-
-// Cargar datos de horarios populares
-async function cargarDatosHorarios() {
-    try {
-        const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/reports`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                dateTo: new Date().toISOString().split('T')[0]
-            })
-        });
-        
-        if (response && response.ok) {
-            const data = await response.json();
-            if (data.charts && data.charts.horariosPopulares && hoursChart) {
-                actualizarGraficoHorarios(data.charts.horariosPopulares);
-            }
-        }
-    } catch (error) {
-        console.error('Error cargando horarios:', error);
-    }
-}
-
-// Actualizar gráfico de tipos
-function actualizarGraficoTipos(datos) {
-    if (!typeChart || !datos) return;
     
-    const labels = datos.map(item => item.tipo);
-    const values = datos.map(item => parseInt(item.cantidad));
-    
-    typeChart.data.labels = labels;
-    typeChart.data.datasets[0].data = values;
-    typeChart.update();
+    console.log('📊 Gráfico actualizado con', datos.length, 'puntos de datos');
 }
 
-// Actualizar gráfico de horarios
-function actualizarGraficoHorarios(datos) {
-    if (!hoursChart || !datos) return;
+function actualizarGrafico() {
+    console.log('🔄 Actualizando gráfico...');
     
-    const labels = datos.map(item => item.hora);
-    const values = datos.map(item => parseInt(item.cantidad));
+    const canvas = document.getElementById('reservationsChart');
+    const loading = document.getElementById('chartLoading');
+    const button = event.target.closest('button');
+    const icon = button.querySelector('i');
     
-    hoursChart.data.labels = labels;
-    hoursChart.data.datasets[0].data = values;
-    hoursChart.update();
+    // Mostrar indicadores de carga
+    icon.classList.add('fa-spin');
+    loading.classList.add('show');
+    canvas.style.display = 'none';
+    
+    // Recargar estadísticas
+    cargarEstadisticas().then(() => {
+        // Ocultar indicadores de carga
+        icon.classList.remove('fa-spin');
+        loading.classList.remove('show');
+        canvas.style.display = 'block';
+        console.log('✅ Gráfico actualizado');
+    }).catch(error => {
+        console.error('❌ Error actualizando gráfico:', error);
+        icon.classList.remove('fa-spin');
+        loading.classList.remove('show');
+        canvas.style.display = 'block';
+    });
 }
 
-// Función para cambiar tipo de gráfico
-function toggleChartType(chartId) {
-    if (chartId === 'reservationsChart' && reservationsChart) {
-        const currentType = reservationsChart.config.type;
-        const newType = currentType === 'line' ? 'bar' : 'line';
-        
-        reservationsChart.config.type = newType;
-        reservationsChart.update();
-        
-        // Actualizar el ícono del botón
-        const button = document.querySelector(`[onclick="toggleChartType('${chartId}')"]`);
-        if (button) {
-            const icon = button.querySelector('i');
-            if (newType === 'bar') {
-                icon.className = 'fas fa-chart-line';
-            } else {
-                icon.className = 'fas fa-chart-bar';
-            }
-        }
-    }
-}
-
-function formatearFecha(fecha) {
-    if (!fecha) return 'Sin fecha';
+function cambiarPeriodo(periodo) {
+    console.log('📅 Cambiando período a:', periodo);
     
-    try {
-        // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
-        let fechaObj;
-        if (fecha.includes('T')) {
-            // Fecha ISO - extraer solo la parte de fecha
-            const fechaParte = fecha.split('T')[0];
-            const [año, mes, dia] = fechaParte.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
-        } else {
-            // Fecha simple (YYYY-MM-DD)
-            const [año, mes, dia] = fecha.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
-        }
-        
-        return fechaObj.toLocaleDateString('es-CL', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    } catch (error) {
-        console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
-        return 'Fecha inválida';
-    }
+    currentPeriod = periodo;
+    
+    // Actualizar texto del botón
+    const periodText = document.getElementById('periodText');
+    const periodNames = {
+        '7d': 'Últimos 7 días',
+        '30d': 'Últimos 30 días',
+        'month': 'Este mes',
+        'all': 'Todos los tiempos'
+    };
+    periodText.textContent = periodNames[periodo];
+    
+    // Actualizar título del gráfico
+    const chartTitle = document.querySelector('.chart-header h5');
+    const periodIcons = {
+        '7d': 'fa-calendar-week',
+        '30d': 'fa-calendar-alt',
+        'month': 'fa-calendar',
+        'all': 'fa-infinity'
+    };
+    
+    // Actualizar ícono en el título
+    const titleIcon = chartTitle.querySelector('i');
+    titleIcon.className = `fas ${periodIcons[periodo]} me-2 text-primary`;
+    
+    // Mostrar indicador de carga
+    const canvas = document.getElementById('reservationsChart');
+    const loading = document.getElementById('chartLoading');
+    
+    loading.classList.add('show');
+    canvas.style.display = 'none';
+    
+    // Recargar estadísticas con el nuevo período
+    cargarEstadisticas().then(() => {
+        loading.classList.remove('show');
+        canvas.style.display = 'block';
+        console.log('✅ Gráfico actualizado con período:', periodo);
+    }).catch(error => {
+        console.error('❌ Error actualizando gráfico:', error);
+        loading.classList.remove('show');
+        canvas.style.display = 'block';
+    });
 }
 
 function formatearFechaCorta(fecha) {
@@ -544,22 +628,4 @@ function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     window.location.href = 'admin-login.html';
-}
-
-function mostrarNotificacion(mensaje, tipo) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
 }

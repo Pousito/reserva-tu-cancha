@@ -231,8 +231,11 @@
         <div class="reservation-summary" id="reservationSummary">
             <h3>📋 Resumen de Reserva</h3>
             <div class="summary-item">
-                <span>Código de Reserva:</span>
+                <span>Código de Transacción:</span>
                 <span id="reservationCode">-</span>
+            </div>
+            <div class="summary-item" style="font-size: 0.9rem; color: #6c757d; font-style: italic;">
+                <span>ℹ️ El código de reserva se generará después del pago exitoso</span>
             </div>
             <div class="summary-item">
                 <span>Cancha:</span>
@@ -344,7 +347,7 @@
                     code: reservationCode,
                     courtName: `${bloqueo.cancha_nombre} - ${bloqueo.tipo}`,
                     date: bloqueo.fecha,
-                    time: `${bloqueo.hora_inicio} - ${bloqueo.hora_fin}`,
+                    time: formatearRangoHoras(bloqueo.hora_inicio, bloqueo.hora_fin),
                     clientName: datosCliente.nombre_cliente,
                     amount: datosCliente.precio_total
                 };
@@ -665,6 +668,7 @@
             }
         }
     </script>
+    <script src="js/time-utils.js?v=1.0"></script>
     <script src="js/url-config.js?v=1.0"></script>
 </body>
 </html>

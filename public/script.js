@@ -1331,7 +1331,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Verificar disponibilidad de una cancha específica (incluyendo bloqueos temporales)
 async function verificarDisponibilidadCancha(canchaId, fecha, hora) {
     try {
-        const response = await fetch(`${API_BASE}/disponibilidad-completa/${canchaId}/${fecha}`);
+        // Agregar timestamp único para evitar cache
+        const timestamp = Date.now();
+        const response = await fetch(`${API_BASE}/disponibilidad-completa/${canchaId}/${fecha}?t=${timestamp}`);
         const data = await response.json();
         
         const reservas = data.reservas || [];
@@ -1462,13 +1464,13 @@ function configurarLimpiezaBloqueo() {
     // Limpiar bloqueo al cerrar la página
     window.addEventListener('beforeunload', liberarBloqueoTemporal);
     
-    // Limpiar bloqueo después de 4.5 minutos (antes de que expire)
+    // Limpiar bloqueo después de 3 minutos (antes de que expire)
     setTimeout(() => {
         if (bloqueoTemporal) {
             console.log('⏰ Limpieza automática del bloqueo temporal');
             liberarBloqueoTemporal();
         }
-    }, 4.5 * 60 * 1000); // 4.5 minutos
+    }, 3 * 60 * 1000); // 3 minutos
 }
 
 // Verificar si hay un bloqueo activo
@@ -1773,6 +1775,31 @@ function validarEmail(email) {
     // Expresión regular para validar email
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
+}
+
+// Validar teléfono chileno
+function validarTelefono(telefono) {
+    if (!telefono || typeof telefono !== 'string') {
+        return false;
+    }
+    
+    telefono = telefono.trim();
+    
+    // Verificar que no esté vacío
+    if (telefono.length === 0) {
+        return false;
+    }
+    
+    // Patrones válidos para teléfonos chilenos
+    const patrones = [
+        /^\+569\d{8}$/, // +56912345678
+        /^569\d{8}$/,   // 56912345678
+        /^9\d{8}$/,     // 912345678
+        /^2\d{8}$/,     // 212345678 (fijo)
+        /^3\d{8}$/      // 312345678 (fijo)
+    ];
+    
+    return patrones.some(patron => patron.test(telefono));
 }
 
 // Formatear RUT con puntos y guión
@@ -2385,6 +2412,77 @@ function configurarEventListeners() {
         
         // Limpiar validación cuando se abre el modal
         nombreInput.addEventListener('focus', function() {
+            // Solo limpiar si no hay contenido y el usuario no ha interactuado
+            if (this.value.length === 0) {
+                this.classList.remove('is-valid', 'is-invalid');
+            }
+        });
+    }
+    
+    // Validación de teléfono en tiempo real
+    const telefonoInput = document.getElementById('telefonoCliente');
+    if (telefonoInput) {
+        // Variable global para controlar si el usuario ha interactuado con el campo teléfono
+        window.telefonoUsuarioHaInteractuado = false;
+        
+        telefonoInput.addEventListener('input', function() {
+            // Marcar que el usuario ha interactuado
+            window.telefonoUsuarioHaInteractuado = true;
+            
+            const telefono = this.value;
+            
+            // Solo validar si el usuario ha interactuado
+            if (window.telefonoUsuarioHaInteractuado) {
+                const esValido = validarTelefono(telefono);
+                
+                if (esValido) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                    // Mostrar feedback válido
+                    const telefonoValidFeedback = this.parentNode.querySelector('.valid-feedback');
+                    const telefonoInvalidFeedback = this.parentNode.querySelector('.invalid-feedback');
+                    if (telefonoValidFeedback) telefonoValidFeedback.classList.remove('d-none');
+                    if (telefonoInvalidFeedback) telefonoInvalidFeedback.classList.add('d-none');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                    // Mostrar feedback inválido
+                    const telefonoValidFeedback = this.parentNode.querySelector('.valid-feedback');
+                    const telefonoInvalidFeedback = this.parentNode.querySelector('.invalid-feedback');
+                    if (telefonoValidFeedback) telefonoValidFeedback.classList.add('d-none');
+                    if (telefonoInvalidFeedback) telefonoInvalidFeedback.classList.remove('d-none');
+                }
+            }
+        });
+        
+        // Validar al perder el foco solo si el usuario ha interactuado
+        telefonoInput.addEventListener('blur', function() {
+            if (!window.telefonoUsuarioHaInteractuado) return;
+            
+            const telefono = this.value;
+            const esValido = validarTelefono(telefono);
+            
+            if (esValido) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+                // Mostrar feedback válido
+                const telefonoValidFeedback = this.parentNode.querySelector('.valid-feedback');
+                const telefonoInvalidFeedback = this.parentNode.querySelector('.invalid-feedback');
+                if (telefonoValidFeedback) telefonoValidFeedback.classList.remove('d-none');
+                if (telefonoInvalidFeedback) telefonoInvalidFeedback.classList.add('d-none');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+                // Mostrar feedback inválido
+                const telefonoValidFeedback = this.parentNode.querySelector('.valid-feedback');
+                const telefonoInvalidFeedback = this.parentNode.querySelector('.invalid-feedback');
+                if (telefonoValidFeedback) telefonoValidFeedback.classList.add('d-none');
+                if (telefonoInvalidFeedback) telefonoInvalidFeedback.classList.remove('d-none');
+            }
+        });
+        
+        // Limpiar validación cuando se abre el modal
+        telefonoInput.addEventListener('focus', function() {
             // Solo limpiar si no hay contenido y el usuario no ha interactuado
             if (this.value.length === 0) {
                 this.classList.remove('is-valid', 'is-invalid');
@@ -3191,13 +3289,15 @@ async function renderizarCanchasConDisponibilidad() {
                 } else {
                     // Si no es "Todas ocupadas", verificar disponibilidad individual
                     try {
-                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                        // Agregar timestamp único para evitar cache
+                        const timestamp = Date.now();
+                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}?t=${timestamp}`);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         const reservas = await response.json();
                         
-                        estaDisponible = !reservas.some(r => {
+                        estaDisponible = !reservas.reservas.some(r => {
                             const horaFin = calcularHoraFin(hora);
                             const reservaInicioMin = timeToMinutes(r.hora_inicio);
                             const reservaFinMin = timeToMinutes(r.hora_fin);
@@ -3270,10 +3370,12 @@ async function renderizarCanchasConDisponibilidad() {
                 } else {
                     // Si no es "Todas ocupadas", verificar disponibilidad individual
                     try {
-                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}`);
+                        // Agregar timestamp único para evitar cache
+                        const timestamp = Date.now();
+                        const response = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}?t=${timestamp}`);
                         const reservas = await response.json();
                         
-                        estaDisponible = !reservas.some(r => {
+                        estaDisponible = !reservas.reservas.some(r => {
                             const horaFin = calcularHoraFin(hora);
                             const reservaInicioMin = timeToMinutes(r.hora_inicio);
                             const reservaFinMin = timeToMinutes(r.hora_fin);
@@ -3486,7 +3588,19 @@ function limpiarFormularioReserva() {
     emailInput.value = '';
     emailInput.classList.remove('is-valid', 'is-invalid');
     
-    // Ocultar todos los elementos de feedback (Nombre, RUT y Email)
+    // Limpiar campo Teléfono
+    const telefonoInput = document.getElementById('telefonoCliente');
+    telefonoInput.value = '';
+    telefonoInput.classList.remove('is-valid', 'is-invalid');
+    
+    // Limpiar checkbox de políticas
+    const aceptarPoliticasCheckbox = document.getElementById('aceptarPoliticas');
+    if (aceptarPoliticasCheckbox) {
+        aceptarPoliticasCheckbox.checked = false;
+        aceptarPoliticasCheckbox.classList.remove('is-valid', 'is-invalid');
+    }
+    
+    // Ocultar todos los elementos de feedback (Nombre, RUT, Email, Teléfono y Políticas)
     const allInvalidFeedbacks = document.querySelectorAll('.invalid-feedback');
     const allValidFeedbacks = document.querySelectorAll('.valid-feedback');
     
@@ -3515,10 +3629,12 @@ async function confirmarReserva() {
     const nombreInput = document.getElementById('nombreCliente');
     const rutInput = document.getElementById('rutCliente');
     const emailInput = document.getElementById('emailCliente');
+    const telefonoInput = document.getElementById('telefonoCliente');
     
     const nombre = nombreInput.value.trim();
     const rut = rutInput.value.trim();
     const email = emailInput.value.trim();
+    const telefono = telefonoInput.value.trim();
     
     // Validar que todos los campos estén completos
     if (!nombre) {
@@ -3563,6 +3679,20 @@ async function confirmarReserva() {
         return;
     }
     
+    if (!telefono) {
+        // Activar feedback visual del Teléfono
+        telefonoInput.classList.add('is-invalid');
+        telefonoInput.classList.remove('is-valid');
+        const telefonoValidFeedback = telefonoInput.parentNode.querySelector('.valid-feedback');
+        const telefonoInvalidFeedback = telefonoInput.parentNode.querySelector('.invalid-feedback');
+        if (telefonoValidFeedback) telefonoValidFeedback.classList.add('d-none');
+        if (telefonoInvalidFeedback) telefonoInvalidFeedback.classList.remove('d-none');
+        
+        mostrarNotificacion('Por favor completa el campo "Teléfono"', 'danger');
+        telefonoInput.focus();
+        return;
+    }
+    
     // Validar que el nombre no esté vacío
     if (!validarNombre(nombre)) {
         nombreInput.classList.add('is-invalid');
@@ -3585,6 +3715,33 @@ async function confirmarReserva() {
         mostrarNotificacion('Por favor ingresa un email válido', 'danger');
         emailInput.focus();
         return;
+    }
+    
+    // Validar formato del Teléfono
+    if (!validarTelefono(telefono)) {
+        telefonoInput.classList.add('is-invalid');
+        mostrarNotificacion('Por favor ingresa un teléfono válido', 'danger');
+        telefonoInput.focus();
+        return;
+    }
+    
+    // Validar aceptación de políticas
+    const aceptarPoliticasCheckbox = document.getElementById('aceptarPoliticas');
+    if (!aceptarPoliticasCheckbox.checked) {
+        aceptarPoliticasCheckbox.classList.add('is-invalid');
+        const invalidFeedback = aceptarPoliticasCheckbox.parentNode.querySelector('.invalid-feedback');
+        if (invalidFeedback) {
+            invalidFeedback.classList.remove('d-none');
+        }
+        mostrarNotificacion('Debes aceptar los términos y condiciones para continuar', 'danger');
+        aceptarPoliticasCheckbox.focus();
+        return;
+    } else {
+        aceptarPoliticasCheckbox.classList.remove('is-invalid');
+        const invalidFeedback = aceptarPoliticasCheckbox.parentNode.querySelector('.invalid-feedback');
+        if (invalidFeedback) {
+            invalidFeedback.classList.add('d-none');
+        }
     }
     
     // Verificar disponibilidad una vez más antes de procesar el pago
@@ -3613,6 +3770,7 @@ async function confirmarReserva() {
         nombre_cliente: document.getElementById('nombreCliente').value,
         rut_cliente: document.getElementById('rutCliente').value,
         email_cliente: document.getElementById('emailCliente').value,
+        telefono_cliente: document.getElementById('telefonoCliente').value,
         precio_total: canchaSeleccionada.precio_hora
     };
     
@@ -3654,8 +3812,8 @@ async function confirmarReserva() {
                 modal.hide();
             }
             
-            // Redirigir a la página de pago
-            window.location.href = `/payment.html?code=${result.codigo_reserva}`;
+            // Redirigir a la página de pago usando el session_id
+            window.location.href = `/payment.html?code=${sessionId}`;
             
         } else {
             throw new Error(result.error || 'Error al crear el bloqueo temporal');
@@ -3712,6 +3870,16 @@ async function buscarReserva() {
 // Mostrar resultado de búsqueda
 function mostrarResultadoReserva(reserva) {
     const resultadoDiv = document.getElementById('resultadoReserva');
+    
+    // Corregir nombres de campos y valores undefined
+    const complejo = reserva.complejo_nombre || reserva.nombre_complejo || 'No especificado';
+    const cancha = reserva.cancha_nombre || reserva.nombre_cancha || 'No especificada';
+    const tipo = reserva.tipo === 'futbol' ? 'Fútbol' : (reserva.tipo || 'No especificado');
+    const fecha = formatearFecha(reserva.fecha);
+    const hora = formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin);
+    const estado = reserva.estado || 'No especificado';
+    const precio = reserva.precio_total ? reserva.precio_total.toLocaleString() : 'No especificado';
+    
     resultadoDiv.innerHTML = `
         <div class="card bg-light">
             <div class="card-body">
@@ -3721,23 +3889,23 @@ function mostrarResultadoReserva(reserva) {
                 </h5>
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Complejo:</strong> ${reserva.nombre_complejo}</p>
-                        <p><strong>Cancha:</strong> ${reserva.nombre_cancha}</p>
-                        <p><strong>Tipo:</strong> ${reserva.tipo}</p>
+                        <p><strong>Complejo:</strong> ${complejo}</p>
+                        <p><strong>Cancha:</strong> ${cancha}</p>
+                        <p><strong>Tipo:</strong> ${tipo}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</p>
-                        <p><strong>Hora:</strong> ${reserva.hora_inicio} - ${reserva.hora_fin}</p>
+                        <p><strong>Fecha:</strong> ${fecha}</p>
+                        <p><strong>Hora:</strong> ${hora}</p>
                         <p><strong>Estado:</strong> 
-                            <span class="badge bg-${reserva.estado === 'confirmada' ? 'success' : 'warning'}">
-                                ${reserva.estado}
+                            <span class="badge bg-${estado === 'confirmada' ? 'success' : 'warning'}">
+                                ${estado}
                             </span>
                         </p>
                     </div>
                 </div>
                 <div class="mt-3">
-                    <p><strong>Cliente:</strong> ${reserva.nombre_cliente}</p>
-                    <p><strong>Precio:</strong> $${reserva.precio_total.toLocaleString()}</p>
+                    <p><strong>Cliente:</strong> ${reserva.nombre_cliente || 'No especificado'}</p>
+                    <p><strong>Precio:</strong> $${precio}</p>
                 </div>
             </div>
         </div>
@@ -3761,7 +3929,7 @@ async function actualizarDisponibilidad() {
             const reservas = await response.json();
             
             const canchaCard = document.querySelector(`[data-cancha-id="${cancha.id}"]`);
-            const estaDisponible = !reservas.some(r => {
+            const estaDisponible = !reservas.reservas.some(r => {
                 const horaFin = calcularHoraFin(hora);
                 const reservaInicioMin = timeToMinutes(r.hora_inicio);
                 const reservaFinMin = timeToMinutes(r.hora_fin);
@@ -3794,24 +3962,65 @@ function calcularHoraFin(horaInicio) {
 }
 
  function formatearFecha(fecha) {
-     // Evitar problema de zona horaria creando la fecha con componentes específicos
-     const [año, mes, dia] = fecha.split('-').map(Number);
-     const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+     if (!fecha) {
+         return 'No especificada';
+     }
      
-     const opciones = {
-         weekday: 'long',
-         year: 'numeric',
-         month: 'long',
-         day: 'numeric'
-     };
-     
-     let fechaFormateada = fechaObj.toLocaleDateString('es-CL', opciones);
-     
-     // Capitalizar la primera letra del día de la semana
-     fechaFormateada = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
-     
-     return fechaFormateada;
+     try {
+         // Extraer solo la parte de la fecha si viene en formato ISO
+         let fechaString = fecha;
+         if (fecha.includes('T')) {
+             fechaString = fecha.split('T')[0]; // Tomar solo la parte YYYY-MM-DD
+         }
+         
+         // Evitar problema de zona horaria creando la fecha con componentes específicos
+         const [año, mes, dia] = fechaString.split('-').map(Number);
+         
+         // Validar que los componentes sean válidos
+         if (isNaN(año) || isNaN(mes) || isNaN(dia)) {
+             console.error('Componentes de fecha inválidos:', { año, mes, dia, fechaOriginal: fecha });
+             return 'Fecha inválida';
+         }
+         
+         const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
+         
+         // Verificar que la fecha sea válida
+         if (fechaObj.getFullYear() !== año || fechaObj.getMonth() !== (mes - 1) || fechaObj.getDate() !== dia) {
+             console.error('Fecha construida inválida:', { fechaOriginal: fecha, fechaString, año, mes, dia });
+             return 'Fecha inválida';
+         }
+         
+         const opciones = {
+             weekday: 'long',
+             year: 'numeric',
+             month: 'long',
+             day: 'numeric'
+         };
+         
+         let fechaFormateada = fechaObj.toLocaleDateString('es-CL', opciones);
+         
+         // Capitalizar la primera letra del día de la semana
+         fechaFormateada = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+         
+         return fechaFormateada;
+     } catch (error) {
+         console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
+         return 'Fecha inválida';
+     }
  }
+
+// Formatear rango de horas
+function formatearRangoHoras(horaInicio, horaFin) {
+    if (!horaInicio || !horaFin) {
+        return 'No especificado';
+    }
+    
+    // Extraer solo la parte de la hora (HH:MM) si viene con segundos
+    const inicio = horaInicio.toString().substring(0, 5);
+    const fin = horaFin.toString().substring(0, 5);
+    
+    return `${inicio} - ${fin}`;
+}
 
 function mostrarNotificacion(mensaje, tipo) {
     const alertDiv = document.createElement('div');

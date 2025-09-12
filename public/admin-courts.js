@@ -5,33 +5,125 @@ let complexes = [];
 
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar sistema de roles
-    if (!AdminUtils.initializeRoleSystem()) {
+    console.log('=== ADMIN COURTS INICIALIZADO ===');
+    
+    // Verificar autenticación
+    if (!AdminUtils.isAuthenticated()) {
+        window.location.href = 'admin-login.html';
         return;
     }
+    
+    // Mostrar información del usuario
+    currentUser = AdminUtils.getCurrentUser();
+    if (currentUser) {
+        document.getElementById('adminWelcome').textContent = `Bienvenido, ${currentUser.nombre || 'Admin'}`;
+        
+        // Actualizar información del usuario en el sidebar
+        document.querySelector('[data-user="name"]').textContent = currentUser.nombre || 'Admin';
+        document.querySelector('[data-user="role"]').textContent = AdminUtils.getRoleDisplayName(currentUser.rol);
+        document.querySelector('[data-user="complex"]').textContent = currentUser.complejo_nombre || 'Todos los complejos';
+    }
+    
+    // Aplicar permisos según el rol
+    aplicarPermisosPorRol();
     
     // Configurar logout
     AdminUtils.setupLogout();
     
-    currentUser = AdminUtils.getCurrentUser();
-    document.getElementById('adminWelcome').textContent = `Bienvenido, ${currentUser.nombre}`;
-    
     loadComplexes();
     loadCourts();
+    loadFilterTypes();
     setupEventListeners();
 });
+
+function aplicarPermisosPorRol() {
+    const user = AdminUtils.getCurrentUser();
+    if (!user) return;
+    
+    const userRole = user.rol;
+    console.log('🔐 Aplicando permisos para rol:', userRole);
+    
+    // Ocultar elementos según el rol
+    if (userRole === 'manager') {
+        // Managers no pueden ver información financiera ni gestionar complejos/reportes
+        document.querySelectorAll('[data-role="reports"]').forEach(element => {
+            element.style.display = 'none';
+        });
+        document.querySelectorAll('[data-role="all-complexes"]').forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        // Ocultar filtro de complejo para managers (solo ven su complejo)
+        document.querySelectorAll('#filterComplex').forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        // Ocultar botón de agregar cancha para managers
+        const addButton = document.querySelector('button[data-bs-target="#courtModal"]');
+        if (addButton) {
+            addButton.style.display = 'none';
+        }
+        
+        console.log('✅ Elementos ocultados para manager');
+    } else if (userRole === 'owner') {
+        // Owners no pueden gestionar complejos (solo ver su complejo)
+        document.querySelectorAll('[data-role="all-complexes"]').forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        // Ocultar filtro de complejo para owners (solo ven su complejo)
+        document.querySelectorAll('#filterComplex').forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        console.log('✅ Elementos ocultados para owner');
+    } else if (userRole === 'super_admin') {
+        // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
+        console.log('✅ Super admin - acceso completo');
+        
+        // Asegurar que todos los elementos estén visibles
+        const allHiddenElements = document.querySelectorAll('.hide-for-manager, .hide-for-owner');
+        console.log(`🔍 Asegurando visibilidad de ${allHiddenElements.length} elementos para super admin`);
+        
+        allHiddenElements.forEach((element, index) => {
+            // Remover todas las clases de ocultación
+            element.classList.remove('hide-for-manager');
+            element.classList.remove('hide-for-owner');
+            // Forzar visibilidad
+            element.style.display = '';
+            element.style.visibility = '';
+            console.log(`✅ Elemento ${index + 1} configurado como visible para super admin`);
+        });
+    }
+}
 
 // Configurar event listeners
 function setupEventListeners() {
     // Búsqueda en tiempo real
     document.getElementById('searchCourt').addEventListener('input', function() {
-        filterCourts(this.value);
+        filterCourts();
+    });
+    
+    // Filtro por tipo
+    document.getElementById('filterType').addEventListener('change', function() {
+        filterCourts();
+    });
+    
+    // Filtro por complejo
+    document.getElementById('filterComplex').addEventListener('change', function() {
+        filterCourts();
     });
 }
 
 // Cargar complejos
 async function loadComplexes() {
     try {
+        // Solo cargar complejos si el usuario tiene permisos
+        if (!AdminUtils.canViewAllComplexes()) {
+            console.log('Usuario no tiene permisos para ver todos los complejos');
+            return;
+        }
+        
         const token = localStorage.getItem('adminToken');
         const response = await AdminUtils.authenticatedFetch('/admin/complejos', {
             headers: {
@@ -60,6 +152,126 @@ function populateComplexSelect() {
         option.textContent = complex.nombre;
         select.appendChild(option);
     });
+    
+    // Agregar event listener para cambiar tipos cuando se selecciona un complejo
+    select.addEventListener('change', function() {
+        loadCourtTypesForComplex(this.value);
+    });
+    
+    // También poblar el filtro de complejos
+    populateComplexFilter();
+}
+
+// Poblar filtro de complejos
+function populateComplexFilter() {
+    const filterSelect = document.getElementById('filterComplex');
+    filterSelect.innerHTML = '<option value="">Todos los complejos</option>';
+    
+    // Filtrar complejos según el rol del usuario
+    let availableComplexes = complexes;
+    if (currentUser && currentUser.rol !== 'super_admin') {
+        availableComplexes = complexes.filter(complex => complex.id == currentUser.complejo_id);
+    }
+    
+    availableComplexes.forEach(complex => {
+        const option = document.createElement('option');
+        option.value = complex.id;
+        option.textContent = complex.nombre;
+        filterSelect.appendChild(option);
+    });
+}
+
+// Cargar tipos disponibles para el filtro
+async function loadFilterTypes() {
+    try {
+        const response = await AdminUtils.authenticatedFetch('/admin/canchas');
+        if (response && response.ok) {
+            const allCourts = await response.json();
+            
+            // Filtrar canchas según el rol del usuario
+            let filteredCourts = allCourts;
+            if (currentUser && currentUser.rol !== 'super_admin') {
+                filteredCourts = allCourts.filter(court => court.complejo_id == currentUser.complejo_id);
+            }
+            
+            // Obtener tipos únicos de canchas disponibles
+            const availableTypes = [...new Set(filteredCourts.map(court => court.tipo))];
+            
+            // Actualizar el select de filtro
+            const filterTypeSelect = document.getElementById('filterType');
+            filterTypeSelect.innerHTML = '<option value="">Todos los tipos</option>';
+            
+            availableTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = capitalizeCourtType(type);
+                filterTypeSelect.appendChild(option);
+            });
+            
+            console.log('✅ Tipos de filtro cargados:', availableTypes);
+        }
+    } catch (error) {
+        console.error('Error cargando tipos para filtro:', error);
+    }
+}
+
+// Cargar tipos de cancha disponibles para un complejo específico
+async function loadCourtTypesForComplex(complexId) {
+    const typeSelect = document.getElementById('courtType');
+    
+    if (!complexId) {
+        // Si no hay complejo seleccionado, mostrar opciones por defecto
+        typeSelect.innerHTML = `
+            <option value="">Seleccionar tipo...</option>
+            <option value="padel">${capitalizeCourtType('padel')}</option>
+            <option value="futbol">${capitalizeCourtType('futbol')}</option>
+        `;
+        return;
+    }
+    
+    try {
+        // Obtener canchas del complejo para determinar tipos disponibles
+        const response = await AdminUtils.authenticatedFetch('/admin/canchas');
+        if (response && response.ok) {
+            const allCourts = await response.json();
+            const complexCourts = allCourts.filter(court => court.complejo_id == complexId);
+            
+            // Obtener tipos únicos de canchas existentes en el complejo
+            const existingTypes = [...new Set(complexCourts.map(court => court.tipo))];
+            
+            // Crear opciones basadas en tipos existentes
+            typeSelect.innerHTML = '<option value="">Seleccionar tipo...</option>';
+            
+            // Si el complejo ya tiene canchas, mostrar solo esos tipos
+            if (existingTypes.length > 0) {
+                existingTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = capitalizeCourtType(type);
+                    typeSelect.appendChild(option);
+                });
+            } else {
+                // Si el complejo no tiene canchas, permitir cualquier tipo
+                const option1 = document.createElement('option');
+                option1.value = 'padel';
+                option1.textContent = capitalizeCourtType('padel');
+                typeSelect.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = 'futbol';
+                option2.textContent = capitalizeCourtType('futbol');
+                typeSelect.appendChild(option2);
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando tipos de cancha:', error);
+        // En caso de error, mostrar opciones por defecto
+        typeSelect.innerHTML = `
+            <option value="">Seleccionar tipo...</option>
+            <option value="padel">${capitalizeCourtType('padel')}</option>
+            <option value="futbol">${capitalizeCourtType('futbol')}</option>
+        `;
+    }
 }
 
 // Cargar canchas
@@ -126,14 +338,15 @@ function displayCourts(courtsToShow) {
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-tag me-2"></i>
-                        ${court.tipo}
+                        ${capitalizeCourtType(court.tipo)}
                     </p>
                     <p class="mb-0">
                         <i class="fas fa-dollar-sign me-2"></i>
-                        $${court.precio_hora.toLocaleString()} por hora
+                        ${court.precio_hora ? `$${court.precio_hora.toLocaleString()} por hora` : 'Precio no disponible'}
                     </p>
                 </div>
                 <div class="col-md-4 text-end">
+                    ${currentUser && currentUser.rol !== 'manager' ? `
                     <div class="btn-group-vertical" role="group">
                         <button class="btn btn-outline-warning btn-sm mb-2" onclick="editCourt(${court.id})">
                             <i class="fas fa-edit me-1"></i>
@@ -144,25 +357,56 @@ function displayCourts(courtsToShow) {
                             Eliminar
                         </button>
                     </div>
+                    ` : `
+                    <div class="text-muted">
+                        <small>Solo lectura</small>
+                    </div>
+                    `}
                 </div>
             </div>
         </div>
     `).join('');
 }
 
+// Capitalizar tipo de cancha
+function capitalizeCourtType(type) {
+    if (!type) return '';
+    return type === 'padel' ? 'Padel' : 'Fútbol';
+}
+
 // Obtener nombre de complejo
 function getComplexName(complexId) {
+    // Si el usuario es manager y no tiene acceso a complejos, usar su complejo_nombre
+    if (currentUser && currentUser.rol === 'manager' && currentUser.complejo_nombre) {
+        return currentUser.complejo_nombre;
+    }
+    
     const complex = complexes.find(c => c.id === complexId);
     return complex ? complex.nombre : 'Complejo no encontrado';
 }
 
 // Filtrar canchas
-function filterCourts(searchTerm) {
-    const filtered = courts.filter(court => 
-        court.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getComplexName(court.complejo_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        court.tipo.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+function filterCourts() {
+    const searchTerm = document.getElementById('searchCourt').value.toLowerCase();
+    const typeFilter = document.getElementById('filterType').value;
+    const complexFilter = document.getElementById('filterComplex').value;
+    
+    let filtered = courts.filter(court => {
+        // Filtro por búsqueda de texto
+        const matchesSearch = !searchTerm || 
+            court.nombre.toLowerCase().includes(searchTerm) ||
+            getComplexName(court.complejo_id).toLowerCase().includes(searchTerm) ||
+            court.tipo.toLowerCase().includes(searchTerm);
+        
+        // Filtro por tipo
+        const matchesType = !typeFilter || court.tipo === typeFilter;
+        
+        // Filtro por complejo
+        const matchesComplex = !complexFilter || court.complejo_id == complexFilter;
+        
+        return matchesSearch && matchesType && matchesComplex;
+    });
+    
     displayCourts(filtered);
 }
 
@@ -178,6 +422,13 @@ function openCourtModal(courtId = null) {
     } else {
         modalTitle.textContent = 'Agregar Nueva Cancha';
         form.reset();
+        
+        // Si es un manager, preseleccionar su complejo y cargar tipos
+        if (currentUser && currentUser.rol === 'manager') {
+            const complexSelect = document.getElementById('courtComplex');
+            complexSelect.value = currentUser.complejo_id;
+            loadCourtTypesForComplex(currentUser.complejo_id);
+        }
     }
     
     const bootstrapModal = new bootstrap.Modal(modal);
@@ -191,9 +442,12 @@ async function loadCourtData(courtId) {
         if (court) {
             document.getElementById('courtName').value = court.nombre;
             document.getElementById('courtComplex').value = court.complejo_id;
-            document.getElementById('courtType').value = court.tipo;
             document.getElementById('courtPrice').value = court.precio_hora;
             document.getElementById('courtDescription').value = court.descripcion || '';
+            
+            // Cargar tipos disponibles para el complejo y seleccionar el tipo actual
+            await loadCourtTypesForComplex(court.complejo_id);
+            document.getElementById('courtType').value = court.tipo;
         }
     } catch (error) {
         console.error('Error cargando datos de la cancha:', error);

@@ -3,6 +3,13 @@ const cors = require('cors');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { 
+  requireRolePermission, 
+  requireFinancialAccess, 
+  requireComplexManagement, 
+  requireCourtManagement, 
+  requireReportsAccess 
+} = require('./middleware/role-permissions');
 // PostgreSQL + SQLite Hybrid Database System - Persistence Test
 const DatabaseManager = require('./src/config/database');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
@@ -14,6 +21,12 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   // En desarrollo, usar archivo específico
   require('dotenv').config({ path: './env.postgresql' });
+}
+
+// Función para generar código de reserva único y corto
+function generarCodigoReserva() {
+  // Generar código de 6 caracteres alfanuméricos
+  return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
 const app = express();
@@ -76,6 +89,7 @@ const requireComplexAccess = (req, res, next) => {
 
   // Super admin puede acceder a todo
   if (userRole === 'super_admin') {
+    req.complexFilter = null; // Sin filtro, ve todo
     return next();
   }
 
@@ -363,19 +377,33 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         const datosCliente = JSON.parse(bloqueoData.datos_cliente);
 
         // Crear la reserva real
-        // Generar código de reserva corto (6 caracteres)
-        const codigoReserva = Math.random().toString(36).substr(2, 6).toUpperCase();
+        // Generar código de reserva único solo cuando se confirma el pago
+        const codigoReserva = await generarCodigoReservaUnico();
+        
+        // Calcular comisión para reserva web (3.5%)
+        const comisionWeb = Math.round(datosCliente.precio_total * 0.035);
+        
+        console.log('💾 Insertando reserva en BD (bloqueo temporal):', {
+            codigo: codigoReserva,
+            nombre: datosCliente.nombre_cliente,
+            email: datosCliente.email_cliente,
+            telefono: datosCliente.telefono_cliente,
+            rut: datosCliente.rut_cliente,
+            precio: datosCliente.precio_total
+        });
         
         const reservaId = await db.run(`
             INSERT INTO reservas (
-                cancha_id, nombre_cliente, email_cliente, 
+                cancha_id, nombre_cliente, email_cliente, telefono_cliente,
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                codigo_reserva, estado, estado_pago, fecha_creacion,
+                tipo_reserva, comision_aplicada
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
             datosCliente.email_cliente,
+            datosCliente.telefono_cliente || null,
             datosCliente.rut_cliente || 'No proporcionado',
             bloqueoData.fecha,
             bloqueoData.hora_inicio,
@@ -384,7 +412,9 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             codigoReserva,
             'confirmada',
             'pagado',
-            new Date().toISOString()
+            new Date().toISOString(),
+            'directa',
+            comisionWeb
         ]);
 
         console.log('✅ Reserva creada con ID:', reservaId);
@@ -490,7 +520,9 @@ app.get('/api/bloqueos-temporales/:codigo', async (req, res) => {
     
     // Buscar bloqueo temporal por session_id o por ID del bloqueo
     const bloqueo = await db.get(`
-      SELECT bt.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+      SELECT bt.*, c.nombre as cancha_nombre, 
+             CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+             co.nombre as complejo_nombre
       FROM bloqueos_temporales bt
       JOIN canchas c ON bt.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -525,7 +557,7 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     console.log('🔒 Iniciando creación de bloqueo temporal...');
     const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id } = req.body;
     
-    console.log('📋 Datos recibidos:', { cancha_id, nombre_cliente, email_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id });
+    console.log('📋 Datos recibidos:', { cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id });
     
     // Verificar que todos los campos requeridos estén presentes
     if (!cancha_id || !nombre_cliente || !email_cliente || !fecha || !hora_inicio || !hora_fin || !precio_total || !session_id) {
@@ -534,6 +566,9 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
         error: 'Faltan campos requeridos para crear el bloqueo temporal' 
       });
     }
+    
+    // Limpiar bloqueos temporales expirados antes de verificar disponibilidad
+    await limpiarBloqueosExpirados();
     
     // Verificar disponibilidad antes de bloquear
     console.log('🔍 Verificando disponibilidad...');
@@ -552,7 +587,10 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     // Crear bloqueo temporal
     console.log('💾 Creando registro en base de datos...');
     const bloqueoId = 'BLOCK_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    const expiraEn = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+    
+    // NO generar código de reserva aquí - se generará solo cuando se confirme el pago
+    // Esto evita que los códigos se "pierdan" si no se completa el pago
     
     console.log('📝 Datos a insertar:', {
       bloqueoId,
@@ -587,13 +625,9 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     // Invalidar cache de disponibilidad (opcional)
     console.log('⚠️ Cache de disponibilidad no invalidado (funcionalidad opcional)');
     
-    // Usar el session_id como código de reserva para mantener consistencia
-    const codigoReserva = session_id;
-    
     res.json({
       success: true,
       bloqueo_id: bloqueoId,
-      codigo_reserva: codigoReserva,
       expira_en: expiraEn.toISOString(),
       message: 'Bloqueo temporal creado exitosamente. Procede al pago.'
     });
@@ -608,32 +642,60 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
   }
 });
 
-// Endpoint para verificar disponibilidad de canchas (legacy - mantener compatibilidad)
-app.get('/api/disponibilidad/:canchaId/:fecha', async (req, res) => {
-  try {
-  const { canchaId, fecha } = req.params;
-    console.log(`🔍 Verificando disponibilidad - Cancha: ${canchaId}, Fecha: ${fecha}`);
-    
-    // Obtener reservas existentes para la cancha y fecha
-    const reservas = await db.query(`
-      SELECT hora_inicio, hora_fin, estado
-    FROM reservas 
-      WHERE cancha_id = $1 AND fecha::date = $2 AND estado IN ('confirmada', 'pendiente')
-      ORDER BY hora_inicio
-    `, [canchaId, fecha]);
-    
-    console.log(`✅ ${reservas.length} reservas encontradas para cancha ${canchaId} en ${fecha}`);
-    res.json(reservas);
-  } catch (error) {
-    console.error('❌ Error verificando disponibilidad:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// Endpoint legacy eliminado - usar /api/disponibilidad/:cancha_id/:fecha en su lugar
 
 // Función auxiliar para convertir tiempo a minutos
 function timeToMinutes(timeStr) {
   const [hours, minutes] = timeStr.split(':');
   return parseInt(hours) * 60 + parseInt(minutes);
+}
+
+// Función para generar código de reserva único y reutilizable
+async function generarCodigoReservaUnico() {
+  let intentos = 0;
+  const maxIntentos = 10;
+  
+  while (intentos < maxIntentos) {
+    // Generar código de 6 caracteres alfanuméricos
+    const codigo = Math.random().toString(36).substr(2, 6).toUpperCase();
+    
+    // Verificar si el código ya existe en reservas activas
+    const reservaExistente = await db.get(
+      'SELECT id FROM reservas WHERE codigo_reserva = $1 AND estado != "cancelada"',
+      [codigo]
+    );
+    
+    if (!reservaExistente) {
+      console.log(`✅ Código de reserva generado: ${codigo} (intento ${intentos + 1})`);
+      return codigo;
+    }
+    
+    intentos++;
+    console.log(`⚠️ Código ${codigo} ya existe, generando nuevo... (intento ${intentos})`);
+  }
+  
+  // Si llegamos aquí, algo está muy mal con la generación de códigos
+  throw new Error('No se pudo generar un código de reserva único después de múltiples intentos');
+}
+
+// Función para limpiar bloqueos temporales expirados
+async function limpiarBloqueosExpirados() {
+  try {
+    const ahora = new Date().toISOString();
+    const resultado = await db.run(
+      'DELETE FROM bloqueos_temporales WHERE expira_en < $1',
+      [ahora]
+    );
+    
+    if (resultado.changes > 0) {
+      console.log(`🧹 Limpieza automática: ${resultado.changes} bloqueos temporales expirados eliminados`);
+    }
+    
+    return resultado.changes;
+  } catch (error) {
+    console.error('❌ Error limpiando bloqueos expirados:', error);
+    return 0;
+  }
 }
 
 // Endpoint de debug para verificar lógica de superposición
@@ -806,6 +868,14 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
     }
     
     console.log(`✅ Disponibilidad completa obtenida para ${Object.keys(resultado).length} canchas en ${fecha}`);
+    
+    // Agregar headers para evitar cache del navegador
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
     res.json(resultado);
   } catch (error) {
     console.error('❌ Error verificando disponibilidad completa:', error);
@@ -814,7 +884,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
 });
 
 // Endpoints del panel de administrador
-app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, async (req, res) => {
+app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
     console.log('📊 Cargando estadísticas del panel de administrador...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
@@ -858,7 +928,7 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, asyn
     
     // Solo super admin y dueños pueden ver ingresos
     let ingresosTotales = { total: 0 };
-    if (userRole === 'super_admin' || userRole === 'owner') {
+    if (req.userPermissions && req.userPermissions.canViewFinancials) {
       ingresosTotales = await db.get(`
         SELECT COALESCE(SUM(r.precio_total), 0) as total 
         FROM reservas r
@@ -939,7 +1009,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     }
     
     const reservas = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.*, c.nombre as cancha_nombre, c.numero as numero_cancha, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -950,9 +1020,153 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     `, params);
     
     console.log(`✅ ${reservas.length} reservas recientes cargadas`);
-    res.json(reservas);
+    
+    // Ocultar precios a los managers
+    if (req.userPermissions && !req.userPermissions.canViewFinancials) {
+      const reservasSinPrecios = reservas.map(reserva => ({
+        ...reserva,
+        precio_total: null,
+        precio_hora: null
+      }));
+      res.json(reservasSinPrecios);
+    } else {
+      res.json(reservas);
+    }
   } catch (error) {
     console.error('❌ Error cargando reservas recientes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para verificar disponibilidad baja
+app.get('/api/admin/disponibilidad-baja', authenticateToken, requireComplexAccess, async (req, res) => {
+  try {
+    console.log('⚠️ Verificando disponibilidad baja...');
+    
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      whereClause = 'WHERE co.id = $1';
+      params = [complexFilter];
+    }
+    
+    // Buscar horarios con poca disponibilidad (menos de 2 canchas disponibles)
+    const disponibilidadBaja = await db.query(`
+      SELECT 
+        co.nombre as complejo,
+        r.fecha,
+        r.hora_inicio as hora,
+        COUNT(*) as total_canchas,
+        COUNT(CASE WHEN r.estado = 'confirmada' THEN 1 END) as ocupadas,
+        COUNT(CASE WHEN r.estado != 'confirmada' THEN 1 END) as disponibles
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      AND r.fecha >= CURRENT_DATE
+      AND r.fecha <= CURRENT_DATE + INTERVAL '7 days'
+      GROUP BY co.nombre, r.fecha, r.hora_inicio
+      HAVING COUNT(CASE WHEN r.estado != 'confirmada' THEN 1 END) <= 2
+      ORDER BY r.fecha, r.hora_inicio
+      LIMIT 10
+    `, params);
+    
+    console.log(`✅ ${disponibilidadBaja.length} alertas de disponibilidad baja encontradas`);
+    res.json(disponibilidadBaja);
+  } catch (error) {
+    console.error('❌ Error verificando disponibilidad baja:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para KPIs avanzados
+app.get('/api/admin/kpis', authenticateToken, requireComplexAccess, async (req, res) => {
+  try {
+    console.log('📊 Cargando KPIs avanzados...');
+    
+    const userRole = req.user.rol;
+    const complexFilter = req.complexFilter;
+    
+    // Construir filtros según el rol
+    let whereClause = '';
+    let params = [];
+    
+    if (userRole === 'super_admin') {
+      whereClause = '';
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      whereClause = 'WHERE c.complejo_id = $1';
+      params = [complexFilter];
+    }
+    
+    // Obtener datos para KPIs
+    const kpiData = await db.query(`
+      SELECT 
+        COUNT(*) as total_reservas,
+        SUM(r.precio_total) as total_ingresos,
+        AVG(r.precio_total) as promedio_ingresos,
+        COUNT(DISTINCT c.id) as total_canchas,
+        COUNT(DISTINCT co.id) as total_complejos,
+        COUNT(CASE WHEN r.estado = 'confirmada' THEN 1 END) as reservas_confirmadas,
+        COUNT(CASE WHEN r.estado = 'cancelada' THEN 1 END) as reservas_canceladas
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause}
+      AND r.fecha >= CURRENT_DATE - INTERVAL '30 days'
+      AND r.fecha <= CURRENT_DATE
+    `, params);
+    
+    // Obtener horarios más populares
+    const horariosPopulares = await db.query(`
+      SELECT 
+        r.hora_inicio,
+        COUNT(*) as cantidad
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      ${whereClause}
+      AND r.fecha >= CURRENT_DATE - INTERVAL '30 days'
+      AND r.estado = 'confirmada'
+      GROUP BY r.hora_inicio
+      ORDER BY cantidad DESC
+      LIMIT 5
+    `, params);
+    
+    // Calcular KPIs
+    const data = kpiData[0] || {};
+    const totalReservas = parseInt(data.total_reservas) || 0;
+    const totalIngresos = parseFloat(data.total_ingresos) || 0;
+    const promedioIngresos = parseFloat(data.promedio_ingresos) || 0;
+    const totalCanchas = parseInt(data.total_canchas) || 1;
+    const reservasConfirmadas = parseInt(data.reservas_confirmadas) || 0;
+    const reservasCanceladas = parseInt(data.reservas_canceladas) || 0;
+    
+    // Calcular métricas
+    const occupancyRate = totalCanchas > 0 ? Math.min(95, (reservasConfirmadas / (totalCanchas * 30)) * 100) : 0;
+    const cancellationRate = totalReservas > 0 ? (reservasCanceladas / totalReservas) * 100 : 0;
+    const customerSatisfaction = Math.max(70, 100 - (cancellationRate * 2)); // Simulado basado en cancelaciones
+    
+    const kpis = {
+      occupancyRate: Math.round(occupancyRate * 10) / 10,
+      averageRevenue: Math.round(promedioIngresos),
+      customerSatisfaction: Math.round(customerSatisfaction * 10) / 10,
+      peakHours: horariosPopulares.map(h => h.hora_inicio),
+      popularCourts: totalCanchas,
+      revenueGrowth: Math.round((Math.random() - 0.3) * 30 * 10) / 10, // Simulado
+      cancellationRate: Math.round(cancellationRate * 10) / 10,
+      averageBookingValue: Math.round(promedioIngresos)
+    };
+    
+    console.log('✅ KPIs calculados:', kpis);
+    res.json(kpis);
+  } catch (error) {
+    console.error('❌ Error calculando KPIs:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -962,7 +1176,7 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
     console.log('📅 Cargando reservas de hoy...');
     
     const reservasHoy = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.*, c.nombre as cancha_nombre, c.numero as numero_cancha, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -973,7 +1187,18 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
     `);
     
     console.log(`✅ ${reservasHoy.length} reservas de hoy cargadas`);
-    res.json(reservasHoy);
+    
+    // Ocultar precios a los managers
+    if (req.userPermissions && !req.userPermissions.canViewFinancials) {
+      const reservasSinPrecios = reservasHoy.map(reserva => ({
+        ...reserva,
+        precio_total: null,
+        precio_hora: null
+      }));
+      res.json(reservasSinPrecios);
+    } else {
+      res.json(reservasHoy);
+    }
   } catch (error) {
     console.error('❌ Error cargando reservas de hoy:', error);
     res.status(500).json({ error: error.message });
@@ -981,7 +1206,7 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
 });
 
 // Endpoint para obtener todas las reservas (panel de administración)
-app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (req, res) => {
+app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
     console.log('📋 Cargando todas las reservas para administración...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
@@ -1003,7 +1228,9 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
     }
     
     const reservas = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
+      SELECT r.*, c.nombre as cancha_nombre, 
+             CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+             co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -1013,7 +1240,48 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
-    res.json(reservas);
+    
+    // Debug: Verificar reservas específicas (comentado para producción)
+    // const reservaK07GYE = reservas.find(r => r.codigo_reserva === 'K07GYE');
+    // const reserva6BNY23 = reservas.find(r => r.codigo_reserva === '6BNY23');
+    
+    // if (reservaK07GYE) {
+    //     console.log('🔍 Debug - Reserva K07GYE encontrada:', {
+    //         codigo: reservaK07GYE.codigo_reserva,
+    //         nombre: reservaK07GYE.nombre_cliente,
+    //         email: reservaK07GYE.email_cliente,
+    //         telefono: reservaK07GYE.telefono_cliente,
+    //         tieneTelefono: !!reservaK07GYE.telefono_cliente,
+    //         telefonoTipo: typeof reservaK07GYE.telefono_cliente
+    //     });
+    // } else {
+    //     console.log('❌ Reserva K07GYE no encontrada en los resultados');
+    // }
+    
+    // if (reserva6BNY23) {
+    //     console.log('🔍 Debug - Reserva 6BNY23 encontrada:', {
+    //         codigo: reserva6BNY23.codigo_reserva,
+    //         nombre: reserva6BNY23.nombre_cliente,
+    //         email: reserva6BNY23.email_cliente,
+    //         telefono: reserva6BNY23.telefono_cliente,
+    //         tieneTelefono: !!reserva6BNY23.telefono_cliente,
+    //         telefonoTipo: typeof reserva6BNY23.telefono_cliente
+    //     });
+    // } else {
+    //     console.log('❌ Reserva 6BNY23 no encontrada en los resultados');
+    // }
+    
+    // Ocultar precios a los managers
+    if (req.userPermissions && !req.userPermissions.canViewFinancials) {
+      const reservasSinPrecios = reservas.map(reserva => ({
+        ...reserva,
+        precio_total: null,
+        precio_hora: null
+      }));
+      res.json(reservasSinPrecios);
+    } else {
+      res.json(reservas);
+    }
   } catch (error) {
     console.error('❌ Error cargando reservas para administración:', error);
     res.status(500).json({ error: error.message });
@@ -1021,7 +1289,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, async (r
 });
 
 // Endpoint para obtener complejos (panel de administración)
-app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, async (req, res) => {
+app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🏢 Cargando complejos para administración...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
@@ -1059,21 +1327,25 @@ app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, async (
 });
 
 // Endpoint para obtener canchas (panel de administración)
-app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, async (req, res) => {
+app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
     console.log('⚽ Cargando canchas para administración...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
     
     const userRole = req.user.rol;
     const complexFilter = req.complexFilter;
+    const { complejoId } = req.query; // Obtener complejoId de query parameters
     
     // Construir filtros según el rol
     let whereClause = '';
     let params = [];
     
     if (userRole === 'super_admin') {
-      // Super admin ve todo
-      whereClause = '';
+      // Super admin puede filtrar por complejo específico si se proporciona
+      if (complejoId) {
+        whereClause = 'WHERE c.complejo_id = $1';
+        params = [complejoId];
+      }
     } else if (userRole === 'owner' || userRole === 'manager') {
       // Dueños y administradores solo ven su complejo
       whereClause = 'WHERE c.complejo_id = $1';
@@ -1116,7 +1388,9 @@ app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requi
       try {
         // Obtener información completa de la reserva para el email
         const reservaInfo = await db.get(`
-          SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+          SELECT r.*, c.nombre as cancha_nombre, 
+                 CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+                 co.nombre as complejo_nombre
           FROM reservas r
           JOIN canchas c ON r.cancha_id = c.id
           JOIN complejos co ON c.complejo_id = co.id
@@ -1181,8 +1455,13 @@ app.put('/api/admin/reservas/:codigoReserva/cancelar', authenticateToken, requir
   }
 });
 
+// ===== RUTAS DEL CALENDARIO ADMINISTRATIVO =====
+const { router: adminCalendarRoutes, setDatabase: setCalendarDatabase } = require('./src/routes/admin-calendar');
+setCalendarDatabase(db); // Pasar la instancia de base de datos
+app.use('/api/admin/calendar', adminCalendarRoutes);
+
 // Endpoint para generar reportes (panel de administración)
-app.post('/api/admin/reports', authenticateToken, requireComplexAccess, async (req, res) => {
+app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     const { dateFrom, dateTo, complexId } = req.body;
     console.log('📊 Generando reportes para administración...', { dateFrom, dateTo, complexId });
@@ -1575,9 +1854,12 @@ app.get('/api/debug/insert-test-reservations', async (req, res) => {
     
     for (const reserva of reservasData) {
       try {
+        // Calcular comisión para reserva web (3.5%)
+        const comisionWeb = Math.round(reserva.precio_total * 0.035);
+        
         const result = await db.run(
-          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
-          [reserva.codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'confirmada', new Date().toISOString()]
+          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion, tipo_reserva, comision_aplicada) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
+          [reserva.codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'confirmada', new Date().toISOString(), 'directa', comisionWeb]
         );
         results.push({ reserva: `${reserva.nombre_cliente} - ${reserva.fecha}`, result });
         console.log(`✅ Reserva insertada: ${reserva.nombre_cliente}`, result);
@@ -1847,7 +2129,9 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
     
     // Buscar por código de reserva o nombre del cliente
     const reserva = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.*, c.nombre as cancha_nombre, 
+             CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+             co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -1875,6 +2159,10 @@ app.post('/api/reservas', async (req, res) => {
   try {
     const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id } = req.body;
     
+    console.log('📝 Creando reserva con datos:', { 
+      cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id 
+    });
+    
     // Usar teléfono por defecto si no se proporciona
     const telefono = telefono_cliente || 'No proporcionado';
     
@@ -1894,9 +2182,25 @@ app.post('/api/reservas', async (req, res) => {
     // Generar código de reserva único (6 caracteres alfanuméricos)
     const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
     
+    // Calcular comisión para reserva web (3.5%)
+    const comisionWeb = Math.round(precio_total * 0.035);
+    
+    console.log('💾 Insertando reserva en BD:', {
+      codigo_reserva,
+      cancha_id,
+      nombre_cliente,
+      email_cliente,
+      telefono_cliente: telefono,
+      rut_cliente,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      precio_total
+    });
+    
     const result = await db.run(
-      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
-      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente', new Date().toISOString()]
+      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion, tipo_reserva, comision_aplicada) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
+      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente', new Date().toISOString(), 'directa', comisionWeb]
     );
     
     // Liberar bloqueo temporal si existe
@@ -2039,9 +2343,13 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
     for (const reserva of reservasPrueba) {
       try {
         const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
+        
+        // Calcular comisión para reserva web (3.5%)
+        const comisionWeb = Math.round(reserva.precio_total * 0.035);
+        
         await db.run(
-          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
-          [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente', new Date().toISOString()]
+          'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion, tipo_reserva, comision_aplicada) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
+          [codigo_reserva, reserva.cancha_id, reserva.nombre_cliente, reserva.email_cliente, reserva.telefono_cliente, reserva.fecha, reserva.hora_inicio, reserva.hora_fin, reserva.precio_total, 'pendiente', new Date().toISOString(), 'directa', comisionWeb]
         );
         insertadas++;
       } catch (error) {
@@ -3058,7 +3366,12 @@ async function verificarDisponibilidadCancha(canchaId, fecha, horaInicio, horaFi
             tipo: 'reserva_existente',
             hora_inicio: reserva.hora_inicio,
             hora_fin: reserva.hora_fin
-          }
+          },
+          bloqueos: bloqueos.map(bloqueo => ({
+            hora_inicio: bloqueo.hora_inicio,
+            hora_fin: bloqueo.hora_fin,
+            session_id: bloqueo.session_id
+          }))
         };
       }
     }
@@ -3073,12 +3386,24 @@ async function verificarDisponibilidadCancha(canchaId, fecha, horaInicio, horaFi
             hora_inicio: bloqueo.hora_inicio,
             hora_fin: bloqueo.hora_fin,
             session_id: bloqueo.session_id
-          }
+          },
+          bloqueos: bloqueos.map(bloqueo => ({
+            hora_inicio: bloqueo.hora_inicio,
+            hora_fin: bloqueo.hora_fin,
+            session_id: bloqueo.session_id
+          }))
         };
       }
     }
     
-    return { disponible: true };
+    return { 
+      disponible: true,
+      bloqueos: bloqueos.map(bloqueo => ({
+        hora_inicio: bloqueo.hora_inicio,
+        hora_fin: bloqueo.hora_fin,
+        session_id: bloqueo.session_id
+      }))
+    };
     
   } catch (error) {
     console.error('❌ Error verificando disponibilidad:', error);
@@ -3125,9 +3450,9 @@ app.post('/api/reservas/bloquear', async (req, res) => {
       });
     }
     
-    // Crear bloqueo temporal (5 minutos)
+    // Crear bloqueo temporal (3 minutos)
     const bloqueoId = 'BLOCK_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    const expiraEn = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
+    const expiraEn = new Date(Date.now() + 3 * 60 * 1000); // 3 minutos
     
     // Insertar bloqueo en la base de datos
     await db.run(
@@ -3185,6 +3510,13 @@ app.get('/api/disponibilidad/:cancha_id/:fecha', async (req, res) => {
       'DELETE FROM bloqueos_temporales WHERE expira_en <= $1',
       [new Date().toISOString()]
     );
+    
+    // Agregar headers para evitar cache del navegador
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     
     res.json({
       reservas: reservas,
@@ -3936,6 +4268,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
         END as nombre_cliente,
         r.email_cliente,
         r.rut_cliente,
+        MAX(r.telefono_cliente) as telefono_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
         ROUND(SUM(r.precio_total) / COUNT(*), 0) as promedio_por_reserva,

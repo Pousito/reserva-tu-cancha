@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ReservaTuCancha Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-icon.success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
+        .stat-icon.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-icon.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            min-height: 500px; /* Altura mínima para acomodar filtros */
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        .chart-container canvas {
+            max-height: 400px !important;
+            width: 100% !important;
+            height: auto !important;
+            display: block !important;
+        }
+        .chart-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-header {
+            margin-bottom: 1rem;
+        }
+        .chart-body {
+            flex: 1;
+            position: relative;
+        }
+        .chart-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .chart-controls .btn {
+            border-radius: 8px;
+            padding: 0.375rem 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .chart-controls .btn:hover {
+            transform: scale(1.05);
+        }
+        .recent-reservations {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            height: 450px; /* Misma altura que el gráfico */
+            display: flex;
+            flex-direction: column;
+        }
+        .reservations-header {
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        .reservations-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .reservations-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .reservations-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .reservations-content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+        .reservations-content::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd8;
+        }
+        .reservation-item {
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .reservation-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
+        }
+        .navbar-admin {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .today-reservations {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .today-header {
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        .today-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .today-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .today-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .today-content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+        .today-content::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd8;
+        }
+        
+        /* Ajustes para gráficos adicionales */
+        .chart-container .chart-body {
+            min-height: 300px;
+        }
+        
+        .chart-container canvas {
+            max-height: 400px !important;
+            width: 100% !important;
+            height: auto !important;
+            display: block !important;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .chart-container {
+                min-height: 400px;
+            }
+            .recent-reservations {
+                height: auto;
+                min-height: 350px;
+            }
+            .today-reservations {
+                max-height: none;
+            }
+        }
+        
+        /* Animaciones suaves */
+        .reservation-item {
+            animation: fadeInUp 0.3s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Mejoras visuales */
+        .badge {
+            font-weight: 500;
+        }
+        
+        .reservation-item .badge {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Estilos para el sistema de notificaciones */
+        .notification-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .notification-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        .notification-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .notification-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        .notification-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+        
+        .notification-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .notification-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .notification-item.unread {
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .notification-item.read {
+            opacity: 0.7;
+        }
+        
+        .notification-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            color: white;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-message {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.3;
+        }
+        
+        .notification-time {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+        }
+        
+        .notification-dot {
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        /* Toast notifications */
+        .toast-container {
+            z-index: 9999;
+        }
+        
+        .toast {
+            min-width: 300px;
+            max-width: 400px;
+        }
+        
+        .toast-header.bg-success {
+            background-color: #28a745 !important;
+        }
+        
+        .toast-header.bg-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+        
+        .toast-header.bg-info {
+            background-color: #17a2b8 !important;
+        }
+        
+        .toast-header.bg-danger {
+            background-color: #dc3545 !important;
+        }
+        
+        /* Animaciones para notificaciones */
+        .notification-item {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Badge de notificaciones */
+        .badge.bg-primary {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Panel de Acciones Rápidas */
+        .quick-actions-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .quick-action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 80px;
+        }
+        
+        .quick-action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+        
+        .quick-action-btn i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quick-action-btn span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        /* Responsive para acciones rápidas */
+        @media (max-width: 768px) {
+            .quick-actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quick-action-btn {
+                min-height: 70px;
+                padding: 0.75rem;
+            }
+            
+            .quick-action-btn i {
+                font-size: 1.25rem;
+            }
+            
+            .quick-action-btn span {
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Estilos para filtros de gráficos */
+        .chart-filters {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            margin-bottom: 1rem;
+        }
+        
+        .chart-filters .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.25rem;
+        }
+        
+        .chart-filters .form-select,
+        .chart-filters .form-control {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-filters .form-select:focus,
+        .chart-filters .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .chart-filters .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-filters .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .chart-filters .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Animación para filtros personalizados */
+        #customDateRange {
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive para filtros */
+        @media (max-width: 768px) {
+            .chart-filters .row {
+                margin: 0;
+            }
+            
+            .chart-filters .col-md-3 {
+                margin-bottom: 0.5rem;
+            }
+            
+            .chart-filters .d-flex {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+        
+        /* Estilos para KPIs Avanzados */
+        .kpi-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: white;
+            font-size: 1.25rem;
+        }
+        
+        .kpi-content {
+            flex: 1;
+        }
+        
+        .kpi-content h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .kpi-content p {
+            margin: 0.25rem 0;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .kpi-trend {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .kpi-trend.positive {
+            color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        
+        .kpi-trend.negative {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+        
+        .kpi-trend.neutral {
+            color: #6c757d;
+            background: rgba(108, 117, 125, 0.1);
+        }
+        
+        /* Responsive para KPIs */
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .kpi-card {
+                padding: 1rem;
+            }
+            
+            .kpi-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .kpi-content h3 {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h4 class="text-center mb-4">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Admin Panel
+                        </h4>
+                        
+                        <!-- Información del Usuario -->
+                        <div class="user-info mb-4 p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                            <div class="text-center">
+                                <i class="fas fa-user-circle fa-3x mb-2"></i>
+                                <h6 data-user="name">Cargando...</h6>
+                                <small data-user="role">Cargando...</small>
+                                <br>
+                                <small data-user="complex">Cargando...</small>
+                            </div>
+                        </div>
+                        
+                        <nav class="nav flex-column">
+                            <a class="nav-link active" href="admin-dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a class="nav-link" href="admin-reservations.html">
+                                <i class="fas fa-calendar-check me-2"></i>Reservas
+                            </a>
+                            <a class="nav-link" href="admin-complexes.html" data-role="all-complexes">
+                                <i class="fas fa-building me-2"></i>Complejos
+                            </a>
+                            <a class="nav-link" href="admin-courts.html">
+                                <i class="fas fa-futbol me-2"></i>Canchas
+                            </a>
+                            <a class="nav-link" href="admin-reports.html" data-role="reports">
+                                <i class="fas fa-chart-bar me-2"></i>Reportes
+                            </a>
+                            <hr class="my-3">
+                            <a class="nav-link" href="index.html">
+                                <i class="fas fa-globe me-2"></i>Sitio Principal
+                            </a>
+                            <a class="nav-link" href="#" data-action="logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-0">
+                <div class="main-content">
+                    <!-- Top Navbar -->
+                    <nav class="navbar navbar-admin">
+                        <div class="container-fluid">
+                            <h5 class="mb-0">Dashboard</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="me-3" id="adminWelcome">Bienvenido, Admin</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="logout()">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Dashboard Content -->
+                    <div class="p-4">
+                        <!-- Quick Actions Panel -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="quick-actions-panel">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                                        </h5>
+                                        <div class="quick-actions-controls">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="refreshDashboard()">
+                                                <i class="fas fa-sync-alt"></i> Actualizar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="quick-actions-grid">
+                                        <button class="quick-action-btn" onclick="createReservation()">
+                                            <i class="fas fa-plus"></i>
+                                            <span>Nueva Reserva</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="exportReport()">
+                                            <i class="fas fa-download"></i>
+                                            <span>Exportar Reporte</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="exportFilteredData()">
+                                            <i class="fas fa-filter"></i>
+                                            <span>Exportar Filtros</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="sendBulkEmail()">
+                                            <i class="fas fa-envelope"></i>
+                                            <span>Email Masivo</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="backupData()">
+                                            <i class="fas fa-save"></i>
+                                            <span>Backup</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="viewReports()">
+                                            <i class="fas fa-chart-bar"></i>
+                                            <span>Ver Reportes</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="manageComplexes()">
+                                            <i class="fas fa-building"></i>
+                                            <span>Gestionar Complejos</span>
+                                        </button>
+                                        <button class="quick-action-btn" onclick="exportKPIs()">
+                                            <i class="fas fa-chart-line"></i>
+                                            <span>Exportar KPIs</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon primary me-3">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalReservations">0</h3>
+                                            <p class="text-muted mb-0">Reservas Totales</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3" data-role="income">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon success me-3">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalRevenue">$0</h3>
+                                            <p class="text-muted mb-0">Ingresos Totales</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon warning me-3">
+                                            <i class="fas fa-futbol"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalCourts">0</h3>
+                                            <p class="text-muted mb-0">Canchas Activas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="stat-icon info me-3">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="mb-0" id="totalComplexes">0</h3>
+                                            <p class="text-muted mb-0">Complejos</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts and Recent Reservations -->
+                        <div class="row">
+                            <div class="col-md-8 mb-4">
+                                <div class="chart-container">
+                                    <div class="chart-content">
+                                        <div class="chart-header">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-chart-line me-2"></i>Reservas por Día (Últimos 7 días)
+                                                </h5>
+                                                <div class="chart-controls">
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleChartType('reservationsChart')">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Los filtros se insertarán aquí dinámicamente -->
+                                        <div class="chart-body">
+                                            <canvas id="reservationsChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="recent-reservations">
+                                    <div class="reservations-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-clock me-2"></i>Reservas Recientes
+                                        </h5>
+                                        <small class="text-muted">Últimas 10 reservas</small>
+                                    </div>
+                                    <div class="reservations-content" id="recentReservationsList">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Charts Row -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">
+                                        <i class="fas fa-chart-pie me-2"></i>Reservas por Tipo de Cancha
+                                    </h5>
+                                    <div style="position: relative; height: 300px;">
+                                        <canvas id="typeChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="chart-container">
+                                    <h5 class="mb-3">
+                                        <i class="fas fa-chart-bar me-2"></i>Horarios Más Populares
+                                    </h5>
+                                    <div style="position: relative; height: 300px;">
+                                        <canvas id="hoursChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Reservations -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="today-reservations">
+                                    <div class="today-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-calendar-day me-2"></i>Reservas de Hoy
+                                        </h5>
+                                        <small class="text-muted">Reservas programadas para hoy</small>
+                                    </div>
+                                    <div class="today-content" id="todayReservationsList">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="js/url-config.js?v=1.0"></script>
+    <script src="js/admin-utils.js?v=1.0"></script>
+    <script src="js/notification-system.js?v=1.0"></script>
+    <script src="js/advanced-kpis.js?v=1.0"></script>
+    <script src="admin-dashboard.js?v=1.8"></script>
+    <script src="js/chart-filters.js?v=1.0"></script>
+    <script>
+        // Inicializar filtros después de que el dashboard esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar si ya se inicializaron los filtros
+            if (window.chartFilters) {
+                console.log('⚠️ Los filtros ya están inicializados');
+                return;
+            }
+            
+            setTimeout(() => {
+                if (typeof ChartFilters !== 'undefined') {
+                    window.chartFilters = new ChartFilters();
+                    console.log('✅ Sistema de filtros inicializado');
+                } else {
+                    console.error('❌ ChartFilters no está disponible');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

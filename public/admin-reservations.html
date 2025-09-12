@@ -75,6 +75,390 @@
             border-radius: 6px;
             font-size: 0.8rem;
         }
+        .badge-tipo {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-directa { background: #e3f2fd; color: #1976d2; }
+        .badge-administrativa { background: #f3e5f5; color: #7b1fa2; }
+        .badge-metodo {
+            padding: 3px 6px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .badge-web { background: #e8f5e8; color: #2e7d32; }
+        .badge-presencial { background: #fff3e0; color: #f57c00; }
+        .badge-whatsapp { background: #e8f5e8; color: #25d366; }
+        .comision-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .search-highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        /* Mejorar experiencia de campos de fecha */
+        input[type="date"] {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="date"]:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        
+        input[type="date"]:hover {
+            border-color: #86b7fe;
+        }
+        
+        /* Estilos para el calendario semanal */
+        .calendar-container {
+            margin-bottom: 2rem;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(7, 1fr);
+            gap: 1px;
+            background: #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .calendar-header {
+            background: #495057;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .calendar-day-header {
+            background: #6c757d;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .calendar-time-slot {
+            background: #f8f9fa;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6c757d;
+            border-right: 1px solid #dee2e6;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .calendar-day {
+            background: white;
+            min-height: 40px;
+            border-right: 1px solid #dee2e6;
+            position: relative;
+        }
+        
+        .calendar-day.today {
+            background: #e3f2fd;
+        }
+        
+        .calendar-day.other-month {
+            background: #f8f9fa;
+            color: #adb5bd;
+        }
+        
+        .calendar-slot {
+            min-height: 40px;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-slot:hover {
+            background: #f0f8ff;
+        }
+        
+        .calendar-slot.reserved {
+            background: #ffebee;
+            border-left: 4px solid #dc3545;
+            cursor: not-allowed;
+        }
+        
+        .calendar-slot.reserved:hover {
+            background: #ffebee;
+        }
+        
+        .calendar-slot.available {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .calendar-slot.available:hover {
+            background: #c3e6cb;
+            transform: scale(1.02);
+        }
+        
+        .calendar-slot.unavailable {
+            background: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .calendar-slot.unavailable:hover {
+            background: #f8f9fa;
+        }
+        
+        .reservation-info {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            right: 4px;
+            font-size: 0.7rem;
+            color: #495057;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .reservation-time {
+            font-weight: 600;
+            color: #dc3545;
+        }
+        
+        .reservation-client {
+            color: #6c757d;
+        }
+        
+        .slot-time {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .calendar-slot.reserved .slot-time {
+            display: none;
+        }
+        
+        .calendar-slot.available .slot-time {
+            color: #28a745;
+        }
+        
+        .calendar-slot.unavailable .slot-time {
+            color: #6c757d;
+        }
+        
+        /* Nuevos estados de disponibilidad */
+        .calendar-slot.partial {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        
+        .calendar-slot.partial:hover {
+            background: #ffeaa7;
+            transform: scale(1.02);
+        }
+        
+        .calendar-slot.occupied {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            cursor: not-allowed;
+            color: #721c24;
+        }
+        
+        .calendar-slot.occupied:hover {
+            background: #f5c6cb;
+        }
+        
+        /* Contenido del slot */
+        .slot-content {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2px 4px;
+        }
+        
+        .slot-time {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .slot-status {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .slot-info-icon {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 0.8rem;
+            transition: color 0.2s ease;
+        }
+        
+        .slot-info-icon:hover {
+            color: #007bff;
+        }
+        
+        /* Estados específicos de colores */
+        .calendar-slot.available .slot-time {
+            color: #155724;
+            font-weight: 700;
+        }
+        
+        .calendar-slot.partial .slot-time {
+            color: #856404;
+            font-weight: 700;
+        }
+        
+        .calendar-slot.occupied .slot-time {
+            color: #721c24;
+            font-weight: 700;
+        }
+        
+        .calendar-slot.unavailable .slot-time {
+            color: #6c757d;
+        }
+        
+        /* Efecto de resaltado para horas disponibles */
+        .calendar-slot.highlight-available {
+            animation: pulse-highlight 1s ease-in-out;
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+            transform: scale(1.05);
+        }
+        
+        @keyframes pulse-highlight {
+            0% {
+                box-shadow: 0 0 5px rgba(40, 167, 69, 0.3);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(40, 167, 69, 0.8);
+                transform: scale(1.08);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+                transform: scale(1.05);
+            }
+        }
+        
+        /* Modal de información de reservas */
+        .reservation-detail {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        
+        .reservation-detail strong {
+            color: #495057;
+        }
+        
+        /* Modal para nueva reserva */
+        .modal-reservation {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content-reservation {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header-reservation {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .modal-body-reservation {
+            padding: 2rem;
+        }
+        
+        .modal-footer-reservation {
+            padding: 1rem 2rem;
+            border-top: 1px solid #dee2e6;
+            background: #f8f9fa;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .btn-close-reservation {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            float: right;
+        }
+        
+        .btn-close-reservation:hover {
+            opacity: 0.7;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: 80px repeat(7, 1fr);
+                font-size: 0.8rem;
+            }
+            
+            .calendar-header,
+            .calendar-day-header {
+                padding: 8px 4px;
+                font-size: 0.75rem;
+            }
+            
+            .calendar-time-slot {
+                padding: 4px;
+                font-size: 0.7rem;
+                min-height: 35px;
+            }
+            
+            .calendar-day {
+                min-height: 35px;
+            }
+            
+            .calendar-slot {
+                min-height: 35px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -153,23 +537,47 @@
 
                     <!-- Content -->
                     <div class="p-4">
-                        <!-- Filtros -->
+                        <!-- Búsqueda Rápida -->
                         <div class="filter-card">
                             <h6 class="mb-3">
-                                <i class="fas fa-filter me-2"></i>Filtros
+                                <i class="fas fa-search me-2"></i>Búsqueda Rápida
                             </h6>
                             <div class="row">
-                                <div class="col-md-3 mb-3">
-                                    <label for="fechaFilter" class="form-label">Fecha</label>
-                                    <input type="date" class="form-control" id="fechaFilter">
+                                <div class="col-md-6 mb-3">
+                                    <label for="searchInput" class="form-label">Buscar por código o nombre</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="searchInput" 
+                                               placeholder="Ej: ABC123 o Juan Pérez" 
+                                               onkeyup="buscarReservas()">
+                                    </div>
                                 </div>
-                                <div class="col-md-3 mb-3" data-role="complex-filter">
+                                <div class="col-md-6 mb-3 d-flex align-items-end">
+                                    <button class="btn btn-outline-secondary me-2" onclick="limpiarBusqueda()">
+                                        <i class="fas fa-times me-2"></i>Limpiar
+                                    </button>
+                                    <button class="btn btn-primary" onclick="toggleFiltrosAvanzados()">
+                                        <i class="fas fa-filter me-2"></i>Filtros Avanzados
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtros Avanzados (Inicialmente ocultos) -->
+                        <div class="filter-card" id="filtrosAvanzados" style="display: none;">
+                            <h6 class="mb-3">
+                                <i class="fas fa-filter me-2"></i>Filtros Avanzados
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-4 mb-3" data-role="complex-filter">
                                     <label for="complejoFilter" class="form-label">Complejo</label>
                                     <select class="form-select" id="complejoFilter">
                                         <option value="">Todos los complejos</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 mb-3">
+                                <div class="col-md-4 mb-3">
                                     <label for="estadoFilter" class="form-label">Estado</label>
                                     <select class="form-select" id="estadoFilter">
                                         <option value="">Todos los estados</option>
@@ -178,7 +586,25 @@
                                         <option value="cancelada">Cancelada</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 mb-3 d-flex align-items-end">
+                                <div class="col-md-4 mb-3">
+                                    <label for="tipoReservaFilter" class="form-label">Tipo de Reserva</label>
+                                    <select class="form-select" id="tipoReservaFilter">
+                                        <option value="">Todos los tipos</option>
+                                        <option value="directa">Directa (Web)</option>
+                                        <option value="administrativa">Administrativa</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="fechaDesde" class="form-label">Fecha Desde</label>
+                                    <input type="date" class="form-control" id="fechaDesde">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="fechaHasta" class="form-label">Fecha Hasta</label>
+                                    <input type="date" class="form-control" id="fechaHasta">
+                                </div>
+                                <div class="col-md-6 mb-3 d-flex align-items-end">
                                     <button class="btn btn-primary me-2" onclick="aplicarFiltros()">
                                         <i class="fas fa-search me-2"></i>Filtrar
                                     </button>
@@ -189,8 +615,92 @@
                             </div>
                         </div>
 
+                        <!-- Navegación entre Lista y Calendario -->
+                        <div class="filter-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-primary" id="btnLista" onclick="mostrarVista('lista')">
+                                        <i class="fas fa-list me-2"></i>Lista
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" id="btnCalendario" onclick="mostrarVista('calendario')">
+                                        <i class="fas fa-calendar-week me-2"></i>Calendario
+                                    </button>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-success" onclick="nuevaReservaAdmin()" id="btnNuevaReserva">
+                                        <i class="fas fa-plus me-2"></i>Nueva Reserva
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calendario Semanal -->
+                        <div class="calendar-container" id="vistaCalendario" style="display: none;">
+                            <div class="filter-card">
+                                <!-- Título dinámico del calendario -->
+                                <div class="text-center mb-3">
+                                    <h4 class="mb-0 text-primary" id="tituloCalendario">
+                                        <i class="fas fa-calendar-week me-2"></i>Calendario Semanal
+                                    </h4>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-calendar-week me-2"></i>Calendario Semanal
+                                    </h6>
+                                    <div class="d-flex align-items-center">
+                                        <button class="btn btn-outline-secondary btn-sm me-2" onclick="semanaAnterior()">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <span class="fw-bold" id="rangoSemana">Semana actual</span>
+                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="semanaSiguiente()">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary btn-sm ms-3" onclick="irAHoy()">
+                                            <i class="fas fa-home me-1"></i>Hoy
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Selector de complejo para calendario (solo para super_admin) -->
+                                <div class="row mb-3" id="selectorComplejoCalendario" style="display: none;">
+                                    <div class="col-md-4">
+                                        <label for="complejoCalendario" class="form-label">Complejo</label>
+                                        <select class="form-select" id="complejoCalendario">
+                                            <option value="">Todos los complejos</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Leyenda de colores -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-wrap gap-3 justify-content-center">
+                                            <div class="d-flex align-items-center">
+                                                <div class="calendar-slot available me-2" style="width: 20px; height: 20px; min-height: 20px;"></div>
+                                                <small class="text-muted">Todas disponibles</small>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <div class="calendar-slot partial me-2" style="width: 20px; height: 20px; min-height: 20px;"></div>
+                                                <small class="text-muted">Parcialmente ocupado</small>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <div class="calendar-slot occupied me-2" style="width: 20px; height: 20px; min-height: 20px;"></div>
+                                                <small class="text-muted">Todas ocupadas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Calendario -->
+                                <div class="calendar-grid" id="calendarGrid">
+                                    <!-- Se generará dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Tabla de Reservas -->
-                        <div class="reservations-table">
+                        <div class="reservations-table" id="vistaLista">
                             <div class="p-3 border-bottom">
                                 <h6 class="mb-0">
                                     <i class="fas fa-list me-2"></i>Lista de Reservas
@@ -208,13 +718,15 @@
                                             <th>Fecha</th>
                                             <th>Hora</th>
                                             <th>Precio</th>
+                                            <th>Tipo</th>
+                                            <th>Comisión</th>
                                             <th>Estado</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="reservationsTableBody">
                                         <tr>
-                                            <td colspan="9" class="text-center text-muted">
+                                            <td colspan="11" class="text-center text-muted">
                                                 <i class="fas fa-spinner fa-spin"></i> Cargando reservas...
                                             </td>
                                         </tr>
@@ -224,6 +736,104 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nueva Reserva Administrativa -->
+    <div class="modal-reservation" id="modalNuevaReserva">
+        <div class="modal-content-reservation">
+            <div class="modal-header-reservation">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Nueva Reserva Administrativa
+                </h5>
+                <button class="btn-close-reservation" onclick="cerrarModalReserva()">&times;</button>
+            </div>
+            <div class="modal-body-reservation">
+                <form id="formNuevaReserva">
+                    <div class="row">
+                        <div class="col-md-6 mb-3" id="seccionComplejoModal">
+                            <label for="modalComplejo" class="form-label">Complejo *</label>
+                            <select class="form-select" id="modalComplejo" required>
+                                <option value="">Seleccionar complejo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3" id="seccionCanchaModal">
+                            <label for="modalCancha" class="form-label">Cancha *</label>
+                            <select class="form-select" id="modalCancha" required>
+                                <option value="">Seleccionar cancha</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de fecha y hora seleccionada -->
+                    <div class="alert alert-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <strong>Reserva para:</strong> <span id="modalInfoFechaHora">Selecciona una hora en el calendario</span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalNombreCliente" class="form-label">Nombre del Cliente *</label>
+                            <input type="text" class="form-control" id="modalNombreCliente" required>
+                            <div class="invalid-feedback d-none">
+                                Por favor ingresa un nombre completo válido (nombre y apellido).
+                            </div>
+                            <div class="valid-feedback d-none">
+                                Nombre válido
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalEmailCliente" class="form-label">Email del Cliente *</label>
+                            <input type="email" class="form-control" id="modalEmailCliente" required>
+                            <div class="invalid-feedback d-none">
+                                Email inválido. Verifica el formato del correo electrónico.
+                            </div>
+                            <div class="valid-feedback d-none">
+                                Email válido
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modalTelefonoCliente" class="form-label">Teléfono del Cliente</label>
+                            <input type="tel" class="form-control" id="modalTelefonoCliente" placeholder="+56912345678">
+                            <div class="invalid-feedback d-none">
+                                Teléfono inválido. Debe ser un número chileno válido (ej: +56912345678, 912345678, 212345678).
+                            </div>
+                            <div class="valid-feedback d-none">
+                                Teléfono válido
+                            </div>
+                            <div class="form-text">Opcional</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modalRutCliente" class="form-label">RUT del Cliente *</label>
+                            <input type="text" class="form-control" id="modalRutCliente" placeholder="12.345.678-9" required>
+                            <div class="invalid-feedback d-none">
+                                RUT inválido. Verifica el formato y dígito verificador.
+                            </div>
+                            <div class="valid-feedback d-none">
+                                RUT válido
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de precio simplificada -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Precio de la reserva:</strong> $28,000 (precio fijo por hora)
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="modal-footer-reservation">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalReserva()">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" onclick="crearReservaAdmin()">
+                    <i class="fas fa-save me-2"></i>Crear Reserva
+                </button>
             </div>
         </div>
     </div>
@@ -247,6 +857,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/time-utils.js?v=1.0"></script>
     <script src="js/url-config.js?v=1.0"></script>
     <script src="js/admin-utils.js?v=1.0"></script>
     <script src="admin-reservations.js?v=1.2"></script>
