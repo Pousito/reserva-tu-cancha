@@ -4447,6 +4447,80 @@ app.get('/debug/check-blocking-table', async (req, res) => {
   }
 });
 
+// Endpoint para crear tabla bloqueos_temporales si no existe
+app.post('/debug/create-blocking-table', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    if (dbInfo.type !== 'PostgreSQL') {
+      return res.json({
+        success: false,
+        message: 'Este endpoint solo funciona con PostgreSQL',
+        databaseType: dbInfo.type
+      });
+    }
+    
+    console.log('🔧 Creando tabla bloqueos_temporales en PostgreSQL...');
+    
+    // Verificar si la tabla ya existe
+    const tableExists = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'bloqueos_temporales'
+      );
+    `);
+    
+    if (tableExists[0].exists) {
+      return res.json({
+        success: true,
+        message: 'Tabla bloqueos_temporales ya existe',
+        tableExists: true
+      });
+    }
+    
+    // Crear la tabla
+    await db.query(`
+      CREATE TABLE bloqueos_temporales (
+        id VARCHAR(50) PRIMARY KEY,
+        cancha_id INTEGER REFERENCES canchas(id),
+        fecha DATE NOT NULL,
+        hora_inicio TIME NOT NULL,
+        hora_fin TIME NOT NULL,
+        session_id VARCHAR(100) NOT NULL,
+        expira_en TIMESTAMP NOT NULL,
+        datos_cliente TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    console.log('✅ Tabla bloqueos_temporales creada exitosamente');
+    
+    // Verificar que se creó correctamente
+    const structure = await db.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'bloqueos_temporales'
+      ORDER BY ordinal_position;
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Tabla bloqueos_temporales creada exitosamente',
+      tableExists: true,
+      structure: structure
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando tabla bloqueos_temporales:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
