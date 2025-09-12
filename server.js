@@ -4897,6 +4897,22 @@ app.post('/debug/simulate-create-blocking', async (req, res) => {
   }
 });
 
+// Endpoint para verificar si el router admin-calendar está funcionando
+app.get('/debug/test-admin-calendar-router', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Router admin-calendar está funcionando',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
