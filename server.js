@@ -119,6 +119,12 @@ const db = new DatabaseManager();
 // Sistema de emails
 const emailService = new EmailService();
 
+// Función helper para obtener la función de fecha actual según el tipo de BD
+const getCurrentTimestampFunction = () => {
+  const dbInfo = db.getDatabaseInfo();
+  return dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
+};
+
 // Inicializar base de datos
 async function initializeDatabase() {
   try {
@@ -2644,11 +2650,12 @@ app.get('/api/auth/verify-reset-token/:token', async (req, res) => {
     console.log('🔍 Verificando token de restablecimiento:', token);
 
     // Buscar token válido
+    const currentTimestampFunc = getCurrentTimestampFunction();
     const tokenData = await db.query(`
       SELECT prt.*, u.nombre, u.rol 
       FROM password_reset_tokens prt
       JOIN usuarios u ON prt.user_id = u.id
-      WHERE prt.token = $1 AND prt.used = false AND prt.expires_at > NOW()
+      WHERE prt.token = $1 AND prt.used = false AND prt.expires_at > ${currentTimestampFunc}
     `, [token]);
 
     if (tokenData.length === 0) {
@@ -2698,11 +2705,12 @@ app.post('/api/auth/reset-password', async (req, res) => {
     console.log('🔐 Restableciendo contraseña con token:', token);
 
     // Buscar token válido
+    const currentTimestampFunc2 = getCurrentTimestampFunction();
     const tokenData = await db.query(`
       SELECT prt.*, u.id, u.email, u.nombre, u.rol 
       FROM password_reset_tokens prt
       JOIN usuarios u ON prt.user_id = u.id
-      WHERE prt.token = $1 AND prt.used = false AND prt.expires_at > NOW()
+      WHERE prt.token = $1 AND prt.used = false AND prt.expires_at > ${currentTimestampFunc2}
     `, [token]);
 
     if (tokenData.length === 0) {
@@ -2725,7 +2733,8 @@ app.post('/api/auth/reset-password', async (req, res) => {
     await db.query('UPDATE password_reset_tokens SET used = true WHERE id = $1', [tokenInfo.id]);
     
     // Limpiar tokens expirados del usuario
-    await db.query('DELETE FROM password_reset_tokens WHERE user_id = $1 AND expires_at <= NOW()', [tokenInfo.id]);
+    const currentTimestampFunc3 = getCurrentTimestampFunction();
+    await db.query(`DELETE FROM password_reset_tokens WHERE user_id = $1 AND expires_at <= ${currentTimestampFunc3}`, [tokenInfo.id]);
 
     console.log('✅ Contraseña restablecida exitosamente para:', tokenInfo.email);
 

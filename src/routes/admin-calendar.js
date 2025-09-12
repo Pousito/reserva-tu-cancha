@@ -27,6 +27,12 @@ const setDatabase = (databaseInstance) => {
     db = databaseInstance;
 };
 
+// Función helper para obtener la función de fecha actual según el tipo de BD
+const getCurrentTimestampFunction = () => {
+    const dbInfo = db.getDatabaseInfo();
+    return dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
+};
+
 // Middleware de autenticación
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -538,6 +544,7 @@ router.post('/check-blocking', authenticateToken, requireRolePermission(['super_
         console.log('🔍 Verificando bloqueos temporales para admin:', { fecha, hora_inicio, hora_fin, user: user.email });
         
         // Construir consulta para verificar bloqueos temporales
+        const currentTimestampFunc = getCurrentTimestampFunction();
         let query = `
             SELECT 
                 bt.id,
@@ -555,7 +562,7 @@ router.post('/check-blocking', authenticateToken, requireRolePermission(['super_
             JOIN canchas c ON bt.cancha_id = c.id
             JOIN complejos comp ON c.complejo_id = comp.id
             WHERE bt.fecha = $1 
-            AND bt.expira_en > NOW()
+            AND bt.expira_en > ${currentTimestampFunc}
             AND (
                 (bt.hora_inicio < $3 AND bt.hora_fin > $2)
             )
@@ -664,9 +671,10 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
                     admin_email: user.email
                 });
                 
+                const currentTimestampFunc = getCurrentTimestampFunction();
                 await db.run(
                     `INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, created_at) 
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${currentTimestampFunc})`,
                     [bloqueoId, cancha.id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), datosCliente]
                 );
                 
