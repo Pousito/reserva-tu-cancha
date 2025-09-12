@@ -4384,6 +4384,69 @@ app.get('/debug/database-structure', async (req, res) => {
   }
 });
 
+// Endpoint para verificar tabla bloqueos_temporales
+app.get('/debug/check-blocking-table', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    let tableExists = false;
+    let tableSchema = [];
+    let testQuery = null;
+    
+    if (dbInfo.type === 'SQLite') {
+      // Verificar si la tabla existe en SQLite
+      const tables = await db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='bloqueos_temporales'");
+      tableExists = tables.length > 0;
+      
+      if (tableExists) {
+        tableSchema = await db.query("PRAGMA table_info(bloqueos_temporales)");
+      }
+    } else {
+      // Verificar si la tabla existe en PostgreSQL
+      const tables = await db.query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_name = 'bloqueos_temporales'
+      `);
+      tableExists = tables.length > 0;
+      
+      if (tableExists) {
+        tableSchema = await db.query(`
+          SELECT column_name, data_type, is_nullable, column_default
+          FROM information_schema.columns 
+          WHERE table_name = 'bloqueos_temporales'
+          ORDER BY ordinal_position
+        `);
+      }
+    }
+    
+    // Probar consulta de inserción (sin ejecutar)
+    if (tableExists) {
+      try {
+        const testSelect = await db.query("SELECT COUNT(*) as count FROM bloqueos_temporales LIMIT 1");
+        testQuery = { success: true, count: testSelect[0]?.count || 0 };
+      } catch (error) {
+        testQuery = { error: error.message, code: error.code };
+      }
+    }
+    
+    res.json({
+      database: dbInfo,
+      tableExists: tableExists,
+      tableSchema: tableSchema,
+      testQuery: testQuery,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
