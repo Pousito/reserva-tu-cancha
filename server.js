@@ -4355,9 +4355,9 @@ app.get('/debug/check-blocking-table', async (req, res) => {
       FROM information_schema.tables 
       WHERE table_name = 'bloqueos_temporales'
     `);
-    const tableExists = tables.length > 0;
+    const bloqueosTableExists = tables.length > 0;
     
-    if (tableExists) {
+    if (bloqueosTableExists) {
       tableSchema = await db.query(`
         SELECT column_name, data_type, is_nullable, column_default
         FROM information_schema.columns 
