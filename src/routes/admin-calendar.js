@@ -97,7 +97,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                 r.comision_aplicada,
                 r.nombre_cliente,
                 r.email_cliente,
-                r.telefono_cliente,
+                r.rut_cliente,
                 c.id as cancha_id,
                 c.nombre as cancha_numero,
                 c.tipo as cancha_tipo,
