@@ -1009,7 +1009,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     }
     
     const reservas = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, c.numero as numero_cancha, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -1176,12 +1176,12 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
     console.log('📅 Cargando reservas de hoy...');
     
     const reservasHoy = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, c.numero as numero_cancha, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE r.fecha::date = CURRENT_DATE
+      WHERE DATE(r.fecha) = DATE('now')
       AND r.estado != 'cancelada'
       ORDER BY r.hora_inicio
     `);
