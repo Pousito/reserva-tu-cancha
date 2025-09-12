@@ -4321,6 +4321,69 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Endpoint de diagnóstico para verificar estructura de BD
+app.get('/debug/database-structure', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    let schema = [];
+    if (dbInfo.type === 'SQLite') {
+      schema = await db.query("PRAGMA table_info(reservas)");
+    } else {
+      schema = await db.query(`
+        SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns 
+        WHERE table_name = 'reservas'
+        ORDER BY ordinal_position
+      `);
+    }
+    
+    // Probar consulta específica del calendario
+    let testResult = null;
+    try {
+      const testQuery = `
+        SELECT 
+          r.id,
+          r.codigo_reserva as codigo,
+          r.fecha,
+          r.hora_inicio,
+          r.hora_fin,
+          r.precio_total,
+          r.estado,
+          r.tipo_reserva,
+          r.creada_por_admin,
+          r.metodo_contacto,
+          r.comision_aplicada,
+          r.nombre_cliente,
+          r.email_cliente,
+          r.telefono_cliente
+        FROM reservas r
+        LIMIT 1
+      `;
+      
+      testResult = await db.query(testQuery);
+    } catch (error) {
+      testResult = { error: error.message, code: error.code };
+    }
+    
+    res.json({
+      database: dbInfo,
+      environment: process.env.NODE_ENV,
+      databaseUrl: process.env.DATABASE_URL ? 'Definido' : 'No definido',
+      reservasSchema: schema,
+      testQuery: testResult,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Test de persistencia - Sun Sep  7 02:06:46 -03 2025
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
