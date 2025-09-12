@@ -671,11 +671,12 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
                     admin_email: user.email
                 });
                 
-                const currentTimestampFunc = getCurrentTimestampFunction();
+                const dbInfo = db.getDatabaseInfo();
+                const timestampFunction = dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
                 await db.run(
                     `INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, created_at) 
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-                    [bloqueoId, cancha.id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), datosCliente, currentTimestampFunc]
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${timestampFunction})`,
+                    [bloqueoId, cancha.id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), datosCliente]
                 );
                 
                 bloqueosCreados.push({
