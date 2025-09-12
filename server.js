@@ -4913,6 +4913,27 @@ app.get('/debug/test-admin-calendar-router', async (req, res) => {
   }
 });
 
+// Endpoint para verificar configuración de JWT
+app.get('/debug/check-jwt-config', async (req, res) => {
+  try {
+    const jwtSecret = process.env.JWT_SECRET;
+    const hasJwtSecret = !!jwtSecret;
+    
+    res.json({
+      success: true,
+      hasJwtSecret: hasJwtSecret,
+      jwtSecretLength: jwtSecret ? jwtSecret.length : 0,
+      nodeEnv: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
