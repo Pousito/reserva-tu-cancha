@@ -4589,6 +4589,64 @@ app.post('/debug/test-reservation-insert', async (req, res) => {
   }
 });
 
+// Endpoint para agregar columna admin_id específicamente
+app.post('/debug/add-admin-id-column', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    if (dbInfo.type !== 'PostgreSQL') {
+      return res.json({
+        success: false,
+        message: 'Este endpoint solo funciona con PostgreSQL',
+        databaseType: dbInfo.type
+      });
+    }
+    
+    console.log('🔧 Agregando columna admin_id a tabla reservas...');
+    
+    // Verificar si la columna ya existe
+    const existingColumns = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas' AND column_name = 'admin_id'
+    `);
+    
+    if (existingColumns.length > 0) {
+      return res.json({
+        success: true,
+        message: 'Columna admin_id ya existe',
+        columnExists: true
+      });
+    }
+    
+    // Agregar la columna
+    await db.query(`ALTER TABLE reservas ADD COLUMN admin_id INTEGER`);
+    console.log('✅ Columna admin_id agregada exitosamente');
+    
+    // Verificar que se agregó correctamente
+    const finalColumns = await db.query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas' AND column_name = 'admin_id'
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Columna admin_id agregada exitosamente',
+      columnExists: true,
+      columnInfo: finalColumns[0]
+    });
+    
+  } catch (error) {
+    console.error('❌ Error agregando columna admin_id:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
