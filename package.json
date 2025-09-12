@@ -43,7 +43,8 @@
     "migrate": "node scripts/migration/migration-manager.js",
     "test-pre-deploy": "node scripts/testing/pre-deploy-tests.js",
     "deploy-safe": "npm run test-pre-deploy && npm run migrate && git add . && git commit -m \"Safe deploy\" && git push origin main",
-    "sync-dev-to-prod": "node scripts/migration/sync-dev-to-prod.js"
+    "sync-dev-to-prod": "node scripts/migration/sync-dev-to-prod.js",
+    "clean-all-reservations": "node scripts/cleanup/clean-all-reservations.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
