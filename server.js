@@ -4934,6 +4934,113 @@ app.get('/debug/check-jwt-config', async (req, res) => {
   }
 });
 
+// Endpoint temporal para reemplazar create-blocking
+app.post('/api/admin/calendar/create-blocking-temp', async (req, res) => {
+  try {
+    const { fecha, hora_inicio, hora_fin, session_id, tipo } = req.body;
+    
+    console.log('🔧 Creando bloqueo temporal (endpoint temporal):', { fecha, hora_inicio, hora_fin, session_id, tipo });
+    
+    // Simular usuario super admin
+    const user = {
+      id: 10,
+      email: 'admin@reservatuscanchas.cl',
+      rol: 'super_admin',
+      complejo_id: null
+    };
+    
+    // Obtener todas las canchas del complejo del usuario
+    let canchasQuery = `
+        SELECT c.id, c.nombre, c.tipo
+        FROM canchas c
+        JOIN complejos comp ON c.complejo_id = comp.id
+        ORDER BY comp.id
+        LIMIT 1
+    `;
+    
+    const canchas = await db.query(canchasQuery);
+    
+    if (canchas.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se encontraron canchas para crear el bloqueo temporal'
+      });
+    }
+    
+    // Verificar disponibilidad de cada cancha antes de crear bloqueos
+    const bloqueosCreados = [];
+    const expiraEn = new Date(Date.now() + 3 * 60 * 1000); // 3 minutos
+    
+    for (const cancha of canchas) {
+      // Verificar si la cancha está realmente disponible
+      const disponibilidadQuery = `
+          SELECT COUNT(*) as count
+          FROM reservas
+          WHERE cancha_id = $1 
+          AND fecha = $2 
+          AND (
+              (hora_inicio < $4 AND hora_fin > $3)
+          )
+          AND estado != 'cancelada'
+      `;
+      
+      const disponibilidadResult = await db.query(disponibilidadQuery, [
+          cancha.id, fecha, hora_inicio, hora_fin
+      ]);
+      
+      const estaOcupada = parseInt((disponibilidadResult || [])[0]?.count || 0) > 0;
+      
+      if (!estaOcupada) {
+        // Solo crear bloqueo si la cancha está disponible
+        const bloqueoId = `ADMIN_${Date.now()}_${cancha.id}`;
+        
+        const datosCliente = JSON.stringify({
+            nombre_cliente: `Admin ${user.email}`,
+            tipo_bloqueo: 'administrativo',
+            admin_id: user.id,
+            admin_email: user.email
+        });
+        
+        const dbInfo = db.getDatabaseInfo();
+        const timestampFunction = dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
+        await db.run(
+            `INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, created_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${timestampFunction})`,
+            [bloqueoId, cancha.id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), datosCliente]
+        );
+        
+        bloqueosCreados.push({
+            id: bloqueoId,
+            cancha_id: cancha.id,
+            cancha_nombre: cancha.nombre,
+            cancha_tipo: cancha.tipo
+        });
+        
+        console.log(`✅ Bloqueo temporal creado para cancha disponible: ${cancha.nombre}`);
+      } else {
+        console.log(`⚠️ Cancha ${cancha.nombre} ya está ocupada, no se creará bloqueo temporal`);
+      }
+    }
+    
+    console.log(`✅ Bloqueos temporales administrativos creados: ${bloqueosCreados.length}`);
+    
+    res.json({
+        success: true,
+        bloqueoId: bloqueosCreados[0]?.id,
+        bloqueos: bloqueosCreados,
+        expiraEn: expiraEn.toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando bloqueo temporal (endpoint temporal):', error);
+    res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor al crear bloqueo temporal',
+        details: error.message
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
