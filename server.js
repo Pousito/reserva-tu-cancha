@@ -4621,6 +4621,10 @@ app.post('/debug/fix-database-columns', async (req, res) => {
       {
         name: 'comision_aplicada',
         definition: 'INTEGER DEFAULT 0'
+      },
+      {
+        name: 'admin_id',
+        definition: 'INTEGER'
       }
     ];
     
