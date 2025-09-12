@@ -4656,6 +4656,64 @@ app.post('/debug/add-admin-id-column', async (req, res) => {
   }
 });
 
+// Endpoint para actualizar credenciales del super admin
+app.post('/debug/update-super-admin', async (req, res) => {
+  try {
+    const bcrypt = require('bcrypt');
+    const dbInfo = db.getDatabaseInfo();
+    
+    console.log('🔧 Actualizando credenciales del super admin...');
+    
+    const email = 'admin@reservatuscanchas.cl';
+    const password = 'admin1234';
+    
+    // Hashear la contraseña
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
+    // Verificar si el usuario existe
+    const existingUser = await db.query('SELECT id FROM usuarios WHERE email = $1', [email]);
+    
+    if (existingUser.length > 0) {
+      // Actualizar usuario existente
+      await db.query(
+        'UPDATE usuarios SET password = $1, rol = $2 WHERE email = $3',
+        [hashedPassword, 'super_admin', email]
+      );
+      console.log('✅ Usuario super admin actualizado');
+    } else {
+      // Crear nuevo usuario
+      await db.query(
+        'INSERT INTO usuarios (email, password, nombre, rol, activo) VALUES ($1, $2, $3, $4, $5)',
+        [email, hashedPassword, 'Super Admin', 'super_admin', true]
+      );
+      console.log('✅ Usuario super admin creado');
+    }
+    
+    // Verificar que se actualizó correctamente
+    const updatedUser = await db.query('SELECT id, email, rol FROM usuarios WHERE email = $1', [email]);
+    
+    res.json({
+      success: true,
+      message: 'Credenciales del super admin actualizadas exitosamente',
+      user: {
+        id: updatedUser[0].id,
+        email: updatedUser[0].email,
+        rol: updatedUser[0].rol
+      },
+      database: dbInfo
+    });
+    
+  } catch (error) {
+    console.error('❌ Error actualizando super admin:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
