@@ -4714,6 +4714,81 @@ app.post('/debug/update-super-admin', async (req, res) => {
   }
 });
 
+// Endpoint para probar create-blocking específicamente
+app.post('/debug/test-create-blocking', async (req, res) => {
+  try {
+    const dbInfo = db.getDatabaseInfo();
+    
+    console.log('🧪 Probando endpoint create-blocking...');
+    
+    // Obtener una cancha existente
+    const canchas = await db.query('SELECT id, nombre FROM canchas LIMIT 1');
+    if (canchas.length === 0) {
+      return res.json({
+        success: false,
+        message: 'No hay canchas disponibles para la prueba'
+      });
+    }
+    
+    const cancha = canchas[0];
+    
+    // Datos de prueba para create-blocking
+    const testData = {
+      fecha: '2025-09-13',
+      hora_inicio: '10:00:00',
+      hora_fin: '11:00:00',
+      session_id: 'test_session_123',
+      tipo: 'admin'
+    };
+    
+    // Simular el proceso de create-blocking
+    const expiraEn = new Date(Date.now() + 3 * 60 * 1000); // 3 minutos
+    const bloqueoId = `ADMIN_${Date.now()}_${cancha.id}`;
+    
+    const datosCliente = JSON.stringify({
+      nombre_cliente: `Admin Test`,
+      tipo_bloqueo: 'administrativo',
+      admin_id: 10,
+      admin_email: 'admin@reservatuscanchas.cl'
+    });
+    
+    // Probar la consulta de inserción
+    const insertQuery = `
+      INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, created_at) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      RETURNING *
+    `;
+    
+    const insertParams = [
+      bloqueoId, cancha.id, testData.fecha, testData.hora_inicio, testData.hora_fin, 
+      testData.session_id, expiraEn.toISOString(), datosCliente
+    ];
+    
+    console.log('🔍 Ejecutando consulta de create-blocking...');
+    const result = await db.query(insertQuery, insertParams);
+    console.log('🔍 Resultado:', result);
+    
+    // Limpiar el registro de prueba
+    await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueoId]);
+    
+    res.json({
+      success: true,
+      message: 'Test de create-blocking exitoso',
+      result: result,
+      database: dbInfo,
+      testData: testData
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en test de create-blocking:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Endpoint para agregar columnas faltantes en PostgreSQL
 app.post('/debug/fix-database-columns', async (req, res) => {
   try {
