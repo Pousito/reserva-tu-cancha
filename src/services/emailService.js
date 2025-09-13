@@ -466,7 +466,12 @@ Cliente: ${reservaData.nombre_cliente}
 Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
 Cancha: ${reservaData.cancha}
-Fecha: ${reservaData.fecha}
+Fecha: ${formatDateForChile(reservaData.fecha, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })}
 Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 Total: $${reservaData.precio_total.toLocaleString()}
 
@@ -526,7 +531,12 @@ Cliente: ${reservaData.nombre_cliente}
 Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
 Cancha: ${reservaData.cancha}
-Fecha: ${reservaData.fecha}
+Fecha: ${formatDateForChile(reservaData.fecha, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })}
 Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 Total: $${reservaData.precio_total.toLocaleString()}
 
