@@ -5352,6 +5352,4 @@ app.get('*', (req, res) => {
 });
 
 // ===== INICIO DEL SERVIDOR =====
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
-});
+// El servidor ya se inicia en la línea 2516, no duplicar aquí
