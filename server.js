@@ -5338,3 +5338,20 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 // Test de persistencia - Sun Sep  7 02:21:56 -03 2025
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
 // Test de persistencia final - Sun Sep  7 03:54:09 -03 2025
+
+// ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
+// Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
+app.get('*', (req, res) => {
+  // Si la ruta es para archivos estáticos (CSS, JS, imágenes), devolver 404
+  if (req.path.includes('.') && !req.path.endsWith('.html')) {
+    return res.status(404).json({ error: 'Archivo no encontrado' });
+  }
+  
+  // Para todas las demás rutas, servir index.html (SPA routing)
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ===== INICIO DEL SERVIDOR =====
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+});
