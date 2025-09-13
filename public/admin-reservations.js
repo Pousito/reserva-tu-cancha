@@ -508,24 +508,23 @@ function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha';
     
     try {
-        // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
+        // Manejar fechas ISO (2025-09-08T00:00:00.000Z) y fechas simples (YYYY-MM-DD)
         let fechaObj;
         if (fecha.includes('T')) {
-            // Fecha ISO - extraer solo la parte de fecha
-            const fechaParte = fecha.split('T')[0];
-            const [año, mes, dia] = fechaParte.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
+            // Fecha ISO - usar directamente para evitar problemas de zona horaria
+            fechaObj = new Date(fecha);
         } else {
-            // Fecha simple (YYYY-MM-DD)
+            // Fecha simple (YYYY-MM-DD) - crear fecha en UTC para evitar problemas de zona horaria
             const [año, mes, dia] = fecha.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
+            fechaObj = new Date(Date.UTC(año, mes - 1, dia));
         }
         
         return fechaObj.toLocaleDateString('es-CL', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: 'numeric',
+            timeZone: 'America/Santiago' // Forzar zona horaria de Chile
         });
     } catch (error) {
         console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
@@ -535,7 +534,9 @@ function formatearFecha(fecha) {
 
 function formatearFechaHora(fechaHora) {
     const fechaObj = new Date(fechaHora);
-    return fechaObj.toLocaleString('es-CL');
+    return fechaObj.toLocaleString('es-CL', {
+        timeZone: 'America/Santiago' // Forzar zona horaria de Chile
+    });
 }
 
 function mostrarError(mensaje) {
@@ -1172,14 +1173,15 @@ function forzarActualizacionCalendario() {
 async function seleccionarSlot(fecha, hora) {
     console.log('📅 Slot seleccionado:', { fecha, hora });
     
-    // Formatear fecha para mostrar (usando zona horaria local)
+    // Formatear fecha para mostrar (usando zona horaria de Chile)
     const [año, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(año, mes - 1, dia);
+    const fechaObj = new Date(Date.UTC(año, mes - 1, dia));
     const fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'America/Santiago' // Forzar zona horaria de Chile
     });
     
     // Calcular hora fin (1 hora después)

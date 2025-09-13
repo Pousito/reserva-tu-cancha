@@ -604,19 +604,18 @@ function formatearFechaCorta(fecha) {
         // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
         let fechaObj;
         if (fecha.includes('T')) {
-            // Fecha ISO - extraer solo la parte de fecha
-            const fechaParte = fecha.split('T')[0];
-            const [año, mes, dia] = fechaParte.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
+            // Fecha ISO - usar directamente para evitar problemas de zona horaria
+            fechaObj = new Date(fecha);
         } else {
-            // Fecha simple (YYYY-MM-DD)
+            // Fecha simple (YYYY-MM-DD) - crear fecha en UTC para evitar problemas de zona horaria
             const [año, mes, dia] = fecha.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
+            fechaObj = new Date(Date.UTC(año, mes - 1, dia));
         }
         
         return fechaObj.toLocaleDateString('es-CL', {
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            timeZone: 'America/Santiago' // Forzar zona horaria de Chile
         });
     } catch (error) {
         console.error('Error formateando fecha corta:', error, 'Fecha original:', fecha);
