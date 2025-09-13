@@ -1063,7 +1063,7 @@ function esMismoDia(fecha1, fecha2) {
 }
 
 /**
- * Formatear fecha para API
+ * Formatear fecha para API - CORREGIDO para manejar zona horaria de Chile
  */
 function formatearFechaParaAPI(fecha) {
     if (!fecha) return '';
@@ -1073,11 +1073,13 @@ function formatearFechaParaAPI(fecha) {
         return fecha;
     }
     
-    // Si es un objeto Date, convertirlo usando zona horaria local
+    // Si es un objeto Date, convertirlo usando zona horaria local de Chile
     if (fecha instanceof Date) {
-        const year = fecha.getFullYear();
-        const month = String(fecha.getMonth() + 1).padStart(2, '0');
-        const day = String(fecha.getDate()).padStart(2, '0');
+        // Usar toLocaleDateString con zona horaria de Chile para evitar problemas de UTC
+        const fechaChile = new Date(fecha.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+        const year = fechaChile.getFullYear();
+        const month = String(fechaChile.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaChile.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
     
@@ -1092,12 +1094,14 @@ function formatearFechaParaAPI(fecha) {
                 return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
         } else {
-            // Otros formatos - usar parsing normal
+            // Otros formatos - usar parsing con zona horaria de Chile
             const dateObj = new Date(fecha);
             if (!isNaN(dateObj.getTime())) {
-                const year = dateObj.getFullYear();
-                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                const day = String(dateObj.getDate()).padStart(2, '0');
+                // Convertir a zona horaria de Chile
+                const fechaChile = new Date(dateObj.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+                const year = fechaChile.getFullYear();
+                const month = String(fechaChile.getMonth() + 1).padStart(2, '0');
+                const day = String(fechaChile.getDate()).padStart(2, '0');
                 return `${year}-${month}-${day}`;
             }
         }

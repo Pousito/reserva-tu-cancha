@@ -36,9 +36,14 @@ class DatabaseManager {
         }
       });
 
-      // Probar conexión
+      // Probar conexión y configurar zona horaria
       const client = await this.pgPool.connect();
       console.log('✅ PostgreSQL conectado exitosamente');
+      
+      // Configurar zona horaria de Chile para todas las conexiones
+      await client.query("SET timezone = 'America/Santiago'");
+      console.log('🕐 Zona horaria configurada a America/Santiago');
+      
       client.release();
 
       // Crear tablas si no existen

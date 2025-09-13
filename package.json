@@ -56,7 +56,8 @@
     "test-working": "node scripts/testing/working-reservation-tests.js",
     "test-working-headless": "HEADLESS=true node scripts/testing/working-reservation-tests.js",
     "test-basic": "node scripts/testing/basic-reservation-tests.js",
-    "test-final": "node scripts/testing/final-reservation-tests.js"
+    "test-final": "node scripts/testing/final-reservation-tests.js",
+    "verify-date-fix": "node scripts/verify-date-fix.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

@@ -1209,7 +1209,7 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE DATE(r.fecha) = DATE('now')
+      WHERE r.fecha = CURRENT_DATE
       AND r.estado != 'cancelada'
       ORDER BY r.hora_inicio
     `);
@@ -1269,9 +1269,33 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
     
+    // CORRECCIÓN: Procesar fechas para asegurar zona horaria correcta
+    const reservasProcesadas = reservas.map(reserva => {
+      // Asegurar que la fecha se maneje correctamente en zona horaria de Chile
+      if (reserva.fecha) {
+        // Si la fecha viene como string, convertirla a formato YYYY-MM-DD
+        if (typeof reserva.fecha === 'string') {
+          // Si ya está en formato YYYY-MM-DD, mantenerla
+          if (/^\d{4}-\d{2}-\d{2}$/.test(reserva.fecha)) {
+            // Fecha ya está en formato correcto
+          } else {
+            // Convertir fecha a formato YYYY-MM-DD
+            const fechaObj = new Date(reserva.fecha);
+            if (!isNaN(fechaObj.getTime())) {
+              const year = fechaObj.getFullYear();
+              const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+              const day = String(fechaObj.getDate()).padStart(2, '0');
+              reserva.fecha = `${year}-${month}-${day}`;
+            }
+          }
+        }
+      }
+      return reserva;
+    });
+    
     // Debug: Verificar reservas específicas (comentado para producción)
-    // const reservaK07GYE = reservas.find(r => r.codigo_reserva === 'K07GYE');
-    // const reserva6BNY23 = reservas.find(r => r.codigo_reserva === '6BNY23');
+    // const reservaK07GYE = reservasProcesadas.find(r => r.codigo_reserva === 'K07GYE');
+    // const reserva6BNY23 = reservasProcesadas.find(r => r.codigo_reserva === '6BNY23');
     
     // if (reservaK07GYE) {
     //     console.log('🔍 Debug - Reserva K07GYE encontrada:', {
@@ -1280,7 +1304,9 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     //         email: reservaK07GYE.email_cliente,
     //         telefono: reservaK07GYE.telefono_cliente,
     //         tieneTelefono: !!reservaK07GYE.telefono_cliente,
-    //         telefonoTipo: typeof reservaK07GYE.telefono_cliente
+    //         telefonoTipo: typeof reservaK07GYE.telefono_cliente,
+    //         fecha: reservaK07GYE.fecha,
+    //         fechaTipo: typeof reservaK07GYE.fecha
     //     });
     // } else {
     //     console.log('❌ Reserva K07GYE no encontrada en los resultados');
@@ -1293,7 +1319,9 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     //         email: reserva6BNY23.email_cliente,
     //         telefono: reserva6BNY23.telefono_cliente,
     //         tieneTelefono: !!reserva6BNY23.telefono_cliente,
-    //         telefonoTipo: typeof reserva6BNY23.telefono_cliente
+    //         telefonoTipo: typeof reserva6BNY23.telefono_cliente,
+    //         fecha: reserva6BNY23.fecha,
+    //         fechaTipo: typeof reserva6BNY23.fecha
     //     });
     // } else {
     //     console.log('❌ Reserva 6BNY23 no encontrada en los resultados');
@@ -1301,14 +1329,14 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     
     // Ocultar precios a los managers
     if (req.userPermissions && !req.userPermissions.canViewFinancials) {
-      const reservasSinPrecios = reservas.map(reserva => ({
+      const reservasSinPrecios = reservasProcesadas.map(reserva => ({
         ...reserva,
         precio_total: null,
         precio_hora: null
       }));
       res.json(reservasSinPrecios);
     } else {
-      res.json(reservas);
+      res.json(reservasProcesadas);
     }
   } catch (error) {
     console.error('❌ Error cargando reservas para administración:', error);
