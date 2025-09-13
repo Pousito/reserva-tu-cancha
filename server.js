@@ -456,11 +456,18 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         try {
             const EmailService = require('./src/services/emailService');
             const emailService = new EmailService();
+            
+            // CORRECCIÓN CRÍTICA: Usar la fecha de la reserva real, no del bloqueo temporal
+            const reservaReal = await db.get(
+                'SELECT fecha FROM reservas WHERE id = $1',
+                [reservaId]
+            );
+            
             const emailData = {
                 codigo_reserva: codigoReserva,
                 nombre_cliente: datosCliente.nombre_cliente,
                 email_cliente: datosCliente.email_cliente,
-                fecha: bloqueoData.fecha,
+                fecha: reservaReal.fecha, // Usar fecha de la reserva real (correcta)
                 hora_inicio: bloqueoData.hora_inicio,
                 hora_fin: bloqueoData.hora_fin,
                 precio_total: datosCliente.precio_total,
