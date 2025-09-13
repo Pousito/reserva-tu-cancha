@@ -1,5 +1,15 @@
 const nodemailer = require('nodemailer');
 
+// Función para formatear hora (quitar segundos si existen)
+const formatearHora = (hora) => {
+  if (typeof hora === 'string') {
+    // Si tiene formato HH:MM:SS, quitar los segundos
+    return hora.includes(':') && hora.split(':').length === 3 ? 
+           hora.substring(0, 5) : hora;
+  }
+  return hora;
+};
+
 class EmailService {
   constructor() {
     this.transporter = null;
@@ -118,16 +128,6 @@ class EmailService {
       month: 'long',
       day: 'numeric'
     });
-    
-    // Función para formatear hora (quitar segundos si existen)
-    const formatearHora = (hora) => {
-      if (typeof hora === 'string') {
-        // Si tiene formato HH:MM:SS, quitar los segundos
-        return hora.includes(':') && hora.split(':').length === 3 ? 
-               hora.substring(0, 5) : hora;
-      }
-      return hora;
-    };
 
     return `
     <!DOCTYPE html>
