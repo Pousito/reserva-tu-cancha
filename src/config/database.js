@@ -40,9 +40,14 @@ class DatabaseManager {
       const client = await this.pgPool.connect();
       console.log('✅ PostgreSQL conectado exitosamente');
       
-      // Configurar zona horaria de Chile para todas las conexiones
+      // CORRECCIÓN CRÍTICA: Configurar zona horaria de Chile para todas las conexiones
+      // Esto es esencial para que las fechas se manejen correctamente en producción
       await client.query("SET timezone = 'America/Santiago'");
       console.log('🕐 Zona horaria configurada a America/Santiago');
+      
+      // Verificar que la configuración se aplicó correctamente
+      const timezoneCheck = await client.query("SHOW timezone");
+      console.log('🔍 Zona horaria verificada:', timezoneCheck.rows[0]?.timezone);
       
       client.release();
 
@@ -192,6 +197,8 @@ class DatabaseManager {
   async query(sql, params = []) {
     const client = await this.pgPool.connect();
     try {
+      // Asegurar zona horaria en cada consulta para producción
+      await client.query("SET timezone = 'America/Santiago'");
       const result = await client.query(sql, params);
       return result.rows;
     } finally {
@@ -202,6 +209,8 @@ class DatabaseManager {
   async run(sql, params = []) {
     const client = await this.pgPool.connect();
     try {
+      // Asegurar zona horaria en cada consulta para producción
+      await client.query("SET timezone = 'America/Santiago'");
       const result = await client.query(sql, params);
       return { lastID: result.rows[0]?.id || 0, changes: result.rowCount };
     } finally {
@@ -212,6 +221,8 @@ class DatabaseManager {
   async get(sql, params = []) {
     const client = await this.pgPool.connect();
     try {
+      // Asegurar zona horaria en cada consulta para producción
+      await client.query("SET timezone = 'America/Santiago'");
       const result = await client.query(sql, params);
       return result.rows[0] || null;
     } finally {
