@@ -515,17 +515,56 @@
             }
         }
 
-        // Formatear fecha - CORREGIDO para evitar problemas de zona horaria
+        // Formatear fecha - CORREGIDO con validaciones robustas
         function formatDate(dateString) {
-            // Crear fecha en zona horaria local para mantener la fecha correcta
-            const [year, month, day] = dateString.split('-').map(Number);
-            const date = new Date(year, month - 1, day);
-            return date.toLocaleDateString('es-CL', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+            console.log('📥 formatDate recibió:', dateString, 'tipo:', typeof dateString);
+            
+            // Validaciones básicas
+            if (!dateString || dateString === 'null' || dateString === 'undefined' || dateString === 'Invalid Date') {
+                console.log('❌ Valor inválido recibido:', dateString);
+                return 'Fecha no disponible';
+            }
+            
+            // Convertir a string si no lo es
+            const dateStr = String(dateString).trim();
+            
+            // Verificar formato básico YYYY-MM-DD
+            if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                console.log('❌ Formato de fecha inválido:', dateStr);
+                return 'Formato de fecha inválido';
+            }
+            
+            try {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                
+                // Validar rangos
+                if (year < 2020 || year > 2030 || month < 1 || month > 12 || day < 1 || day > 31) {
+                    console.log('❌ Fecha fuera de rangos válidos');
+                    return 'Fecha inválida';
+                }
+                
+                // Crear fecha en zona horaria local para mantener la fecha correcta
+                const date = new Date(year, month - 1, day);
+                
+                // Verificar que la fecha sea válida
+                if (isNaN(date.getTime())) {
+                    console.log('❌ Fecha inválida creada');
+                    return 'Fecha inválida';
+                }
+                
+                const formatted = date.toLocaleDateString('es-CL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                console.log('✅ Fecha formateada exitosamente:', formatted);
+                return formatted;
+            } catch (error) {
+                console.log('❌ Error en formatDate:', error.message);
+                return 'Error al formatear fecha';
+            }
         }
 
         // Formatear moneda
