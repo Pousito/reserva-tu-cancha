@@ -3581,17 +3581,17 @@ app.post('/api/debug/test-email-send', async (req, res) => {
     
     const emailService = new EmailService();
     
-    // Datos de prueba
+    // Datos de prueba (usar datos del request si se proporcionan)
     const testData = {
-      codigo_reserva: Math.random().toString(36).substr(2, 6).toUpperCase(),
-      nombre_cliente: 'Cliente de Prueba',
-      email_cliente: 'ignacio.araya.lillo@gmail.com',
-      complejo: 'MagnaSports',
-      cancha: 'Cancha Techada 1',
-      fecha: '2025-09-12',
-      hora_inicio: '18:00',
-      hora_fin: '19:00',
-      precio_total: 28000
+      codigo_reserva: req.body.codigo_reserva || Math.random().toString(36).substr(2, 6).toUpperCase(),
+      nombre_cliente: req.body.nombre_cliente || 'Cliente de Prueba',
+      email_cliente: req.body.email_cliente || 'ignacio.araya.lillo@gmail.com',
+      complejo: req.body.complejo || 'MagnaSports',
+      cancha: req.body.cancha || 'Cancha Techada 1',
+      fecha: req.body.fecha || '2025-09-12',
+      hora_inicio: req.body.hora_inicio || '18:00',
+      hora_fin: req.body.hora_fin || '19:00',
+      precio_total: req.body.precio_total || 28000
     };
     
     // Intentar enviar email
