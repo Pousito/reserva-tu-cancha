@@ -2277,6 +2277,43 @@ app.post('/api/reservas', async (req, res) => {
       precio: result.precio
     });
     
+    // ===== ENVÍO AUTOMÁTICO DE EMAILS =====
+    try {
+      // Obtener información completa de la reserva para el email
+      const reservaInfo = await db.get(`
+        SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        JOIN complejos co ON c.complejo_id = co.id
+        JOIN ciudades ci ON co.ciudad_id = ci.id
+        WHERE r.codigo_reserva = $1
+      `, [result.codigo_reserva]);
+      
+      if (reservaInfo) {
+        console.log('📧 Preparando envío de emails para reserva:', result.codigo_reserva);
+        
+        // Preparar datos para el email
+        const emailData = {
+          codigo_reserva: result.codigo_reserva,
+          email_cliente: reservaInfo.email_cliente,
+          nombre_cliente: reservaInfo.nombre_cliente,
+          complejo: reservaInfo.complejo_nombre,
+          cancha: reservaInfo.cancha_nombre,
+          fecha: reservaInfo.fecha,
+          hora_inicio: reservaInfo.hora_inicio,
+          hora_fin: reservaInfo.hora_fin,
+          precio_total: parseInt(reservaInfo.precio_total)
+        };
+        
+        // Enviar emails de confirmación (cliente + administradores)
+        const emailResults = await emailService.sendConfirmationEmails(emailData);
+        console.log('📧 Emails de confirmación procesados:', emailResults);
+      }
+    } catch (emailError) {
+      console.error('⚠️ Error enviando emails de confirmación:', emailError.message);
+      // No fallar la reserva por error de email, solo loggear
+    }
+    
     res.json({
       success: true,
       id: result.reserva.id,
