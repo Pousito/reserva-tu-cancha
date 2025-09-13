@@ -5339,6 +5339,15 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
 // Test de persistencia final - Sun Sep  7 03:54:09 -03 2025
 
+// ===== ENDPOINT TEMPORAL PARA DEBUG DE TOKEN =====
+app.get('/api/debug/token-info', authenticateToken, (req, res) => {
+  res.json({
+    success: true,
+    user: req.user,
+    timestamp: new Date().toISOString()
+  });
+});
+
 
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
