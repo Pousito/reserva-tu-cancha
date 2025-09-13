@@ -71,12 +71,37 @@ function formatDateForChile(date, options = {}) {
         return `${diaSemana}, ${day} de ${meses[month - 1]} de ${year}`;
     }
     
+    // CORRECCIÓN CRÍTICA: Manejar objetos Date UTC correctamente
+    if (date instanceof Date) {
+        // Si es un objeto Date, extraer solo la fecha sin conversión de zona horaria
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth() + 1;
+        const day = date.getUTCDate();
+        
+        // Usar el algoritmo directo para evitar problemas de zona horaria
+        const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        // Algoritmo de Zeller para el día correcto
+        let m = month;
+        let y = year;
+        if (month < 3) {
+            m += 12;
+            y -= 1;
+        }
+        const k = y % 100;
+        const j = Math.floor(y / 100);
+        const h = (day + Math.floor((13 * (m + 1)) / 5) + k + Math.floor(k / 4) + Math.floor(j / 4) - 2 * j) % 7;
+        const diaSemana = diasSemana[(h + 6) % 7];
+        
+        return `${diaSemana}, ${day} de ${meses[month - 1]} de ${year}`;
+    }
+    
     // Para otros casos, usar el método original
     let dateObj;
     if (typeof date === 'string') {
         dateObj = parseDateInChile(date);
-    } else if (date instanceof Date) {
-        dateObj = date;
     } else {
         throw new Error('Tipo de fecha no válido');
     }
