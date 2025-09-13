@@ -47,19 +47,34 @@ function formatDateForChile(date, options = {}) {
     
     const formatOptions = { ...defaultOptions, ...options };
     
+    // ENFOQUE DIRECTO: Para fechas YYYY-MM-DD, usar mapeo sin Date objects para evitar problemas UTC
+    if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number);
+        
+        // Mapear día de la semana directamente
+        const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        // Algoritmo de Zeller para calcular día de la semana sin Date objects
+        let m = month;
+        let y = year;
+        if (month < 3) {
+            m += 12;
+            y -= 1;
+        }
+        const k = y % 100;
+        const j = Math.floor(y / 100);
+        const h = (day + Math.floor((13 * (m + 1)) / 5) + k + Math.floor(k / 4) + Math.floor(j / 4) - 2 * j) % 7;
+        const diaSemana = diasSemana[(h + 6) % 7]; // Ajustar índice para Chile
+        
+        return `${diaSemana}, ${day} de ${meses[month - 1]} de ${year}`;
+    }
+    
+    // Para otros casos, usar el método original
     let dateObj;
     if (typeof date === 'string') {
-        // CORRECCIÓN CRÍTICA: Para fechas en formato YYYY-MM-DD, crear directamente en Chile
-        if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [year, month, day] = date.split('-').map(Number);
-            // Crear fecha en zona horaria de Chile usando toLocaleString
-            const fechaChile = new Date(year, month - 1, day).toLocaleDateString('en-CA', {
-                timeZone: CHILE_TIMEZONE
-            });
-            dateObj = new Date(fechaChile + 'T12:00:00');
-        } else {
-            dateObj = parseDateInChile(date);
-        }
+        dateObj = parseDateInChile(date);
     } else if (date instanceof Date) {
         dateObj = date;
     } else {
