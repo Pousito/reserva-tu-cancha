@@ -1238,19 +1238,21 @@ app.get('/api/debug/date-fix', async (req, res) => {
   try {
     const testDate = '2025-09-26';
     
-    // Simular el formateo que se hace en el email (CORREGIDO)
+    // Simular el formateo que se hace en el email (CORREGIDO v3)
     let fechaFormateada;
     if (typeof testDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(testDate)) {
       const [year, month, day] = testDate.split('-').map(Number);
-      // CORRECCIÓN: Usar Date.UTC para evitar problemas de zona horaria del servidor
-      const fechaObj = new Date(Date.UTC(year, month - 1, day));
-      fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/Santiago'
-      });
+      
+      // Mapeo directo para evitar problemas de zona horaria
+      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      
+      const fechaObj = new Date(year, month - 1, day);
+      const diaSemana = diasSemana[fechaObj.getDay()];
+      const nombreMes = meses[month - 1];
+      
+      fechaFormateada = `${diaSemana}, ${day} de ${nombreMes} de ${year}`;
     } else {
       fechaFormateada = testDate;
     }

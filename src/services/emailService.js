@@ -112,20 +112,20 @@ class EmailService {
     // CORRECCIÓN CRÍTICA: Formatear fecha correctamente para zona horaria de Chile
     let fechaFormateada;
     if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      // Fecha en formato YYYY-MM-DD - usar directamente la fecha sin conversiones de zona horaria
+      // Fecha en formato YYYY-MM-DD - usar mapeo directo para evitar problemas de zona horaria
       const [year, month, day] = fecha.split('-').map(Number);
       
-      // Crear fecha usando UTC para evitar problemas de zona horaria del servidor
-      const fechaObj = new Date(Date.UTC(year, month - 1, day));
+      // Mapeo directo de días de la semana (0 = domingo, 1 = lunes, etc.)
+      const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
       
-      // Formatear usando zona horaria de Chile
-      fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'America/Santiago'
-      });
+      // Crear fecha en zona horaria local para obtener el día de la semana correcto
+      const fechaObj = new Date(year, month - 1, day);
+      const diaSemana = diasSemana[fechaObj.getDay()];
+      const nombreMes = meses[month - 1];
+      
+      fechaFormateada = `${diaSemana}, ${day} de ${nombreMes} de ${year}`;
     } else {
       // Usar la función original para otros formatos
       fechaFormateada = formatDateForChile(fecha, {
@@ -363,14 +363,13 @@ Detalles:
 - Fecha: ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
   (() => {
     const [year, month, day] = reservaData.fecha.split('-').map(Number);
-    const fechaObj = new Date(Date.UTC(year, month - 1, day));
-    return fechaObj.toLocaleDateString('es-CL', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'America/Santiago'
-    });
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const fechaObj = new Date(year, month - 1, day);
+    const diaSemana = diasSemana[fechaObj.getDay()];
+    const nombreMes = meses[month - 1];
+    return `${diaSemana}, ${day} de ${nombreMes} de ${year}`;
   })() : reservaData.fecha}
 - Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 - Total: $${reservaData.precio_total.toLocaleString()}
@@ -460,14 +459,13 @@ Gracias por elegir Reserva Tu Cancha!
               <p><strong>Fecha:</strong> ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
                 (() => {
                   const [year, month, day] = reservaData.fecha.split('-').map(Number);
-                  const fechaObj = new Date(Date.UTC(year, month - 1, day));
-                  return fechaObj.toLocaleDateString('es-CL', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    timeZone: 'America/Santiago'
-                  });
+                  const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                                'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                  const fechaObj = new Date(year, month - 1, day);
+                  const diaSemana = diasSemana[fechaObj.getDay()];
+                  const nombreMes = meses[month - 1];
+                  return `${diaSemana}, ${day} de ${nombreMes} de ${year}`;
                 })() : reservaData.fecha}</p>
               <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
               <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
@@ -526,14 +524,13 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
               <p><strong>Fecha:</strong> ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
                 (() => {
                   const [year, month, day] = reservaData.fecha.split('-').map(Number);
-                  const fechaObj = new Date(Date.UTC(year, month - 1, day));
-                  return fechaObj.toLocaleDateString('es-CL', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    timeZone: 'America/Santiago'
-                  });
+                  const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                                'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                  const fechaObj = new Date(year, month - 1, day);
+                  const diaSemana = diasSemana[fechaObj.getDay()];
+                  const nombreMes = meses[month - 1];
+                  return `${diaSemana}, ${day} de ${nombreMes} de ${year}`;
                 })() : reservaData.fecha}</p>
               <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
               <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
