@@ -1479,12 +1479,12 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
           if (/^\d{4}-\d{2}-\d{2}$/.test(reserva.fecha)) {
             // Fecha ya está en formato correcto
           } else {
-            // Convertir fecha a formato YYYY-MM-DD
+            // Convertir fecha a formato YYYY-MM-DD usando métodos UTC para evitar problemas de zona horaria
             const fechaObj = new Date(reserva.fecha);
             if (!isNaN(fechaObj.getTime())) {
-              const year = fechaObj.getFullYear();
-              const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
-              const day = String(fechaObj.getDate()).padStart(2, '0');
+              const year = fechaObj.getUTCFullYear();
+              const month = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+              const day = String(fechaObj.getUTCDate()).padStart(2, '0');
               reserva.fecha = `${year}-${month}-${day}`;
             }
           }
