@@ -1233,6 +1233,39 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
   }
 });
 
+// Endpoint de debug temporal para verificar correcciones de fechas
+app.get('/api/debug/date-fix', async (req, res) => {
+  try {
+    const testDate = '2025-09-26';
+    
+    // Simular el formateo que se hace en el email
+    let fechaFormateada;
+    if (typeof testDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(testDate)) {
+      const [year, month, day] = testDate.split('-').map(Number);
+      const fechaObj = new Date(year, month - 1, day);
+      fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'America/Santiago'
+      });
+    } else {
+      fechaFormateada = testDate;
+    }
+    
+    res.json({
+      version: 'CORRECCION_FECHAS_v2',
+      testDate: testDate,
+      fechaFormateada: fechaFormateada,
+      timestamp: new Date().toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para obtener todas las reservas (panel de administración)
 app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
