@@ -350,7 +350,7 @@ function mostrarReservas(reservasAMostrar) {
             </td>
             <td>${reserva.complejo_nombre}</td>
             <td>${reserva.cancha_nombre}</td>
-            <td>${reserva.fecha ? formatearFecha(reserva.fecha) : 'Sin fecha'}</td>
+            <td>${reserva.fecha ? formatearFechaParaAPI(reserva.fecha) : 'Sin fecha'}</td>
             <td>
                 <span class="badge bg-light text-dark">
                     ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}
@@ -417,7 +417,7 @@ function verDetalles(codigoReserva) {
                 <p><strong>Código:</strong> <code>${reserva.codigo_reserva}</code></p>
                 <p><strong>Complejo:</strong> ${reserva.complejo_nombre}</p>
                 <p><strong>Cancha:</strong> ${reserva.cancha_nombre}</p>
-                <p><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</p>
+                <p><strong>Fecha:</strong> ${formatearFechaParaAPI(reserva.fecha)}</p>
                 <p><strong>Hora:</strong> ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}</p>
                 <p><strong>Precio:</strong> ${reserva.precio_total ? `$${reserva.precio_total.toLocaleString()}` : 'No disponible'}</p>
                 <p><strong>Estado:</strong> 
@@ -1065,7 +1065,7 @@ function esMismoDia(fecha1, fecha2) {
 /**
  * Formatear fecha para API
  */
-function formatearFecha(fecha) {
+function formatearFechaParaAPI(fecha) {
     if (!fecha) return '';
     
     // Si ya es un string en formato YYYY-MM-DD, devolverlo tal como está
@@ -1083,12 +1083,23 @@ function formatearFecha(fecha) {
     
     // Si es un string que puede ser parseado como fecha
     if (typeof fecha === 'string') {
-        const dateObj = new Date(fecha);
-        if (!isNaN(dateObj.getTime())) {
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+        // CORRECCIÓN: Para fechas simples YYYY-MM-DD, usar parsing local para evitar problemas de zona horaria
+        if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Fecha simple YYYY-MM-DD - crear fecha local
+            const [year, month, day] = fecha.split('-').map(Number);
+            const dateObj = new Date(year, month - 1, day);
+            if (!isNaN(dateObj.getTime())) {
+                return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+        } else {
+            // Otros formatos - usar parsing normal
+            const dateObj = new Date(fecha);
+            if (!isNaN(dateObj.getTime())) {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
         }
     }
     
