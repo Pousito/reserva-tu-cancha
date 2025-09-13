@@ -515,7 +515,7 @@
             }
         }
 
-        // Formatear fecha - CORREGIDO con parsing flexible
+        // Formatear fecha - CORREGIDO para manejar fechas ISO UTC del servidor
         function formatDate(dateString) {
             console.log('📥 formatDate recibió:', dateString, 'tipo:', typeof dateString);
             
@@ -531,8 +531,22 @@
             try {
                 let date;
                 
-                // Intentar diferentes métodos de parsing
-                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                // CORRECCIÓN PRINCIPAL: Manejar fechas ISO UTC del servidor
+                if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)) {
+                    // Formato ISO UTC del servidor: 2025-12-25T00:00:00.000Z
+                    console.log('📅 Parsing formato ISO UTC del servidor');
+                    // Extraer solo la parte de la fecha y crear fecha local
+                    const fechaParte = dateStr.split('T')[0]; // "2025-12-25"
+                    const [year, month, day] = fechaParte.split('-').map(Number);
+                    date = new Date(year, month - 1, day); // Crear fecha local
+                } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T/)) {
+                    // Formato ISO con hora (otros casos)
+                    console.log('📅 Parsing formato ISO con hora');
+                    // Extraer solo la parte de la fecha y crear fecha local
+                    const fechaParte = dateStr.split('T')[0];
+                    const [year, month, day] = fechaParte.split('-').map(Number);
+                    date = new Date(year, month - 1, day);
+                } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
                     // Formato YYYY-MM-DD
                     console.log('📅 Parsing formato YYYY-MM-DD');
                     const [year, month, day] = dateStr.split('-').map(Number);
@@ -542,10 +556,6 @@
                     console.log('📅 Parsing formato YYYY-M-D');
                     const [year, month, day] = dateStr.split('-').map(Number);
                     date = new Date(year, month - 1, day);
-                } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T/)) {
-                    // Formato ISO con hora
-                    console.log('📅 Parsing formato ISO con hora');
-                    date = new Date(dateStr);
                 } else if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
                     // Formato DD/MM/YYYY o MM/DD/YYYY
                     console.log('📅 Parsing formato DD/MM/YYYY');
