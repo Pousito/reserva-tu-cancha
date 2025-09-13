@@ -1259,6 +1259,12 @@ app.post('/api/debug/send-test-email', async (req, res) => {
     
     // Formatear fecha correctamente usando mapeo directo
     const fecha = reservaData.fecha;
+    console.log('🔍 Debug fecha:', { fecha, tipo: typeof fecha });
+    
+    if (typeof fecha !== 'string') {
+      return res.status(400).json({ error: 'Fecha no es un string', fecha: fecha, tipo: typeof fecha });
+    }
+    
     const [year, month, day] = fecha.split('-').map(Number);
     const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
