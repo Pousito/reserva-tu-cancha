@@ -1329,15 +1329,7 @@ app.get('/api/debug/date-fix', async (req, res) => {
       fechaFormateada: fechaFormateada,
       timestamp: new Date().toISOString(),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      commit: 'f4a569b',
-      debug: {
-        year: year,
-        month: month,
-        day: day,
-        fechaObj: fechaObj.toDateString(),
-        diaSemana: diaSemana,
-        nombreMes: nombreMes
-      }
+      commit: 'f4a569b'
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
