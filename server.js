@@ -1252,6 +1252,39 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
   }
 });
 
+// Endpoint específico para probar email con fecha 2025-09-30
+app.post('/api/debug/test-email-30sep', async (req, res) => {
+  try {
+    console.log('📧 Probando email con fecha 2025-09-30...');
+    
+    const emailService = new EmailService();
+    
+    const testData = {
+      codigo_reserva: 'TEST30',
+      nombre_cliente: 'Ignacio Araya',
+      email_cliente: 'ignacio.araya.lillo@gmail.com',
+      complejo: 'MagnaSports',
+      cancha: 'Cancha Techada 1',
+      fecha: '2025-09-30',
+      hora_inicio: '21:00',
+      hora_fin: '22:00',
+      precio_total: 28000
+    };
+    
+    const result = await emailService.sendConfirmationEmails(testData);
+    
+    res.json({
+      success: true,
+      message: 'Email de prueba con fecha 2025-09-30 enviado',
+      testData: testData,
+      result: result
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint temporal para debuggear zona horaria
 app.get('/api/debug/timezone', async (req, res) => {
   try {
