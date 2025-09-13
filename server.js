@@ -668,13 +668,32 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
       })
     });
     
-    // Asegurar que la fecha se almacene como fecha simple sin zona horaria
+    // CORRECCIÓN CRÍTICA: Asegurar que la fecha se almacene correctamente sin problemas de zona horaria
+    console.log('🔍 DEBUG FECHA - Fecha recibida:', fecha, 'Tipo:', typeof fecha);
     let fechaParaBD = fecha;
     if (fecha instanceof Date) {
+      // Si es un objeto Date, usar solo la fecha sin zona horaria
       fechaParaBD = fecha.toISOString().split('T')[0];
-    } else if (typeof fecha === 'string' && fecha.includes('T')) {
-      fechaParaBD = fecha.split('T')[0];
+      console.log('🔍 DEBUG FECHA - Convertido desde Date:', fechaParaBD);
+    } else if (typeof fecha === 'string') {
+      if (fecha.includes('T')) {
+        // Si tiene timestamp, extraer solo la fecha
+        fechaParaBD = fecha.split('T')[0];
+        console.log('🔍 DEBUG FECHA - Extraído de timestamp:', fechaParaBD);
+      } else if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Si ya está en formato YYYY-MM-DD, usarlo directamente
+        fechaParaBD = fecha;
+        console.log('🔍 DEBUG FECHA - Usando formato YYYY-MM-DD directamente:', fechaParaBD);
+      } else {
+        // Si está en otro formato, intentar parsearlo correctamente
+        const parsedDate = new Date(fecha);
+        if (!isNaN(parsedDate.getTime())) {
+          fechaParaBD = parsedDate.toISOString().split('T')[0];
+          console.log('🔍 DEBUG FECHA - Parseado desde string:', fechaParaBD);
+        }
+      }
     }
+    console.log('🔍 DEBUG FECHA - Fecha final para BD:', fechaParaBD);
     
     await db.run(`
       INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente)
