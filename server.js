@@ -5617,6 +5617,87 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 
 
 
+// 🔍 ENDPOINT ESPECÍFICO PARA PROBAR RESERVA TYUY16
+app.get('/api/diagnostic/test-reserva/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log(`🔍 DIAGNÓSTICO ESPECÍFICO PARA RESERVA: ${codigo}`);
+    
+    // 1. Obtener datos de la reserva
+    const reservaResult = await db.query(`
+      SELECT 
+        r.*, 
+        c.nombre as cancha_nombre, 
+        co.nombre as complejo_nombre, 
+        ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      WHERE r.codigo_reserva = $1
+    `, [codigo]);
+    
+    if (reservaResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Reserva ${codigo} no encontrada`
+      });
+    }
+    
+    const reservaData = reservaResult[0];
+    
+    // 2. Probar diferentes formatos de fecha
+    const fechaOriginal = reservaData.fecha;
+    const fechaFormateada = formatDateForChile(fechaOriginal, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    // 3. Simular envío de email
+    const emailData = {
+      codigo_reserva: reservaData.codigo_reserva,
+      email_cliente: reservaData.email_cliente,
+      nombre_cliente: reservaData.nombre_cliente,
+      complejo: reservaData.complejo_nombre,
+      cancha: reservaData.cancha_nombre,
+      fecha: reservaData.fecha,
+      hora_inicio: reservaData.hora_inicio,
+      hora_fin: reservaData.hora_fin,
+      precio_total: reservaData.precio_total
+    };
+    
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      reserva: {
+        codigo: reservaData.codigo_reserva,
+        fecha_original: fechaOriginal,
+        fecha_tipo: typeof fechaOriginal,
+        fecha_formateada: fechaFormateada,
+        email_data: emailData
+      },
+      analysis: {
+        fecha_desde_bd: reservaData.fecha,
+        fecha_para_email: emailData.fecha,
+        fecha_formateada_final: fechaFormateada
+      }
+    };
+    
+    console.log('✅ DIAGNÓSTICO ESPECÍFICO COMPLETADO:', result.analysis);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ Error en diagnóstico específico:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // 🔍 ENDPOINT DE DIAGNÓSTICO AUTOMATIZADO PARA FECHAS
 app.get('/api/diagnostic/date-analysis', async (req, res) => {
   try {
