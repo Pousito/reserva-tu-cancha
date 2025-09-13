@@ -41,7 +41,7 @@ class AutoBackupManager {
     async createBackup() {
         try {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const backupFileName = `database_backup_${timestamp}.sqlite`;
+            const backupFileName = `database_backup_${timestamp}.sql`;
             const backupPath = path.join(this.backupDir, backupFileName);
             
             console.log(`💾 Creando backup: ${backupFileName}`);
@@ -50,19 +50,8 @@ class AutoBackupManager {
             const dbInfo = this.db.getDatabaseInfo();
             console.log(`📊 Base de datos: ${dbInfo.type}`);
             
-            if (dbInfo.type === 'SQLite') {
-                // Para SQLite, copiar el archivo directamente
-                const sourcePath = path.join(__dirname, '../../data/database.sqlite');
-                if (fs.existsSync(sourcePath)) {
-                    fs.copyFileSync(sourcePath, backupPath);
-                    console.log(`✅ Backup SQLite creado: ${backupPath}`);
-                } else {
-                    throw new Error('Archivo de base de datos SQLite no encontrado');
-                }
-            } else {
-                // Para PostgreSQL, exportar datos
-                await this.exportPostgreSQLData(backupPath);
-            }
+            // Solo PostgreSQL - exportar datos
+            await this.exportPostgreSQLData(backupPath);
             
             // Crear archivo de hash para verificación
             const hashFileName = `${backupFileName}.hash`;
@@ -140,7 +129,7 @@ class AutoBackupManager {
             
             const files = fs.readdirSync(this.backupDir);
             const backupFiles = files
-                .filter(file => file.startsWith('database_backup_') && file.endsWith('.sqlite'))
+                .filter(file => file.startsWith('database_backup_') && file.endsWith('.sql'))
                 .map(file => {
                     const filePath = path.join(this.backupDir, file);
                     const stats = fs.statSync(filePath);
@@ -184,7 +173,7 @@ class AutoBackupManager {
     async shouldCreateBackup() {
         try {
             const files = fs.readdirSync(this.backupDir);
-            const backupFiles = files.filter(file => file.startsWith('database_backup_') && file.endsWith('.sqlite'));
+            const backupFiles = files.filter(file => file.startsWith('database_backup_') && file.endsWith('.sql'));
             
             if (backupFiles.length === 0) {
                 return true; // No hay backups, crear uno

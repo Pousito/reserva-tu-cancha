@@ -113,7 +113,7 @@ CORS_ORIGIN=https://www.reservatuscanchas.cl
 
 ### **Problemas de Base de Datos:**
 
-1. **Verificar conexión** a SQLite
+1. **Verificar conexión** a PostgreSQL
 2. **Revisar permisos** de archivos
 3. **Verificar logs** de base de datos
 

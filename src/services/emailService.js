@@ -98,8 +98,10 @@ class EmailService {
       precio_total 
     } = reservaData;
 
-    // Formatear fecha
-    const fechaFormateada = new Date(fecha).toLocaleDateString('es-CL', {
+    // Formatear fecha (usando zona horaria local)
+    const [año, mes, dia] = fecha.split('-').map(Number);
+    const fechaObj = new Date(año, mes - 1, dia);
+    const fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',

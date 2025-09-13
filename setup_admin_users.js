@@ -1,121 +1,133 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
 console.log('👑 CONFIGURACIÓN DE USUARIOS ADMINISTRADORES');
 console.log('============================================');
 
-// Ruta de la base de datos
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? '/opt/render/project/src/database.sqlite'  // Ruta persistente en Render
-  : './database.sqlite';                       // Ruta local
-
-console.log(`📁 Ruta de BD: ${dbPath}`);
-console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
-
-// Conectar a la base de datos
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('❌ Error conectando a la base de datos:', err.message);
-    console.error('📍 Ruta intentada:', dbPath);
-    return;
+// Configurar conexión PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
   }
-  
-  console.log('✅ Conectado a la base de datos SQLite');
-  
-  // Verificar y crear usuarios admin
-  setupAdminUsers();
 });
 
-function setupAdminUsers() {
-  console.log('\n🔍 VERIFICANDO USUARIOS ADMINISTRADORES...');
-  
-  // Verificar si la tabla usuarios existe
-  db.all("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'", (err, tables) => {
-    if (err) {
-      console.error('❌ Error verificando tabla usuarios:', err.message);
-      return;
-    }
+console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+console.log(`📊 Base de datos: PostgreSQL`);
+console.log(`🔗 DATABASE_URL: ${process.env.DATABASE_URL ? 'Configurado' : 'No configurado'}`);
+
+// Función para ejecutar consultas
+async function query(sql, params = []) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(sql, params);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+async function run(sql, params = []) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(sql, params);
+    return { lastID: result.rows[0]?.id || 0, changes: result.rowCount };
+  } finally {
+    client.release();
+  }
+}
+
+async function setupAdminUsers() {
+  try {
+    console.log('\n🔍 VERIFICANDO USUARIOS ADMINISTRADORES...');
+    
+    // Verificar si la tabla usuarios existe
+    const tables = await query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'usuarios'
+    `);
     
     if (tables.length === 0) {
       console.log('⚠️  Tabla usuarios no existe, creando...');
-      createUsersTable();
+      await createUsersTable();
     } else {
       console.log('✅ Tabla usuarios existe, verificando contenido...');
-      checkExistingUsers();
+      await checkExistingUsers();
     }
-  });
+  } catch (error) {
+    console.error('❌ Error en setupAdminUsers:', error.message);
+  }
 }
 
-function createUsersTable() {
+async function createUsersTable() {
   console.log('\n🔨 CREANDO TABLA USUARIOS...');
   
   const createTableSQL = `
     CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      nombre TEXT NOT NULL,
-      rol TEXT NOT NULL CHECK(rol IN ('super_admin', 'admin', 'usuario')),
-      activo INTEGER DEFAULT 1,
-      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
-      ultimo_acceso DATETIME
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      nombre VARCHAR(255) NOT NULL,
+      rol VARCHAR(50) NOT NULL CHECK(rol IN ('super_admin', 'owner', 'manager', 'usuario')),
+      activo BOOLEAN DEFAULT true,
+      complejo_id INTEGER REFERENCES complejos(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      ultimo_acceso TIMESTAMP
     );
   `;
   
-  db.exec(createTableSQL, (err) => {
-    if (err) {
-      console.error('❌ Error creando tabla usuarios:', err.message);
-      return;
-    }
-    
+  try {
+    await run(createTableSQL);
     console.log('✅ Tabla usuarios creada exitosamente');
-    createAdminUsers();
-  });
+    await createAdminUsers();
+  } catch (error) {
+    console.error('❌ Error creando tabla usuarios:', error.message);
+  }
 }
 
-function checkExistingUsers() {
+async function checkExistingUsers() {
   console.log('\n👥 VERIFICANDO USUARIOS EXISTENTES...');
   
-  db.all("SELECT * FROM usuarios", (err, usuarios) => {
-    if (err) {
-      console.error('❌ Error consultando usuarios:', err.message);
-      return;
-    }
+  try {
+    const usuarios = await query("SELECT * FROM usuarios ORDER BY id");
     
     console.log(`📊 Usuarios encontrados: ${usuarios.length}`);
     
     if (usuarios.length === 0) {
       console.log('⚠️  No hay usuarios en la base de datos');
       console.log('🔄 Creando usuarios administradores...');
-      createAdminUsers();
+      await createAdminUsers();
     } else {
       usuarios.forEach(usuario => {
         console.log(`   - ${usuario.email} (${usuario.rol}) - Activo: ${usuario.activo ? 'Sí' : 'No'}`);
       });
       
       // Verificar si hay super admin
-      const superAdmin = usuarios.find(u => u.rol === 'super_admin' && u.activo === 1);
+      const superAdmin = usuarios.find(u => u.rol === 'super_admin' && u.activo === true);
       if (!superAdmin) {
         console.log('⚠️  No hay super admin activo, creando...');
-        createAdminUsers();
+        await createAdminUsers();
       } else {
         console.log('✅ Super admin encontrado y activo');
         console.log('🔄 Actualizando contraseñas con hash...');
-        createAdminUsers(); // Siempre actualizar contraseñas
+        await createAdminUsers(); // Siempre actualizar contraseñas
       }
     }
-  });
+  } catch (error) {
+    console.error('❌ Error consultando usuarios:', error.message);
+  }
 }
 
-function createAdminUsers() {
+async function createAdminUsers() {
   console.log('\n👑 CREANDO USUARIOS ADMINISTRADORES...');
   
   // Usuarios administradores
   const adminUsers = [
     {
       email: 'admin@reservatucancha.com',
-      password: 'admin123', // En producción debería ser hash
+      password: 'admin123',
       nombre: 'Super Administrador',
       rol: 'super_admin'
     },
@@ -123,59 +135,66 @@ function createAdminUsers() {
       email: 'admin@magnasports.cl',
       password: 'magnasports2024',
       nombre: 'Administrador MagnaSports',
-      rol: 'admin'
+      rol: 'owner'
     },
     {
       email: 'admin@complejocentral.cl',
       password: 'complejo2024',
       nombre: 'Administrador Complejo Central',
-      rol: 'admin'
+      rol: 'owner'
     }
   ];
   
-  const insertUser = db.prepare(`
-    INSERT OR REPLACE INTO usuarios (email, password, nombre, rol, activo) 
-    VALUES (?, ?, ?, ?, 1)
-  `);
-  
-  adminUsers.forEach(async (usuario) => {
+  for (const usuario of adminUsers) {
     try {
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(usuario.password, 10);
       
-      insertUser.run(usuario.email, hashedPassword, usuario.nombre, usuario.rol, (err) => {
-        if (err) {
-          console.error(`❌ Error insertando usuario ${usuario.email}:`, err.message);
-        } else {
-          console.log(`✅ Usuario creado: ${usuario.email} (${usuario.rol}) con contraseña hasheada`);
-        }
-      });
+      // Insertar o actualizar usuario
+      await run(`
+        INSERT INTO usuarios (email, password, nombre, rol, activo) 
+        VALUES ($1, $2, $3, $4, true)
+        ON CONFLICT (email) 
+        DO UPDATE SET 
+          password = EXCLUDED.password,
+          nombre = EXCLUDED.nombre,
+          rol = EXCLUDED.rol,
+          activo = EXCLUDED.activo
+      `, [usuario.email, hashedPassword, usuario.nombre, usuario.rol]);
+      
+      console.log(`✅ Usuario creado/actualizado: ${usuario.email} (${usuario.rol}) con contraseña hasheada`);
     } catch (error) {
-      console.error(`❌ Error hasheando contraseña para ${usuario.email}:`, error.message);
+      console.error(`❌ Error insertando usuario ${usuario.email}:`, error.message);
     }
-  });
+  }
   
-  insertUser.finalize(() => {
-    console.log('✅ Usuarios administradores creados');
-    console.log('\n🔑 CREDENCIALES DE ACCESO:');
-    console.log('============================');
-    console.log('👑 Super Admin:');
-    console.log('   Email: admin@reservatucancha.com');
-    console.log('   Password: admin123');
-    console.log('');
-    console.log('🏢 Admin MagnaSports:');
-    console.log('   Email: admin@magnasports.cl');
-    console.log('   Password: magnasports2024');
-    console.log('');
-    console.log('🏟️ Admin Complejo Central:');
-    console.log('   Email: admin@complejocentral.cl');
-    console.log('   Password: complejo2024');
-    console.log('');
-    console.log('🎉 Configuración completada exitosamente');
-    
-    // Verificar usuarios creados
-    setTimeout(() => {
-      checkExistingUsers();
-    }, 1000);
-  });
+  console.log('✅ Usuarios administradores creados');
+  console.log('\n🔑 CREDENCIALES DE ACCESO:');
+  console.log('============================');
+  console.log('👑 Super Admin:');
+  console.log('   Email: admin@reservatucancha.com');
+  console.log('   Password: admin123');
+  console.log('');
+  console.log('🏢 Admin MagnaSports:');
+  console.log('   Email: admin@magnasports.cl');
+  console.log('   Password: magnasports2024');
+  console.log('');
+  console.log('🏟️ Admin Complejo Central:');
+  console.log('   Email: admin@complejocentral.cl');
+  console.log('   Password: complejo2024');
+  console.log('');
+  console.log('🎉 Configuración completada exitosamente');
+  
+  // Verificar usuarios creados
+  setTimeout(async () => {
+    await checkExistingUsers();
+    await pool.end();
+  }, 1000);
 }
+
+// Ejecutar configuración
+setupAdminUsers().catch(async (error) => {
+  console.error('❌ Error general:', error.message);
+  await pool.end();
+  process.exit(1);
+});

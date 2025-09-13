@@ -5,7 +5,7 @@
 El problema que estás experimentando en dispositivos móviles en producción se debe a varios factores:
 
 ### **1. Diferencias de Rendimiento entre Entornos**
-- **Desarrollo local**: SQLite local, respuesta rápida
+- **Desarrollo local**: PostgreSQL local, respuesta rápida
 - **Producción**: PostgreSQL en Render, latencia de red adicional
 - **Móviles**: Conexiones más lentas y menos estables
 

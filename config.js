@@ -10,9 +10,10 @@ const config = {
 
   // Configuración de la base de datos
   database: {
-    path: process.env.DB_PATH || './database.sqlite',
+    url: process.env.DATABASE_URL,
     timeout: 30000,
-    verbose: process.env.NODE_ENV === 'development'
+    verbose: process.env.NODE_ENV === 'development',
+    type: 'PostgreSQL'
   },
 
   // Configuración de seguridad

@@ -1,94 +1,90 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
+require('dotenv').config();
+
+// Configurar conexión PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 // Función para limpiar la base de datos y dejar solo Los Ángeles y MagnaSports
-function cleanDatabase() {
-    console.log('🧹 LIMPIANDO BASE DE DATOS');
-    console.log('==========================');
+async function cleanDatabase() {
+    console.log('🧹 LIMPIANDO BASE DE DATOS POSTGRESQL');
+    console.log('=====================================');
     
-    const dbPath = path.join(__dirname, '..', 'database.sqlite');
-    const db = new sqlite3.Database(dbPath);
-    
-    db.serialize(() => {
+    try {
         console.log('🔄 Iniciando limpieza...');
         
         // 1. Eliminar todas las reservas existentes
-        db.run('DELETE FROM reservas', function(err) {
-            if (err) {
-                console.error('❌ Error eliminando reservas:', err);
-            } else {
-                console.log('✅ Reservas eliminadas:', this.changes);
-            }
-        });
+        const reservasResult = await pool.query('DELETE FROM reservas');
+        console.log('✅ Reservas eliminadas:', reservasResult.rowCount);
         
         // 2. Eliminar todos los complejos excepto MagnaSports
-        db.run('DELETE FROM complejos WHERE nombre != "MagnaSports"', function(err) {
-            if (err) {
-                console.error('❌ Error eliminando complejos:', err);
-            } else {
-                console.log('✅ Complejos eliminados:', this.changes);
-            }
-        });
+        const complejosResult = await pool.query('DELETE FROM complejos WHERE nombre != $1', ['MagnaSports']);
+        console.log('✅ Complejos eliminados:', complejosResult.rowCount);
         
         // 3. Eliminar todas las ciudades excepto Los Ángeles
-        db.run('DELETE FROM ciudades WHERE nombre != "Los Ángeles"', function(err) {
-            if (err) {
-                console.error('❌ Error eliminando ciudades:', err);
-            } else {
-                console.log('✅ Ciudades eliminadas:', this.changes);
-            }
+        const ciudadesResult = await pool.query('DELETE FROM ciudades WHERE nombre != $1', ['Los Ángeles']);
+        console.log('✅ Ciudades eliminadas:', ciudadesResult.rowCount);
+        
+        // 4. Eliminar canchas de complejos eliminados
+        const canchasResult = await pool.query(`
+            DELETE FROM canchas 
+            WHERE complejo_id NOT IN (SELECT id FROM complejos)
+        `);
+        console.log('✅ Canchas eliminadas:', canchasResult.rowCount);
+        
+        // 5. Eliminar usuarios que no sean super_admin
+        const usuariosResult = await pool.query('DELETE FROM usuarios WHERE rol != $1', ['super_admin']);
+        console.log('✅ Usuarios eliminados:', usuariosResult.rowCount);
+        
+        // 6. Eliminar bloqueos temporales
+        const bloqueosResult = await pool.query('DELETE FROM bloqueos_temporales');
+        console.log('✅ Bloqueos temporales eliminados:', bloqueosResult.rowCount);
+        
+        // 7. Eliminar pagos
+        const pagosResult = await pool.query('DELETE FROM pagos');
+        console.log('✅ Pagos eliminados:', pagosResult.rowCount);
+        
+        // 8. Verificar estado final
+        console.log('\n📊 ESTADO FINAL DE LA BASE DE DATOS:');
+        console.log('=====================================');
+        
+        const ciudades = await pool.query('SELECT COUNT(*) as count FROM ciudades');
+        const complejos = await pool.query('SELECT COUNT(*) as count FROM complejos');
+        const canchas = await pool.query('SELECT COUNT(*) as count FROM canchas');
+        const usuarios = await pool.query('SELECT COUNT(*) as count FROM usuarios');
+        const reservas = await pool.query('SELECT COUNT(*) as count FROM reservas');
+        
+        console.log(`📍 Ciudades: ${ciudades.rows[0].count}`);
+        console.log(`🏢 Complejos: ${complejos.rows[0].count}`);
+        console.log(`⚽ Canchas: ${canchas.rows[0].count}`);
+        console.log(`👥 Usuarios: ${usuarios.rows[0].count}`);
+        console.log(`📅 Reservas: ${reservas.rows[0].count}`);
+        
+        // Mostrar datos restantes
+        const ciudadesRestantes = await pool.query('SELECT * FROM ciudades');
+        const complejosRestantes = await pool.query('SELECT * FROM complejos');
+        
+        console.log('\n📍 CIUDADES RESTANTES:');
+        ciudadesRestantes.rows.forEach(ciudad => {
+            console.log(`  - ${ciudad.nombre}`);
         });
         
-        // 4. Actualizar el ID de Los Ángeles a 1 para simplificar
-        db.run('UPDATE ciudades SET id = 1 WHERE nombre = "Los Ángeles"', function(err) {
-            if (err) {
-                console.error('❌ Error actualizando ID de Los Ángeles:', err);
-            } else {
-                console.log('✅ ID de Los Ángeles actualizado a 1');
-            }
+        console.log('\n🏢 COMPLEJOS RESTANTES:');
+        complejosRestantes.rows.forEach(complejo => {
+            console.log(`  - ${complejo.nombre}`);
         });
         
-        // 5. Actualizar el ID de MagnaSports a 1 y su ciudad_id a 1
-        db.run('UPDATE complejos SET id = 1, ciudad_id = 1 WHERE nombre = "MagnaSports"', function(err) {
-            if (err) {
-                console.error('❌ Error actualizando MagnaSports:', err);
-            } else {
-                console.log('✅ MagnaSports actualizado - ID: 1, Ciudad ID: 1');
-            }
-        });
+        console.log('\n✅ Limpieza completada exitosamente');
         
-        // 6. Verificar el resultado final
-        setTimeout(() => {
-            console.log('\n📊 VERIFICACIÓN FINAL');
-            console.log('=====================');
-            
-            db.all('SELECT * FROM ciudades', (err, rows) => {
-                if (err) console.error('❌ Error consultando ciudades:', err);
-                else {
-                    console.log('🏙️ Ciudades finales:');
-                    rows.forEach(ciudad => console.log(`  - ID: ${ciudad.id}, Nombre: ${ciudad.nombre}`));
-                }
-            });
-            
-            db.all('SELECT * FROM complejos', (err, rows) => {
-                if (err) console.error('❌ Error consultando complejos:', err);
-                else {
-                    console.log('🏢 Complejos finales:');
-                    rows.forEach(complejo => console.log(`  - ID: ${complejo.id}, Nombre: ${complejo.nombre}, Ciudad ID: ${complejo.ciudad_id}`));
-                }
-            });
-            
-            db.all('SELECT COUNT(*) as count FROM reservas', (err, rows) => {
-                if (err) console.error('❌ Error consultando reservas:', err);
-                else {
-                    console.log(`📋 Reservas finales: ${rows[0].count}`);
-                }
-                
-                console.log('\n✅ Limpieza completada exitosamente');
-                db.close();
-            });
-        }, 1000);
-    });
+    } catch (error) {
+        console.error('❌ Error durante la limpieza:', error.message);
+    } finally {
+        await pool.end();
+    }
 }
 
 // Ejecutar si se llama directamente

@@ -20,58 +20,22 @@ async function checkDuplicateComplexes() {
         await db.connect();
         console.log('✅ Conectado a la base de datos');
         
-        // Verificar complejos duplicados (compatible con SQLite y PostgreSQL)
-        const dbInfo = db.getDatabaseInfo();
-        let duplicates;
-        
-        if (dbInfo.type === 'PostgreSQL') {
-            duplicates = await db.query(`
-                SELECT 
-                    nombre, 
-                    ciudad_id, 
-                    direccion, 
-                    telefono, 
-                    email,
-                    COUNT(*) as count,
-                    MIN(id) as oldest_id,
-                    MAX(id) as newest_id,
-                    ARRAY_AGG(id ORDER BY id) as all_ids
-                FROM complejos 
-                GROUP BY nombre, ciudad_id, direccion, telefono, email
-                HAVING COUNT(*) > 1
-            `);
-        } else {
-            // SQLite - obtener duplicados de forma diferente
-            const duplicateGroups = await db.query(`
-                SELECT 
-                    nombre, 
-                    ciudad_id, 
-                    direccion, 
-                    telefono, 
-                    email,
-                    COUNT(*) as count,
-                    MIN(id) as oldest_id,
-                    MAX(id) as newest_id
-                FROM complejos 
-                GROUP BY nombre, ciudad_id, direccion, telefono, email
-                HAVING COUNT(*) > 1
-            `);
-            
-            // Para cada grupo, obtener todos los IDs
-            duplicates = [];
-            for (const group of duplicateGroups) {
-                const ids = await db.query(`
-                    SELECT id FROM complejos 
-                    WHERE nombre = ? AND ciudad_id = ? AND direccion = ? AND telefono = ? AND email = ?
-                    ORDER BY id
-                `, [group.nombre, group.ciudad_id, group.direccion, group.telefono, group.email]);
-                
-                duplicates.push({
-                    ...group,
-                    all_ids: ids.map(row => row.id)
-                });
-            }
-        }
+        // Verificar complejos duplicados - Solo PostgreSQL
+        const duplicates = await db.query(`
+            SELECT 
+                nombre, 
+                ciudad_id, 
+                direccion, 
+                telefono,
+                email,
+                COUNT(*) as count,
+                MIN(id) as oldest_id,
+                MAX(id) as newest_id,
+                ARRAY_AGG(id ORDER BY id) as all_ids
+            FROM complejos 
+            GROUP BY nombre, ciudad_id, direccion, telefono, email
+            HAVING COUNT(*) > 1
+        `);
         
         if (duplicates.length === 0) {
             console.log('✅ No se encontraron complejos duplicados');
@@ -93,49 +57,25 @@ async function checkDuplicateComplexes() {
             console.log(`   - ID más nuevo: ${duplicate.newest_id}`);
             console.log(`   - Todos los IDs: ${duplicate.all_ids.join(', ')}`);
             
-            // Obtener información detallada de cada duplicado
-            let details;
-            if (dbInfo.type === 'PostgreSQL') {
-                details = await db.query(`
-                    SELECT 
-                        c.id,
-                        c.nombre,
-                        c.direccion,
-                        c.telefono,
-                        c.email,
-                        c.created_at,
-                        ci.nombre as ciudad_nombre,
-                        (SELECT COUNT(*) FROM canchas WHERE complejo_id = c.id) as canchas_count,
-                        (SELECT COUNT(*) FROM reservas r 
-                         JOIN canchas ch ON r.cancha_id = ch.id 
-                         WHERE ch.complejo_id = c.id) as reservas_count
-                    FROM complejos c
-                    JOIN ciudades ci ON c.ciudad_id = ci.id
-                    WHERE c.id = ANY($1)
-                    ORDER BY c.id
-                `, [duplicate.all_ids]);
-            } else {
-                // SQLite - usar IN en lugar de ANY
-                const placeholders = duplicate.all_ids.map(() => '?').join(',');
-                details = await db.query(`
-                    SELECT 
-                        c.id,
-                        c.nombre,
-                        c.direccion,
-                        c.telefono,
-                        c.email,
-                        c.created_at,
-                        ci.nombre as ciudad_nombre,
-                        (SELECT COUNT(*) FROM canchas WHERE complejo_id = c.id) as canchas_count,
-                        (SELECT COUNT(*) FROM reservas r 
-                         JOIN canchas ch ON r.cancha_id = ch.id 
-                         WHERE ch.complejo_id = c.id) as reservas_count
-                    FROM complejos c
-                    JOIN ciudades ci ON c.ciudad_id = ci.id
-                    WHERE c.id IN (${placeholders})
-                    ORDER BY c.id
-                `, duplicate.all_ids);
-            }
+            // Obtener información detallada de cada duplicado - Solo PostgreSQL
+            const details = await db.query(`
+                SELECT 
+                    c.id,
+                    c.nombre,
+                    c.direccion,
+                    c.telefono,
+                    c.email,
+                    c.created_at,
+                    ci.nombre as ciudad_nombre,
+                    (SELECT COUNT(*) FROM canchas WHERE complejo_id = c.id) as canchas_count,
+                    (SELECT COUNT(*) FROM reservas r 
+                     JOIN canchas ch ON r.cancha_id = ch.id 
+                     WHERE ch.complejo_id = c.id) as reservas_count
+                FROM complejos c
+                JOIN ciudades ci ON c.ciudad_id = ci.id
+                WHERE c.id = ANY($1)
+                ORDER BY c.id
+            `, [duplicate.all_ids]);
             
             console.log(`   📊 Detalles por ID:`);
             for (const detail of details) {

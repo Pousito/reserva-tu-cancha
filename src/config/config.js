@@ -8,11 +8,9 @@ const config = {
     env: process.env.NODE_ENV || 'development'
   },
 
-  // Configuración de la base de datos
+  // Configuración de la base de datos PostgreSQL
   database: {
-    path: process.env.NODE_ENV === 'production' 
-      ? '/opt/render/project/src/database.sqlite'
-      : './database.sqlite',
+    url: process.env.DATABASE_URL,
     timeout: 30000,
     verbose: process.env.NODE_ENV === 'development'
   },

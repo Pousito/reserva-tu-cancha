@@ -40,14 +40,23 @@
     "setup-transbank": "node scripts/setup-transbank.js",
     "setup-postgresql": "node scripts/setup-postgresql-local.js",
     "dev-postgresql": "NODE_ENV=development DATABASE_URL=postgresql://postgres@localhost:5432/reserva_tu_cancha_local npm start",
+    "cleanup-locks": "node scripts/maintenance/cleanup-temporary-locks.js",
     "migrate": "node scripts/migration/migration-manager.js",
     "test-pre-deploy": "node scripts/testing/pre-deploy-tests.js",
     "deploy-safe": "npm run test-pre-deploy && npm run migrate && git add . && git commit -m \"Safe deploy\" && git push origin main",
-    "sync-dev-to-prod": "node scripts/migration/sync-dev-to-prod.js",
     "clean-all-reservations": "node scripts/cleanup/clean-all-reservations.js",
-    "setup-unified-db": "node scripts/setup/unified-database-setup.js",
     "clean-to-essential": "node scripts/cleanup/clean-to-essential.js",
-    "clean-production-essential": "node scripts/cleanup/clean-production-essential.js"
+    "clean-production-essential": "node scripts/cleanup/clean-production-essential.js",
+    "verify-postgresql": "node scripts/verify-postgresql-migration.js",
+    "setup-test-env": "node scripts/testing/setup-test-environment.js",
+    "test-reservations": "npm run setup-test-env && node scripts/testing/automated-reservation-tests.js",
+    "test-reservations-headless": "npm run setup-test-env && HEADLESS=true node scripts/testing/automated-reservation-tests.js",
+    "test-simple": "node scripts/testing/simple-reservation-tests.js",
+    "test-simple-headless": "HEADLESS=true node scripts/testing/simple-reservation-tests.js",
+    "test-working": "node scripts/testing/working-reservation-tests.js",
+    "test-working-headless": "HEADLESS=true node scripts/testing/working-reservation-tests.js",
+    "test-basic": "node scripts/testing/basic-reservation-tests.js",
+    "test-final": "node scripts/testing/final-reservation-tests.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -65,7 +74,8 @@
     "transbank-sdk": "^6.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "puppeteer": "^24.20.0"
   },
   "keywords": [
     "reservas",

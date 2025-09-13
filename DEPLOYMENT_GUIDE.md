@@ -79,13 +79,13 @@ Después del despliegue, puedes verificar que todo funcione:
 ## ⚠️ NOTAS IMPORTANTES
 
 ### Base de Datos Persistente:
-- Render usa un disco persistente en `/opt/render/project/src/database.sqlite`
+- Render usa PostgreSQL como base de datos principal
 - Los datos **NO se pierden** entre reinicios
 - Solo se inicializa **la primera vez** o si está vacía
 
 ### Variables de Entorno:
 - `NODE_ENV=production` (ya configurado en Render)
-- `DB_PATH=/opt/render/project/src/database.sqlite` (ya configurado)
+- `DATABASE_URL` (configurado automáticamente por Render)
 
 ### Logs en Render:
 - Los logs del despliegue aparecen en la consola de Render

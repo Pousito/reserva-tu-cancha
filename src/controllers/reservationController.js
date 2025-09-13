@@ -159,22 +159,14 @@ function getReservaByCodigo(req, res) {
 /**
  * Endpoint de prueba para verificar la base de datos
  */
-function testDatabase(req, res) {
+async function testDatabase(req, res) {
   console.log('🧪 PRUEBA DE BASE DE DATOS');
   
-  // Verificar si la tabla usuarios existe
-  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'", (err, row) => {
-    if (err) {
-      console.error('❌ Error verificando tabla usuarios:', err);
-      res.json({ 
-        success: false, 
-        error: err.message,
-        message: 'Error verificando tabla usuarios'
-      });
-      return;
-    }
+  try {
+    // Verificar si la tabla usuarios existe (PostgreSQL)
+    const result = await db.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'usuarios'");
     
-    if (!row) {
+    if (result.length === 0) {
       console.log('❌ Tabla usuarios NO existe');
       res.json({ 
         success: false, 
@@ -187,23 +179,23 @@ function testDatabase(req, res) {
     console.log('✅ Tabla usuarios existe');
     
     // Contar usuarios
-    db.get("SELECT COUNT(*) as count FROM usuarios", (err, countRow) => {
-      if (err) {
-        res.json({ 
-          success: false, 
-          error: err.message,
-          message: 'Error contando usuarios'
-        });
-        return;
-      }
-      
-      res.json({ 
-        success: true, 
-        message: 'Tabla usuarios existe y funciona',
-        usersCount: countRow.count
-      });
+    const countResult = await db.query("SELECT COUNT(*) as count FROM usuarios");
+    const usersCount = countResult[0].count;
+    
+    res.json({ 
+      success: true, 
+      message: 'Base de datos PostgreSQL funcionando correctamente',
+      usersCount: usersCount
     });
-  });
+    
+  } catch (err) {
+    console.error('❌ Error verificando base de datos:', err);
+    res.json({ 
+      success: false, 
+      error: err.message,
+      message: 'Error verificando base de datos'
+    });
+  }
 }
 
 module.exports = {

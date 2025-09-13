@@ -1,5 +1,14 @@
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const crypto = require('crypto');
+require('dotenv').config();
+
+// Configurar conexión PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 // Función para generar código de reserva único (5 caracteres)
 function generateReservationCode() {
@@ -7,152 +16,156 @@ function generateReservationCode() {
 }
 
 // Función para poblar la base de datos con reservas de ejemplo
-function populateWithSampleReservations() {
-  return new Promise((resolve, reject) => {
+async function populateWithSampleReservations() {
+  try {
     console.log('🌱 POBLANDO BASE DE DATOS CON RESERVAS DE EJEMPLO');
     console.log('==================================================');
     
-    const dbPath = process.env.DB_PATH || '/opt/render/project/src/database.sqlite';
-    
-    console.log(`📁 Ruta de BD: ${dbPath}`);
     console.log(`🌍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+    console.log(`📊 Base de datos: PostgreSQL`);
     
-    const db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('❌ Error conectando a la base de datos:', err.message);
-        console.error('📍 Ruta intentada:', dbPath);
-        reject(err);
-        return;
-      }
-      
-      console.log(`✅ Conectado a la base de datos SQLite en: ${dbPath}`);
-      checkAndPopulate();
-    });
-
-  function checkAndPopulate() {
-    console.log('🔍 Verificando estado actual de reservas...');
+    await checkAndPopulate();
     
-    // Verificar si ya hay reservas
-    db.get('SELECT COUNT(*) as count FROM reservas', (err, row) => {
-      if (err) {
-        console.log('❌ Error verificando reservas:', err.message);
-        return;
-      }
-      
-      if (row.count > 0) {
-        console.log(`⚠️  Ya existen ${row.count} reservas en la base de datos`);
-        console.log('¿Deseas continuar y agregar más reservas de ejemplo? (S/N)');
-        // En producción, continuamos automáticamente
-        insertSampleReservations();
-      } else {
-        console.log('✅ No hay reservas, insertando ejemplos...');
-        insertSampleReservations();
-      }
-    });
+  } catch (error) {
+    console.error('❌ Error en populateWithSampleReservations:', error.message);
+  } finally {
+    await pool.end();
   }
-
-  function insertSampleReservations() {
-    console.log('\n📅 Insertando reservas de ejemplo...');
-    
-    // Obtener IDs de canchas disponibles
-    db.all('SELECT id, nombre, tipo, precio_hora FROM canchas WHERE activa = 1 LIMIT 10', (err, canchas) => {
-      if (err || !canchas || canchas.length === 0) {
-        console.error('❌ No se pudieron obtener canchas:', err?.message || 'No hay canchas activas');
-        db.close();
-        return;
-      }
-      
-      console.log(`✅ Encontradas ${canchas.length} canchas para reservas`);
-      
-      // Generar fechas para las próximas semanas
-      const today = new Date();
-      const reservations = [];
-      
-      // Crear reservas para diferentes fechas y horarios
-      for (let i = 0; i < 15; i++) {
-        const fecha = new Date(today);
-        fecha.setDate(today.getDate() + i + 1); // Empezar desde mañana
-        
-        // Solo reservas para días de semana (lunes a viernes)
-        if (fecha.getDay() >= 1 && fecha.getDay() <= 5) {
-          const cancha = canchas[i % canchas.length];
-          const horaInicio = 18 + (i % 4); // Horarios entre 18:00 y 21:00
-          const horaFin = horaInicio + 1;
-          
-          reservations.push({
-            cancha_id: cancha.id,
-            fecha: fecha.toISOString().split('T')[0], // Formato YYYY-MM-DD
-            hora_inicio: `${horaInicio.toString().padStart(2, '0')}:00`,
-            hora_fin: `${horaFin.toString().padStart(2, '0')}:00`,
-            nombre_cliente: `Cliente Ejemplo ${i + 1}`,
-            rut_cliente: `${Math.floor(Math.random() * 99999999) + 10000000}`,
-            email_cliente: `cliente${i + 1}@ejemplo.com`,
-            codigo_reserva: generateReservationCode(),
-            estado: i < 5 ? 'confirmada' : 'pendiente', // Las primeras 5 confirmadas
-            precio_total: cancha.precio_hora
-          });
-        }
-      }
-      
-      console.log(`📋 Preparando ${reservations.length} reservas de ejemplo...`);
-      
-      // Insertar reservas una por una
-      let insertedCount = 0;
-      reservations.forEach((reserva, index) => {
-        const stmt = db.prepare(`
-          INSERT OR IGNORE INTO reservas 
-          (cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, 
-           email_cliente, codigo_reserva, estado, precio_total)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        
-        stmt.run([
-          reserva.cancha_id,
-          reserva.fecha,
-          reserva.hora_inicio,
-          reserva.hora_fin,
-          reserva.nombre_cliente,
-          reserva.rut_cliente,
-          reserva.email_cliente,
-          reserva.codigo_reserva,
-          reserva.estado,
-          reserva.precio_total
-        ], function(err) {
-          if (err) {
-            console.error(`❌ Error insertando reserva ${index + 1}:`, err.message);
-          } else {
-            insertedCount++;
-            console.log(`✅ Reserva ${index + 1} insertada: ${reserva.fecha} ${reserva.hora_inicio} - ${reserva.nombre_cliente}`);
-          }
-          
-          stmt.finalize();
-          
-          // Si es la última reserva, mostrar resumen
-          if (insertedCount === reservations.length || index === reservations.length - 1) {
-            setTimeout(() => {
-              console.log(`\n🎉 Proceso completado!`);
-              console.log(`📊 Total de reservas insertadas: ${insertedCount}`);
-              console.log(`📅 Fechas cubiertas: ${reservations.length} días`);
-              console.log(`⚽ Canchas utilizadas: ${canchas.length}`);
-              
-              // Verificar el resultado final
-              db.get('SELECT COUNT(*) as count FROM reservas', (err, row) => {
-                if (!err) {
-                  console.log(`📋 Total de reservas en BD: ${row.count}`);
-                }
-                db.close();
-                resolve(`Proceso completado. Total de reservas: ${row?.count || 0}`);
-              });
-            }, 1000);
-          }
-        });
-      });
-    });
-  }
-  });
 }
 
-// Si se ejecuta directamente
+async function checkAndPopulate() {
+  try {
+    // Verificar si ya hay reservas
+    const reservasExistentes = await pool.query('SELECT COUNT(*) as count FROM reservas');
+    const count = parseInt(reservasExistentes.rows[0].count);
+    
+    console.log(`📊 Reservas existentes: ${count}`);
+    
+    if (count > 0) {
+      console.log('⚠️  Ya hay reservas en la base de datos');
+      console.log('🔄 Eliminando reservas existentes...');
+      await pool.query('DELETE FROM reservas');
+      console.log('✅ Reservas existentes eliminadas');
+    }
+    
+    // Verificar que existan canchas
+    const canchas = await pool.query('SELECT * FROM canchas LIMIT 1');
+    if (canchas.rows.length === 0) {
+      console.log('❌ No hay canchas en la base de datos. Ejecuta primero el setup de datos básicos.');
+      return;
+    }
+    
+    const canchaId = canchas.rows[0].id;
+    console.log(`⚽ Usando cancha ID: ${canchaId}`);
+    
+    // Generar reservas de ejemplo
+    await generateSampleReservations(canchaId);
+    
+  } catch (error) {
+    console.error('❌ Error en checkAndPopulate:', error.message);
+  }
+}
+
+async function generateSampleReservations(canchaId) {
+  console.log('\n🎯 GENERANDO RESERVAS DE EJEMPLO...');
+  
+  const reservasEjemplo = [
+    {
+      nombre: 'Juan Pérez',
+      email: 'juan.perez@email.com',
+      telefono: '+56912345678',
+      rut: '12345678-9',
+      fecha: '2025-09-15',
+      hora_inicio: '16:00',
+      hora_fin: '17:00',
+      precio: 25000
+    },
+    {
+      nombre: 'María González',
+      email: 'maria.gonzalez@email.com',
+      telefono: '+56987654321',
+      rut: '98765432-1',
+      fecha: '2025-09-15',
+      hora_inicio: '18:00',
+      hora_fin: '19:00',
+      precio: 25000
+    },
+    {
+      nombre: 'Carlos Rodríguez',
+      email: 'carlos.rodriguez@email.com',
+      telefono: '+56911223344',
+      rut: '11223344-5',
+      fecha: '2025-09-16',
+      hora_inicio: '17:00',
+      hora_fin: '18:00',
+      precio: 25000
+    },
+    {
+      nombre: 'Ana Martínez',
+      email: 'ana.martinez@email.com',
+      telefono: '+56955667788',
+      rut: '55667788-9',
+      fecha: '2025-09-16',
+      hora_inicio: '19:00',
+      hora_fin: '20:00',
+      precio: 25000
+    },
+    {
+      nombre: 'Luis Fernández',
+      email: 'luis.fernandez@email.com',
+      telefono: '+56999887766',
+      rut: '99887766-5',
+      fecha: '2025-09-17',
+      hora_inicio: '16:00',
+      hora_fin: '17:00',
+      precio: 25000
+    }
+  ];
+  
+  let reservasCreadas = 0;
+  
+  for (const reserva of reservasEjemplo) {
+    try {
+      const codigoReserva = generateReservationCode();
+      
+      const result = await pool.query(`
+        INSERT INTO reservas (
+          codigo_reserva, cancha_id, nombre_cliente, email_cliente, 
+          telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, 
+          precio_total, estado, estado_pago, fecha_creacion
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `, [
+        codigoReserva,
+        canchaId,
+        reserva.nombre,
+        reserva.email,
+        reserva.telefono,
+        reserva.rut,
+        reserva.fecha,
+        reserva.hora_inicio,
+        reserva.hora_fin,
+        reserva.precio,
+        'confirmada',
+        'pagado',
+        new Date().toISOString()
+      ]);
+      
+      console.log(`✅ Reserva creada: ${codigoReserva} - ${reserva.nombre} (${reserva.fecha} ${reserva.hora_inicio})`);
+      reservasCreadas++;
+      
+    } catch (error) {
+      console.error(`❌ Error creando reserva para ${reserva.nombre}:`, error.message);
+    }
+  }
+  
+  console.log(`\n🎉 Población completada: ${reservasCreadas} reservas creadas`);
+  
+  // Verificar reservas creadas
+  const totalReservas = await pool.query('SELECT COUNT(*) as count FROM reservas');
+  console.log(`📊 Total de reservas en la base de datos: ${totalReservas.rows[0].count}`);
+}
+
+// Ejecutar si se llama directamente
 if (require.main === module) {
   populateWithSampleReservations();
 }

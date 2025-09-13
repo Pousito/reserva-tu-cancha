@@ -4,12 +4,12 @@
 
 **Síntoma**: Al seleccionar una hora de reserva en la aplicación, aparecían 2 complejos en el diseño cuando debería aparecer solo uno.
 
-**Causa Raíz**: Existían registros duplicados en la tabla `complejos` de la base de datos local (SQLite).
+**Causa Raíz**: Existían registros duplicados en la tabla `complejos` de la base de datos PostgreSQL.
 
 ## 🔍 Análisis Realizado
 
 ### Verificación Local
-- **Base de datos**: SQLite (local)
+- **Base de datos**: PostgreSQL (local)
 - **Complejos encontrados**: 6 total
 - **Duplicados detectados**: 2 registros de "MagnaSports" (IDs 1 y 6)
 - **Estado**: ✅ **SOLUCIONADO** - Se eliminó 1 duplicado
@@ -68,7 +68,7 @@ curl -s "http://localhost:3000/api/debug/clean-duplicate-complexes"
 
 2. **Antes de poblar datos de ejemplo**:
    - Verificar que no existan duplicados
-   - Usar `INSERT OR IGNORE` en SQLite
+   - Usar `INSERT ... ON CONFLICT DO NOTHING` en PostgreSQL
    - Usar `ON CONFLICT DO NOTHING` en PostgreSQL
 
 3. **En el código de inicialización**:
@@ -91,7 +91,7 @@ if (!complejoExistente) {
 
 ## 📊 Estado Actual
 
-### Local (SQLite)
+### Local (PostgreSQL)
 - ✅ **Complejos**: 5 (sin duplicados)
 - ✅ **MagnaSports**: 1 registro único
 - ✅ **Funcionamiento**: Normal
@@ -122,7 +122,7 @@ Para verificar que el problema está solucionado:
 
 ## 📝 Notas Técnicas
 
-- **Diferencia entre entornos**: Local usa SQLite, Producción usa PostgreSQL
+- **Unificación**: Ambos entornos usan PostgreSQL
 - **IDs diferentes**: Los IDs pueden variar entre entornos
 - **Sincronización**: Los datos de ejemplo se insertan independientemente en cada entorno
 - **Persistencia**: La base de datos de producción persiste entre deployments [[memory:8183353]]

@@ -26,56 +26,21 @@ async function cleanDuplicateComplexes() {
         await db.connect();
         console.log('✅ Conectado a la base de datos');
         
-        // Verificar complejos duplicados (compatible con SQLite y PostgreSQL)
-        const dbInfo = db.getDatabaseInfo();
-        let duplicates;
-        
-        if (dbInfo.type === 'PostgreSQL') {
-            duplicates = await db.query(`
-                SELECT 
-                    nombre, 
-                    ciudad_id, 
-                    direccion, 
-                    telefono, 
-                    email,
-                    COUNT(*) as count,
-                    MIN(id) as keep_id,
-                    ARRAY_AGG(id ORDER BY id) as all_ids
-                FROM complejos 
-                GROUP BY nombre, ciudad_id, direccion, telefono, email
-                HAVING COUNT(*) > 1
-            `);
-        } else {
-            // SQLite - obtener duplicados de forma diferente
-            const duplicateGroups = await db.query(`
-                SELECT 
-                    nombre, 
-                    ciudad_id, 
-                    direccion, 
-                    telefono, 
-                    email,
-                    COUNT(*) as count,
-                    MIN(id) as keep_id
-                FROM complejos 
-                GROUP BY nombre, ciudad_id, direccion, telefono, email
-                HAVING COUNT(*) > 1
-            `);
-            
-            // Para cada grupo, obtener todos los IDs
-            duplicates = [];
-            for (const group of duplicateGroups) {
-                const ids = await db.query(`
-                    SELECT id FROM complejos 
-                    WHERE nombre = ? AND ciudad_id = ? AND direccion = ? AND telefono = ? AND email = ?
-                    ORDER BY id
-                `, [group.nombre, group.ciudad_id, group.direccion, group.telefono, group.email]);
-                
-                duplicates.push({
-                    ...group,
-                    all_ids: ids.map(row => row.id)
-                });
-            }
-        }
+        // Verificar complejos duplicados - Solo PostgreSQL
+        const duplicates = await db.query(`
+            SELECT 
+                nombre, 
+                ciudad_id, 
+                direccion, 
+                telefono,
+                email,
+                COUNT(*) as count,
+                MIN(id) as keep_id,
+                ARRAY_AGG(id ORDER BY id) as all_ids
+            FROM complejos 
+            GROUP BY nombre, ciudad_id, direccion, telefono, email
+            HAVING COUNT(*) > 1
+        `);
         
         if (duplicates.length === 0) {
             console.log('✅ No se encontraron complejos duplicados');

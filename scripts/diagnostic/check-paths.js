@@ -12,8 +12,8 @@ function checkPaths() {
     sourceDir: '/opt/render/project/src',
     dataDir: '/opt/render/project/data',
     publicDir: '/opt/render/project/src/public',
-    databaseSource: '/opt/render/project/src/database.sqlite',
-    databaseTarget: '/opt/render/project/data/database.sqlite',
+    databaseSource: 'PostgreSQL (conexión remota)',
+    databaseTarget: 'PostgreSQL (conexión remota)',
     backupsSource: '/opt/render/project/src/backups',
     backupsTarget: '/opt/render/project/data/backups'
   };

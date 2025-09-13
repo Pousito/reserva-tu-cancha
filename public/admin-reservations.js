@@ -826,6 +826,8 @@ function renderizarCalendario(data = null) {
     const grid = document.getElementById('calendarGrid');
     const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     
+    console.log('📅 Renderizando calendario para semanaActual:', semanaActual.toDateString());
+    
     let html = '';
     
     // Header con horas
@@ -837,6 +839,8 @@ function renderizarCalendario(data = null) {
         fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
         const esHoy = esMismoDia(fecha, new Date());
         const esOtroMes = fecha.getMonth() !== semanaActual.getMonth();
+        
+        console.log(`📅 Día ${i}: ${fecha.toDateString()} (número: ${fecha.getDate()})`);
         
         html += `<div class="calendar-day-header ${esHoy ? 'today' : ''} ${esOtroMes ? 'other-month' : ''}">
             ${dias[i]}<br>
@@ -1018,24 +1022,32 @@ function generarHoras(fecha = null) {
 }
 
 /**
- * Obtener inicio de semana
+ * Obtener inicio de semana (lunes)
  */
 function obtenerInicioSemana(fecha) {
     const inicio = new Date(fecha);
     const dia = inicio.getDay();
-    const diff = inicio.getDate() - dia + (dia === 0 ? -6 : 1);
-    inicio.setDate(diff);
+    // Lunes = 1, Martes = 2, ..., Domingo = 0
+    // Si es domingo (0), necesitamos ir al lunes anterior (-6)
+    // Si es lunes (1), no necesitamos mover la fecha (0)
+    // Si es martes (2), necesitamos ir al lunes anterior (-1)
+    const diff = dia === 0 ? -6 : 1 - dia;
+    inicio.setDate(inicio.getDate() + diff);
     return formatearFecha(inicio);
 }
 
 /**
- * Obtener fin de semana
+ * Obtener fin de semana (domingo)
  */
 function obtenerFinSemana(fecha) {
     const fin = new Date(fecha);
     const dia = fin.getDay();
-    const diff = fin.getDate() - dia + (dia === 0 ? 0 : 7);
-    fin.setDate(diff);
+    // Domingo = 0, Lunes = 1, ..., Sábado = 6
+    // Si es domingo (0), no necesitamos mover la fecha (0)
+    // Si es lunes (1), necesitamos ir al domingo siguiente (+6)
+    // Si es sábado (6), necesitamos ir al domingo siguiente (+1)
+    const diff = dia === 0 ? 0 : 7 - dia;
+    fin.setDate(fin.getDate() + diff);
     return formatearFecha(fin);
 }
 
@@ -1059,16 +1071,22 @@ function formatearFecha(fecha) {
         return fecha;
     }
     
-    // Si es un objeto Date, convertirlo
+    // Si es un objeto Date, convertirlo usando zona horaria local
     if (fecha instanceof Date) {
-        return fecha.toISOString().split('T')[0];
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     
     // Si es un string que puede ser parseado como fecha
     if (typeof fecha === 'string') {
         const dateObj = new Date(fecha);
         if (!isNaN(dateObj.getTime())) {
-            return dateObj.toISOString().split('T')[0];
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
     }
     
@@ -1079,32 +1097,72 @@ function formatearFecha(fecha) {
  * Actualizar rango de semana mostrado
  */
 function actualizarRangoSemana() {
-    const inicio = obtenerInicioSemana(semanaActual);
-    const fin = obtenerFinSemana(semanaActual);
-    const inicioDate = new Date(inicio);
-    const finDate = new Date(fin);
+    // Usar exactamente el mismo cálculo que el calendario
+    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     
-    const inicioStr = inicioDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    const finStr = finDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    // Calcular el primer día (lunes) usando la misma lógica que renderizarCalendario
+    const primerDia = new Date(semanaActual);
+    primerDia.setDate(semanaActual.getDate() - semanaActual.getDay() + 1);
     
-    document.getElementById('rangoSemana').textContent = `${inicioStr} - ${finStr}`;
+    // Calcular el último día (domingo)
+    const ultimoDia = new Date(primerDia);
+    ultimoDia.setDate(primerDia.getDate() + 6);
+    
+    const inicioStr = primerDia.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const finStr = ultimoDia.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    
+    const rangoTexto = `${inicioStr} - ${finStr}`;
+    console.log('📅 Actualizando rango de semana:', rangoTexto);
+    console.log('📅 Primer día (lunes):', primerDia.toDateString());
+    console.log('📅 Último día (domingo):', ultimoDia.toDateString());
+    console.log('📅 semanaActual:', semanaActual.toDateString());
+    
+    document.getElementById('rangoSemana').textContent = rangoTexto;
 }
 
 /**
  * Navegación de semanas
  */
 function semanaAnterior() {
-    semanaActual.setDate(semanaActual.getDate() - 7);
+    // Crear una nueva fecha para evitar problemas de mutación
+    const nuevaFecha = new Date(semanaActual);
+    nuevaFecha.setDate(nuevaFecha.getDate() - 7);
+    semanaActual = nuevaFecha;
+    console.log('📅 Navegando a semana anterior:', semanaActual.toDateString());
     cargarCalendario();
 }
 
 function semanaSiguiente() {
-    semanaActual.setDate(semanaActual.getDate() + 7);
+    // Crear una nueva fecha para evitar problemas de mutación
+    const nuevaFecha = new Date(semanaActual);
+    nuevaFecha.setDate(nuevaFecha.getDate() + 7);
+    semanaActual = nuevaFecha;
+    console.log('📅 Navegando a semana siguiente:', semanaActual.toDateString());
     cargarCalendario();
 }
 
 function irAHoy() {
     semanaActual = new Date();
+    console.log('📅 Navegando a hoy:', semanaActual.toDateString());
+    cargarCalendario();
+}
+
+/**
+ * Forzar actualización completa del calendario
+ */
+function forzarActualizacionCalendario() {
+    console.log('🔄 Forzando actualización completa del calendario...');
+    
+    // Limpiar datos del calendario
+    calendarioData = {};
+    
+    // Limpiar el grid del calendario
+    const grid = document.getElementById('calendarGrid');
+    if (grid) {
+        grid.innerHTML = '';
+    }
+    
+    // Recargar el calendario
     cargarCalendario();
 }
 
@@ -1114,8 +1172,9 @@ function irAHoy() {
 async function seleccionarSlot(fecha, hora) {
     console.log('📅 Slot seleccionado:', { fecha, hora });
     
-    // Formatear fecha para mostrar
-    const fechaObj = new Date(fecha);
+    // Formatear fecha para mostrar (usando zona horaria local)
+    const [año, mes, dia] = fecha.split('-').map(Number);
+    const fechaObj = new Date(año, mes - 1, dia);
     const fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
         weekday: 'long',
         year: 'numeric',
@@ -1855,7 +1914,8 @@ async function crearReservaAdmin() {
         rut_cliente: formatearRUT(rut),
         tipo_reserva: 'administrativa',
         creada_por_admin: true,
-        precio_total: 28000 // Precio fijo según el modal
+        precio_total: 28000, // Precio fijo según el modal
+        bloqueo_id: window.reservaSeleccionada.bloqueoId // ID del bloqueo temporal del admin actual
     };
     
     // Mostrar indicador de procesamiento

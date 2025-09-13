@@ -143,7 +143,7 @@ PORT=3000
 NODE_ENV=development
 
 # Base de Datos
-DB_PATH=./database.sqlite
+DATABASE_URL=postgresql://user:password@host:port/database
 
 # Seguridad
 JWT_SECRET=tu_jwt_secret_super_seguro

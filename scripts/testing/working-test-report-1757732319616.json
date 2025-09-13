@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-09-13T02:58:39.615Z",
+  "totalTests": 4,
+  "passed": 0,
+  "failed": 4,
+  "results": [
+    {
+      "test": "WebToAdmin",
+      "status": "FAILED",
+      "duration": 908,
+      "error": "Error creando reserva desde web: Error creando reserva: La cancha ya no está disponible en ese horario"
+    },
+    {
+      "test": "AdminToWeb",
+      "status": "FAILED",
+      "duration": 31112,
+      "error": "Error creando reserva desde admin: Navigation timeout of 30000 ms exceeded"
+    },
+    {
+      "test": "NormalTemporalBlocks",
+      "status": "FAILED",
+      "duration": 129,
+      "error": "❌ ERROR: Admin puede reservar horario con bloqueo temporal"
+    },
+    {
+      "test": "ConcurrentTemporalBlocks",
+      "status": "FAILED",
+      "duration": 5,
+      "error": "Error: Se esperaban 2 bloqueos, se crearon 0"
+    }
+  ]
+}

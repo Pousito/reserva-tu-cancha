@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-09-13T03:00:31.606Z",
+  "totalTests": 4,
+  "passed": 1,
+  "failed": 3,
+  "results": [
+    {
+      "test": "WebToAdmin",
+      "status": "PASSED",
+      "duration": 6,
+      "details": {
+        "webReservation": {
+          "success": true,
+          "bloqueo_id": "BLOCK_1757732430596_EX7S1",
+          "expira_en": "2025-09-13T03:10:30.596Z",
+          "message": "Bloqueo temporal creado exitosamente. Procede al pago."
+        },
+        "adminAttempt": {
+          "success": false,
+          "error": "No hay token de admin disponible"
+        }
+      }
+    },
+    {
+      "test": "AdminToWeb",
+      "status": "FAILED",
+      "duration": 0,
+      "error": "No hay token de admin disponible"
+    },
+    {
+      "test": "NormalTemporalBlocks",
+      "status": "FAILED",
+      "duration": 2,
+      "error": "Error creando bloqueo temporal: La cancha ya no está disponible en ese horario"
+    },
+    {
+      "test": "ConcurrentTemporalBlocks",
+      "status": "FAILED",
+      "duration": 1006,
+      "error": "Error: Se esperaban 2 bloqueos, se crearon 0"
+    }
+  ]
+}

@@ -24,21 +24,8 @@ function migrateToPersistentDisk() {
       console.log(`✅ Directorio ya existe: ${targetDir}`);
     }
     
-    // 2. Migrar base de datos si existe en el directorio fuente
-    const sourceDb = path.join(sourceDir, 'database.sqlite');
-    const targetDb = path.join(targetDir, 'database.sqlite');
-    
-    if (fs.existsSync(sourceDb)) {
-      console.log(`📊 Migrando base de datos...`);
-      fs.copyFileSync(sourceDb, targetDb);
-      console.log(`✅ Base de datos migrada: ${sourceDb} → ${targetDb}`);
-      
-      // Verificar tamaño
-      const stats = fs.statSync(targetDb);
-      console.log(`📊 Tamaño de BD migrada: ${stats.size} bytes`);
-    } else {
-      console.log(`ℹ️  No hay base de datos existente para migrar`);
-    }
+    // 2. PostgreSQL no requiere migración de archivos (usa conexión remota)
+    console.log(`📊 PostgreSQL configurado - no se requiere migración de archivos`);
     
     // 3. Migrar respaldos si existen
     const sourceBackups = path.join(sourceDir, 'backups');
@@ -59,7 +46,7 @@ function migrateToPersistentDisk() {
       });
       
       backupFiles.forEach(file => {
-        // Migrar TODOS los archivos de respaldo (tanto .sqlite como .hash)
+        // Migrar TODOS los archivos de respaldo (tanto .sql como .hash)
         if (file.includes('database_backup_')) {
           const sourceFile = path.join(sourceBackups, file);
           const targetFile = path.join(targetBackups, file);

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-09-13T02:53:34.735Z",
+  "totalTests": 4,
+  "passed": 0,
+  "failed": 4,
+  "results": [
+    {
+      "test": "WebToAdmin",
+      "status": "FAILED",
+      "duration": 744,
+      "error": "Error creando reserva desde web: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON"
+    },
+    {
+      "test": "AdminToWeb",
+      "status": "FAILED",
+      "duration": 736,
+      "error": "Error creando reserva desde admin: No element found for selector: #loginBtn"
+    },
+    {
+      "test": "NormalTemporalBlocks",
+      "status": "FAILED",
+      "duration": 2,
+      "error": "Error creando bloqueo temporal: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON"
+    },
+    {
+      "test": "ConcurrentTemporalBlocks",
+      "status": "FAILED",
+      "duration": 2,
+      "error": "Error: Se esperaban 2 bloqueos, se crearon 0"
+    }
+  ]
+}

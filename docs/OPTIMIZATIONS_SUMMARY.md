@@ -36,7 +36,7 @@
   - ✅ Backups automáticos cada 24 horas
   - ✅ Limpieza automática de backups antiguos (máximo 10)
   - ✅ Verificación de integridad con hash SHA-256
-  - ✅ Soporte para SQLite y PostgreSQL
+  - ✅ Solo PostgreSQL (unificado)
   - ✅ Estadísticas detalladas de cada backup
 
 #### 4. **Estructura de Base de Datos Optimizada**

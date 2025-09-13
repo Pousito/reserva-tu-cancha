@@ -40,7 +40,7 @@
 
 ## 🔧 Archivos Modificados
 
-### **1. Base de Datos (`database.sqlite`)**
+### **1. Base de Datos (PostgreSQL)**
 ```sql
 -- Usuarios actualizados
 UPDATE usuarios SET email = 'naxiin320@gmail.com' WHERE email = 'admin@magnasports.cl';

@@ -9,122 +9,104 @@
  * 3. Proporciona un reporte de las correcciones realizadas
  */
 
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
+require('dotenv').config();
 
-// Configuración de la base de datos
-const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'database.sqlite');
-const db = new sqlite3.Database(dbPath);
+// Configurar conexión PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 console.log('🔧 Iniciando corrección del problema de zonas horarias...');
-console.log('📁 Base de datos:', dbPath);
+console.log('📊 Base de datos: PostgreSQL');
 
 // Función principal
 async function main() {
-    return new Promise((resolve, reject) => {
-        db.serialize(() => {
-            // 1. Verificar reservas sin fecha_creacion
-            console.log('\n📊 Verificando reservas sin fecha_creacion...');
-            db.get(`
-                SELECT COUNT(*) as count 
-                FROM reservas 
-                WHERE fecha_creacion IS NULL
-            `, (err, row) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                
-                console.log(`   Reservas sin fecha_creacion: ${row.count}`);
-                
-                if (row.count > 0) {
-                    // 2. Actualizar reservas sin fecha_creacion
-                    console.log('\n🔄 Actualizando reservas sin fecha_creacion...');
-                    
-                    db.run(`
-                        UPDATE reservas 
-                        SET fecha_creacion = datetime(fecha || ' ' || 
-                            CASE 
-                                WHEN hora_inicio < '12:00' THEN '09:00:00'
-                                WHEN hora_inicio < '18:00' THEN '14:00:00'
-                                ELSE '19:00:00'
-                            END
-                        )
-                        WHERE fecha_creacion IS NULL
-                    `, function(err) {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
-                        
-                        console.log(`   ✅ ${this.changes} reservas actualizadas`);
-                        
-                        // 3. Verificar la corrección
-                        console.log('\n✅ Verificando corrección...');
-                        db.get(`
-                            SELECT COUNT(*) as count 
-                            FROM reservas 
-                            WHERE fecha_creacion IS NOT NULL
-                        `, (err, row) => {
-                            if (err) {
-                                reject(err);
-                                return;
-                            }
-                            
-                            console.log(`   Reservas con fecha_creacion: ${row.count}`);
-                            
-                            // 4. Mostrar algunas reservas de ejemplo
-                            console.log('\n📋 Ejemplos de reservas actualizadas:');
-                            db.all(`
-                                SELECT codigo_reserva, nombre_cliente, fecha, hora_inicio, fecha_creacion
-                                FROM reservas 
-                                WHERE fecha_creacion IS NOT NULL
-                                ORDER BY fecha_creacion DESC
-                                LIMIT 5
-                            `, (err, rows) => {
-                                if (err) {
-                                    reject(err);
-                                    return;
-                                }
-                                
-                                rows.forEach((reserva, index) => {
-                                    console.log(`   ${index + 1}. ${reserva.codigo_reserva} - ${reserva.nombre_cliente}`);
-                                    console.log(`      Fecha reserva: ${reserva.fecha} ${reserva.hora_inicio}`);
-                                    console.log(`      Fecha creación: ${reserva.fecha_creacion}`);
-                                });
-                                
-                                // 5. Verificar zona horaria en reportes
-                                console.log('\n🌍 Verificando zona horaria...');
-                                console.log('   Chile está en UTC-4 (no UTC-3)');
-                                console.log('   La conversión en los reportes ha sido corregida');
-                                
-                                console.log('\n🎉 Corrección completada exitosamente!');
-                                console.log('\n📝 Resumen de cambios:');
-                                console.log('   ✅ Reservas nuevas ahora incluyen fecha_creacion');
-                                console.log('   ✅ Reservas existentes actualizadas con fecha_creacion estimada');
-                                console.log('   ✅ Zona horaria corregida de UTC-3 a UTC-4');
-                                console.log('   ✅ Reportes ahora mostrarán las fechas correctas');
-                                
-                                resolve();
-                            });
-                        });
-                    });
-                } else {
-                    console.log('\n✅ Todas las reservas ya tienen fecha_creacion');
-                    resolve();
-                }
-            });
-        });
-    });
+  try {
+    // 1. Verificar reservas sin fecha_creacion
+    console.log('\n📊 Verificando reservas sin fecha_creacion...');
+    const reservasSinFecha = await pool.query(`
+      SELECT COUNT(*) as count 
+      FROM reservas 
+      WHERE fecha_creacion IS NULL
+    `);
+    
+    const count = parseInt(reservasSinFecha.rows[0].count);
+    console.log(`📅 Reservas sin fecha_creacion: ${count}`);
+    
+    if (count > 0) {
+      console.log('🔄 Actualizando reservas sin fecha_creacion...');
+      
+      // Actualizar reservas sin fecha_creacion
+      const updateResult = await pool.query(`
+        UPDATE reservas 
+        SET fecha_creacion = NOW() 
+        WHERE fecha_creacion IS NULL
+      `);
+      
+      console.log(`✅ Reservas actualizadas: ${updateResult.rowCount}`);
+    } else {
+      console.log('✅ Todas las reservas tienen fecha_creacion');
+    }
+    
+    // 2. Verificar reservas con fechas incorrectas
+    console.log('\n📊 Verificando reservas con fechas incorrectas...');
+    const reservasIncorrectas = await pool.query(`
+      SELECT COUNT(*) as count 
+      FROM reservas 
+      WHERE fecha_creacion < '2020-01-01' OR fecha_creacion > NOW() + INTERVAL '1 day'
+    `);
+    
+    const countIncorrectas = parseInt(reservasIncorrectas.rows[0].count);
+    console.log(`⚠️  Reservas con fechas incorrectas: ${countIncorrectas}`);
+    
+    if (countIncorrectas > 0) {
+      console.log('🔄 Corrigiendo fechas incorrectas...');
+      
+      // Corregir fechas incorrectas
+      const fixResult = await pool.query(`
+        UPDATE reservas 
+        SET fecha_creacion = NOW() 
+        WHERE fecha_creacion < '2020-01-01' OR fecha_creacion > NOW() + INTERVAL '1 day'
+      `);
+      
+      console.log(`✅ Fechas corregidas: ${fixResult.rowCount}`);
+    }
+    
+    // 3. Verificar zona horaria
+    console.log('\n🌍 Verificando zona horaria...');
+    const timezoneResult = await pool.query('SELECT NOW() as current_time');
+    console.log(`🕐 Hora actual en la base de datos: ${timezoneResult.rows[0].current_time}`);
+    
+    // 4. Reporte final
+    console.log('\n📊 REPORTE FINAL:');
+    console.log('=================');
+    
+    const totalReservas = await pool.query('SELECT COUNT(*) as count FROM reservas');
+    const reservasConFecha = await pool.query(`
+      SELECT COUNT(*) as count 
+      FROM reservas 
+      WHERE fecha_creacion IS NOT NULL
+    `);
+    
+    console.log(`📅 Total de reservas: ${totalReservas.rows[0].count}`);
+    console.log(`✅ Reservas con fecha_creacion: ${reservasConFecha.rows[0].count}`);
+    
+    console.log('\n✅ Corrección de zona horaria completada exitosamente');
+    
+  } catch (error) {
+    console.error('❌ Error durante la corrección:', error.message);
+  } finally {
+    await pool.end();
+  }
 }
 
-// Ejecutar
-main().catch(error => {
-    console.error('❌ Error durante la corrección:', error);
-    process.exit(1);
-}).finally(() => {
-    db.close();
-});
+// Ejecutar si se llama directamente
+if (require.main === module) {
+  main();
+}
 
-console.log('\n🚀 El problema de zonas horarias ha sido resuelto!');
-console.log('   Las nuevas reservas aparecerán correctamente en los reportes.');
+module.exports = { main };

@@ -2,7 +2,7 @@ const { Pool } = require('pg');
 
 /**
  * DatabaseManager unificado - Solo PostgreSQL
- * Elimina dependencias de SQLite para evitar problemas de sincronización
+ * Configuración unificada para PostgreSQL en desarrollo y producción
  */
 class DatabaseManager {
   constructor() {

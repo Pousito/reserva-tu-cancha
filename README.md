@@ -9,7 +9,7 @@ Sistema de reservas de canchas deportivas moderno y eficiente. Permite a los usu
 - **Filtros inteligentes**: Por ciudad, complejo y tipo de cancha
 - **Códigos de reserva**: Sistema único de identificación
 - **Búsqueda de reservas**: Consulta tus reservas existentes
-- **Base de datos relacional**: SQLite para almacenamiento eficiente
+- **Base de datos relacional**: PostgreSQL para almacenamiento eficiente y escalable
 
 ## 📋 Requisitos
 
@@ -44,7 +44,7 @@ Sistema de reservas de canchas deportivas moderno y eficiente. Permite a los usu
 ReservaTuCancha/
 ├── server.js              # Servidor principal (Express)
 ├── package.json           # Dependencias y scripts
-├── database.sqlite        # Base de datos (se crea automáticamente)
+├── .env.postgresql        # Configuración de PostgreSQL
 ├── public/                # Archivos del frontend
 │   ├── index.html         # Página principal
 │   ├── styles.css         # Estilos CSS
@@ -54,7 +54,7 @@ ReservaTuCancha/
 
 ## 🗄️ Base de Datos
 
-El sistema utiliza SQLite con las siguientes tablas:
+El sistema utiliza PostgreSQL con las siguientes tablas:
 
 - **ciudades**: Lista de ciudades disponibles
 - **complejos**: Complejos deportivos por ciudad
@@ -129,7 +129,7 @@ npm start
 4. Usar el código para consultar reservas futuras
 
 ### Para Administradores
-- Los datos se almacenan en `database.sqlite`
+- Los datos se almacenan en PostgreSQL
 - Pueden agregar nuevas ciudades, complejos y canchas directamente en la base de datos
 - El sistema es escalable para múltiples ubicaciones
 

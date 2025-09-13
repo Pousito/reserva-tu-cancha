@@ -3,7 +3,7 @@
 -- Ejecutar en la base de datos de Render
 
 
-INSERT OR REPLACE INTO reservas (
+INSERT INTO reservas (
   codigo_reserva,
   nombre_cliente,
   rut_cliente,
@@ -29,7 +29,7 @@ INSERT OR REPLACE INTO reservas (
   5
 );
 
-INSERT OR REPLACE INTO reservas (
+INSERT INTO reservas (
   codigo_reserva,
   nombre_cliente,
   rut_cliente,
@@ -55,7 +55,7 @@ INSERT OR REPLACE INTO reservas (
   6
 );
 
-INSERT OR REPLACE INTO reservas (
+INSERT INTO reservas (
   codigo_reserva,
   nombre_cliente,
   rut_cliente,
@@ -81,7 +81,7 @@ INSERT OR REPLACE INTO reservas (
   5
 );
 
-INSERT OR REPLACE INTO reservas (
+INSERT INTO reservas (
   codigo_reserva,
   nombre_cliente,
   rut_cliente,
@@ -107,7 +107,7 @@ INSERT OR REPLACE INTO reservas (
   5
 );
 
-INSERT OR REPLACE INTO reservas (
+INSERT INTO reservas (
   codigo_reserva,
   nombre_cliente,
   rut_cliente,
@@ -133,7 +133,7 @@ INSERT OR REPLACE INTO reservas (
   5
 );
 
-INSERT OR REPLACE INTO reservas (
+INSERT INTO reservas (
   codigo_reserva,
   nombre_cliente,
   rut_cliente,

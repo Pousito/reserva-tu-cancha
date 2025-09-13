@@ -10,7 +10,8 @@ async function autoRestoreFromBackups() {
   console.log('🔄 INICIANDO RESTAURACIÓN AUTOMÁTICA');
   console.log('===================================');
   
-  const dbPath = process.env.DB_PATH || '/opt/render/project/data/database.sqlite';
+  // PostgreSQL no requiere archivo local - usa conexión remota
+  console.log('📊 PostgreSQL configurado - no se requiere restauración de archivos');
   const backupDir = '/opt/render/project/data/backups';
   
   try {
@@ -21,7 +22,7 @@ async function autoRestoreFromBackups() {
     }
     
     const backupFiles = fs.readdirSync(backupDir)
-      .filter(file => file.endsWith('.sqlite') && !file.endsWith('.hash') && file.includes('database_backup_'))
+      .filter(file => file.endsWith('.sql') && !file.endsWith('.hash') && file.includes('database_backup_'))
       .sort()
       .reverse(); // Más recientes primero
     

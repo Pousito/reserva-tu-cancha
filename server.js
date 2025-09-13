@@ -12,6 +12,7 @@ const {
 } = require('./middleware/role-permissions');
 // PostgreSQL Database System - Unified for Development and Production
 const DatabaseManager = require('./src/config/database');
+const AtomicReservationManager = require('./src/utils/atomic-reservation');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
 const EmailService = require('./src/services/emailService');
 // Configuración de entorno - desarrollo vs producción
@@ -19,7 +20,7 @@ if (process.env.NODE_ENV === 'production') {
   // En producción, usar variables de entorno de Render
   require('dotenv').config();
 } else {
-  // En desarrollo, usar archivo específico
+  // En desarrollo, usar PostgreSQL (no SQLite)
   require('dotenv').config({ path: './env.postgresql' });
 }
 
@@ -113,14 +114,15 @@ const requireComplexAccess = (req, res, next) => {
   });
 };
 
-// Sistema de base de datos PostgreSQL unificado
-const db = new DatabaseManager();
+// Sistema de base de datos PostgreSQL unificado - INICIALIZAR DESPUÉS DE CARGAR ENV
+let db;
 
 // Sistema de emails
 const emailService = new EmailService();
 
 // Función helper para obtener la función de fecha actual según el tipo de BD
 const getCurrentTimestampFunction = () => {
+  if (!db) return 'NOW()'; // Default a PostgreSQL
   const dbInfo = db.getDatabaseInfo();
   return dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
 };
@@ -128,7 +130,14 @@ const getCurrentTimestampFunction = () => {
 // Inicializar base de datos
 async function initializeDatabase() {
   try {
+    // Inicializar DatabaseManager después de cargar las variables de entorno
+    db = new DatabaseManager();
     await db.connect();
+    
+    // Inicializar sistema de reservas atómicas
+    const atomicManager = new AtomicReservationManager(db);
+    global.atomicReservationManager = atomicManager;
+    console.log('🔒 Sistema de reservas atómicas inicializado');
     
     // Poblar con datos de ejemplo si está vacía
     await populateSampleData();
@@ -573,6 +582,49 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
       });
     }
     
+    // Validar que no se esté intentando reservar en horarios pasados
+    const ahora = new Date();
+    let fechaHoraReserva;
+    
+    try {
+      // Manejar diferentes formatos de hora
+      const horaFormateada = hora_inicio.includes(':') ? hora_inicio : `${hora_inicio}:00:00`;
+      fechaHoraReserva = new Date(`${fecha}T${horaFormateada}`);
+      
+      // Verificar que la fecha sea válida
+      if (isNaN(fechaHoraReserva.getTime())) {
+        throw new Error('Fecha o hora inválida');
+      }
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha o hora inválido',
+        detalles: {
+          fecha: fecha,
+          hora_inicio: hora_inicio,
+          mensaje: 'Verifique que la fecha esté en formato YYYY-MM-DD y la hora en formato HH:MM o HH:MM:SS'
+        }
+      });
+    }
+    
+    console.log('🕐 Validando horario para bloqueo y pago:', {
+      ahora: ahora.toISOString(),
+      fechaHoraReserva: fechaHoraReserva.toISOString(),
+      diferencia: fechaHoraReserva.getTime() - ahora.getTime()
+    });
+    
+    if (fechaHoraReserva <= ahora) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se pueden hacer reservas en horarios pasados',
+        detalles: {
+          hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+          hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+          mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros'
+        }
+      });
+    }
+    
     // Limpiar bloqueos temporales expirados antes de verificar disponibilidad
     await limpiarBloqueosExpirados();
     
@@ -667,8 +719,8 @@ async function generarCodigoReservaUnico() {
     
     // Verificar si el código ya existe en reservas activas
     const reservaExistente = await db.get(
-      'SELECT id FROM reservas WHERE codigo_reserva = $1 AND estado != "cancelada"',
-      [codigo]
+      'SELECT id FROM reservas WHERE codigo_reserva = $1 AND estado != $2',
+      [codigo, 'cancelada']
     );
     
     if (!reservaExistente) {
@@ -703,6 +755,18 @@ async function limpiarBloqueosExpirados() {
     return 0;
   }
 }
+
+// Configurar limpieza automática cada 2 minutos
+setInterval(async () => {
+  try {
+    await limpiarBloqueosExpirados();
+  } catch (error) {
+    console.error('❌ Error en limpieza automática programada:', error);
+  }
+}, 2 * 60 * 1000); // 2 minutos
+
+console.log('⏰ Limpieza automática de bloqueos temporales configurada cada 2 minutos');
+
 
 // Endpoint de debug para verificar lógica de superposición
 app.get('/api/debug/verificar-superposicion/:canchaId/:fecha/:hora', async (req, res) => {
@@ -818,7 +882,7 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
         SELECT cancha_id, hora_inicio, hora_fin, session_id, expira_en
         FROM bloqueos_temporales 
         WHERE cancha_id IN (${canchaIds.map((_, i) => `$${i + 1}`).join(',')}) 
-        AND fecha = $${canchaIds.length + 1} 
+        AND fecha::date = $${canchaIds.length + 1}::date 
         AND expira_en > $${canchaIds.length + 2}
       `, [...canchaIds, fecha, new Date().toISOString()]);
       
@@ -2110,78 +2174,123 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
 });
 
 // Crear reserva
+// Crear reserva (ATÓMICA - Previene condiciones de carrera)
 app.post('/api/reservas', async (req, res) => {
   try {
     const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id } = req.body;
     
-    console.log('📝 Creando reserva con datos:', { 
+    console.log('📝 Creando reserva atómica con datos:', { 
       cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id 
     });
+    
+    // Validar campos requeridos
+    if (!cancha_id || !nombre_cliente || !email_cliente || !fecha || !hora_inicio || !hora_fin || !precio_total) {
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan campos requeridos para crear la reserva'
+      });
+    }
+    
+    // Validar que no se esté intentando reservar en horarios pasados
+    const ahora = new Date();
+    let fechaHoraReserva;
+    
+    try {
+      // Manejar diferentes formatos de hora
+      const horaFormateada = hora_inicio.includes(':') ? hora_inicio : `${hora_inicio}:00:00`;
+      fechaHoraReserva = new Date(`${fecha}T${horaFormateada}`);
+      
+      // Verificar que la fecha sea válida
+      if (isNaN(fechaHoraReserva.getTime())) {
+        throw new Error('Fecha o hora inválida');
+      }
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha o hora inválido',
+        detalles: {
+          fecha: fecha,
+          hora_inicio: hora_inicio,
+          mensaje: 'Verifique que la fecha esté en formato YYYY-MM-DD y la hora en formato HH:MM o HH:MM:SS'
+        }
+      });
+    }
+    
+    console.log('🕐 Validando horario:', {
+      ahora: ahora.toISOString(),
+      fechaHoraReserva: fechaHoraReserva.toISOString(),
+      diferencia: fechaHoraReserva.getTime() - ahora.getTime()
+    });
+    
+    if (fechaHoraReserva <= ahora) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se pueden hacer reservas en horarios pasados',
+        detalles: {
+          hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+          hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+          mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros'
+        }
+      });
+    }
     
     // Usar teléfono por defecto si no se proporciona
     const telefono = telefono_cliente || 'No proporcionado';
     
-    // VERIFICAR DISPONIBILIDAD ANTES DE CREAR LA RESERVA
-    if (!bloqueo_id) {
-      // Si no hay bloqueo temporal, verificar disponibilidad
-      const disponibilidad = await verificarDisponibilidadCancha(cancha_id, fecha, hora_inicio, hora_fin);
-      if (!disponibilidad.disponible) {
-        return res.status(409).json({ 
-          success: false, 
-          error: 'La cancha ya no está disponible en ese horario',
-          conflicto: disponibilidad.conflicto
-        });
-      }
-    }
+    // Usar AtomicReservationManager para crear reserva de forma atómica
+    const AtomicReservationManager = require('./src/utils/atomic-reservation');
+    const atomicManager = new AtomicReservationManager(db);
     
-    // Generar código de reserva único (6 caracteres alfanuméricos)
-    const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
-    
-    // Calcular comisión para reserva web (3.5%)
-    const comisionWeb = Math.round(precio_total * 0.035);
-    
-    console.log('💾 Insertando reserva en BD:', {
-      codigo_reserva,
+    const reservationData = {
       cancha_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
       nombre_cliente,
       email_cliente,
       telefono_cliente: telefono,
       rut_cliente,
-      fecha,
-      hora_inicio,
-      hora_fin,
-      precio_total
-    });
+      precio_total,
+      tipo_reserva: 'directa',
+      bloqueo_id
+    };
     
-    const result = await db.run(
-      'INSERT INTO reservas (codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, estado, fecha_creacion, tipo_reserva, comision_aplicada) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
-      [codigo_reserva, cancha_id, nombre_cliente, email_cliente, telefono, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 'pendiente', new Date().toISOString(), 'directa', comisionWeb]
-    );
+    const options = {
+      skipAvailabilityCheck: false, // Siempre verificar disponibilidad
+      commissionRate: 0.035 // 3.5% para reservas web
+    };
     
-    // Liberar bloqueo temporal si existe
-    if (bloqueo_id) {
-      try {
-        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueo_id]);
-        console.log('🔓 Bloqueo temporal liberado:', bloqueo_id);
-      } catch (error) {
-        console.error('⚠️ Error liberando bloqueo temporal:', error.message);
-      }
+    const result = await atomicManager.createAtomicReservation(reservationData, options);
+    
+    if (!result.success) {
+      const statusCode = result.code === 'NOT_AVAILABLE' || result.code === 'TEMPORARILY_BLOCKED' ? 409 : 500;
+      return res.status(statusCode).json({
+        success: false,
+        error: result.error,
+        code: result.code
+      });
     }
     
-    // Invalidar caché de disponibilidad
-    const { invalidateCacheOnReservation } = require('./src/controllers/availabilityController');
-    invalidateCacheOnReservation(cancha_id, fecha);
+    console.log('✅ Reserva atómica creada exitosamente:', {
+      id: result.reserva.id,
+      codigo: result.codigo_reserva,
+      precio: result.precio
+    });
     
-    // Los emails se enviarán después de confirmar el pago
-    
-    res.json({ 
-      success: true, 
-      id: result.lastID,
-      codigo_reserva,
+    res.json({
+      success: true,
+      id: result.reserva.id,
+      codigo_reserva: result.codigo_reserva,
+      precio: result.precio,
       message: 'Reserva creada exitosamente'
     });
+    
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error creando reserva atómica:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor al crear la reserva' 
+    });
   }
 });
 
@@ -2348,6 +2457,54 @@ app.get('/api/debug/table-data', async (req, res) => {
         canchas: { count: canchas[0].count, ejemplos: canchasEjemplos },
         reservas: { count: reservas[0].count },
         usuarios: { count: usuarios[0].count }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para limpiar datos de prueba
+app.post('/api/reservas/cleanup-test', async (req, res) => {
+  try {
+    // Limpiar reservas de prueba
+    const reservasResult = await db.query(`
+      DELETE FROM reservas 
+      WHERE email_cliente LIKE '%@test.com' 
+      OR nombre_cliente LIKE 'Cliente %'
+      OR nombre_cliente LIKE 'Cliente Web%'
+      OR nombre_cliente LIKE 'Cliente Admin%'
+    `);
+    
+    // Limpiar bloqueos temporales de prueba
+    const bloqueosResult = await db.query(`
+      DELETE FROM bloqueos_temporales 
+      WHERE session_id LIKE 'test-session-%'
+      OR session_id LIKE 'web-session-%'
+      OR session_id LIKE 'admin-session-%'
+    `);
+    
+    // Limpiar pagos de prueba (si la tabla existe)
+    let pagosResult = { rowCount: 0 };
+    try {
+      pagosResult = await db.query(`
+        DELETE FROM pagos 
+        WHERE reserva_id IN (
+          SELECT id FROM reservas 
+          WHERE email_cliente LIKE '%@test.com'
+        )
+      `);
+    } catch (error) {
+      console.log('⚠️ Tabla pagos no existe o no tiene la columna esperada');
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Datos de prueba limpiados',
+      data: {
+        reservas: reservasResult.rowCount,
+        bloqueos: bloqueosResult.rowCount,
+        pagos: pagosResult.rowCount
       }
     });
   } catch (error) {
@@ -3308,7 +3465,7 @@ async function verificarDisponibilidadCancha(canchaId, fecha, horaInicio, horaFi
     const reservas = await db.query(`
       SELECT hora_inicio, hora_fin 
       FROM reservas 
-      WHERE cancha_id = $1 AND fecha = $2 AND estado != 'cancelada'
+      WHERE cancha_id = $1 AND fecha::date = $2::date AND estado != 'cancelada'
     `, [canchaId, fecha]);
     
     console.log(`📊 Reservas encontradas: ${reservas.length}`);
@@ -3318,7 +3475,7 @@ async function verificarDisponibilidadCancha(canchaId, fecha, horaInicio, horaFi
     const bloqueos = await db.query(`
       SELECT hora_inicio, hora_fin, session_id
       FROM bloqueos_temporales 
-      WHERE cancha_id = $1 AND fecha = $2 AND expira_en > $3
+      WHERE cancha_id = $1 AND fecha::date = $2::date AND expira_en > $3
     `, [canchaId, fecha, new Date().toISOString()]);
     
     console.log(`📊 Bloqueos temporales encontrados: ${bloqueos.length}`);
@@ -3396,10 +3553,10 @@ function timeToMinutes(time) {
   return hours * 60 + minutes;
 }
 
-// ===== ENDPOINT PARA BLOQUEAR TEMPORALMENTE UNA RESERVA =====
+// ===== ENDPOINT PARA BLOQUEAR TEMPORALMENTE UNA RESERVA (MEJORADO) =====
 app.post('/api/reservas/bloquear', async (req, res) => {
   try {
-    const { cancha_id, fecha, hora_inicio, hora_fin, session_id } = req.body;
+    const { cancha_id, fecha, hora_inicio, hora_fin, session_id, datos_cliente } = req.body;
     
     // Verificar que todos los campos requeridos estén presentes
     if (!cancha_id || !fecha || !hora_inicio || !hora_fin || !session_id) {
@@ -3409,48 +3566,116 @@ app.post('/api/reservas/bloquear', async (req, res) => {
       });
     }
     
-    // Verificar disponibilidad antes de bloquear
-    const disponibilidad = await verificarDisponibilidadCancha(cancha_id, fecha, hora_inicio, hora_fin);
+    // Validar que no se esté intentando reservar en horarios pasados
+    const ahora = new Date();
+    let fechaHoraReserva;
+    
+    try {
+      // Manejar diferentes formatos de hora
+      const horaFormateada = hora_inicio.includes(':') ? hora_inicio : `${hora_inicio}:00:00`;
+      fechaHoraReserva = new Date(`${fecha}T${horaFormateada}`);
+      
+      // Verificar que la fecha sea válida
+      if (isNaN(fechaHoraReserva.getTime())) {
+        throw new Error('Fecha o hora inválida');
+      }
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de fecha o hora inválido',
+        detalles: {
+          fecha: fecha,
+          hora_inicio: hora_inicio,
+          mensaje: 'Verifique que la fecha esté en formato YYYY-MM-DD y la hora en formato HH:MM o HH:MM:SS'
+        }
+      });
+    }
+    
+    console.log('🕐 Validando horario para bloqueo temporal:', {
+      ahora: ahora.toISOString(),
+      fechaHoraReserva: fechaHoraReserva.toISOString(),
+      diferencia: fechaHoraReserva.getTime() - ahora.getTime()
+    });
+    
+    if (fechaHoraReserva <= ahora) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se pueden hacer reservas en horarios pasados',
+        detalles: {
+          hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+          hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+          mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros'
+        }
+      });
+    }
+    
+    // Usar sistema atómico para verificar disponibilidad
+    const atomicManager = global.atomicReservationManager;
+    if (!atomicManager) {
+      throw new Error('Sistema de reservas atómicas no inicializado');
+    }
+    
+    const disponibilidad = await atomicManager.checkAtomicAvailability(
+      cancha_id, fecha, hora_inicio, hora_fin
+    );
+    
     if (!disponibilidad.disponible) {
       return res.status(409).json({ 
         success: false, 
         error: 'La cancha ya no está disponible en ese horario',
-        conflicto: disponibilidad.conflicto
+        detalles: {
+          reservas_existentes: disponibilidad.reservas_existentes,
+          bloqueos_temporales: disponibilidad.bloqueos_temporales
+        }
       });
     }
     
-    // Crear bloqueo temporal (3 minutos)
+    // Crear bloqueo temporal (5 minutos)
     const bloqueoId = 'BLOCK_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    const expiraEn = new Date(Date.now() + 3 * 60 * 1000); // 3 minutos
+    const expiraEn = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
     
-    // Insertar bloqueo en la base de datos
-    await db.run(
-      'INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, creado_en) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [bloqueoId, cancha_id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), new Date().toISOString()]
-    );
-    
-    console.log('🔒 Bloqueo temporal creado:', {
-      bloqueoId,
-      cancha_id,
-      fecha,
-      hora_inicio,
-      hora_fin,
-      session_id,
-      expiraEn: expiraEn.toISOString()
-    });
-    
-    res.json({
-      success: true,
-      bloqueoId,
-      expiraEn: expiraEn.toISOString(),
-      mensaje: 'Reserva bloqueada temporalmente por 5 minutos'
-    });
+    // Insertar bloqueo usando transacción
+    const client = await db.pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      await client.query(
+        'INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, creado_en, datos_cliente) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [bloqueoId, cancha_id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), new Date().toISOString(), datos_cliente ? JSON.stringify(datos_cliente) : null]
+      );
+      
+      await client.query('COMMIT');
+      
+      console.log('🔒 Bloqueo temporal creado:', {
+        bloqueoId,
+        cancha_id,
+        fecha,
+        hora_inicio,
+        hora_fin,
+        session_id,
+        expiraEn: expiraEn.toISOString()
+      });
+      
+      res.json({
+        success: true,
+        bloqueoId,
+        expiraEn: expiraEn.toISOString(),
+        mensaje: 'Reserva bloqueada temporalmente por 5 minutos'
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
     
   } catch (error) {
     console.error('❌ Error bloqueando reserva:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno del servidor',
+      detalles: error.message
     });
   }
 });

@@ -69,11 +69,17 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             startOfWeek = new Date(fechaInicio);
             endOfWeek = new Date(fechaFin);
         } else {
-            // Calcular semana actual
+            // Calcular semana actual (lunes a domingo)
             const today = new Date();
-            const dayOfWeek = today.getDay();
+            const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+            
             startOfWeek = new Date(today);
-            startOfWeek.setDate(today.getDate() - dayOfWeek + 1); // Lunes
+            // Si es domingo (0), ir al lunes anterior (-6)
+            // Si es lunes (1), no mover la fecha (0)
+            // Si es martes (2), ir al lunes anterior (-1)
+            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            startOfWeek.setDate(today.getDate() + diffToMonday);
+            
             endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6); // Domingo
         }
@@ -163,10 +169,10 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         const canchasParams = [];
         
         if (user.rol === 'owner' || user.rol === 'manager') {
-            canchasQuery += ` AND comp.id = $1`;
+            canchasQuery += ` WHERE comp.id = $1`;
             canchasParams.push(user.complejo_id);
         } else if (complejoId && user.rol === 'super_admin') {
-            canchasQuery += ` AND comp.id = $1`;
+            canchasQuery += ` WHERE comp.id = $1`;
             canchasParams.push(complejoId);
         }
         
@@ -207,7 +213,9 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         const bloqueosProcesados = (bloqueos || []).map(bloqueo => {
             let datosCliente = {};
             try {
-                datosCliente = JSON.parse(bloqueo.datos_cliente);
+                if (bloqueo.datos_cliente) {
+                    datosCliente = JSON.parse(bloqueo.datos_cliente);
+                }
             } catch (e) {
                 console.log('⚠️ Error parseando datos del cliente:', e.message);
             }
@@ -353,7 +361,12 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
     } catch (error) {
         console.error('❌ Error obteniendo datos del calendario:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('❌ Stack trace:', error.stack);
+        res.status(500).json({ 
+            error: 'Error interno del servidor',
+            details: error.message,
+            stack: error.stack
+        });
     }
 });
 
@@ -414,74 +427,58 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         
         const cancha = (canchaResult || [])[0];
         
-        // Verificar disponibilidad
-        const disponibilidadQuery = `
-            SELECT COUNT(*) as count
-            FROM reservas
-            WHERE cancha_id = $1 
-            AND fecha = $2 
-            AND (
-                (hora_inicio <= $3 AND hora_fin > $3) OR
-                (hora_inicio < $4 AND hora_fin >= $4) OR
-                (hora_inicio >= $3 AND hora_fin <= $4)
-            )
-            AND estado != 'cancelada'
-        `;
-        
-        const disponibilidadResult = await db.query(disponibilidadQuery, [
-            cancha_id, fecha, hora_inicio, hora_fin
-        ]);
-        
-        if (parseInt((disponibilidadResult || [])[0]?.count || 0) > 0) {
-            return res.status(409).json({ error: 'La cancha no está disponible en ese horario' });
-        }
-        
         // Calcular precio con comisión administrativa
         const precioBase = cancha.precio_hora;
         const precioCalculado = calculateAdminReservationPrice(precioBase);
         
-        // Generar código de reserva de 6 dígitos
-        const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let codigo = '';
-        for (let i = 0; i < 6; i++) {
-            codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+        // Usar AtomicReservationManager para crear reserva de forma atómica
+        const AtomicReservationManager = require('../utils/atomic-reservation');
+        const atomicManager = new AtomicReservationManager(db);
+        
+        const reservationData = {
+            cancha_id,
+            fecha,
+            hora_inicio,
+            hora_fin,
+            nombre_cliente,
+            email_cliente,
+            telefono_cliente,
+            rut_cliente,
+            precio_total: precioCalculado.finalPrice,
+            tipo_reserva: 'administrativa',
+            admin_id: user.id,
+            bloqueo_id: req.body.bloqueo_id || null // ID del bloqueo temporal del admin actual
+        };
+        
+        const options = {
+            skipAvailabilityCheck: false, // Siempre verificar disponibilidad
+            commissionRate: 0.0175 // 1.75% para reservas administrativas
+        };
+        
+        console.log('🔍 Ejecutando reserva atómica administrativa...');
+        const result = await atomicManager.createAtomicReservation(reservationData, options);
+        
+        if (!result.success) {
+            const statusCode = result.code === 'NOT_AVAILABLE' || result.code === 'TEMPORARILY_BLOCKED' ? 409 : 500;
+            return res.status(statusCode).json({
+                success: false,
+                error: result.error,
+                code: result.code
+            });
         }
         
-        // Crear la reserva
-        const insertQuery = `
-            INSERT INTO reservas (
-                codigo_reserva, cancha_id, fecha, hora_inicio, hora_fin,
-                nombre_cliente, email_cliente, telefono_cliente, rut_cliente,
-                precio_total, estado, tipo_reserva, creada_por_admin, admin_id,
-                comision_aplicada
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-            RETURNING *
-        `;
+        const nuevaReserva = result.reserva;
+        console.log('🔍 Nueva reserva atómica obtenida:', nuevaReserva);
         
-        const insertParams = [
-            codigo, cancha_id, fecha, hora_inicio, hora_fin,
-            nombre_cliente, email_cliente || null, telefono_cliente || null, rut_cliente || null,
-            precioCalculado.finalPrice, 'confirmada', 'administrativa', true, user.id,
-            precioCalculado.commission
-        ];
-        
-        console.log('🔍 Ejecutando consulta de inserción...');
-        const result = await db.query(insertQuery, insertParams);
-        console.log('🔍 Resultado de la consulta:', result);
-        
-        const nuevaReserva = (result || [])[0];
-        console.log('🔍 Nueva reserva obtenida:', nuevaReserva);
-        
-        console.log('✅ Reserva administrativa creada:', {
+        console.log('✅ Reserva administrativa atómica creada:', {
             codigo: nuevaReserva.codigo_reserva,
-            precio: precioCalculado.finalPrice,
-            comision: precioCalculado.commission
+            precio: result.precio
         });
         
         // ENVIAR EMAILS INMEDIATAMENTE DESPUÉS DE CREAR LA RESERVA
         console.log('📧 Iniciando proceso de envío de emails...');
         console.log('📧 Datos para email:', {
-            codigo: codigo,
+            codigo: nuevaReserva.codigo_reserva,
             nombre_cliente: nombre_cliente,
             email_cliente: email_cliente,
             complejo: cancha.complejo_nombre,
@@ -489,7 +486,7 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             fecha: fecha,
             hora_inicio: hora_inicio,
             hora_fin: hora_fin,
-            precio_total: precioCalculado.finalPrice
+            precio_total: result.precio.final
         });
         
         // Enviar emails de confirmación ANTES de responder
@@ -498,7 +495,7 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
           const emailService = new EmailService();
           
           const emailData = {
-            codigo_reserva: codigo,
+            codigo_reserva: nuevaReserva.codigo_reserva,
             nombre_cliente: nombre_cliente,
             email_cliente: email_cliente,
             complejo: cancha.complejo_nombre,
@@ -506,10 +503,10 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             fecha: fecha,
             hora_inicio: hora_inicio,
             hora_fin: hora_fin,
-            precio_total: precioCalculado.finalPrice
+            precio_total: result.precio.final
           };
           
-          console.log('📧 Enviando emails de confirmación para reserva administrativa:', codigo);
+          console.log('📧 Enviando emails de confirmación para reserva administrativa:', nuevaReserva.codigo_reserva);
           const emailResults = await emailService.sendConfirmationEmails(emailData);
           console.log('✅ Emails de confirmación procesados:', emailResults);
         } catch (emailError) {
@@ -522,7 +519,7 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         res.status(201).json({
             success: true,
             reserva: nuevaReserva,
-            precio: precioCalculado,
+            precio: result.precio,
             mensaje: 'Reserva administrativa creada exitosamente'
         });
         
@@ -605,27 +602,74 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
         
         console.log('🔒 Creando bloqueo temporal administrativo:', { fecha, hora_inicio, hora_fin, session_id, tipo, user: user.email });
         
-        // Obtener todas las canchas del complejo del usuario
-        let canchasQuery = `
-            SELECT c.id, c.nombre, c.tipo
-            FROM canchas c
-            JOIN complejos comp ON c.complejo_id = comp.id
-            WHERE comp.id = $1
-        `;
+        // Validar que no se esté intentando reservar en horarios pasados
+        const ahora = new Date();
+        let fechaHoraReserva;
         
-        const canchasParams = [user.complejo_id];
+        try {
+            // Manejar diferentes formatos de hora
+            const horaFormateada = hora_inicio.includes(':') ? hora_inicio : `${hora_inicio}:00:00`;
+            fechaHoraReserva = new Date(`${fecha}T${horaFormateada}`);
+            
+            // Verificar que la fecha sea válida
+            if (isNaN(fechaHoraReserva.getTime())) {
+                throw new Error('Fecha o hora inválida');
+            }
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                error: 'Formato de fecha o hora inválido',
+                detalles: {
+                    fecha: fecha,
+                    hora_inicio: hora_inicio,
+                    mensaje: 'Verifique que la fecha esté en formato YYYY-MM-DD y la hora en formato HH:MM o HH:MM:SS'
+                }
+            });
+        }
+        
+        console.log('🕐 Validando horario:', {
+            ahora: ahora.toISOString(),
+            fechaHoraReserva: fechaHoraReserva.toISOString(),
+            diferencia: fechaHoraReserva.getTime() - ahora.getTime()
+        });
+        
+        if (fechaHoraReserva <= ahora) {
+            return res.status(400).json({
+                success: false,
+                error: 'No se pueden hacer reservas en horarios pasados',
+                detalles: {
+                    hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+                    hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+                    mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros'
+                }
+            });
+        }
+        
+        // Obtener todas las canchas del complejo del usuario
+        let canchasQuery;
+        let canchasParams = [];
         
         if (user.rol === 'super_admin') {
             // Super admin puede crear bloqueos en cualquier complejo
-            // Si no se especifica complejo, usar el primero disponible
+            // Obtener todas las canchas del primer complejo disponible
             canchasQuery = `
                 SELECT c.id, c.nombre, c.tipo
                 FROM canchas c
                 JOIN complejos comp ON c.complejo_id = comp.id
-                ORDER BY comp.id
-                LIMIT 1
+                WHERE comp.id = (
+                    SELECT MIN(id) FROM complejos
+                )
+                ORDER BY c.id
             `;
-            canchasParams.pop();
+        } else {
+            // Owner y manager solo pueden crear bloqueos en su complejo
+            canchasQuery = `
+                SELECT c.id, c.nombre, c.tipo
+                FROM canchas c
+                JOIN complejos comp ON c.complejo_id = comp.id
+                WHERE comp.id = $1
+            `;
+            canchasParams = [user.complejo_id];
         }
         
         const canchas = await db.query(canchasQuery, canchasParams);
@@ -637,59 +681,40 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
             });
         }
         
-        // Verificar disponibilidad de cada cancha antes de crear bloqueos
+        // Crear bloqueos temporales para TODAS las canchas del complejo
+        // Esto evita confusión en la interfaz cuando se selecciona un slot
         const bloqueosCreados = [];
         const expiraEn = new Date(Date.now() + 3 * 60 * 1000); // 3 minutos
         
         for (const cancha of canchas) {
-            // Verificar si la cancha está realmente disponible
-            const disponibilidadQuery = `
-                SELECT COUNT(*) as count
-                FROM reservas
-                WHERE cancha_id = $1 
-                AND fecha = $2 
-                AND (
-                    (hora_inicio < $4 AND hora_fin > $3)
-                )
-                AND estado != 'cancelada'
-            `;
+            // Crear bloqueo temporal para todas las canchas, independientemente de su disponibilidad
+            // Esto proporciona una experiencia más consistente en el panel de administración
+            const bloqueoId = `ADMIN_${Date.now()}_${cancha.id}`;
             
-            const disponibilidadResult = await db.query(disponibilidadQuery, [
-                cancha.id, fecha, hora_inicio, hora_fin
-            ]);
+            const datosCliente = JSON.stringify({
+                nombre_cliente: `Admin ${user.email}`,
+                tipo_bloqueo: 'administrativo',
+                admin_id: user.id,
+                admin_email: user.email,
+                bloquea_todas_canchas: true // Indicador de que es un bloqueo administrativo global
+            });
             
-            const estaOcupada = parseInt((disponibilidadResult || [])[0]?.count || 0) > 0;
+            const dbInfo = db.getDatabaseInfo();
+            const timestampFunction = dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
+            await db.run(
+                `INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, created_at) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${timestampFunction})`,
+                [bloqueoId, cancha.id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), datosCliente]
+            );
             
-            if (!estaOcupada) {
-                // Solo crear bloqueo si la cancha está disponible
-                const bloqueoId = `ADMIN_${Date.now()}_${cancha.id}`;
-                
-                const datosCliente = JSON.stringify({
-                    nombre_cliente: `Admin ${user.email}`,
-                    tipo_bloqueo: 'administrativo',
-                    admin_id: user.id,
-                    admin_email: user.email
-                });
-                
-                const dbInfo = db.getDatabaseInfo();
-                const timestampFunction = dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
-                await db.run(
-                    `INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, created_at) 
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${timestampFunction})`,
-                    [bloqueoId, cancha.id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), datosCliente]
-                );
-                
-                bloqueosCreados.push({
-                    id: bloqueoId,
-                    cancha_id: cancha.id,
-                    cancha_nombre: cancha.nombre,
-                    cancha_tipo: cancha.tipo
-                });
-                
-                console.log(`✅ Bloqueo temporal creado para cancha disponible: ${cancha.nombre}`);
-            } else {
-                console.log(`⚠️ Cancha ${cancha.nombre} ya está ocupada, no se creará bloqueo temporal`);
-            }
+            bloqueosCreados.push({
+                id: bloqueoId,
+                cancha_id: cancha.id,
+                cancha_nombre: cancha.nombre,
+                cancha_tipo: cancha.tipo
+            });
+            
+            console.log(`✅ Bloqueo temporal administrativo creado para: ${cancha.nombre}`);
         }
         
         console.log(`✅ Bloqueos temporales administrativos creados: ${bloqueosCreados.length}`);
@@ -746,14 +771,33 @@ router.delete('/liberate-blocking/:bloqueoId', authenticateToken, requireRolePer
             });
         }
         
-        // Eliminar el bloqueo temporal
-        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueoId]);
+        // Para bloqueos administrativos, liberar todos los bloqueos de la misma sesión
+        // Esto asegura que se liberen todas las canchas bloqueadas temporalmente
+        let deleteQuery = 'DELETE FROM bloqueos_temporales WHERE session_id = $1';
+        const deleteParams = [bloqueo.session_id];
         
-        console.log('✅ Bloqueo temporal administrativo liberado:', bloqueoId);
+        // Si es owner o manager, asegurar que solo se liberen bloqueos de su complejo
+        if (user.rol === 'owner' || user.rol === 'manager') {
+            deleteQuery = `
+                DELETE FROM bloqueos_temporales 
+                WHERE session_id = $1 
+                AND cancha_id IN (
+                    SELECT c.id FROM canchas c 
+                    JOIN complejos comp ON c.complejo_id = comp.id 
+                    WHERE comp.id = $2
+                )
+            `;
+            deleteParams.push(user.complejo_id);
+        }
+        
+        const result = await db.run(deleteQuery, deleteParams);
+        
+        console.log(`✅ Bloqueos temporales administrativos liberados: ${result.changes} bloqueos de sesión ${bloqueo.session_id}`);
         
         res.json({
             success: true,
-            message: 'Bloqueo temporal liberado exitosamente'
+            message: `Bloqueos temporales liberados exitosamente (${result.changes} bloqueos)`,
+            bloqueosLiberados: result.changes
         });
         
     } catch (error) {
@@ -764,5 +808,6 @@ router.delete('/liberate-blocking/:bloqueoId', authenticateToken, requireRolePer
         });
     }
 });
+
 
 module.exports = { router, setDatabase };
