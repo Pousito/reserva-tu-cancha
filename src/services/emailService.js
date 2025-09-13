@@ -118,6 +118,16 @@ class EmailService {
       month: 'long',
       day: 'numeric'
     });
+    
+    // Función para formatear hora (quitar segundos si existen)
+    const formatearHora = (hora) => {
+      if (typeof hora === 'string') {
+        // Si tiene formato HH:MM:SS, quitar los segundos
+        return hora.includes(':') && hora.split(':').length === 3 ? 
+               hora.substring(0, 5) : hora;
+      }
+      return hora;
+    };
 
     return `
     <!DOCTYPE html>
@@ -250,7 +260,7 @@ class EmailService {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Horario:</span>
-                    <span class="detail-value">${hora_inicio} - ${hora_fin}</span>
+                    <span class="detail-value">${formatearHora(hora_inicio)} - ${formatearHora(hora_fin)}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Total Pagado:</span>
@@ -344,7 +354,7 @@ Detalles:
 - Complejo: ${reservaData.complejo}
 - Cancha: ${reservaData.cancha}
 - Fecha: ${reservaData.fecha}
-- Horario: ${reservaData.hora_inicio} - ${reservaData.hora_fin}
+- Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 - Total: $${reservaData.precio_total.toLocaleString()}
 
 Instrucciones:
@@ -430,7 +440,7 @@ Gracias por elegir Reserva Tu Cancha!
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
               <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
               <p><strong>Fecha:</strong> ${reservaData.fecha}</p>
-              <p><strong>Horario:</strong> ${reservaData.hora_inicio} - ${reservaData.hora_fin}</p>
+              <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
               <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
             </div>
             <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 30px;">
@@ -447,7 +457,7 @@ Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
 Cancha: ${reservaData.cancha}
 Fecha: ${reservaData.fecha}
-Horario: ${reservaData.hora_inicio} - ${reservaData.hora_fin}
+Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 Total: $${reservaData.precio_total.toLocaleString()}
 
 Este email fue generado automáticamente por el sistema Reserva Tu Cancha
@@ -485,7 +495,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
               <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
               <p><strong>Fecha:</strong> ${reservaData.fecha}</p>
-              <p><strong>Horario:</strong> ${reservaData.hora_inicio} - ${reservaData.hora_fin}</p>
+              <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
               <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
             </div>
             <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 30px;">
@@ -502,7 +512,7 @@ Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
 Cancha: ${reservaData.cancha}
 Fecha: ${reservaData.fecha}
-Horario: ${reservaData.hora_inicio} - ${reservaData.hora_fin}
+Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 Total: $${reservaData.precio_total.toLocaleString()}
 
 Este email fue generado automáticamente por el sistema Reserva Tu Cancha
