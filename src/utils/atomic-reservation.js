@@ -153,14 +153,32 @@ class AtomicReservationManager {
                 RETURNING *
             `;
             
-            // Asegurar que la fecha se almacene como fecha simple sin zona horaria
+            // CORRECCIÓN: Asegurar que la fecha se almacene correctamente sin problemas de zona horaria
             let fechaParaBD = fecha;
             if (fecha instanceof Date) {
-                // Si es un objeto Date, extraer solo la parte de fecha
-                fechaParaBD = fecha.toISOString().split('T')[0];
-            } else if (typeof fecha === 'string' && fecha.includes('T')) {
-                // Si es un string ISO, extraer solo la parte de fecha
-                fechaParaBD = fecha.split('T')[0];
+                // Si es un objeto Date, crear fecha local para evitar problemas de UTC
+                const year = fecha.getFullYear();
+                const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                const day = String(fecha.getDate()).padStart(2, '0');
+                fechaParaBD = `${year}-${month}-${day}`;
+            } else if (typeof fecha === 'string') {
+                // Si es un string, verificar el formato
+                if (fecha.includes('T')) {
+                    // Fecha ISO - extraer solo la parte de fecha
+                    fechaParaBD = fecha.split('T')[0];
+                } else if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+                    // Fecha ya en formato YYYY-MM-DD - usar tal como está
+                    fechaParaBD = fecha;
+                } else {
+                    // Otros formatos - intentar parsear y convertir
+                    const fechaObj = new Date(fecha);
+                    if (!isNaN(fechaObj.getTime())) {
+                        const year = fechaObj.getFullYear();
+                        const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                        const day = String(fechaObj.getDate()).padStart(2, '0');
+                        fechaParaBD = `${year}-${month}-${day}`;
+                    }
+                }
             }
             
             const insertParams = [

@@ -109,13 +109,28 @@ class EmailService {
       precio_total 
     } = reservaData;
 
-    // Formatear fecha usando utilidades de zona horaria de Chile
-    const fechaFormateada = formatDateForChile(fecha, {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    // CORRECCIÓN: Formatear fecha correctamente para zona horaria de Chile
+    let fechaFormateada;
+    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      // Fecha en formato YYYY-MM-DD - crear fecha local para evitar problemas de UTC
+      const [year, month, day] = fecha.split('-').map(Number);
+      const fechaObj = new Date(year, month - 1, day);
+      fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'America/Santiago'
+      });
+    } else {
+      // Usar la función original para otros formatos
+      fechaFormateada = formatDateForChile(fecha, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
 
     return `
     <!DOCTYPE html>
@@ -341,7 +356,18 @@ Código de Reserva: ${reservaData.codigo_reserva}
 Detalles:
 - Complejo: ${reservaData.complejo}
 - Cancha: ${reservaData.cancha}
-- Fecha: ${reservaData.fecha}
+- Fecha: ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
+  (() => {
+    const [year, month, day] = reservaData.fecha.split('-').map(Number);
+    const fechaObj = new Date(year, month - 1, day);
+    return fechaObj.toLocaleDateString('es-CL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'America/Santiago'
+    });
+  })() : reservaData.fecha}
 - Horario: ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}
 - Total: $${reservaData.precio_total.toLocaleString()}
 
@@ -427,7 +453,18 @@ Gracias por elegir Reserva Tu Cancha!
               <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
               <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
-              <p><strong>Fecha:</strong> ${reservaData.fecha}</p>
+              <p><strong>Fecha:</strong> ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
+                (() => {
+                  const [year, month, day] = reservaData.fecha.split('-').map(Number);
+                  const fechaObj = new Date(year, month - 1, day);
+                  return fechaObj.toLocaleDateString('es-CL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'America/Santiago'
+                  });
+                })() : reservaData.fecha}</p>
               <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
               <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
             </div>
@@ -482,7 +519,18 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
               <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
               <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
-              <p><strong>Fecha:</strong> ${reservaData.fecha}</p>
+              <p><strong>Fecha:</strong> ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
+                (() => {
+                  const [year, month, day] = reservaData.fecha.split('-').map(Number);
+                  const fechaObj = new Date(year, month - 1, day);
+                  return fechaObj.toLocaleDateString('es-CL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'America/Santiago'
+                  });
+                })() : reservaData.fecha}</p>
               <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
               <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
             </div>
