@@ -109,12 +109,16 @@ class EmailService {
       precio_total 
     } = reservaData;
 
-    // CORRECCIÓN: Formatear fecha correctamente para zona horaria de Chile
+    // CORRECCIÓN CRÍTICA: Formatear fecha correctamente para zona horaria de Chile
     let fechaFormateada;
     if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      // Fecha en formato YYYY-MM-DD - crear fecha local para evitar problemas de UTC
+      // Fecha en formato YYYY-MM-DD - usar directamente la fecha sin conversiones de zona horaria
       const [year, month, day] = fecha.split('-').map(Number);
-      const fechaObj = new Date(year, month - 1, day);
+      
+      // Crear fecha usando UTC para evitar problemas de zona horaria del servidor
+      const fechaObj = new Date(Date.UTC(year, month - 1, day));
+      
+      // Formatear usando zona horaria de Chile
       fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
         weekday: 'long',
         year: 'numeric',
@@ -359,7 +363,7 @@ Detalles:
 - Fecha: ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
   (() => {
     const [year, month, day] = reservaData.fecha.split('-').map(Number);
-    const fechaObj = new Date(year, month - 1, day);
+    const fechaObj = new Date(Date.UTC(year, month - 1, day));
     return fechaObj.toLocaleDateString('es-CL', {
       weekday: 'long',
       year: 'numeric',
@@ -456,7 +460,7 @@ Gracias por elegir Reserva Tu Cancha!
               <p><strong>Fecha:</strong> ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
                 (() => {
                   const [year, month, day] = reservaData.fecha.split('-').map(Number);
-                  const fechaObj = new Date(year, month - 1, day);
+                  const fechaObj = new Date(Date.UTC(year, month - 1, day));
                   return fechaObj.toLocaleDateString('es-CL', {
                     weekday: 'long',
                     year: 'numeric',
@@ -522,7 +526,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
               <p><strong>Fecha:</strong> ${typeof reservaData.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(reservaData.fecha) ? 
                 (() => {
                   const [year, month, day] = reservaData.fecha.split('-').map(Number);
-                  const fechaObj = new Date(year, month - 1, day);
+                  const fechaObj = new Date(Date.UTC(year, month - 1, day));
                   return fechaObj.toLocaleDateString('es-CL', {
                     weekday: 'long',
                     year: 'numeric',

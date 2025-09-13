@@ -1238,11 +1238,12 @@ app.get('/api/debug/date-fix', async (req, res) => {
   try {
     const testDate = '2025-09-26';
     
-    // Simular el formateo que se hace en el email
+    // Simular el formateo que se hace en el email (CORREGIDO)
     let fechaFormateada;
     if (typeof testDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(testDate)) {
       const [year, month, day] = testDate.split('-').map(Number);
-      const fechaObj = new Date(year, month - 1, day);
+      // CORRECCIÓN: Usar Date.UTC para evitar problemas de zona horaria del servidor
+      const fechaObj = new Date(Date.UTC(year, month - 1, day));
       fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
         weekday: 'long',
         year: 'numeric',
