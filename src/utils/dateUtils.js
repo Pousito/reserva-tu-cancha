@@ -66,7 +66,7 @@ function formatDateForChile(date, options = {}) {
         const k = y % 100;
         const j = Math.floor(y / 100);
         const h = (day + Math.floor((13 * (m + 1)) / 5) + k + Math.floor(k / 4) + Math.floor(j / 4) - 2 * j) % 7;
-        const diaSemana = diasSemana[(h + 5) % 7]; // CORRECCIÓN: Usar +5 en lugar de +6
+        const diaSemana = diasSemana[(h + 6) % 7]; // CORRECCIÓN: Usar +6 para obtener el día correcto
         
         return `${diaSemana}, ${day} de ${meses[month - 1]} de ${year}`;
     }
