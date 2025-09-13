@@ -5354,7 +5354,7 @@ app.post('/api/admin/cleanup-users', async (req, res) => {
     // Obtener todos los usuarios actuales
     const allUsers = await db.query('SELECT email, nombre, rol, activo FROM usuarios ORDER BY id');
     
-    console.log(`📊 Usuarios encontrados: ${allUsers.rows.length}`);
+    console.log(`📊 Usuarios encontrados: ${allUsers ? allUsers.length : 0}`);
     
     // Usuarios que SÍ queremos mantener
     const usuariosCorrectos = [
@@ -5396,7 +5396,7 @@ app.post('/api/admin/cleanup-users', async (req, res) => {
       success: true,
       message: 'Limpieza completada',
       eliminados: deleteResult.rowCount,
-      usuarios_finales: usuariosFinales.rows,
+      usuarios_finales: usuariosFinales || [],
       timestamp: new Date().toISOString()
     });
     
