@@ -5617,6 +5617,147 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 
 
 
+// 🔍 ENDPOINT DE DIAGNÓSTICO AUTOMATIZADO PARA FECHAS
+app.get('/api/diagnostic/date-analysis', async (req, res) => {
+  try {
+    console.log('🔍 INICIANDO DIAGNÓSTICO AUTOMATIZADO DE FECHAS');
+    
+    // 1. Información del entorno
+    const environmentInfo = {
+      nodeEnv: process.env.NODE_ENV,
+      timezone: process.env.TZ || 'No configurado',
+      databaseUrl: process.env.DATABASE_URL ? 'Configurado' : 'No configurado',
+      timestamp: new Date().toISOString()
+    };
+    
+    // 2. Información de zona horaria del sistema
+    const timezoneInfo = getTimezoneInfo();
+    
+    // 3. Verificar zona horaria de PostgreSQL
+    let postgresTimezone = null;
+    let postgresCurrentTime = null;
+    try {
+      const timezoneResult = await db.query("SHOW timezone");
+      postgresTimezone = timezoneResult[0]?.timezone;
+      
+      const currentTimeResult = await db.query("SELECT NOW() as current_time, CURRENT_DATE as current_date, CURRENT_TIMESTAMP as current_timestamp");
+      postgresCurrentTime = currentTimeResult[0];
+    } catch (error) {
+      console.error('Error obteniendo info de PostgreSQL:', error.message);
+    }
+    
+    // 4. Buscar la reserva específica WZH24I
+    let reservaWZH24I = null;
+    try {
+      const reservaResult = await db.query(`
+        SELECT 
+          codigo_reserva,
+          fecha,
+          fecha::text as fecha_text,
+          fecha::timestamp as fecha_timestamp,
+          fecha::timestamp with time zone as fecha_timestamp_tz,
+          EXTRACT(timezone_hour FROM fecha::timestamp with time zone) as timezone_offset_hours,
+          created_at,
+          created_at::text as created_at_text
+        FROM reservas 
+        WHERE codigo_reserva = 'WZH24I'
+      `);
+      
+      if (reservaResult.length > 0) {
+        reservaWZH24I = reservaResult[0];
+      }
+    } catch (error) {
+      console.error('Error obteniendo reserva WZH24I:', error.message);
+    }
+    
+    // 5. Probar formateo de fecha específica
+    let dateFormattingTest = null;
+    if (reservaWZH24I) {
+      try {
+        const fechaOriginal = reservaWZH24I.fecha;
+        const fechaFormateada = formatDateForChile(fechaOriginal, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        dateFormattingTest = {
+          fecha_original: fechaOriginal,
+          fecha_tipo: typeof fechaOriginal,
+          fecha_formateada: fechaFormateada,
+          fecha_text: reservaWZH24I.fecha_text,
+          fecha_timestamp: reservaWZH24I.fecha_timestamp,
+          fecha_timestamp_tz: reservaWZH24I.fecha_timestamp_tz
+        };
+      } catch (error) {
+        console.error('Error en formateo de fecha:', error.message);
+      }
+    }
+    
+    // 6. Probar con fechas de control
+    const controlDates = ['2025-09-30', '2025-01-30', '2025-12-31'];
+    const controlTests = controlDates.map(date => {
+      try {
+        const formatted = formatDateForChile(date, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        return {
+          input: date,
+          output: formatted,
+          success: true
+        };
+      } catch (error) {
+        return {
+          input: date,
+          output: null,
+          success: false,
+          error: error.message
+        };
+      }
+    });
+    
+    // 7. Información de la base de datos
+    const dbInfo = db.getDatabaseInfo();
+    
+    const diagnosticResult = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      environment: environmentInfo,
+      systemTimezone: timezoneInfo,
+      postgresql: {
+        timezone: postgresTimezone,
+        currentTime: postgresCurrentTime
+      },
+      databaseInfo: dbInfo,
+      reservaWZH24I: reservaWZH24I,
+      dateFormattingTest: dateFormattingTest,
+      controlTests: controlTests,
+      summary: {
+        hasReservaWZH24I: !!reservaWZH24I,
+        postgresTimezoneConfigured: postgresTimezone === 'America/Santiago',
+        systemInChile: timezoneInfo.isSystemInChile,
+        nodeEnv: process.env.NODE_ENV
+      }
+    };
+    
+    console.log('✅ DIAGNÓSTICO COMPLETADO:', diagnosticResult.summary);
+    
+    res.json(diagnosticResult);
+    
+  } catch (error) {
+    console.error('❌ Error en diagnóstico:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
