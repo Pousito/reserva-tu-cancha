@@ -15,6 +15,12 @@ const DatabaseManager = require('./src/config/database');
 const AtomicReservationManager = require('./src/utils/atomic-reservation');
 const { insertEmergencyReservations } = require('./scripts/emergency/insert-reservations');
 const EmailService = require('./src/services/emailService');
+const { 
+  getCurrentDateInChile, 
+  createDateTimeInChile, 
+  isFutureDateTime,
+  getTimezoneInfo 
+} = require('./src/utils/dateUtils');
 // Configuración de entorno - desarrollo vs producción
 if (process.env.NODE_ENV === 'production') {
   // En producción, usar variables de entorno de Render
@@ -582,18 +588,23 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
       });
     }
     
-    // Validar que no se esté intentando reservar en horarios pasados
-    const ahora = new Date();
-    let fechaHoraReserva;
-    
+    // Validar que no se esté intentando reservar en horarios pasados usando utilidades de fecha
     try {
-      // Manejar diferentes formatos de hora
-      const horaFormateada = hora_inicio.includes(':') ? hora_inicio : `${hora_inicio}:00:00`;
-      fechaHoraReserva = new Date(`${fecha}T${horaFormateada}`);
-      
-      // Verificar que la fecha sea válida
-      if (isNaN(fechaHoraReserva.getTime())) {
-        throw new Error('Fecha o hora inválida');
+      // Verificar que la fecha y hora sean futuras
+      if (!isFutureDateTime(fecha, hora_inicio)) {
+        const ahora = new Date();
+        const fechaHoraReserva = createDateTimeInChile(fecha, hora_inicio);
+        
+        return res.status(400).json({
+          success: false,
+          error: 'No se pueden hacer reservas en horarios pasados',
+          detalles: {
+            hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+            hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+            mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros',
+            zona_horaria: 'America/Santiago'
+          }
+        });
       }
     } catch (error) {
       return res.status(400).json({
@@ -602,28 +613,18 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
         detalles: {
           fecha: fecha,
           hora_inicio: hora_inicio,
-          mensaje: 'Verifique que la fecha esté en formato YYYY-MM-DD y la hora en formato HH:MM o HH:MM:SS'
+          mensaje: 'Verifique que la fecha esté en formato YYYY-MM-DD y la hora en formato HH:MM o HH:MM:SS',
+          error: error.message
         }
       });
     }
     
     console.log('🕐 Validando horario para bloqueo y pago:', {
-      ahora: ahora.toISOString(),
-      fechaHoraReserva: fechaHoraReserva.toISOString(),
-      diferencia: fechaHoraReserva.getTime() - ahora.getTime()
+      fecha: fecha,
+      hora_inicio: hora_inicio,
+      zona_horaria: 'America/Santiago',
+      info_zona: getTimezoneInfo()
     });
-    
-    if (fechaHoraReserva <= ahora) {
-      return res.status(400).json({
-        success: false,
-        error: 'No se pueden hacer reservas en horarios pasados',
-        detalles: {
-          hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
-          hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
-          mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros'
-        }
-      });
-    }
     
     // Limpiar bloqueos temporales expirados antes de verificar disponibilidad
     await limpiarBloqueosExpirados();

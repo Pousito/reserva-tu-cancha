@@ -1837,6 +1837,7 @@ function configurarFechaMinima() {
         timeZone: 'America/Santiago'
     });
     fechaInput.min = hoy;
+    console.log('📅 Fecha mínima configurada:', hoy, 'Zona horaria: America/Santiago');
     fechaInput.value = hoy;
 }
 
@@ -1869,6 +1870,7 @@ function configurarEventListeners() {
                 timeZone: 'America/Santiago'
             });
             fechaInput.value = hoy;
+            console.log('📅 Fecha de hoy seleccionada:', hoy, 'Zona horaria: America/Santiago');
             
             // Trigger change event para actualizar disponibilidad
             fechaInput.dispatchEvent(new Event('change'));
@@ -2791,6 +2793,7 @@ async function actualizarHorariosConDisponibilidad() {
             timeZone: 'America/Santiago'
         });
         fecha = fechaActual;
+        console.log('📅 Usando fecha actual por defecto:', fechaActual, 'Zona horaria: America/Santiago');
         console.log('📅 No hay fecha seleccionada, usando fecha actual:', fecha);
     }
     

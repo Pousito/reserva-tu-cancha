@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { formatDateForChile } = require('../utils/dateUtils');
 
 // Función para formatear hora (quitar segundos si existen)
 const formatearHora = (hora) => {
@@ -108,21 +109,8 @@ class EmailService {
       precio_total 
     } = reservaData;
 
-    // Formatear fecha (usando zona horaria local)
-    let fechaObj;
-    if (typeof fecha === 'string') {
-      const [año, mes, dia] = fecha.split('-').map(Number);
-      fechaObj = new Date(año, mes - 1, dia);
-    } else if (fecha instanceof Date) {
-      fechaObj = fecha;
-    } else {
-      // Fallback: intentar convertir a string primero
-      const fechaStr = fecha.toString();
-      const [año, mes, dia] = fechaStr.split('-').map(Number);
-      fechaObj = new Date(año, mes - 1, dia);
-    }
-    
-    const fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
+    // Formatear fecha usando utilidades de zona horaria de Chile
+    const fechaFormateada = formatDateForChile(fecha, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
