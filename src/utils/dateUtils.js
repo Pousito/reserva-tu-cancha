@@ -56,7 +56,7 @@ function formatDateForChile(date, options = {}) {
         const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
                       'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         
-        // Algoritmo de Zeller para calcular día de la semana sin Date objects
+        // CORRECCIÓN FINAL: Algoritmo de Zeller corregido para Chile
         let m = month;
         let y = year;
         if (month < 3) {
@@ -66,7 +66,7 @@ function formatDateForChile(date, options = {}) {
         const k = y % 100;
         const j = Math.floor(y / 100);
         const h = (day + Math.floor((13 * (m + 1)) / 5) + k + Math.floor(k / 4) + Math.floor(j / 4) - 2 * j) % 7;
-        const diaSemana = diasSemana[(h + 6) % 7]; // Ajustar índice para Chile
+        const diaSemana = diasSemana[(h + 5) % 7]; // CORRECCIÓN: Usar +5 en lugar de +6
         
         return `${diaSemana}, ${day} de ${meses[month - 1]} de ${year}`;
     }
