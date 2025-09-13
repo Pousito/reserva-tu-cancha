@@ -515,7 +515,7 @@
             }
         }
 
-        // Formatear fecha - CORREGIDO con validaciones robustas
+        // Formatear fecha - CORREGIDO con parsing flexible
         function formatDate(dateString) {
             console.log('📥 formatDate recibió:', dateString, 'tipo:', typeof dateString);
             
@@ -528,28 +528,48 @@
             // Convertir a string si no lo es
             const dateStr = String(dateString).trim();
             
-            // Verificar formato básico YYYY-MM-DD
-            if (!dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                console.log('❌ Formato de fecha inválido:', dateStr);
-                return 'Formato de fecha inválido';
-            }
-            
             try {
-                const [year, month, day] = dateStr.split('-').map(Number);
+                let date;
                 
-                // Validar rangos
-                if (year < 2020 || year > 2030 || month < 1 || month > 12 || day < 1 || day > 31) {
-                    console.log('❌ Fecha fuera de rangos válidos');
-                    return 'Fecha inválida';
+                // Intentar diferentes métodos de parsing
+                if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    // Formato YYYY-MM-DD
+                    console.log('📅 Parsing formato YYYY-MM-DD');
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    date = new Date(year, month - 1, day);
+                } else if (dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+                    // Formato YYYY-M-D o YYYY-MM-D
+                    console.log('📅 Parsing formato YYYY-M-D');
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    date = new Date(year, month - 1, day);
+                } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T/)) {
+                    // Formato ISO con hora
+                    console.log('📅 Parsing formato ISO con hora');
+                    date = new Date(dateStr);
+                } else if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                    // Formato DD/MM/YYYY o MM/DD/YYYY
+                    console.log('📅 Parsing formato DD/MM/YYYY');
+                    const parts = dateStr.split('/');
+                    // Asumir DD/MM/YYYY (formato chileno)
+                    const [day, month, year] = parts.map(Number);
+                    date = new Date(year, month - 1, day);
+                } else {
+                    // Intentar parsing automático
+                    console.log('📅 Parsing automático');
+                    date = new Date(dateStr);
                 }
-                
-                // Crear fecha en zona horaria local para mantener la fecha correcta
-                const date = new Date(year, month - 1, day);
                 
                 // Verificar que la fecha sea válida
                 if (isNaN(date.getTime())) {
-                    console.log('❌ Fecha inválida creada');
+                    console.log('❌ Fecha inválida después del parsing:', dateStr);
                     return 'Fecha inválida';
+                }
+                
+                // Verificar que la fecha esté en un rango razonable
+                const year = date.getFullYear();
+                if (year < 2020 || year > 2030) {
+                    console.log('❌ Año fuera del rango válido:', year);
+                    return 'Año inválido';
                 }
                 
                 const formatted = date.toLocaleDateString('es-CL', {
