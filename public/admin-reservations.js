@@ -519,10 +519,16 @@ function formatearFecha(fecha) {
         } else if (typeof fecha === 'string') {
             // Manejar fechas ISO (2025-09-08T00:00:00.000Z) y fechas simples (YYYY-MM-DD)
             if (fecha.includes('T')) {
-                // CORRECCIÓN: Fecha ISO UTC del servidor - extraer solo la parte de fecha para evitar problemas de zona horaria
-                const fechaParte = fecha.split('T')[0]; // "2025-12-25"
-                const [año, mes, dia] = fechaParte.split('-').map(Number);
-                fechaObj = new Date(año, mes - 1, dia); // Crear fecha local
+                // CORRECCIÓN: Fecha ISO UTC del servidor - usar métodos UTC para evitar problemas de zona horaria
+                const dateObj = new Date(fecha);
+                if (!isNaN(dateObj.getTime())) {
+                    const año = dateObj.getUTCFullYear();
+                    const mes = dateObj.getUTCMonth();
+                    const dia = dateObj.getUTCDate();
+                    fechaObj = new Date(año, mes, dia); // Crear fecha local con componentes UTC
+                } else {
+                    throw new Error('Fecha inválida');
+                }
             } else {
                 // Fecha simple (YYYY-MM-DD) - crear fecha local
                 const [año, mes, dia] = fecha.split('-').map(Number);
@@ -1141,15 +1147,23 @@ function formatearFechaParaAPI(fecha) {
                 return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
         } else {
-            // Otros formatos - usar parsing con zona horaria de Chile
+            // CORRECCIÓN: Para fechas ISO UTC, usar métodos UTC para evitar problemas de zona horaria
             const dateObj = new Date(fecha);
             if (!isNaN(dateObj.getTime())) {
-                // Convertir a zona horaria de Chile
-                const fechaChile = new Date(dateObj.toLocaleString("en-US", {timeZone: "America/Santiago"}));
-                const year = fechaChile.getFullYear();
-                const month = String(fechaChile.getMonth() + 1).padStart(2, '0');
-                const day = String(fechaChile.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+                // Si es una fecha ISO UTC (termina en Z), usar métodos UTC
+                if (fecha.endsWith('Z') || fecha.includes('T')) {
+                    const year = dateObj.getUTCFullYear();
+                    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                } else {
+                    // Para otros formatos, usar conversión con zona horaria de Chile
+                    const fechaChile = new Date(dateObj.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+                    const year = fechaChile.getFullYear();
+                    const month = String(fechaChile.getMonth() + 1).padStart(2, '0');
+                    const day = String(fechaChile.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
             }
         }
     }
