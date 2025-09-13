@@ -5617,6 +5617,198 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 
 
 
+// 🔍 ENDPOINT PARA DEBUGGING FRONTEND - DATOS RAW DE RESERVA
+app.get('/api/diagnostic/frontend-debug/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log(`🔍 DEBUG FRONTEND PARA RESERVA: ${codigo}`);
+    
+    // Obtener datos exactos que recibe el frontend
+    const reservas = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, 
+             CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+             co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      WHERE r.codigo_reserva = $1
+      ORDER BY r.fecha_creacion DESC
+    `, [codigo]);
+    
+    if (reservas.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Reserva ${codigo} no encontrada`
+      });
+    }
+    
+    const reserva = reservas[0];
+    
+    // Simular exactamente el procesamiento del backend
+    const reservaProcesada = { ...reserva };
+    if (reservaProcesada.fecha) {
+      if (typeof reservaProcesada.fecha === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(reservaProcesada.fecha)) {
+          // Fecha ya está en formato correcto
+        } else {
+          // Convertir fecha a formato YYYY-MM-DD usando métodos UTC para evitar problemas de zona horaria
+          const fechaObj = new Date(reservaProcesada.fecha);
+          if (!isNaN(fechaObj.getTime())) {
+            const year = fechaObj.getUTCFullYear();
+            const month = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(fechaObj.getUTCDate()).padStart(2, '0');
+            reservaProcesada.fecha = `${year}-${month}-${day}`;
+          }
+        }
+      }
+    }
+    
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      reserva_original: {
+        codigo: reserva.codigo_reserva,
+        fecha_original: reserva.fecha,
+        fecha_tipo: typeof reserva.fecha,
+        fecha_string: reserva.fecha ? reserva.fecha.toString() : null,
+        fecha_iso: reserva.fecha instanceof Date ? reserva.fecha.toISOString() : null
+      },
+      reserva_procesada_backend: {
+        codigo: reservaProcesada.codigo_reserva,
+        fecha_procesada: reservaProcesada.fecha,
+        fecha_tipo: typeof reservaProcesada.fecha
+      },
+      simulacion_frontend: {
+        formatearFechaParaAPI_result: simularFormatearFechaParaAPI(reserva.fecha),
+        formatearFecha_result: simularFormatearFecha(reserva.fecha)
+      },
+      comparacion: {
+        antes: reserva.fecha,
+        despues_backend: reservaProcesada.fecha,
+        despues_frontend: simularFormatearFechaParaAPI(reserva.fecha),
+        cambio_backend: reserva.fecha !== reservaProcesada.fecha ? 'SÍ' : 'NO',
+        cambio_frontend: reserva.fecha !== simularFormatearFechaParaAPI(reserva.fecha) ? 'SÍ' : 'NO'
+      }
+    };
+    
+    console.log('✅ DEBUG FRONTEND COMPLETADO:', result.comparacion);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ Error en debug frontend:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Función para simular formatearFechaParaAPI del frontend
+function simularFormatearFechaParaAPI(fecha) {
+  if (!fecha) return '';
+  
+  // Si ya es un string en formato YYYY-MM-DD, devolverlo tal como está
+  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return fecha;
+  }
+  
+  // Si es un objeto Date, convertirlo usando zona horaria local de Chile
+  if (fecha instanceof Date) {
+    // Usar toLocaleDateString con zona horaria de Chile para evitar problemas de UTC
+    const fechaChile = new Date(fecha.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+    const year = fechaChile.getFullYear();
+    const month = String(fechaChile.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaChile.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  // Si es un string que puede ser parseado como fecha
+  if (typeof fecha === 'string') {
+    // CORRECCIÓN: Para fechas simples YYYY-MM-DD, usar parsing local para evitar problemas de zona horaria
+    if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Fecha simple YYYY-MM-DD - crear fecha local
+      const [year, month, day] = fecha.split('-').map(Number);
+      const dateObj = new Date(year, month - 1, day);
+      if (!isNaN(dateObj.getTime())) {
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+    } else {
+      // CORRECCIÓN: Para fechas ISO UTC, usar métodos UTC para evitar problemas de zona horaria
+      const dateObj = new Date(fecha);
+      if (!isNaN(dateObj.getTime())) {
+        // Si es una fecha ISO UTC (termina en Z), usar métodos UTC
+        if (fecha.endsWith('Z') || fecha.includes('T')) {
+          const year = dateObj.getUTCFullYear();
+          const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        } else {
+          // Para otros formatos, usar conversión con zona horaria de Chile
+          const fechaChile = new Date(dateObj.toLocaleString("en-US", {timeZone: "America/Santiago"}));
+          const year = fechaChile.getFullYear();
+          const month = String(fechaChile.getMonth() + 1).padStart(2, '0');
+          const day = String(fechaChile.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      }
+    }
+  }
+  
+  return '';
+}
+
+// Función para simular formatearFecha del frontend
+function simularFormatearFecha(fecha) {
+  if (!fecha) return 'Sin fecha';
+  
+  try {
+    let fechaObj;
+    
+    // Si ya es un objeto Date, usarlo directamente
+    if (fecha instanceof Date) {
+      fechaObj = fecha;
+    } else if (typeof fecha === 'string') {
+      // Manejar fechas ISO (2025-09-08T00:00:00.000Z) y fechas simples (YYYY-MM-DD)
+      if (fecha.includes('T')) {
+        // CORRECCIÓN: Fecha ISO UTC del servidor - usar métodos UTC para evitar problemas de zona horaria
+        const dateObj = new Date(fecha);
+        if (!isNaN(dateObj.getTime())) {
+          const año = dateObj.getUTCFullYear();
+          const mes = dateObj.getUTCMonth();
+          const dia = dateObj.getUTCDate();
+          fechaObj = new Date(año, mes, dia); // Crear fecha local con componentes UTC
+        } else {
+          throw new Error('Fecha inválida');
+        }
+      } else {
+        // Fecha simple (YYYY-MM-DD) - crear fecha local
+        const [año, mes, dia] = fecha.split('-').map(Number);
+        fechaObj = new Date(año, mes - 1, dia);
+      }
+    } else {
+      // Intentar convertir a Date si es otro tipo
+      fechaObj = new Date(fecha);
+    }
+    
+    // Verificar que la fecha es válida
+    if (isNaN(fechaObj.getTime())) {
+      throw new Error('Fecha inválida');
+    }
+    
+    return fechaObj.toLocaleDateString('es-CL', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
+    return 'Fecha inválida';
+  }
+}
+
 // 🔍 ENDPOINT PARA VERIFICAR DATOS DEL PANEL DE ADMIN
 app.get('/api/diagnostic/admin-reservas/:codigo', async (req, res) => {
   try {
