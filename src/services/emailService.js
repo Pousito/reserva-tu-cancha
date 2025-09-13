@@ -99,8 +99,19 @@ class EmailService {
     } = reservaData;
 
     // Formatear fecha (usando zona horaria local)
-    const [año, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(año, mes - 1, dia);
+    let fechaObj;
+    if (typeof fecha === 'string') {
+      const [año, mes, dia] = fecha.split('-').map(Number);
+      fechaObj = new Date(año, mes - 1, dia);
+    } else if (fecha instanceof Date) {
+      fechaObj = fecha;
+    } else {
+      // Fallback: intentar convertir a string primero
+      const fechaStr = fecha.toString();
+      const [año, mes, dia] = fechaStr.split('-').map(Number);
+      fechaObj = new Date(año, mes - 1, dia);
+    }
+    
     const fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
       weekday: 'long',
       year: 'numeric',
