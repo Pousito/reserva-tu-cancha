@@ -669,29 +669,28 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
       })
     });
     
-    // CORRECCIÓN CRÍTICA: Asegurar que la fecha se almacene correctamente sin problemas de zona horaria
+    // CORRECCIÓN CRÍTICA: Forzar que la fecha se mantenga como YYYY-MM-DD sin interpretación de zona horaria
     console.log('🔍 DEBUG FECHA - Fecha recibida:', fecha, 'Tipo:', typeof fecha);
     let fechaParaBD = fecha;
-    if (fecha instanceof Date) {
+    
+    // Si es string en formato YYYY-MM-DD, usarlo directamente SIN parsear
+    if (typeof fecha === 'string' && fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      fechaParaBD = fecha;
+      console.log('🔍 DEBUG FECHA - Usando formato YYYY-MM-DD directamente (SIN parsear):', fechaParaBD);
+    } else if (typeof fecha === 'string' && fecha.includes('T')) {
+      // Si tiene timestamp, extraer solo la fecha
+      fechaParaBD = fecha.split('T')[0];
+      console.log('🔍 DEBUG FECHA - Extraído de timestamp:', fechaParaBD);
+    } else if (fecha instanceof Date) {
       // Si es un objeto Date, usar solo la fecha sin zona horaria
       fechaParaBD = fecha.toISOString().split('T')[0];
       console.log('🔍 DEBUG FECHA - Convertido desde Date:', fechaParaBD);
-    } else if (typeof fecha === 'string') {
-      if (fecha.includes('T')) {
-        // Si tiene timestamp, extraer solo la fecha
-        fechaParaBD = fecha.split('T')[0];
-        console.log('🔍 DEBUG FECHA - Extraído de timestamp:', fechaParaBD);
-      } else if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // Si ya está en formato YYYY-MM-DD, usarlo directamente
-        fechaParaBD = fecha;
-        console.log('🔍 DEBUG FECHA - Usando formato YYYY-MM-DD directamente:', fechaParaBD);
-      } else {
-        // Si está en otro formato, intentar parsearlo correctamente
-        const parsedDate = new Date(fecha);
-        if (!isNaN(parsedDate.getTime())) {
-          fechaParaBD = parsedDate.toISOString().split('T')[0];
-          console.log('🔍 DEBUG FECHA - Parseado desde string:', fechaParaBD);
-        }
+    } else {
+      // Para otros casos, intentar parsearlo pero con cuidado
+      const parsedDate = new Date(fecha);
+      if (!isNaN(parsedDate.getTime())) {
+        fechaParaBD = parsedDate.toISOString().split('T')[0];
+        console.log('🔍 DEBUG FECHA - Parseado desde string:', fechaParaBD);
       }
     }
     console.log('🔍 DEBUG FECHA - Fecha final para BD:', fechaParaBD);
