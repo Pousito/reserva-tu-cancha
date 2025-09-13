@@ -5343,33 +5343,18 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 app.post('/api/admin/cleanup-users', async (req, res) => {
   try {
     console.log('🧹 LIMPIEZA DE USUARIOS EN PRODUCCIÓN');
-    console.log('====================================');
     
-    // Verificar que sea el super admin
+    // Verificar credenciales
     const { email, password } = req.body;
     if (email !== 'admin@reservatuscanchas.cl' || password !== 'admin123') {
       return res.status(401).json({ success: false, error: 'Credenciales de super admin requeridas' });
     }
     
-    // Obtener todos los usuarios actuales
-    const allUsers = await db.query('SELECT email, nombre, rol, activo FROM usuarios ORDER BY id');
-    
-    console.log(`📊 Usuarios encontrados: ${allUsers ? allUsers.length : 0}`);
-    
-    // Usuarios que SÍ queremos mantener
-    const usuariosCorrectos = [
-      'admin@reservatuscanchas.cl',
-      'naxiin320@gmail.com', 
-      'naxiin_320@hotmail.com'
-    ];
-    
-    // Eliminar usuarios que NO están en la lista de correctos
+    // Eliminar usuarios no deseados
     const deleteResult = await db.query(`
       DELETE FROM usuarios 
       WHERE email NOT IN ($1, $2, $3)
-    `, usuariosCorrectos);
-    
-    console.log(`✅ Eliminados ${deleteResult.rowCount} usuarios no deseados`);
+    `, ['admin@reservatuscanchas.cl', 'naxiin320@gmail.com', 'naxiin_320@hotmail.com']);
     
     // Actualizar roles
     await db.query(`UPDATE usuarios SET rol = 'owner' WHERE email = 'naxiin_320@hotmail.com'`);
@@ -5377,26 +5362,22 @@ app.post('/api/admin/cleanup-users', async (req, res) => {
     
     // Actualizar contraseñas
     const bcrypt = require('bcryptjs');
+    const hashedAdmin = await bcrypt.hash('admin123', 10);
+    const hashedManager = await bcrypt.hash('magnasports2024', 10);
+    const hashedOwner = await bcrypt.hash('complejo2024', 10);
     
-    const passwordUpdates = [
-      { email: 'admin@reservatuscanchas.cl', password: 'admin123' },
-      { email: 'naxiin320@gmail.com', password: 'magnasports2024' },
-      { email: 'naxiin_320@hotmail.com', password: 'complejo2024' }
-    ];
+    await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedAdmin, 'admin@reservatuscanchas.cl']);
+    await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedManager, 'naxiin320@gmail.com']);
+    await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedOwner, 'naxiin_320@hotmail.com']);
     
-    for (const user of passwordUpdates) {
-      const hashedPassword = await bcrypt.hash(user.password, 10);
-      await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedPassword, user.email]);
-    }
-    
-    // Verificar usuarios finales
-    const usuariosFinales = await db.query('SELECT email, nombre, rol, activo FROM usuarios ORDER BY id');
+    // Obtener usuarios finales
+    const finalUsers = await db.query('SELECT email, nombre, rol FROM usuarios ORDER BY id');
     
     res.json({
       success: true,
       message: 'Limpieza completada',
-      eliminados: deleteResult.rowCount,
-      usuarios_finales: usuariosFinales || [],
+      eliminados: deleteResult.rowCount || 0,
+      usuarios_finales: finalUsers,
       timestamp: new Date().toISOString()
     });
     
