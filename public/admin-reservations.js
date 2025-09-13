@@ -511,20 +511,21 @@ function formatearFecha(fecha) {
         // Manejar fechas ISO (2025-09-08T00:00:00.000Z) y fechas simples (YYYY-MM-DD)
         let fechaObj;
         if (fecha.includes('T')) {
-            // Fecha ISO - usar directamente para evitar problemas de zona horaria
-            fechaObj = new Date(fecha);
+            // CORRECCIÓN: Fecha ISO UTC del servidor - extraer solo la parte de fecha para evitar problemas de zona horaria
+            const fechaParte = fecha.split('T')[0]; // "2025-12-25"
+            const [año, mes, dia] = fechaParte.split('-').map(Number);
+            fechaObj = new Date(año, mes - 1, dia); // Crear fecha local
         } else {
-            // Fecha simple (YYYY-MM-DD) - crear fecha en UTC para evitar problemas de zona horaria
+            // Fecha simple (YYYY-MM-DD) - crear fecha local
             const [año, mes, dia] = fecha.split('-').map(Number);
-            fechaObj = new Date(Date.UTC(año, mes - 1, dia));
+            fechaObj = new Date(año, mes - 1, dia);
         }
         
         return fechaObj.toLocaleDateString('es-CL', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
-            day: 'numeric',
-            timeZone: 'America/Santiago' // Forzar zona horaria de Chile
+            day: 'numeric'
         });
     } catch (error) {
         console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
