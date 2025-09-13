@@ -153,8 +153,18 @@ class AtomicReservationManager {
                 RETURNING *
             `;
             
+            // Asegurar que la fecha se almacene como fecha simple sin zona horaria
+            let fechaParaBD = fecha;
+            if (fecha instanceof Date) {
+                // Si es un objeto Date, extraer solo la parte de fecha
+                fechaParaBD = fecha.toISOString().split('T')[0];
+            } else if (typeof fecha === 'string' && fecha.includes('T')) {
+                // Si es un string ISO, extraer solo la parte de fecha
+                fechaParaBD = fecha.split('T')[0];
+            }
+            
             const insertParams = [
-                codigo_reserva, cancha_id, fecha, hora_inicio, hora_fin,
+                codigo_reserva, cancha_id, fechaParaBD, hora_inicio, hora_fin,
                 nombre_cliente, email_cliente || null, telefono_cliente || null, rut_cliente || null,
                 precio_total, 'confirmada', new Date().toISOString(), tipo_reserva,
                 comision, admin_id !== null, admin_id

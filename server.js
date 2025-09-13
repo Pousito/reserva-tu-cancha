@@ -667,10 +667,18 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
       })
     });
     
+    // Asegurar que la fecha se almacene como fecha simple sin zona horaria
+    let fechaParaBD = fecha;
+    if (fecha instanceof Date) {
+      fechaParaBD = fecha.toISOString().split('T')[0];
+    } else if (typeof fecha === 'string' && fecha.includes('T')) {
+      fechaParaBD = fecha.split('T')[0];
+    }
+    
     await db.run(`
       INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [bloqueoId, cancha_id, fecha, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), JSON.stringify({
+    `, [bloqueoId, cancha_id, fechaParaBD, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), JSON.stringify({
       nombre_cliente,
       email_cliente,
       telefono_cliente: telefono_cliente || 'No proporcionado',
