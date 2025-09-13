@@ -1829,10 +1829,13 @@ function formatearRUT(rut) {
 
 // Función para hacer scroll suave a la sección de reserva (se define al final del archivo)
 
-// Configurar fecha mínima (hoy)
+// Configurar fecha mínima (hoy) - CORREGIDO PARA ZONA HORARIA DE CHILE
 function configurarFechaMinima() {
     const fechaInput = document.getElementById('fechaSelect');
-    const hoy = new Date().toISOString().split('T')[0];
+    // Usar zona horaria de Chile para obtener la fecha correcta
+    const hoy = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'America/Santiago'
+    });
     fechaInput.min = hoy;
     fechaInput.value = hoy;
 }
@@ -1861,7 +1864,10 @@ function configurarEventListeners() {
     if (hoyBtn) {
         hoyBtn.addEventListener('click', function() {
             const fechaInput = document.getElementById('fechaSelect');
-            const hoy = new Date().toISOString().split('T')[0];
+            // Usar zona horaria de Chile para obtener la fecha correcta
+            const hoy = new Date().toLocaleDateString('en-CA', {
+                timeZone: 'America/Santiago'
+            });
             fechaInput.value = hoy;
             
             // Trigger change event para actualizar disponibilidad
@@ -2779,10 +2785,11 @@ async function actualizarHorariosConDisponibilidad() {
     const horaSelect = document.getElementById('horaSelect');
     let fecha = document.getElementById('fechaSelect').value;
     
-    // Si no hay fecha seleccionada, usar fecha actual
+    // Si no hay fecha seleccionada, usar fecha actual - CORREGIDO PARA ZONA HORARIA DE CHILE
     if (!fecha) {
-        const hoy = new Date();
-        const fechaActual = hoy.toISOString().split('T')[0];
+        const fechaActual = new Date().toLocaleDateString('en-CA', {
+            timeZone: 'America/Santiago'
+        });
         fecha = fechaActual;
         console.log('📅 No hay fecha seleccionada, usando fecha actual:', fecha);
     }
@@ -2846,7 +2853,9 @@ async function cargarHorariosComplejo(complejo) {
         // Verificar la fecha actual para cargar los horarios correctos
         const fecha = document.getElementById('fechaSelect').value;
         if (fecha) {
-            const fechaObj = new Date(fecha + 'T00:00:00');
+            // CORREGIDO: Usar Date.UTC para evitar problemas de zona horaria
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            const fechaObj = new Date(Date.UTC(año, mes - 1, dia));
             const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
             
             console.log('MagnaSports - Fecha:', fecha, 'Día de semana:', diaSemana, 'Día nombre:', ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][diaSemana]);
@@ -2991,7 +3000,9 @@ async function cargarHorariosBasicos() {
     
     if (complejoSeleccionado.nombre === 'MagnaSports') {
         if (fecha) {
-            const fechaObj = new Date(fecha + 'T00:00:00');
+            // CORREGIDO: Usar Date.UTC para evitar problemas de zona horaria
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            const fechaObj = new Date(Date.UTC(año, mes - 1, dia));
             const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
             
             if (diaSemana === 0 || diaSemana === 6) {
@@ -3185,7 +3196,9 @@ async function validarHorariosSegunFecha() {
     const fecha = document.getElementById('fechaSelect').value;
     if (!fecha) return;
     
-    const fechaObj = new Date(fecha + 'T00:00:00');
+    // CORREGIDO: Usar Date.UTC para evitar problemas de zona horaria
+    const [año, mes, dia] = fecha.split('-').map(Number);
+    const fechaObj = new Date(Date.UTC(año, mes - 1, dia));
     const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
     const horaSelect = document.getElementById('horaSelect');
     const horaSeleccionada = horaSelect.value;
