@@ -5339,54 +5339,6 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
 // Test de persistencia final - Sun Sep  7 03:54:09 -03 2025
 
-// ===== ENDPOINT TEMPORAL PARA LIMPIAR USUARIOS EN PRODUCCIÓN =====
-app.post('/api/admin/cleanup-users', async (req, res) => {
-  try {
-    console.log('🧹 LIMPIEZA DE USUARIOS EN PRODUCCIÓN');
-    
-    // Verificar credenciales
-    const { email, password } = req.body;
-    if (email !== 'admin@reservatuscanchas.cl' || password !== 'admin123') {
-      return res.status(401).json({ success: false, error: 'Credenciales de super admin requeridas' });
-    }
-    
-    // Eliminar usuarios no deseados
-    const deleteResult = await db.query(`
-      DELETE FROM usuarios 
-      WHERE email NOT IN ($1, $2, $3)
-    `, ['admin@reservatuscanchas.cl', 'naxiin320@gmail.com', 'naxiin_320@hotmail.com']);
-    
-    // Actualizar roles
-    await db.query(`UPDATE usuarios SET rol = 'owner' WHERE email = 'naxiin_320@hotmail.com'`);
-    await db.query(`UPDATE usuarios SET rol = 'manager' WHERE email = 'naxiin320@gmail.com'`);
-    
-    // Actualizar contraseñas
-    const bcrypt = require('bcryptjs');
-    const hashedAdmin = await bcrypt.hash('admin123', 10);
-    const hashedManager = await bcrypt.hash('magnasports2024', 10);
-    const hashedOwner = await bcrypt.hash('complejo2024', 10);
-    
-    await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedAdmin, 'admin@reservatuscanchas.cl']);
-    await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedManager, 'naxiin320@gmail.com']);
-    await db.query(`UPDATE usuarios SET password = $1 WHERE email = $2`, [hashedOwner, 'naxiin_320@hotmail.com']);
-    
-    // Obtener usuarios finales
-    const finalUsers = await db.query('SELECT email, nombre, rol FROM usuarios ORDER BY id');
-    
-    res.json({
-      success: true,
-      message: 'Limpieza completada',
-      eliminados: deleteResult.rowCount || 0,
-      usuarios_finales: finalUsers,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('❌ Error en limpieza:', error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
