@@ -5339,6 +5339,44 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 // Forzar creación de PostgreSQL - Sun Sep  7 02:25:06 -03 2025
 // Test de persistencia final - Sun Sep  7 03:54:09 -03 2025
 
+// ===== ENDPOINT TEMPORAL PARA ASIGNAR COMPLEJOS A USUARIOS =====
+app.post('/api/admin/assign-complexes', async (req, res) => {
+  try {
+    console.log('🏢 ASIGNANDO COMPLEJOS A USUARIOS');
+    
+    // Verificar credenciales de super admin
+    const { email, password } = req.body;
+    if (email !== 'admin@reservatuscanchas.cl' || password !== 'admin123') {
+      return res.status(401).json({ success: false, error: 'Credenciales de super admin requeridas' });
+    }
+    
+    // Asignar MagnaSports (ID: 1) a los usuarios correspondientes
+    await db.query(`UPDATE usuarios SET complejo_id = 1 WHERE email = 'naxiin320@gmail.com'`);
+    await db.query(`UPDATE usuarios SET complejo_id = 1 WHERE email = 'naxiin_320@hotmail.com'`);
+    
+    console.log('✅ Complejos asignados correctamente');
+    
+    // Verificar usuarios actualizados
+    const usuarios = await db.query(`
+      SELECT u.email, u.nombre, u.rol, u.complejo_id, c.nombre as complejo_nombre 
+      FROM usuarios u 
+      LEFT JOIN complejos c ON u.complejo_id = c.id 
+      ORDER BY u.id
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Complejos asignados correctamente',
+      usuarios: usuarios,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error asignando complejos:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
