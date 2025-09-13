@@ -19,8 +19,8 @@ window.webPaySimulator = {
     generatePaymentTicket(paymentResult, paymentData) {
         const ticket = `
 === TICKET DE PAGO WEBPAY ===
-Fecha: ${new Date().toLocaleDateString('es-CL')}
-Hora: ${new Date().toLocaleTimeString('es-CL')}
+Fecha: ${new Date().toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })}
+Hora: ${new Date().toLocaleTimeString('es-CL', { timeZone: 'America/Santiago' })}
 
 ID Transacción: ${paymentResult.transactionId}
 Estado: ${paymentResult.status === 'approved' ? 'APROBADO' : 'RECHAZADO'}

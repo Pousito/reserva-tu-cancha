@@ -515,9 +515,11 @@
             }
         }
 
-        // Formatear fecha
+        // Formatear fecha - CORREGIDO para evitar problemas de zona horaria
         function formatDate(dateString) {
-            const date = new Date(dateString);
+            // Crear fecha en zona horaria local para mantener la fecha correcta
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
             return date.toLocaleDateString('es-CL', {
                 weekday: 'long',
                 year: 'numeric',
