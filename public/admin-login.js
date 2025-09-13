@@ -1,8 +1,5 @@
-// API Base URL - Usa configuración centralizada
-const API_BASE = window.URL_CONFIG ? window.URL_CONFIG.API_URL : 
-    (window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000/api' 
-        : 'https://www.reservatuscanchas.cl/api');
+// Usar la variable API_BASE global definida en url-config.js
+// No definir aquí para evitar conflictos
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {

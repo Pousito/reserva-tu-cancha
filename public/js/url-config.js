@@ -63,17 +63,22 @@ window.URL_CONFIG = {
   }
 };
 
+// Definir API_BASE globalmente para compatibilidad
+window.API_BASE = window.URL_CONFIG.API_URL;
+
 // Log para debugging (solo en desarrollo)
 if (isDevelopment) {
   console.log('🔧 URL Config cargado:', {
     environment: 'development',
     baseUrl: window.URL_CONFIG.BASE_URL,
-    apiUrl: window.URL_CONFIG.API_URL
+    apiUrl: window.URL_CONFIG.API_URL,
+    apiBase: window.API_BASE
   });
 } else {
   console.log('🌐 URL Config cargado:', {
     environment: 'production',
     baseUrl: window.URL_CONFIG.BASE_URL,
-    apiUrl: window.URL_CONFIG.API_URL
+    apiUrl: window.URL_CONFIG.API_URL,
+    apiBase: window.API_BASE
   });
 }

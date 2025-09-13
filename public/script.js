@@ -124,11 +124,8 @@ function crearBotonLogs() {
     document.body.appendChild(boton);
 }
 
-// API Base URL - Usa configuración centralizada
-const API_BASE = window.URL_CONFIG ? window.URL_CONFIG.API_URL : 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000/api'  // Desarrollo local
-    : `${window.location.protocol}//${window.location.host}/api`);  // Producción
+// Usar la variable API_BASE global definida en url-config.js
+// No definir aquí para evitar conflictos
 
 // Función para leer parámetros URL - Ultra compatible con móviles
 function leerParametrosURL() {

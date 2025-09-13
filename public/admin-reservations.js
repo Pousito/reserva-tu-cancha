@@ -5,6 +5,9 @@ let complejos = [];
 let busquedaActual = '';
 let filtrosActivos = {};
 
+// Usar la variable API_BASE global definida en url-config.js
+// No definir aquí para evitar conflictos
+
 // Variables para el calendario
 let vistaActual = 'lista';
 let semanaActual = new Date();
@@ -508,17 +511,31 @@ function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha';
     
     try {
-        // Manejar fechas ISO (2025-09-08T00:00:00.000Z) y fechas simples (YYYY-MM-DD)
         let fechaObj;
-        if (fecha.includes('T')) {
-            // CORRECCIÓN: Fecha ISO UTC del servidor - extraer solo la parte de fecha para evitar problemas de zona horaria
-            const fechaParte = fecha.split('T')[0]; // "2025-12-25"
-            const [año, mes, dia] = fechaParte.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia); // Crear fecha local
+        
+        // Si ya es un objeto Date, usarlo directamente
+        if (fecha instanceof Date) {
+            fechaObj = fecha;
+        } else if (typeof fecha === 'string') {
+            // Manejar fechas ISO (2025-09-08T00:00:00.000Z) y fechas simples (YYYY-MM-DD)
+            if (fecha.includes('T')) {
+                // CORRECCIÓN: Fecha ISO UTC del servidor - extraer solo la parte de fecha para evitar problemas de zona horaria
+                const fechaParte = fecha.split('T')[0]; // "2025-12-25"
+                const [año, mes, dia] = fechaParte.split('-').map(Number);
+                fechaObj = new Date(año, mes - 1, dia); // Crear fecha local
+            } else {
+                // Fecha simple (YYYY-MM-DD) - crear fecha local
+                const [año, mes, dia] = fecha.split('-').map(Number);
+                fechaObj = new Date(año, mes - 1, dia);
+            }
         } else {
-            // Fecha simple (YYYY-MM-DD) - crear fecha local
-            const [año, mes, dia] = fecha.split('-').map(Number);
-            fechaObj = new Date(año, mes - 1, dia);
+            // Intentar convertir a Date si es otro tipo
+            fechaObj = new Date(fecha);
+        }
+        
+        // Verificar que la fecha es válida
+        if (isNaN(fechaObj.getTime())) {
+            throw new Error('Fecha inválida');
         }
         
         return fechaObj.toLocaleDateString('es-CL', {
@@ -883,7 +900,7 @@ function renderizarCalendario(data = null) {
         for (let i = 0; i < 7; i++) {
             const fecha = new Date(semanaActual);
             fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
-            const fechaStr = formatearFecha(fecha);
+            const fechaStr = fecha.toISOString().split('T')[0]; // Usar formato ISO para coincidir con calendarioData
             
             // Verificar si esta hora está disponible para este día
             const fechaObj = new Date(semanaActual);
@@ -918,8 +935,8 @@ function renderizarCalendario(data = null) {
                 }
                 
                 // Debug para fecha específica
-                if (fechaStr === '2025-09-12' && hora === '16:00') {
-                    console.log('🔍 Debug para 12/09/2025 16:00:');
+                if (fechaStr === '2025-09-12' && hora === '23:00') {
+                    console.log('🔍 Debug para 12/09/2025 23:00:');
                     console.log('  - fechaStr:', fechaStr);
                     console.log('  - hora:', hora);
                     console.log('  - calendarioData[fechaStr]:', calendarioData[fechaStr]);
@@ -1024,9 +1041,10 @@ function generarHoras(fecha = null) {
 }
 
 /**
- * Obtener inicio de semana (lunes)
+ * Obtener inicio de semana (lunes) - devuelve fecha en formato ISO
  */
 function obtenerInicioSemana(fecha) {
+    console.log('🔍 obtenerInicioSemana llamada con fecha:', fecha);
     const inicio = new Date(fecha);
     const dia = inicio.getDay();
     // Lunes = 1, Martes = 2, ..., Domingo = 0
@@ -1035,19 +1053,48 @@ function obtenerInicioSemana(fecha) {
     // Si es martes (2), necesitamos ir al lunes anterior (-1)
     const diff = dia === 0 ? -6 : 1 - dia;
     inicio.setDate(inicio.getDate() + diff);
-    return formatearFecha(inicio);
+    // Devolver fecha en formato ISO (YYYY-MM-DD) para el backend
+    const fechaISO = inicio.toISOString().split('T')[0];
+    console.log('🔍 obtenerInicioSemana devuelve:', fechaISO);
+    return fechaISO;
 }
 
 /**
- * Obtener fin de semana (domingo)
+ * Obtener fin de semana (domingo) - devuelve fecha en formato ISO
  */
 function obtenerFinSemana(fecha) {
+    console.log('🔍 obtenerFinSemana llamada con fecha:', fecha);
     const fin = new Date(fecha);
     const dia = fin.getDay();
     // Domingo = 0, Lunes = 1, ..., Sábado = 6
     // Si es domingo (0), no necesitamos mover la fecha (0)
     // Si es lunes (1), necesitamos ir al domingo siguiente (+6)
     // Si es sábado (6), necesitamos ir al domingo siguiente (+1)
+    const diff = dia === 0 ? 0 : 7 - dia;
+    fin.setDate(fin.getDate() + diff);
+    // Devolver fecha en formato ISO (YYYY-MM-DD) para el backend
+    const fechaISO = fin.toISOString().split('T')[0];
+    console.log('🔍 obtenerFinSemana devuelve:', fechaISO);
+    return fechaISO;
+}
+
+/**
+ * Obtener inicio de semana formateado para mostrar en la interfaz
+ */
+function obtenerInicioSemanaFormateado(fecha) {
+    const inicio = new Date(fecha);
+    const dia = inicio.getDay();
+    const diff = dia === 0 ? -6 : 1 - dia;
+    inicio.setDate(inicio.getDate() + diff);
+    return formatearFecha(inicio);
+}
+
+/**
+ * Obtener fin de semana formateado para mostrar en la interfaz
+ */
+function obtenerFinSemanaFormateado(fecha) {
+    const fin = new Date(fecha);
+    const dia = fin.getDay();
     const diff = dia === 0 ? 0 : 7 - dia;
     fin.setDate(fin.getDate() + diff);
     return formatearFecha(fin);
@@ -1114,25 +1161,18 @@ function formatearFechaParaAPI(fecha) {
  * Actualizar rango de semana mostrado
  */
 function actualizarRangoSemana() {
-    // Usar exactamente el mismo cálculo que el calendario
-    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    // Usar las funciones formateadas para mostrar en la interfaz
+    const inicioFormateado = obtenerInicioSemanaFormateado(semanaActual);
+    const finFormateado = obtenerFinSemanaFormateado(semanaActual);
     
-    // Calcular el primer día (lunes) usando la misma lógica que renderizarCalendario
-    const primerDia = new Date(semanaActual);
-    primerDia.setDate(semanaActual.getDate() - semanaActual.getDay() + 1);
-    
-    // Calcular el último día (domingo)
-    const ultimoDia = new Date(primerDia);
-    ultimoDia.setDate(primerDia.getDate() + 6);
-    
-    const inicioStr = primerDia.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    const finStr = ultimoDia.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    // Extraer solo la fecha sin el día de la semana para el rango
+    const inicioStr = inicioFormateado.split(', ')[1]; // "8 de septiembre de 2025"
+    const finStr = finFormateado.split(', ')[1]; // "14 de septiembre de 2025"
     
     const rangoTexto = `${inicioStr} - ${finStr}`;
     console.log('📅 Actualizando rango de semana:', rangoTexto);
-    console.log('📅 Primer día (lunes):', primerDia.toDateString());
-    console.log('📅 Último día (domingo):', ultimoDia.toDateString());
-    console.log('📅 semanaActual:', semanaActual.toDateString());
+    console.log('📅 Inicio formateado:', inicioFormateado);
+    console.log('📅 Fin formateado:', finFormateado);
     
     document.getElementById('rangoSemana').textContent = rangoTexto;
 }
