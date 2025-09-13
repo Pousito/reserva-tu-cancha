@@ -5617,6 +5617,87 @@ app.post('/debug/fix-database-columns', async (req, res) => {
 
 
 
+// 🔍 ENDPOINT PARA VERIFICAR DATOS DEL PANEL DE ADMIN
+app.get('/api/diagnostic/admin-reservas/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log(`🔍 DIAGNÓSTICO PANEL ADMIN PARA RESERVA: ${codigo}`);
+    
+    // Simular exactamente la misma consulta que usa el panel de admin
+    const reservas = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, 
+             CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+             co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      WHERE r.codigo_reserva = $1
+      ORDER BY r.fecha_creacion DESC
+    `, [codigo]);
+    
+    if (reservas.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Reserva ${codigo} no encontrada`
+      });
+    }
+    
+    const reservaOriginal = reservas[0];
+    
+    // Aplicar exactamente el mismo procesamiento que usa el panel de admin
+    const reservaProcesada = reservaOriginal;
+    if (reservaProcesada.fecha) {
+      if (typeof reservaProcesada.fecha === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(reservaProcesada.fecha)) {
+          // Fecha ya está en formato correcto
+        } else {
+          // Convertir fecha a formato YYYY-MM-DD usando métodos UTC para evitar problemas de zona horaria
+          const fechaObj = new Date(reservaProcesada.fecha);
+          if (!isNaN(fechaObj.getTime())) {
+            const year = fechaObj.getUTCFullYear();
+            const month = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(fechaObj.getUTCDate()).padStart(2, '0');
+            reservaProcesada.fecha = `${year}-${month}-${day}`;
+          }
+        }
+      }
+    }
+    
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      reserva_original: {
+        codigo: reservaOriginal.codigo_reserva,
+        fecha_original: reservaOriginal.fecha,
+        fecha_tipo: typeof reservaOriginal.fecha,
+        fecha_string: reservaOriginal.fecha ? reservaOriginal.fecha.toString() : null
+      },
+      reserva_procesada: {
+        codigo: reservaProcesada.codigo_reserva,
+        fecha_procesada: reservaProcesada.fecha,
+        fecha_tipo: typeof reservaProcesada.fecha
+      },
+      comparacion: {
+        antes: reservaOriginal.fecha,
+        despues: reservaProcesada.fecha,
+        cambio: reservaOriginal.fecha !== reservaProcesada.fecha ? 'SÍ' : 'NO'
+      }
+    };
+    
+    console.log('✅ DIAGNÓSTICO PANEL ADMIN COMPLETADO:', result.comparacion);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('❌ Error en diagnóstico panel admin:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // 🔍 ENDPOINT ESPECÍFICO PARA PROBAR RESERVA TYUY16
 app.get('/api/diagnostic/test-reserva/:codigo', async (req, res) => {
   try {
