@@ -1233,6 +1233,72 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
   }
 });
 
+// Endpoint temporal para enviar email de prueba con fecha correcta
+app.post('/api/debug/send-test-email', async (req, res) => {
+  try {
+    const { codigo_reserva } = req.body;
+    
+    if (!codigo_reserva) {
+      return res.status(400).json({ error: 'Código de reserva requerido' });
+    }
+    
+    // Obtener datos de la reserva
+    const reserva = await db.query(`
+      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      WHERE r.codigo_reserva = $1
+    `, [codigo_reserva]);
+    
+    if (reserva.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+    
+    const reservaData = reserva[0];
+    
+    // Formatear fecha correctamente usando mapeo directo
+    const fecha = reservaData.fecha;
+    const [year, month, day] = fecha.split('-').map(Number);
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const fechaObj = new Date(year, month - 1, day);
+    const diaSemana = diasSemana[fechaObj.getDay()];
+    const nombreMes = meses[month - 1];
+    const fechaFormateada = `${diaSemana}, ${day} de ${nombreMes} de ${year}`;
+    
+    // Enviar email con fecha correcta
+    const EmailService = require('./src/services/emailService');
+    const emailService = new EmailService();
+    
+    const emailData = {
+      codigo_reserva: reservaData.codigo_reserva,
+      nombre_cliente: reservaData.nombre_cliente,
+      email_cliente: reservaData.email_cliente,
+      complejo: reservaData.complejo_nombre,
+      cancha: reservaData.cancha_nombre,
+      fecha: fechaFormateada, // Usar fecha ya formateada correctamente
+      hora_inicio: reservaData.hora_inicio,
+      hora_fin: reservaData.hora_fin,
+      precio_total: reservaData.precio_total
+    };
+    
+    const result = await emailService.sendReservationConfirmation(emailData);
+    
+    res.json({
+      success: true,
+      message: 'Email de prueba enviado con fecha correcta',
+      fechaFormateada: fechaFormateada,
+      emailResult: result
+    });
+    
+  } catch (error) {
+    console.error('Error enviando email de prueba:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint de debug temporal para verificar correcciones de fechas
 app.get('/api/debug/date-fix', async (req, res) => {
   try {
