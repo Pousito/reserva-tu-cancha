@@ -1252,6 +1252,38 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
   }
 });
 
+// Endpoint temporal para debuggear zona horaria
+app.get('/api/debug/timezone', async (req, res) => {
+  try {
+    const { formatDateForChile } = require('./src/utils/dateUtils');
+    
+    const fecha = '2025-09-30';
+    const fechaFormateada = formatDateForChile(fecha, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    res.json({
+      fecha_original: fecha,
+      fecha_formateada: fechaFormateada,
+      zona_horaria_sistema: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      fecha_actual: new Date().toISOString(),
+      fecha_actual_chile: new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
+      test_date_parsing: new Date('2025-09-30').toLocaleDateString('es-CL', { 
+        timeZone: 'America/Santiago',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint temporal para enviar email de prueba con fecha correcta
 app.post('/api/debug/send-test-email', async (req, res) => {
   try {
