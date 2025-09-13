@@ -2156,7 +2156,9 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
     
     // Buscar por código de reserva o nombre del cliente
     const reserva = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, 
+      SELECT r.*, 
+             TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+             c.nombre as cancha_nombre, 
              CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
              co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
