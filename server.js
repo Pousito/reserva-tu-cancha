@@ -1258,11 +1258,20 @@ app.get('/api/debug/date-fix', async (req, res) => {
     }
     
     res.json({
-      version: 'CORRECCION_FECHAS_v2',
+      version: 'CORRECCION_FECHAS_v3_DEFINITIVA',
       testDate: testDate,
       fechaFormateada: fechaFormateada,
       timestamp: new Date().toISOString(),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      commit: 'f4a569b',
+      debug: {
+        year: year,
+        month: month,
+        day: day,
+        fechaObj: fechaObj.toDateString(),
+        diaSemana: diaSemana,
+        nombreMes: nombreMes
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
