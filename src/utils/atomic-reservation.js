@@ -137,10 +137,9 @@ class AtomicReservationManager {
             const codigo_reserva = this.generateReservationCode();
             console.log('🎫 Código de reserva generado:', codigo_reserva);
 
-            // PASO 4: Calcular comisión
+            // PASO 4: Calcular comisión (solo para registro, no se suma al precio)
             const comision = Math.round(precio_total * commissionRate);
-            const precio_final = precio_total + comision;
-            console.log('💰 Precio calculado:', { precio_total, comision, precio_final });
+            console.log('💰 Precio calculado:', { precio_total, comision, nota: 'La comisión es solo informativa' });
 
             // PASO 5: Crear la reserva
             console.log('💾 Creando reserva en base de datos...');
@@ -157,7 +156,7 @@ class AtomicReservationManager {
             const insertParams = [
                 codigo_reserva, cancha_id, fecha, hora_inicio, hora_fin,
                 nombre_cliente, email_cliente || null, telefono_cliente || null, rut_cliente || null,
-                precio_final, 'confirmada', new Date().toISOString(), tipo_reserva,
+                precio_total, 'confirmada', new Date().toISOString(), tipo_reserva,
                 comision, admin_id !== null, admin_id
             ];
             
@@ -182,7 +181,7 @@ class AtomicReservationManager {
                 precio: {
                     base: precio_total,
                     comision,
-                    final: precio_final
+                    final: precio_total // El precio final es el mismo que el base (comisión es solo informativa)
                 }
             };
 

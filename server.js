@@ -395,7 +395,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         // Generar código de reserva único solo cuando se confirma el pago
         const codigoReserva = await generarCodigoReservaUnico();
         
-        // Calcular comisión para reserva web (3.5%)
+        // Calcular comisión para reserva web (3.5%) - Solo para registro, no se suma al precio
         const comisionWeb = Math.round(datosCliente.precio_total * 0.035);
         
         console.log('💾 Insertando reserva en BD (bloqueo temporal):', {
@@ -1873,7 +1873,7 @@ app.get('/api/debug/insert-test-reservations', async (req, res) => {
     
     for (const reserva of reservasData) {
       try {
-        // Calcular comisión para reserva web (3.5%)
+        // Calcular comisión para reserva web (3.5%) - Solo para registro, no se suma al precio
         const comisionWeb = Math.round(reserva.precio_total * 0.035);
         
         const result = await db.run(
@@ -2408,7 +2408,7 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
       try {
         const codigo_reserva = Math.random().toString(36).substr(2, 6).toUpperCase();
         
-        // Calcular comisión para reserva web (3.5%)
+        // Calcular comisión para reserva web (3.5%) - Solo para registro, no se suma al precio
         const comisionWeb = Math.round(reserva.precio_total * 0.035);
         
         await db.run(
