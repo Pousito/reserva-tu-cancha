@@ -25,9 +25,9 @@ function parseDateInChile(dateString) {
         throw new Error('Fecha requerida');
     }
     
-    // Crear fecha en zona horaria local para mantener la fecha correcta
+    // CORRECCIÓN CRÍTICA: Usar UTC para evitar problemas de zona horaria
     const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
 }
 
 /**
@@ -49,7 +49,17 @@ function formatDateForChile(date, options = {}) {
     
     let dateObj;
     if (typeof date === 'string') {
-        dateObj = parseDateInChile(date);
+        // CORRECCIÓN CRÍTICA: Para fechas en formato YYYY-MM-DD, crear directamente en Chile
+        if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = date.split('-').map(Number);
+            // Crear fecha en zona horaria de Chile usando toLocaleString
+            const fechaChile = new Date(year, month - 1, day).toLocaleDateString('en-CA', {
+                timeZone: CHILE_TIMEZONE
+            });
+            dateObj = new Date(fechaChile + 'T12:00:00');
+        } else {
+            dateObj = parseDateInChile(date);
+        }
     } else if (date instanceof Date) {
         dateObj = date;
     } else {
