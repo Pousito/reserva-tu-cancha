@@ -5623,6 +5623,9 @@ app.get('/api/diagnostic/test-reserva/:codigo', async (req, res) => {
     const { codigo } = req.params;
     console.log(`🔍 DIAGNÓSTICO ESPECÍFICO PARA RESERVA: ${codigo}`);
     
+    // Importar función de formateo de fechas
+    const { formatDateForChile } = require('./src/utils/dateUtils');
+    
     // 1. Obtener datos de la reserva
     const reservaResult = await db.query(`
       SELECT 
@@ -5702,6 +5705,9 @@ app.get('/api/diagnostic/test-reserva/:codigo', async (req, res) => {
 app.get('/api/diagnostic/date-analysis', async (req, res) => {
   try {
     console.log('🔍 INICIANDO DIAGNÓSTICO AUTOMATIZADO DE FECHAS');
+    
+    // Importar función de formateo de fechas
+    const { formatDateForChile } = require('./src/utils/dateUtils');
     
     // 1. Información del entorno
     const environmentInfo = {
