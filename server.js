@@ -1258,11 +1258,18 @@ app.post('/api/debug/send-test-email', async (req, res) => {
     const reservaData = reserva[0];
     
     // Formatear fecha correctamente usando mapeo directo
-    const fecha = reservaData.fecha;
+    let fecha = reservaData.fecha;
     console.log('🔍 Debug fecha:', { fecha, tipo: typeof fecha });
     
-    if (typeof fecha !== 'string') {
-      return res.status(400).json({ error: 'Fecha no es un string', fecha: fecha, tipo: typeof fecha });
+    // Convertir fecha a string si es necesario
+    if (typeof fecha === 'object' && fecha instanceof Date) {
+      fecha = fecha.toISOString().split('T')[0]; // Convertir a YYYY-MM-DD
+    } else if (typeof fecha === 'string' && fecha.includes('T')) {
+      fecha = fecha.split('T')[0]; // Extraer solo la parte de fecha
+    }
+    
+    if (typeof fecha !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      return res.status(400).json({ error: 'Fecha no tiene formato válido', fecha: fecha, tipo: typeof fecha });
     }
     
     const [year, month, day] = fecha.split('-').map(Number);
