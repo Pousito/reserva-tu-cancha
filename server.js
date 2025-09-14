@@ -1773,15 +1773,21 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     console.log('🔍 Where clause:', whereClause);
     console.log('🔍 Params:', params);
     
-    const clientesUnicos = await db.get(`
-      SELECT COUNT(DISTINCT r.rut_cliente) as count
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
-    `, params);
-    
-    console.log('📊 Clientes únicos (métricas generales):', clientesUnicos);
+    let clientesUnicos;
+    try {
+      clientesUnicos = await db.get(`
+        SELECT COUNT(DISTINCT r.rut_cliente) as count
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        JOIN complejos co ON c.complejo_id = co.id
+        ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
+      `, params);
+      
+      console.log('📊 Clientes únicos (métricas generales):', clientesUnicos);
+    } catch (error) {
+      console.error('❌ Error consultando clientes únicos:', error);
+      clientesUnicos = { count: 0 };
+    }
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
     const reservasPorDiaRaw = await db.query(`
