@@ -5364,6 +5364,66 @@ app.post('/debug/simulate-create-blocking', async (req, res) => {
   }
 });
 
+// Endpoint para limpiar todas las reservas (solo para super admin en producción)
+app.delete('/api/admin/clear-all-reservations', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Verificar que solo se ejecute en producción o por super admin
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Esta operación solo está disponible en producción' 
+      });
+    }
+    
+    console.log('🗑️ Limpiando todas las reservas de producción...');
+    console.log('👤 Usuario:', user.email, 'Rol:', user.rol);
+    
+    // Contar reservas antes de eliminar
+    const countBefore = await db.get('SELECT COUNT(*) as total FROM reservas');
+    const totalBefore = countBefore.total;
+    
+    console.log(`📊 Total de reservas antes de limpiar: ${totalBefore}`);
+    
+    if (totalBefore === 0) {
+      return res.json({
+        success: true,
+        message: 'No hay reservas para eliminar',
+        reservasEliminadas: 0,
+        reservasRestantes: 0
+      });
+    }
+    
+    // Eliminar todas las reservas
+    const deleteResult = await db.run('DELETE FROM reservas');
+    
+    // Verificar que se eliminaron todas
+    const countAfter = await db.get('SELECT COUNT(*) as total FROM reservas');
+    const totalAfter = countAfter.total;
+    
+    console.log(`✅ Eliminadas ${deleteResult.changes} reservas de producción`);
+    console.log(`📊 Reservas restantes: ${totalAfter}`);
+    
+    res.json({
+      success: true,
+      message: 'Base de datos de reservas limpiada exitosamente',
+      reservasEliminadas: deleteResult.changes,
+      reservasRestantes: totalAfter,
+      usuario: user.email,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error limpiando reservas de producción:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor al limpiar reservas',
+      details: error.message 
+    });
+  }
+});
+
 // Endpoint para verificar si el router admin-calendar está funcionando
 app.get('/debug/test-admin-calendar-router', async (req, res) => {
   try {
