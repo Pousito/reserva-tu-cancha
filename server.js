@@ -1970,6 +1970,27 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
   }
 });
 
+// Endpoint de prueba para clientes únicos
+app.get('/api/debug/test-clientes-unicos', async (req, res) => {
+  try {
+    console.log('🧪 Probando consulta de clientes únicos...');
+    
+    const result = await db.get(`
+      SELECT COUNT(DISTINCT r.rut_cliente) as count
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      WHERE r.estado IN ('confirmada', 'pendiente')
+    `);
+    
+    console.log('🧪 Resultado de prueba:', result);
+    res.json({ success: true, clientes_unicos: result });
+  } catch (error) {
+    console.error('❌ Error en prueba:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para limpiar complejos duplicados
 app.get('/api/debug/clean-duplicate-complexes', async (req, res) => {
   try {
