@@ -260,7 +260,7 @@ function updateMetrics() {
     if (totalRevenue) totalRevenue.textContent = `$${metrics.ingresosTotales.toLocaleString()}`;
     if (totalReservations) totalReservations.textContent = metrics.totalReservas;
     if (occupancyRate) occupancyRate.textContent = `${metrics.ocupacionPromedio || 0}%`;
-    if (uniqueCustomers) uniqueCustomers.textContent = metrics.reservasConfirmadas;
+    if (uniqueCustomers) uniqueCustomers.textContent = metrics.clientes_unicos || 0;
 }
 
 // Destruir gráficos existentes

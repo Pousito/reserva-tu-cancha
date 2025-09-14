@@ -1768,6 +1768,15 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
       ${whereClause} AND r.estado = 'confirmada'
     `, params);
     
+    // Contar clientes únicos para las métricas generales
+    const clientesUnicos = await db.get(`
+      SELECT COUNT(DISTINCT r.rut_cliente) as count
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
+    `, params);
+    
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
     const reservasPorDiaRaw = await db.query(`
       SELECT r.fecha, r.precio_total
@@ -1925,6 +1934,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
         totalReservas: parseInt(totalReservas.count),
         ingresosTotales: parseInt(ingresosTotales.total),
         reservasConfirmadas: parseInt(reservasConfirmadas.count),
+        clientes_unicos: parseInt(clientesUnicos.count),
         tasaConfirmacion: totalReservas.count > 0 ? (reservasConfirmadas.count / totalReservas.count * 100).toFixed(1) : 0,
         ocupacionPromedio: parseFloat(ocupacionPromedio)
       },
