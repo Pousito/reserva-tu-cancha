@@ -1022,7 +1022,7 @@ function generarHoras(fecha = null) {
     
     // Si no se proporciona fecha, usar horarios por defecto (Lunes a Viernes)
     let horaInicio = 16;
-    let horaFin = 22;
+    let horaFin = 23;
     
     if (fecha) {
         const fechaObj = new Date(fecha);
@@ -1030,10 +1030,10 @@ function generarHoras(fecha = null) {
         
         if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
             horaInicio = 16;
-            horaFin = 22;
+            horaFin = 23;
         } else { // Sábado y Domingo: 12:00 a 23:00
             horaInicio = 12;
-            horaFin = 22;
+            horaFin = 23;
         }
     }
     
