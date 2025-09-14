@@ -89,8 +89,8 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         console.log('📅 Rango de semana:', { startOfWeek, endOfWeek });
         console.log('📅 Fechas formateadas:', { 
-            fechaInicio: startOfWeek.toISOString().split('T')[0], 
-            fechaFin: endOfWeek.toISOString().split('T')[0] 
+            fechaInicio: `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`,
+            fechaFin: `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`
         });
         
         // Construir consulta base
@@ -122,7 +122,10 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             WHERE r.fecha >= $1 AND r.fecha <= $2 AND r.estado != 'cancelada'
         `;
         
-        const queryParams = [startOfWeek.toISOString().split('T')[0], endOfWeek.toISOString().split('T')[0]];
+        const queryParams = [
+            `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`,
+            `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`
+        ];
         
         // Filtrar por complejo según el rol del usuario
         if (user.rol === 'owner' || user.rol === 'manager') {
@@ -197,7 +200,10 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             WHERE bt.fecha >= $1 AND bt.fecha <= $2
         `;
         
-        const bloqueosParams = [startOfWeek.toISOString().split('T')[0], endOfWeek.toISOString().split('T')[0]];
+        const bloqueosParams = [
+            `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`,
+            `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`
+        ];
         
         if (user.rol === 'owner' || user.rol === 'manager') {
             bloqueosQuery += ` AND comp.id = $${bloqueosParams.length + 1}`;
@@ -268,7 +274,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             
             horarios.push({
                 dia: i,
-                fecha: dia.toISOString().split('T')[0],
+                fecha: `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`,
                 diaSemana: diaSemana,
                 horarios: generarHorariosPorDia(diaSemana)
             });
@@ -280,7 +286,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             const dia = new Date(startOfWeek);
             dia.setDate(startOfWeek.getDate() + i);
             diasSemana.push({
-                fecha: dia.toISOString().split('T')[0],
+                fecha: `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`,
                 dia: dia.getDate(),
                 nombre: dia.toLocaleDateString('es-CL', { weekday: 'short' }),
                 nombreCompleto: dia.toLocaleDateString('es-CL', { weekday: 'long' })
@@ -329,8 +335,8 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         const response = {
             semana: {
-                inicio: startOfWeek.toISOString().split('T')[0],
-                fin: endOfWeek.toISOString().split('T')[0],
+                inicio: `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`,
+                fin: `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`,
                 dias: diasSemana
             },
             canchas: canchas || [],

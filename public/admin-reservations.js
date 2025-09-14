@@ -997,7 +997,8 @@ function renderizarCalendario(data = null) {
         for (let i = 0; i < 7; i++) {
             const fecha = new Date(semanaActual);
             fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
-            const fechaStr = fecha.toISOString().split('T')[0]; // Usar formato ISO para coincidir con calendarioData
+            // Usar fecha local en lugar de UTC para evitar desfase de zona horaria
+            const fechaStr = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
             
             // Verificar si esta hora está disponible para este día
             const fechaObj = new Date(semanaActual);
