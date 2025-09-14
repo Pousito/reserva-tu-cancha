@@ -727,20 +727,38 @@ function aplicarOrdenamiento(reservas, tipoOrdenamiento) {
     
     switch (tipoOrdenamiento) {
         case 'fecha_reserva_asc':
-            // Más antigua → Más reciente (por fecha de reserva)
+            // Fecha de reserva: Antigua → Reciente (incluyendo hora)
             reservasOrdenadas.sort((a, b) => {
-                const fechaA = new Date(formatearFechaParaAPI(a.fecha));
-                const fechaB = new Date(formatearFechaParaAPI(b.fecha));
-                return fechaA - fechaB;
+                const fechaA = formatearFechaParaAPI(a.fecha);
+                const fechaB = formatearFechaParaAPI(b.fecha);
+                
+                // Si las fechas son diferentes, ordenar por fecha
+                if (fechaA !== fechaB) {
+                    return new Date(fechaA) - new Date(fechaB);
+                }
+                
+                // Si las fechas son iguales, ordenar por hora de inicio
+                const horaA = a.hora_inicio || '00:00:00';
+                const horaB = b.hora_inicio || '00:00:00';
+                return horaA.localeCompare(horaB);
             });
             break;
             
         case 'fecha_reserva_desc':
-            // Más reciente → Más antigua (por fecha de reserva)
+            // Fecha de reserva: Reciente → Antigua (incluyendo hora)
             reservasOrdenadas.sort((a, b) => {
-                const fechaA = new Date(formatearFechaParaAPI(a.fecha));
-                const fechaB = new Date(formatearFechaParaAPI(b.fecha));
-                return fechaB - fechaA;
+                const fechaA = formatearFechaParaAPI(a.fecha);
+                const fechaB = formatearFechaParaAPI(b.fecha);
+                
+                // Si las fechas son diferentes, ordenar por fecha
+                if (fechaA !== fechaB) {
+                    return new Date(fechaB) - new Date(fechaA);
+                }
+                
+                // Si las fechas son iguales, ordenar por hora de inicio (descendente)
+                const horaA = a.hora_inicio || '00:00:00';
+                const horaB = b.hora_inicio || '00:00:00';
+                return horaB.localeCompare(horaA);
             });
             break;
             
