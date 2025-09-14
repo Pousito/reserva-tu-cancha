@@ -5364,6 +5364,71 @@ app.post('/debug/simulate-create-blocking', async (req, res) => {
   }
 });
 
+// Endpoint temporal para limpiar reservas sin autenticación (solo para emergencias)
+app.delete('/api/emergency/clear-reservations', async (req, res) => {
+  try {
+    // Solo permitir en producción y con una clave secreta
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Solo disponible en producción' 
+      });
+    }
+    
+    // Verificar clave secreta
+    const secretKey = req.headers['x-secret-key'];
+    if (secretKey !== 'EMERGENCY_CLEAR_2025') {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Clave secreta requerida' 
+      });
+    }
+    
+    console.log('🚨 LIMPIEZA DE EMERGENCIA - Eliminando todas las reservas de producción...');
+    
+    // Contar reservas antes de eliminar
+    const countBefore = await db.get('SELECT COUNT(*) as total FROM reservas');
+    const totalBefore = countBefore.total;
+    
+    console.log(`📊 Total de reservas antes de limpiar: ${totalBefore}`);
+    
+    if (totalBefore === 0) {
+      return res.json({
+        success: true,
+        message: 'No hay reservas para eliminar',
+        reservasEliminadas: 0,
+        reservasRestantes: 0
+      });
+    }
+    
+    // Eliminar todas las reservas
+    const deleteResult = await db.run('DELETE FROM reservas');
+    
+    // Verificar que se eliminaron todas
+    const countAfter = await db.get('SELECT COUNT(*) as total FROM reservas');
+    const totalAfter = countAfter.total;
+    
+    console.log(`✅ LIMPIEZA COMPLETADA - Eliminadas ${deleteResult.changes} reservas de producción`);
+    console.log(`📊 Reservas restantes: ${totalAfter}`);
+    
+    res.json({
+      success: true,
+      message: 'Base de datos de reservas limpiada exitosamente',
+      reservasEliminadas: deleteResult.changes,
+      reservasRestantes: totalAfter,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en limpieza de emergencia:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error interno del servidor',
+      details: error.message 
+    });
+  }
+});
+
 // Endpoint de diagnóstico para verificar datos de reservas en producción
 app.get('/api/admin/debug-reservations', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   try {
