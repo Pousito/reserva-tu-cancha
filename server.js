@@ -1769,6 +1769,10 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     `, params);
     
     // Contar clientes únicos para las métricas generales
+    console.log('🔍 Consultando clientes únicos para métricas generales...');
+    console.log('🔍 Where clause:', whereClause);
+    console.log('🔍 Params:', params);
+    
     const clientesUnicos = await db.get(`
       SELECT COUNT(DISTINCT r.rut_cliente) as count
       FROM reservas r
@@ -1776,6 +1780,8 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
     `, params);
+    
+    console.log('📊 Clientes únicos (métricas generales):', clientesUnicos);
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
     const reservasPorDiaRaw = await db.query(`
@@ -1950,6 +1956,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     };
     
     console.log(`✅ Reportes generados exitosamente`);
+    console.log('📊 Métricas enviadas:', reportData.metrics);
     res.json(reportData);
   } catch (error) {
     console.error('❌ Error generando reportes:', error);
