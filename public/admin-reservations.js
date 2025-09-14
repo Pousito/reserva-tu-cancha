@@ -134,6 +134,7 @@ function configurarEventListeners() {
     document.getElementById('tipoReservaFilter').addEventListener('change', aplicarFiltros);
     document.getElementById('fechaDesde').addEventListener('change', aplicarFiltros);
     document.getElementById('fechaHasta').addEventListener('change', aplicarFiltros);
+    document.getElementById('ordenamientoFilter').addEventListener('change', aplicarFiltros);
     
     // Event listeners para cerrar calendarios automáticamente
     document.getElementById('fechaDesde').addEventListener('change', function() {
@@ -653,6 +654,7 @@ function aplicarFiltrosAvanzados() {
     const tipoReservaFilter = document.getElementById('tipoReservaFilter').value;
     const fechaDesde = document.getElementById('fechaDesde').value;
     const fechaHasta = document.getElementById('fechaHasta').value;
+    const ordenamientoFilter = document.getElementById('ordenamientoFilter').value;
     
     // Guardar filtros activos
     filtrosActivos = {
@@ -660,7 +662,8 @@ function aplicarFiltrosAvanzados() {
         estado: estadoFilter,
         tipoReserva: tipoReservaFilter,
         fechaDesde: fechaDesde,
-        fechaHasta: fechaHasta
+        fechaHasta: fechaHasta,
+        ordenamiento: ordenamientoFilter
     };
     
     // Empezar siempre con todas las reservas originales
@@ -706,9 +709,65 @@ function aplicarFiltrosAvanzados() {
         });
     }
     
+    // Aplicar ordenamiento
+    if (ordenamientoFilter) {
+        reservasFiltradasTemp = aplicarOrdenamiento(reservasFiltradasTemp, ordenamientoFilter);
+    }
+    
     reservasFiltradas = reservasFiltradasTemp;
     mostrarReservas(reservasFiltradas);
     actualizarContador();
+}
+
+/**
+ * Aplicar ordenamiento a las reservas
+ */
+function aplicarOrdenamiento(reservas, tipoOrdenamiento) {
+    const reservasOrdenadas = [...reservas];
+    
+    switch (tipoOrdenamiento) {
+        case 'fecha_reserva_asc':
+            // Más antigua → Más reciente (por fecha de reserva)
+            reservasOrdenadas.sort((a, b) => {
+                const fechaA = new Date(formatearFechaParaAPI(a.fecha));
+                const fechaB = new Date(formatearFechaParaAPI(b.fecha));
+                return fechaA - fechaB;
+            });
+            break;
+            
+        case 'fecha_reserva_desc':
+            // Más reciente → Más antigua (por fecha de reserva)
+            reservasOrdenadas.sort((a, b) => {
+                const fechaA = new Date(formatearFechaParaAPI(a.fecha));
+                const fechaB = new Date(formatearFechaParaAPI(b.fecha));
+                return fechaB - fechaA;
+            });
+            break;
+            
+        case 'fecha_creacion_asc':
+            // Primera realizada → Última realizada (por fecha de creación)
+            reservasOrdenadas.sort((a, b) => {
+                const fechaA = new Date(a.created_at);
+                const fechaB = new Date(b.created_at);
+                return fechaA - fechaB;
+            });
+            break;
+            
+        case 'fecha_creacion_desc':
+            // Última realizada → Primera realizada (por fecha de creación)
+            reservasOrdenadas.sort((a, b) => {
+                const fechaA = new Date(a.created_at);
+                const fechaB = new Date(b.created_at);
+                return fechaB - fechaA;
+            });
+            break;
+            
+        default:
+            // Sin ordenamiento
+            break;
+    }
+    
+    return reservasOrdenadas;
 }
 
 /**
@@ -725,6 +784,7 @@ function limpiarFiltros() {
     document.getElementById('tipoReservaFilter').value = '';
     document.getElementById('fechaDesde').value = '';
     document.getElementById('fechaHasta').value = '';
+    document.getElementById('ordenamientoFilter').value = '';
     
     // Resetear variables
     filtrosActivos = {};

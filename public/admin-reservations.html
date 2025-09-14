@@ -604,7 +604,16 @@
                                     <label for="fechaHasta" class="form-label">Fecha Hasta</label>
                                     <input type="date" class="form-control" id="fechaHasta">
                                 </div>
-                                <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <div class="col-md-3 mb-3">
+                                    <label for="ordenamientoFilter" class="form-label">Ordenar por</label>
+                                    <select class="form-select" id="ordenamientoFilter">
+                                        <option value="fecha_reserva_asc">Más antigua → Más reciente</option>
+                                        <option value="fecha_reserva_desc">Más reciente → Más antigua</option>
+                                        <option value="fecha_creacion_asc">Primera realizada → Última realizada</option>
+                                        <option value="fecha_creacion_desc">Última realizada → Primera realizada</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3 d-flex align-items-end">
                                     <button class="btn btn-primary me-2" onclick="aplicarFiltros()">
                                         <i class="fas fa-search me-2"></i>Filtrar
                                     </button>
