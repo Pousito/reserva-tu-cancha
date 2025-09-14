@@ -5364,6 +5364,61 @@ app.post('/debug/simulate-create-blocking', async (req, res) => {
   }
 });
 
+// Endpoint de diagnóstico para verificar datos de reservas en producción
+app.get('/api/admin/debug-reservations', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('🔍 Diagnóstico de reservas en producción...');
+    
+    // Contar total de reservas
+    const totalResult = await db.get('SELECT COUNT(*) as total FROM reservas');
+    const totalReservas = totalResult.total;
+    
+    // Obtener algunas reservas de ejemplo
+    const ejemploReservas = await db.all(`
+      SELECT codigo_reserva, fecha, estado, nombre_cliente, created_at
+      FROM reservas 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `);
+    
+    // Verificar reservas por estado
+    const porEstado = await db.all(`
+      SELECT estado, COUNT(*) as cantidad
+      FROM reservas 
+      GROUP BY estado
+    `);
+    
+    // Verificar fechas
+    const fechasResult = await db.all(`
+      SELECT fecha, COUNT(*) as cantidad
+      FROM reservas 
+      GROUP BY fecha
+      ORDER BY fecha DESC
+      LIMIT 10
+    `);
+    
+    res.json({
+      success: true,
+      diagnostico: {
+        totalReservas,
+        porEstado,
+        fechasEjemplo: fechasResult,
+        reservasEjemplo: ejemploReservas,
+        timestamp: new Date().toISOString(),
+        entorno: process.env.NODE_ENV
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en diagnóstico:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error en diagnóstico',
+      details: error.message 
+    });
+  }
+});
+
 // Endpoint para limpiar todas las reservas (solo para super admin en producción)
 app.delete('/api/admin/clear-all-reservations', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   try {
