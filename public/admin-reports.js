@@ -204,10 +204,6 @@ async function generateReports() {
         if (response.ok) {
             reportsData = await response.json();
             console.log('📊 Datos de reportes recibidos:', reportsData);
-            console.log('📊 Métricas específicas:', reportsData.metrics);
-            console.log('📊 Clientes únicos en métricas:', reportsData.metrics.clientes_unicos);
-            console.log('📊 Tipo de clientes_unicos:', typeof reportsData.metrics.clientes_unicos);
-            console.log('📊 Todas las claves de métricas:', Object.keys(reportsData.metrics));
             updateMetrics();
             updateCharts();
             await updateTables();

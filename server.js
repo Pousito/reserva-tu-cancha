@@ -1769,25 +1769,13 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     `, params);
     
     // Contar clientes únicos para las métricas generales
-    console.log('🔍 Consultando clientes únicos para métricas generales...');
-    console.log('🔍 Where clause:', whereClause);
-    console.log('🔍 Params:', params);
-    
-    let clientesUnicos;
-    try {
-      clientesUnicos = await db.get(`
-        SELECT COUNT(DISTINCT r.rut_cliente) as count
-        FROM reservas r
-        JOIN canchas c ON r.cancha_id = c.id
-        JOIN complejos co ON c.complejo_id = co.id
-        ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
-      `, params);
-      
-      console.log('📊 Clientes únicos (métricas generales):', clientesUnicos);
-    } catch (error) {
-      console.error('❌ Error consultando clientes únicos:', error);
-      clientesUnicos = { count: 0 };
-    }
+    const clientesUnicos = await db.get(`
+      SELECT COUNT(DISTINCT r.rut_cliente) as count
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
+    `, params);
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
     const reservasPorDiaRaw = await db.query(`
@@ -1962,31 +1950,9 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     };
     
     console.log(`✅ Reportes generados exitosamente`);
-    console.log('📊 Métricas enviadas:', reportData.metrics);
     res.json(reportData);
   } catch (error) {
     console.error('❌ Error generando reportes:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Endpoint de prueba para clientes únicos
-app.get('/api/debug/test-clientes-unicos', async (req, res) => {
-  try {
-    console.log('🧪 Probando consulta de clientes únicos...');
-    
-    const result = await db.get(`
-      SELECT COUNT(DISTINCT r.rut_cliente) as count
-      FROM reservas r
-      JOIN canchas c ON r.cancha_id = c.id
-      JOIN complejos co ON c.complejo_id = co.id
-      WHERE r.estado IN ('confirmada', 'pendiente')
-    `);
-    
-    console.log('🧪 Resultado de prueba:', result);
-    res.json({ success: true, clientes_unicos: result });
-  } catch (error) {
-    console.error('❌ Error en prueba:', error);
     res.status(500).json({ error: error.message });
   }
 });
