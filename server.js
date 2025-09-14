@@ -4728,6 +4728,15 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
       params.push(complexId);
     }
     
+    // Contar todos los clientes únicos (sin LIMIT)
+    const totalClientesUnicos = await db.query(`
+      SELECT COUNT(DISTINCT r.rut_cliente) as clientes_unicos
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
+    `, params);
+
     // Análisis de clientes agrupando por RUT para evitar duplicados y conservar nombre más completo
     const clientesFrecuentes = await db.query(`
       SELECT 
@@ -4754,6 +4763,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
     `, params);
     
     console.log('✅ Análisis de clientes generado exitosamente');
+    console.log('📊 Clientes únicos encontrados:', totalClientesUnicos[0]?.clientes_unicos || 0);
     
     res.json({
       success: true,
@@ -4762,7 +4772,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
         clientesMayorGasto: clientesFrecuentes,
         clientesNuevos: [],
         clientesRecurrentes: [],
-        estadisticas: { clientes_unicos: clientesFrecuentes.length },
+        estadisticas: { clientes_unicos: totalClientesUnicos[0]?.clientes_unicos || 0 },
         distribucionComplejos: [],
         horariosPopulares: []
       }
