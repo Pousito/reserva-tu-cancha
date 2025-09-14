@@ -3090,8 +3090,10 @@ async function cargarHorariosConDisponibilidadInmediata() {
     console.log('🚀 cargarHorariosConDisponibilidadInmediata - Complejo:', complejoSeleccionado.nombre, 'Fecha:', fecha);
     
     // Determinar horarios según el complejo y día
-    const fechaObj = new Date(fecha + 'T00:00:00');
-    const diaSemana = fechaObj.getDay();
+    // CORREGIDO: Usar Date.UTC para evitar problemas de zona horaria
+    const [año, mes, dia] = fecha.split('-').map(Number);
+    const fechaObj = new Date(Date.UTC(año, mes - 1, dia));
+    const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
     let horarios = [];
     
     if (complejoSeleccionado.nombre === 'MagnaSports') {
