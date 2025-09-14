@@ -866,10 +866,9 @@ function mostrarVista(vista) {
         vistaLista.style.display = 'none';
         vistaCalendario.style.display = 'block';
         
-        // Cargar calendario si no está cargado
-        if (Object.keys(calendarioData).length === 0) {
-            cargarCalendario();
-        }
+        // Siempre recargar el calendario para mostrar los cambios más recientes
+        console.log('📅 Cambiando a vista calendario - recargando datos...');
+        cargarCalendario();
     }
 }
 
@@ -878,6 +877,8 @@ function mostrarVista(vista) {
  */
 async function cargarCalendario() {
     try {
+        console.log('📅 Iniciando carga del calendario...');
+        
         const user = AdminUtils.getCurrentUser();
         let complejoId = '';
         
@@ -894,6 +895,12 @@ async function cargarCalendario() {
         const fechaFin = obtenerFinSemana(semanaActual);
         
         console.log(`📅 Cargando calendario para complejo: ${complejoId}, usuario: ${user.rol}`);
+        
+        // Mostrar indicador de carga en el calendario
+        const calendarGrid = document.getElementById('calendarGrid');
+        if (calendarGrid) {
+            calendarGrid.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin me-2"></i>Cargando calendario...</div>';
+        }
         
         const response = await fetch(`${API_BASE}/admin/calendar/week?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&complejoId=${complejoId}`, {
             headers: {
