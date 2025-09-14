@@ -680,11 +680,17 @@ function aplicarFiltrosAvanzados() {
     }
     
     if (fechaDesde) {
-        reservasFiltradasTemp = reservasFiltradasTemp.filter(r => r.fecha >= fechaDesde);
+        reservasFiltradasTemp = reservasFiltradasTemp.filter(r => {
+            const fechaReserva = formatearFechaParaAPI(r.fecha);
+            return fechaReserva >= fechaDesde;
+        });
     }
     
     if (fechaHasta) {
-        reservasFiltradasTemp = reservasFiltradasTemp.filter(r => r.fecha <= fechaHasta);
+        reservasFiltradasTemp = reservasFiltradasTemp.filter(r => {
+            const fechaReserva = formatearFechaParaAPI(r.fecha);
+            return fechaReserva <= fechaHasta;
+        });
     }
     
     // Aplicar búsqueda si hay término activo
