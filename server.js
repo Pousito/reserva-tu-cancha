@@ -2398,6 +2398,21 @@ app.get('/api/complejos/:ciudadId', async (req, res) => {
   }
 });
 
+// Obtener todas las canchas
+app.get('/api/canchas', async (req, res) => {
+  try {
+    console.log('⚽ Obteniendo todas las canchas...');
+    const canchas = await db.query(
+      'SELECT * FROM canchas ORDER BY complejo_id, nombre'
+    );
+    console.log(`✅ ${canchas.rows.length} canchas encontradas`);
+    res.json(canchas.rows);
+  } catch (error) {
+    console.error('❌ Error obteniendo canchas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Obtener canchas por complejo
 app.get('/api/canchas/:complejoId', async (req, res) => {
   try {
