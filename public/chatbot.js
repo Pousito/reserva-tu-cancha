@@ -289,5 +289,11 @@ class Chatbot {
 
 // Inicializar chatbot cuando se carga la página
 document.addEventListener('DOMContentLoaded', () => {
-    new Chatbot();
+    console.log('🤖 Inicializando chatbot...');
+    try {
+        new Chatbot();
+        console.log('✅ Chatbot inicializado correctamente');
+    } catch (error) {
+        console.error('❌ Error inicializando chatbot:', error);
+    }
 });
