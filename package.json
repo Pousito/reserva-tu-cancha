@@ -58,7 +58,11 @@
     "test-basic": "node scripts/testing/basic-reservation-tests.js",
     "test-final": "node scripts/testing/final-reservation-tests.js",
     "verify-date-fix": "node scripts/verify-date-fix.js",
-    "test-complete-date-fix": "node scripts/test-complete-date-fix.js"
+    "test-complete-date-fix": "node scripts/test-complete-date-fix.js",
+    "keep-alive": "node scripts/keep-alive.js",
+    "export-render-data": "node scripts/export-render-data.js",
+    "migrate-to-neon": "node scripts/migrate-to-neon.js",
+    "configure-chatbot": "node scripts/configure-chatbot.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
