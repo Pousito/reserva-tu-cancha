@@ -496,6 +496,54 @@ app.post('/api/simulate-payment-success', async (req, res) => {
     }
 });
 
+// Endpoint de diagnóstico para Transbank
+app.get('/api/transbank-diagnostic', (req, res) => {
+    try {
+        const diagnostic = {
+            environment: process.env.NODE_ENV,
+            transbank: {
+                environment: process.env.TRANSBANK_ENVIRONMENT,
+                commerceCode: process.env.TRANSBANK_COMMERCE_CODE ? 'Configurado' : 'No configurado',
+                apiKey: process.env.TRANSBANK_API_KEY ? 'Configurado' : 'No configurado',
+                returnUrl: process.env.TRANSBANK_RETURN_URL,
+                finalUrl: process.env.TRANSBANK_FINAL_URL
+            },
+            cors: {
+                origin: process.env.CORS_ORIGIN
+            },
+            issues: []
+        };
+
+        // Verificar problemas
+        if (process.env.TRANSBANK_RETURN_URL && process.env.TRANSBANK_RETURN_URL.startsWith('@')) {
+            diagnostic.issues.push('TRANSBANK_RETURN_URL tiene @ al inicio');
+        }
+        
+        if (process.env.TRANSBANK_RETURN_URL && !process.env.TRANSBANK_RETURN_URL.startsWith('https://')) {
+            diagnostic.issues.push('TRANSBANK_RETURN_URL no usa HTTPS');
+        }
+        
+        if (process.env.TRANSBANK_FINAL_URL && !process.env.TRANSBANK_FINAL_URL.startsWith('https://')) {
+            diagnostic.issues.push('TRANSBANK_FINAL_URL no usa HTTPS');
+        }
+        
+        if (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.includes('onrender.com')) {
+            diagnostic.issues.push('CORS_ORIGIN apunta a onrender.com en lugar del dominio real');
+        }
+
+        res.json({
+            success: true,
+            diagnostic,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Endpoint para simular pago cancelado
 app.post('/api/simulate-payment-cancelled', async (req, res) => {
     try {
