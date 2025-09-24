@@ -175,8 +175,10 @@ class PaymentService {
      * @returns {string} - ID único de la orden
      */
     generateOrderId(reservationCode) {
-        const timestamp = Date.now().toString().slice(-8); // Últimos 8 dígitos
-        return `${reservationCode}_${timestamp}`;
+        // Transbank requiere que el buyOrder sea máximo 26 caracteres
+        // Usar solo los últimos 8 dígitos del timestamp para mantener el orden único
+        const timestamp = Date.now().toString().slice(-8);
+        return `ORD${timestamp}`;
     }
 
     /**
