@@ -2417,24 +2417,6 @@ app.get('/api/canchas', async (req, res) => {
   }
 });
 
-// Endpoint de diagnóstico para precios
-app.get('/api/debug/precios', async (req, res) => {
-  try {
-    console.log('🔍 Verificando precios en tiempo real...');
-    const canchas = await db.query('SELECT id, nombre, precio_hora FROM canchas ORDER BY id');
-    
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      canchas: canchas.rows || [],
-      total: canchas.rows ? canchas.rows.length : 0
-    });
-  } catch (error) {
-    console.error('❌ Error verificando precios:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Obtener canchas por complejo
 app.get('/api/canchas/:complejoId', async (req, res) => {
   try {
