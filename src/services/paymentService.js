@@ -12,18 +12,34 @@ class PaymentService {
 
     initializeTransbank() {
         if (this.transaction) {
+            console.log('🔄 Transbank ya está inicializado');
             return; // Ya está inicializado
         }
         
         try {
+            console.log('🔧 Inicializando Transbank...', {
+                environment: this.environment,
+                commerceCode: this.commerceCode ? 'Configurado' : 'No configurado',
+                apiKey: this.apiKey ? 'Configurado' : 'No configurado'
+            });
+            
             if (this.environment === 'production') {
                 this.transaction = WebpayPlus.Transaction.buildForProduction(this.commerceCode, this.apiKey);
+                console.log('✅ Transbank configurado para PRODUCCIÓN');
             } else {
                 this.transaction = WebpayPlus.Transaction.buildForIntegration(this.commerceCode, this.apiKey);
+                console.log('✅ Transbank configurado para INTEGRACIÓN');
             }
             console.log('✅ Transbank configurado correctamente');
         } catch (error) {
             console.error('❌ Error configurando Transbank:', error);
+            console.error('🔧 Detalles del error:', {
+                message: error.message,
+                stack: error.stack,
+                environment: this.environment,
+                commerceCode: this.commerceCode,
+                apiKey: this.apiKey
+            });
             throw error;
         }
     }
@@ -78,6 +94,12 @@ class PaymentService {
      */
     async confirmTransaction(token) {
         try {
+            this.initializeTransbank(); // Asegurar que Transbank esté inicializado
+            
+            if (!this.transaction) {
+                throw new Error('Transbank no está inicializado correctamente');
+            }
+            
             const response = await this.transaction.commit(token);
             
             console.log('✅ Transacción confirmada:', {

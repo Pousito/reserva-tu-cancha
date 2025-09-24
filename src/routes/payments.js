@@ -148,17 +148,23 @@ router.post('/confirm', async (req, res) => {
             };
         } else {
             try {
+                console.log('🏦 Confirmando transacción real con Transbank...');
                 confirmResult = await paymentService.confirmTransaction(token_ws);
+                console.log('✅ Confirmación exitosa:', confirmResult);
             } catch (error) {
-                console.log('❌ Error en confirmación real, simulando éxito para desarrollo');
-                confirmResult = {
-                    success: true,
-                    authorizationCode: 'AUTH123',
-                    paymentTypeCode: 'VD',
-                    responseCode: 0,
-                    installmentsNumber: 1,
-                    transactionDate: new Date().toISOString()
-                };
+                console.error('❌ Error en confirmación real:', error);
+                console.log('🔧 Detalles del error:', {
+                    message: error.message,
+                    stack: error.stack,
+                    token: token_ws
+                });
+                
+                // En lugar de simular éxito, vamos a manejar el error correctamente
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error confirmando pago con Transbank: ' + error.message,
+                    details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.'
+                });
             }
         }
 
