@@ -4802,10 +4802,6 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
   }
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // Endpoint de diagnóstico para verificar estructura de BD
 app.get('/debug/database-structure', async (req, res) => {

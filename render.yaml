@@ -32,6 +32,17 @@ services:
         value: reservas@reservatuscanchas.cl
       - key: SMTP_RESERVAS_PASS
         value: L660mKFmcDBk
+      # Transbank Webpay Plus - Configuración de integración (pruebas)
+      - key: TRANSBANK_API_KEY
+        value: 579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C
+      - key: TRANSBANK_COMMERCE_CODE
+        value: 597055555532
+      - key: TRANSBANK_ENVIRONMENT
+        value: integration
+      - key: TRANSBANK_RETURN_URL
+        value: https://www.reservatuscanchas.cl/payment.html
+      - key: TRANSBANK_FINAL_URL
+        value: https://www.reservatuscanchas.cl/?payment=success
     healthCheckPath: /health
     autoDeploy: true
     # Forzar redeploy para código de reserva corto - Versión 4
