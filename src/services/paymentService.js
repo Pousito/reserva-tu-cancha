@@ -136,7 +136,17 @@ class PaymentService {
      */
     async getTransactionStatus(token) {
         try {
+            this.initializeTransbank(); // Asegurar que Transbank esté inicializado
+            
+            if (!this.transaction) {
+                throw new Error('Transbank no está inicializado correctamente');
+            }
+            
             const response = await this.transaction.status(token);
+            
+            if (!response) {
+                throw new Error('Respuesta vacía de Transbank');
+            }
             
             return {
                 success: true,
