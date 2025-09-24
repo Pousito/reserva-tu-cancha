@@ -222,8 +222,8 @@ async function populateSampleData() {
         { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
         { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
         { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
-        { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
-        { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+        { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
+        { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
         { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
         { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
       ];
@@ -2156,8 +2156,8 @@ app.get('/api/debug/insert-courts', async (req, res) => {
       { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
       { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
       { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
-      { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
-      { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 28000, complejo: 'MagnaSports' },
+      { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
+      { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
       { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
       { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
     ];
@@ -3376,14 +3376,14 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
     // Insertar canchas
     const cancha1Result = await db.run(
       'INSERT INTO canchas (nombre, tipo, precio_hora, complejo_id) VALUES ($1, $2, $3, $4) RETURNING id',
-      ['Cancha Techada 1', 'Fútbol', 28000, complejoId]
+      ['Cancha Techada 1', 'Fútbol', 50, complejoId]
     );
     const cancha1Id = cancha1Result.lastID;
     console.log(`✅ Cancha "Cancha Techada 1" insertada con ID: ${cancha1Id}`);
     
     const cancha2Result = await db.run(
       'INSERT INTO canchas (nombre, tipo, precio_hora, complejo_id) VALUES ($1, $2, $3, $4) RETURNING id',
-      ['Cancha Techada 2', 'Fútbol', 28000, complejoId]
+      ['Cancha Techada 2', 'Fútbol', 50, complejoId]
     );
     const cancha2Id = cancha2Result.lastID;
     console.log(`✅ Cancha "Cancha Techada 2" insertada con ID: ${cancha2Id}`);
@@ -3639,7 +3639,7 @@ app.post('/api/debug/test-email-send', async (req, res) => {
       fecha: req.body.fecha || '2025-09-12',
       hora_inicio: req.body.hora_inicio || '18:00',
       hora_fin: req.body.hora_fin || '19:00',
-      precio_total: req.body.precio_total || 28000
+      precio_total: req.body.precio_total || 50
     };
     
     // Intentar enviar email
