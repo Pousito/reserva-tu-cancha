@@ -51,16 +51,16 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
-  // Content Security Policy para permitir Transbank
+  // Content Security Policy más permisivo para la página principal
   res.setHeader('Content-Security-Policy', 
-    "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://webpay3g.transbank.cl https://*.transbank.cl; " +
-    "style-src 'self' 'unsafe-inline' https://webpay3g.transbank.cl https://*.transbank.cl; " +
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; " +
+    "style-src 'self' 'unsafe-inline' https: http:; " +
     "img-src 'self' data: https: http:; " +
-    "font-src 'self' data: https:; " +
-    "connect-src 'self' https://webpay3g.transbank.cl https://*.transbank.cl; " +
-    "frame-src 'self' https://webpay3g.transbank.cl https://*.transbank.cl; " +
-    "form-action 'self' https://webpay3g.transbank.cl https://*.transbank.cl;"
+    "font-src 'self' data: https: http:; " +
+    "connect-src 'self' https: http:; " +
+    "frame-src 'self' https: http:; " +
+    "form-action 'self' https: http:;"
   );
   
   // P3P Policy para cookies (requerido por algunos navegadores)
