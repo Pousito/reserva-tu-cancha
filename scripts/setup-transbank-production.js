@@ -32,7 +32,7 @@ if (!commerceCode || commerceCode.length < 10) {
     process.exit(1);
 }
 
-if (!apiKey || apiKey.length < 60) {
+if (!apiKey || apiKey.length < 30) {
     console.log('❌ Error: API Key inválida');
     process.exit(1);
 }

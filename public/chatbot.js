@@ -24,8 +24,14 @@ class Chatbot {
             <div id="chatbot-widget" class="chatbot-widget">
                 <div id="chatbot-header" class="chatbot-header">
                     <div class="chatbot-title">
-                        <span class="chatbot-icon">🤖</span>
-                        <span>Asistente Virtual</span>
+                        <div class="chatbot-avatar">
+                            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face&auto=format&q=80" alt="Carla" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <span class="chatbot-initials" style="display:none;">C</span>
+                        </div>
+                        <div class="chatbot-info">
+                            <span class="chatbot-name">Carla</span>
+                            <span class="chatbot-status">En línea</span>
+                        </div>
                     </div>
                     <button id="chatbot-toggle" class="chatbot-toggle">
                         <span id="chatbot-toggle-icon">−</span>
@@ -49,7 +55,7 @@ class Chatbot {
             
             <button id="chatbot-launcher" class="chatbot-launcher">
                 <span class="chatbot-launcher-icon">💬</span>
-                <span class="chatbot-launcher-text">¿Necesitas ayuda?</span>
+                <span class="chatbot-launcher-text">Habla con Carla</span>
             </button>
         `;
 
@@ -89,7 +95,7 @@ class Chatbot {
     }
 
     addWelcomeMessage() {
-        this.addMessage('bot', '¡Hola! 👋 Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?');
+        this.addMessage('bot', '¡Hola! 👋 Soy Carla, tu asistente personal. ¿En qué puedo ayudarte con tu reserva hoy?');
     }
 
     toggleChatbot() {
@@ -161,77 +167,82 @@ class Chatbot {
 
     handleQuickAction(action) {
         const responses = {
-            precios: '💰 **Precios de Canchas:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Cancha Techada 1: $28,000 por hora\n• Cancha Techada 2: $28,000 por hora\n\n🏢 **Otros Complejos:**\n• Complejo Deportivo Central (Santiago): $25,000/hora\n• Padel Club Premium (Santiago): $30,000/hora\n• Club Deportivo Norte (Santiago): $28,000/hora\n• Centro Deportivo Costero (Valparaíso): $22,000/hora\n\n💡 *Los precios pueden variar según el complejo y tipo de cancha.*',
-            horarios: '🕐 **Horarios de Atención:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Lunes a Viernes: 16:00 - 23:00\n• Sábados y Domingos: 12:00 - 23:00\n\n🏢 **Otros Complejos:**\n• Lunes a Viernes: 8:00 - 22:00\n• Sábados: 8:00 - 20:00\n• Domingos: 9:00 - 19:00\n\n📅 *Las reservas se pueden hacer hasta con 30 días de anticipación.*',
-            reservar: '📅 **Cómo Reservar:**\n\n1. Selecciona tu ciudad (Santiago, Valparaíso, Concepción, Los Ángeles)\n2. Elige el complejo deportivo\n3. Selecciona tipo de cancha (Fútbol o Pádel)\n4. Elige fecha y horario disponible\n5. Completa tus datos personales\n6. Aplica código de descuento (opcional)\n7. Procede al pago con Webpay Plus\n\n💡 *Recibirás confirmación por email con tu código de reserva.*',
-            contacto: '📞 **Información de Contacto:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Teléfono: +56987654321\n• Email: reservas@magnasports.cl\n• Dirección: Monte Perdido 1685, Los Ángeles\n\n🏢 **Soporte General:**\n• Email: soporte@reservatuscanchas.cl\n• Horario: Lunes a Viernes 9:00-18:00\n\n🕐 *Para otros complejos, consulta la información específica en la página.*'
+            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $28,000 por hora<br><br><b>Cancha Techada 2:</b> $28,000 por hora<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
+            horarios: '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>',
+            reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
+            contacto: '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00'
         };
         
         this.addMessage('bot', responses[action]);
     }
 
+    // Función para detectar intenciones con múltiples palabras clave
+    detectIntent(message, keywords) {
+        return keywords.some(keyword => message.includes(keyword.toLowerCase()));
+    }
+
     getResponse(message) {
         const lowerMessage = message.toLowerCase();
         
-        // Respuestas predefinidas
+        // Sistema de respuestas inteligente
         const responses = {
             // Saludos
-            'hola': '¡Hola! 👋 ¿En qué puedo ayudarte hoy?',
-            'buenos días': '¡Buenos días! ☀️ ¿Cómo puedo asistirte?',
-            'buenas tardes': '¡Buenas tardes! 🌅 ¿En qué te ayudo?',
-            'buenas noches': '¡Buenas noches! 🌙 ¿Necesitas alguna información?',
+            'hola': '¡Hola! 👋 Soy Carla, tu asistente personal. ¿En qué puedo ayudarte hoy?',
+            'buenos días': '¡Buenos días! ☀️ Soy Carla, ¿cómo puedo asistirte con tu reserva?',
+            'buenas tardes': '¡Buenas tardes! 🌅 Soy Carla, ¿en qué te ayudo?',
+            'buenas noches': '¡Buenas noches! 🌙 Soy Carla, ¿necesitas alguna información sobre reservas?',
             
             // Precios
-            'precio': '💰 **Precios por Complejo:**\n\n🏟️ **MagnaSports (Los Ángeles):** $28,000/hora\n🏢 **Complejo Deportivo Central (Santiago):** $25,000/hora\n🏓 **Padel Club Premium (Santiago):** $30,000/hora\n🏢 **Club Deportivo Norte (Santiago):** $28,000/hora\n🏖️ **Centro Deportivo Costero (Valparaíso):** $22,000/hora\n\n💡 *Los precios varían según el complejo y tipo de cancha.*',
-            'cuanto cuesta': '💰 **Precios por hora:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Canchas Techadas de Fútbol: $28,000\n\n🏢 **Santiago:**\n• Complejo Deportivo Central: $25,000\n• Padel Club Premium: $30,000\n• Club Deportivo Norte: $28,000\n\n🏖️ **Valparaíso:**\n• Centro Deportivo Costero: $22,000\n\n¿Te interesa algún complejo específico?',
-            'costos': '💰 **Costos de reserva:**\n\n🏟️ **MagnaSports (Los Ángeles):** $28,000/hora\n🏢 **Santiago:** $25,000 - $30,000/hora\n🏖️ **Valparaíso:** $22,000/hora\n\n💳 *Aceptamos Webpay Plus y códigos de descuento.*',
+            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $28,000 por hora<br><br><b>Cancha Techada 2:</b> $28,000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Canchas Techadas de Fútbol:</b> $28,000<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
+            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Precio:</b> $28,000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
             
             // Horarios
-            'horario': '🕐 **Horarios por Complejo:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Lunes a Viernes: 16:00 - 23:00\n• Sábados y Domingos: 12:00 - 23:00\n\n🏢 **Otros Complejos:**\n• Lunes a Viernes: 8:00 - 22:00\n• Sábados: 8:00 - 20:00\n• Domingos: 9:00 - 19:00',
-            'cuando abren': '🕐 **Horarios de atención:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Lunes a Viernes: 16:00 - 23:00\n• Sábados y Domingos: 12:00 - 23:00\n\n🏢 **Otros Complejos:**\n• Lunes a Viernes: 8:00 - 22:00\n• Sábados: 8:00 - 20:00\n• Domingos: 9:00 - 19:00',
-            'disponibilidad': '📅 **Disponibilidad:**\n• Reservas hasta 30 días adelante\n• Horarios según complejo\n• MagnaSports: 16:00-23:00 (L-V), 12:00-23:00 (S-D)\n• Otros: 8:00-22:00 (L-V), horarios reducidos fines de semana',
+            'horario': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>',
+            'cuando abren': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>💡 <i>Estamos disponibles todos los días de la semana.</i>',
+            'disponibilidad': '📅 <b>Disponibilidad:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Reservas:</b> hasta 30 días adelante<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)<br><br><b>Canchas:</b> techadas disponibles todo el año',
             
             // Reservas
-            'reservar': '📅 **Para reservar:**\n1. Selecciona cancha y fecha\n2. Completa tus datos\n3. Aplica descuento (opcional)\n4. Paga con Webpay Plus\n\n💡 *Recibirás confirmación por email.*',
-            'como reservo': '📅 **Proceso de reserva:**\n1. Elige cancha y horario\n2. Llena formulario\n3. Aplica código descuento\n4. Procede al pago\n\n¿Necesitas ayuda con algún paso?',
-            'hacer reserva': '📅 **Reserva fácil:**\n1. Selecciona cancha\n2. Elige fecha/hora\n3. Completa datos\n4. Paga online\n\n✅ *Confirmación inmediata por email*',
+            'reservar': '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
+            'como reservo': '📅 <b>Proceso de Reserva:</b><br><br><b>Paso 1:</b> Elige Los Ángeles como ciudad<br><br><b>Paso 2:</b> Selecciona MagnaSports<br><br><b>Paso 3:</b> Escoge cancha techada de fútbol<br><br><b>Paso 4:</b> Selecciona fecha y horario<br><br><b>Paso 5:</b> Completa formulario de datos<br><br><b>Paso 6:</b> Aplica código descuento (opcional)<br><br><b>Paso 7:</b> Realiza pago seguro<br><br>¿Necesitas ayuda con algún paso?',
+            'hacer reserva': '📅 <b>Reserva Rápida:</b><br><br><b>Paso 1:</b> Selecciona Los Ángeles<br><br><b>Paso 2:</b> Elige MagnaSports<br><br><b>Paso 3:</b> Escoge cancha y horario<br><br><b>Paso 4:</b> Completa datos personales<br><br><b>Paso 5:</b> Paga online con Webpay Plus<br><br>✅ <i>Confirmación inmediata por email</i>',
             
             // Descuentos
-            'descuento': '🎫 **Códigos de descuento disponibles:**\n• RESERVATUSCANCHAS20 (20%)\n• BIENVENIDA15 (15%)\n• FIDELIDAD10 (10%)\n\n💡 *Aplica el código al hacer tu reserva.*',
-            'codigo': '🎫 **Códigos activos:**\n• RESERVATUSCANCHAS20: 20% descuento\n• BIENVENIDA15: 15% descuento\n• FIDELIDAD10: 10% descuento\n\n¿Quieres aplicar alguno?',
-            'promocion': '🎫 **Promociones disponibles:**\n• RESERVATUSCANCHAS20 (20%)\n• BIENVENIDA15 (15%)\n• FIDELIDAD10 (10%)\n\n💡 *Válidos hasta agotar stock*',
+            'descuento': '🎫 <b>Códigos de Descuento Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% de descuento<br><br><b>BIENVENIDA15:</b> 15% de descuento<br><br><b>FIDELIDAD10:</b> 10% de descuento<br><br>💡 <i>Aplica el código al hacer tu reserva.</i>',
+            'codigo': '🎫 <b>Códigos Activos:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% descuento<br><br><b>BIENVENIDA15:</b> 15% descuento<br><br><b>FIDELIDAD10:</b> 10% descuento<br><br>¿Quieres aplicar alguno?',
+            'promocion': '🎫 <b>Promociones Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% descuento<br><br><b>BIENVENIDA15:</b> 15% descuento<br><br><b>FIDELIDAD10:</b> 10% descuento<br><br>💡 <i>Válidos hasta agotar stock</i>',
             
             // Contacto
-            'contacto': '📞 **Contacto por Complejo:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Teléfono: +56987654321\n• Email: reservas@magnasports.cl\n• Dirección: Monte Perdido 1685, Los Ángeles\n\n🏢 **Soporte General:**\n• Email: soporte@reservatuscanchas.cl\n• Horario: Lun-Vie 9:00-18:00',
-            'telefono': '📞 **Teléfonos:**\n\n🏟️ **MagnaSports:** +56987654321\n🏢 **Complejo Deportivo Central:** +56912345678\n🏓 **Padel Club Premium:** +56987654321\n\n🕐 *Horario de atención: Lunes a Viernes 9:00-18:00*',
-            'email': '📧 **Emails:**\n\n🏟️ **MagnaSports:** reservas@magnasports.cl\n🏢 **Complejo Central:** info@complejocentral.cl\n🏓 **Padel Club:** reservas@padelclub.cl\n🏢 **Soporte General:** soporte@reservatuscanchas.cl\n\n💡 *Te respondemos en menos de 24 horas*',
+            'contacto': '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00',
+            'telefono': '📞 <b>Teléfonos de Contacto:</b><br><br>🏟️ <b>MagnaSports:</b> +56912345678<br><br>🏢 <b>Soporte:</b> +56912345678<br><br>🕐 <i>Horario de atención: Lunes a Viernes 9:00-18:00</i>',
+            'email': '📧 <b>Emails de Contacto:</b><br><br>🏟️ <b>MagnaSports:</b> naxiin320@gmail.com<br><br>🏢 <b>Soporte General:</b> soporte@reservatuscanchas.cl<br><br>💡 <i>Te respondemos en menos de 24 horas</i>',
             
             // Problemas técnicos
-            'no funciona': '🔧 **Soporte técnico:**\n• Refresca la página\n• Verifica tu conexión\n• Contacta: soporte@reservatuscanchas.cl\n\n¿Qué problema específico tienes?',
-            'error': '🔧 **Si hay un error:**\n1. Refresca la página\n2. Verifica conexión\n3. Contacta soporte\n\n📧 *soporte@reservatuscanchas.cl*',
-            'problema': '🔧 **Para problemas:**\n• Refresca la página\n• Verifica conexión\n• Contacta soporte técnico\n\n¿Puedes describir el problema?',
+            'no funciona': '🔧 <b>Soporte Técnico:</b><br><br><b>Paso 1:</b> Refresca la página<br><br><b>Paso 2:</b> Verifica tu conexión<br><br><b>Paso 3:</b> Contacta: soporte@reservatuscanchas.cl<br><br>¿Qué problema específico tienes?',
+            'error': '🔧 <b>Si hay un Error:</b><br><br><b>Paso 1:</b> Refresca la página<br><br><b>Paso 2:</b> Verifica conexión<br><br><b>Paso 3:</b> Contacta soporte<br><br>📧 <i>soporte@reservatuscanchas.cl</i>',
+            'problema': '🔧 <b>Para Problemas:</b><br><br><b>Paso 1:</b> Refresca la página<br><br><b>Paso 2:</b> Verifica conexión<br><br><b>Paso 3:</b> Contacta soporte técnico<br><br>¿Puedes describir el problema?',
             
             // Pagos
-            'pago': '💳 **Métodos de pago:**\n• Webpay Plus (tarjetas)\n• Visa, Mastercard\n• Débito y Crédito\n\n✅ *Pagos 100% seguros*',
-            'webpay': '💳 **Webpay Plus:**\n• Acepta todas las tarjetas\n• Pago seguro y confiable\n• Confirmación inmediata\n\n✅ *Procesado por Transbank*',
+            'pago': '💳 <b>Métodos de Pago:</b><br><br><b>Webpay Plus:</b> tarjetas de crédito y débito<br><br><b>Visa y Mastercard:</b> aceptadas<br><br><b>Débito y Crédito:</b> disponibles<br><br>✅ <i>Pagos 100% seguros</i>',
+            'webpay': '💳 <b>Webpay Plus:</b><br><br><b>Acepta:</b> todas las tarjetas<br><br><b>Pago:</b> seguro y confiable<br><br><b>Confirmación:</b> inmediata<br><br>✅ <i>Procesado por Transbank</i>',
             
             // Ubicación
-            'ubicacion': '📍 **Ubicaciones por Ciudad:**\n\n🏟️ **MagnaSports (Los Ángeles):**\n• Dirección: Monte Perdido 1685, Los Ángeles\n• Estacionamiento disponible\n\n🏢 **Santiago:**\n• Complejo Deportivo Central: Av. Providencia 123\n• Padel Club Premium: Las Condes 456\n• Club Deportivo Norte: Av. Las Condes 5678\n\n🏖️ **Valparaíso:**\n• Centro Deportivo Costero: Av. Argentina 9012\n\n🗺️ *Fácil acceso en transporte público*',
-            'direccion': '📍 **Direcciones:**\n\n🏟️ **MagnaSports:** Monte Perdido 1685, Los Ángeles\n🏢 **Complejo Central:** Av. Providencia 123, Santiago\n🏓 **Padel Club:** Las Condes 456, Santiago\n🏖️ **Centro Costero:** Av. Argentina 9012, Valparaíso\n\n🚗 *Estacionamiento disponible en todos los complejos*',
+            'ubicacion': '📍 <b>Ubicación:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br><b>Estacionamiento:</b> disponible<br><br>🗺️ <i>Fácil acceso en transporte público</i>',
+            'direccion': '📍 <b>Dirección:</b><br><br>🏟️ <b>MagnaSports</b><br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🚗 <i>Estacionamiento disponible</i>',
             
             // Deportes
-            'padel': '🏓 **Pádel:**\n• Canchas profesionales en Padel Club Premium (Santiago)\n• $30,000 por hora\n• Raquetas disponibles\n• Horarios: 8:00-22:00 (L-V), 8:00-20:00 (S), 9:00-19:00 (D)',
-            'futbol': '⚽ **Fútbol:**\n• Canchas techadas en MagnaSports (Los Ángeles): $28,000/hora\n• Canchas abiertas en otros complejos: $22,000-$28,000/hora\n• Balones incluidos\n• Vestidores disponibles\n• Horarios según complejo',
+            'padel': '🏓 <b>Pádel:</b><br><br><b>Disponible en:</b> MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $28,000 por hora<br><br><b>Incluye:</b> raquetas y pelotas<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
+            'futbol': '⚽ <b>Fútbol:</b><br><br><b>Canchas:</b> techadas en MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $28,000 por hora<br><br><b>Incluye:</b> balones y vestidores<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
             
             // MagnaSports específico
-            'magnasports': '🏟️ **MagnaSports (Los Ángeles):**\n• 2 canchas techadas de fútbol\n• $28,000 por hora\n• Horarios: L-V 16:00-23:00, S-D 12:00-23:00\n• Dirección: Monte Perdido 1685, Los Ángeles\n• Teléfono: +56987654321\n• Email: reservas@magnasports.cl',
-            'los angeles': '🏟️ **MagnaSports en Los Ángeles:**\n• 2 canchas techadas de fútbol\n• $28,000 por hora\n• Horarios especiales: L-V 16:00-23:00, S-D 12:00-23:00\n• Dirección: Monte Perdido 1685\n• Contacto: reservas@magnasports.cl',
-            'canchas techadas': '🏟️ **Canchas Techadas:**\n• MagnaSports (Los Ángeles) tiene 2 canchas techadas\n• Perfectas para jugar sin importar el clima\n• $28,000 por hora\n• Horarios: L-V 16:00-23:00, S-D 12:00-23:00\n• Ideal para fútbol 7 vs 7',
+            'magnasports': '🏟️ <b>MagnaSports (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $28,000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com',
+            'los angeles': '🏟️ <b>MagnaSports en Los Ángeles:</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $28,000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685<br><br><b>Contacto:</b> naxiin320@gmail.com',
+            'canchas techadas': '🏟️ <b>Canchas Techadas:</b><br><br><b>MagnaSports (Los Ángeles):</b> 2 canchas techadas<br><br><b>Ventaja:</b> perfectas para jugar sin importar el clima<br><br><b>Precio:</b> $28,000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Ideal para:</b> fútbol 7 vs 7',
             
             // Ciudades
-            'santiago': '🏢 **Santiago - Complejos Disponibles:**\n• Complejo Deportivo Central: $25,000/hora\n• Padel Club Premium: $30,000/hora\n• Club Deportivo Norte: $28,000/hora\n\n📍 *Ubicaciones en Providencia, Las Condes y norte de Santiago*',
-            'valparaiso': '🏖️ **Valparaíso:**\n• Centro Deportivo Costero\n• $22,000 por hora\n• Dirección: Av. Argentina 9012\n• Horarios: 8:00-22:00 (L-V), 8:00-20:00 (S), 9:00-19:00 (D)',
-            'concepcion': '🏙️ **Concepción:**\n• Próximamente disponible\n• Mantente atento a nuestras redes sociales\n• Para más información: soporte@reservatuscanchas.cl'
+            'santiago': '🏢 <b>Santiago:</b><br><br><b>Estado:</b> Próximamente disponible<br><br><b>Mantente atento:</b> a nuestras redes sociales<br><br><b>Para más información:</b> soporte@reservatuscanchas.cl',
+            'valparaiso': '🏖️ <b>Valparaíso:</b><br><br><b>Estado:</b> Próximamente disponible<br><br><b>Mantente atento:</b> a nuestras redes sociales<br><br><b>Para más información:</b> soporte@reservatuscanchas.cl',
+            'concepcion': '🏙️ <b>Concepción:</b><br><br><b>Estado:</b> Próximamente disponible<br><br><b>Mantente atento:</b> a nuestras redes sociales<br><br><b>Para más información:</b> soporte@reservatuscanchas.cl'
         };
         
         // Buscar respuesta exacta
@@ -239,7 +250,32 @@ class Chatbot {
             return responses[lowerMessage];
         }
         
-        // Buscar palabras clave
+        // Sistema inteligente de detección de intenciones
+        if (this.detectIntent(lowerMessage, ['hola', 'hi', 'buenos días', 'buenas tardes', 'buenas noches'])) {
+            return '¡Hola! 👋 Soy Carla, tu asistente personal. ¿En qué puedo ayudarte con tu reserva hoy?';
+        }
+        
+        if (this.detectIntent(lowerMessage, ['reservar', 'reserva', 'quiero reservar', 'me gustaría reservar', 'hacer reserva', 'hacer una reserva'])) {
+            return '📅 <b>¡Perfecto! Te ayudo a reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>¿Necesitas ayuda con algún paso específico?</i>';
+        }
+        
+        if (this.detectIntent(lowerMessage, ['precio', 'precios', 'cuesta', 'cuanto cuesta', 'valor', 'costos'])) {
+            return '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $28,000 por hora<br><br><b>Cancha Techada 2:</b> $28,000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>';
+        }
+        
+        if (this.detectIntent(lowerMessage, ['horario', 'horarios', 'abierto', 'cuando abren', 'disponibilidad'])) {
+            return '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>';
+        }
+        
+        if (this.detectIntent(lowerMessage, ['contacto', 'teléfono', 'email', 'dirección', 'ubicación'])) {
+            return '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00';
+        }
+        
+        if (this.detectIntent(lowerMessage, ['descuento', 'código', 'promoción', 'oferta'])) {
+            return '🎫 <b>Códigos de Descuento Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% de descuento<br><br><b>BIENVENIDA15:</b> 15% de descuento<br><br><b>FIDELIDAD10:</b> 10% de descuento<br><br>💡 <i>Aplica el código al hacer tu reserva.</i>';
+        }
+        
+        // Buscar por palabras clave en el objeto responses
         for (const [keyword, response] of Object.entries(responses)) {
             if (lowerMessage.includes(keyword)) {
                 return response;
@@ -247,7 +283,7 @@ class Chatbot {
         }
         
         // Respuesta por defecto
-        return '🤔 No estoy seguro de entender tu pregunta. ¿Podrías ser más específico?\n\n💡 **Puedo ayudarte con:**\n• Precios por complejo (MagnaSports $28k, Santiago $25k-$30k, Valparaíso $22k)\n• Horarios (MagnaSports: 16:00-23:00 L-V, 12:00-23:00 S-D)\n• Cómo hacer reservas paso a paso\n• Códigos de descuento (RESERVATUSCANCHAS20, BIENVENIDA15, FIDELIDAD10)\n• Información de contacto por complejo\n• Ubicaciones (Los Ángeles, Santiago, Valparaíso)\n• Problemas técnicos\n\n📞 *Para ayuda personalizada: soporte@reservatuscanchas.cl*\n🏟️ *Para MagnaSports: reservas@magnasports.cl*';
+        return '🤔 No estoy seguro de entender tu pregunta. ¿Podrías ser más específico?<br><br>💡 <b>Puedo ayudarte con:</b><br>• Precios de MagnaSports ($28,000/hora)<br>• Horarios (16:00-23:00 L-V, 12:00-23:00 S-D)<br>• Cómo hacer reservas paso a paso<br>• Códigos de descuento (RESERVATUSCANCHAS20, BIENVENIDA15, FIDELIDAD10)<br>• Información de contacto<br>• Ubicación en Los Ángeles<br>• Problemas técnicos<br><br>📞 <i>Para ayuda personalizada: soporte@reservatuscanchas.cl</i><br>🏟️ <i>Para MagnaSports: naxiin320@gmail.com</i>';
     }
 }
 
