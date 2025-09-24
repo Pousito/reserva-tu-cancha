@@ -167,7 +167,7 @@ class Chatbot {
 
     handleQuickAction(action) {
         const responses = {
-            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $50 por hora<br><br><b>Cancha Techada 2:</b> $50 por hora<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
+            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $5.000 por hora<br><br><b>Cancha Techada 2:</b> $5.000 por hora<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
             horarios: '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>',
             reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
             contacto: '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00'
@@ -193,9 +193,9 @@ class Chatbot {
             'buenas noches': '¡Buenas noches! 🌙 Soy Carla, ¿necesitas alguna información sobre reservas?',
             
             // Precios
-            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $50 por hora<br><br><b>Cancha Techada 2:</b> $50 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
-            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Canchas Techadas de Fútbol:</b> $50<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
-            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Precio:</b> $50 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $5.000 por hora<br><br><b>Cancha Techada 2:</b> $5.000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Canchas Techadas de Fútbol:</b> $5.000<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
+            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Precio:</b> $5.000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
             
             // Horarios
             'horario': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>',
@@ -231,13 +231,13 @@ class Chatbot {
             'direccion': '📍 <b>Dirección:</b><br><br>🏟️ <b>MagnaSports</b><br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🚗 <i>Estacionamiento disponible</i>',
             
             // Deportes
-            'padel': '🏓 <b>Pádel:</b><br><br><b>Disponible en:</b> MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $50 por hora<br><br><b>Incluye:</b> raquetas y pelotas<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
-            'futbol': '⚽ <b>Fútbol:</b><br><br><b>Canchas:</b> techadas en MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $50 por hora<br><br><b>Incluye:</b> balones y vestidores<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
+            'padel': '🏓 <b>Pádel:</b><br><br><b>Disponible en:</b> MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Incluye:</b> raquetas y pelotas<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
+            'futbol': '⚽ <b>Fútbol:</b><br><br><b>Canchas:</b> techadas en MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Incluye:</b> balones y vestidores<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
             
             // MagnaSports específico
-            'magnasports': '🏟️ <b>MagnaSports (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $50 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com',
-            'los angeles': '🏟️ <b>MagnaSports en Los Ángeles:</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $50 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685<br><br><b>Contacto:</b> naxiin320@gmail.com',
-            'canchas techadas': '🏟️ <b>Canchas Techadas:</b><br><br><b>MagnaSports (Los Ángeles):</b> 2 canchas techadas<br><br><b>Ventaja:</b> perfectas para jugar sin importar el clima<br><br><b>Precio:</b> $50 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Ideal para:</b> fútbol 7 vs 7',
+            'magnasports': '🏟️ <b>MagnaSports (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com',
+            'los angeles': '🏟️ <b>MagnaSports en Los Ángeles:</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685<br><br><b>Contacto:</b> naxiin320@gmail.com',
+            'canchas techadas': '🏟️ <b>Canchas Techadas:</b><br><br><b>MagnaSports (Los Ángeles):</b> 2 canchas techadas<br><br><b>Ventaja:</b> perfectas para jugar sin importar el clima<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Ideal para:</b> fútbol 7 vs 7',
             
             // Ciudades
             'santiago': '🏢 <b>Santiago:</b><br><br><b>Estado:</b> Próximamente disponible<br><br><b>Mantente atento:</b> a nuestras redes sociales<br><br><b>Para más información:</b> soporte@reservatuscanchas.cl',
@@ -260,7 +260,7 @@ class Chatbot {
         }
         
         if (this.detectIntent(lowerMessage, ['precio', 'precios', 'cuesta', 'cuanto cuesta', 'valor', 'costos'])) {
-            return '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $50 por hora<br><br><b>Cancha Techada 2:</b> $50 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>';
+            return '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $5.000 por hora<br><br><b>Cancha Techada 2:</b> $5.000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>';
         }
         
         if (this.detectIntent(lowerMessage, ['horario', 'horarios', 'abierto', 'cuando abren', 'disponibilidad'])) {
@@ -283,7 +283,7 @@ class Chatbot {
         }
         
         // Respuesta por defecto
-        return '🤔 No estoy seguro de entender tu pregunta. ¿Podrías ser más específico?<br><br>💡 <b>Puedo ayudarte con:</b><br>• Precios de MagnaSports ($50/hora)<br>• Horarios (16:00-23:00 L-V, 12:00-23:00 S-D)<br>• Cómo hacer reservas paso a paso<br>• Códigos de descuento (RESERVATUSCANCHAS20, BIENVENIDA15, FIDELIDAD10)<br>• Información de contacto<br>• Ubicación en Los Ángeles<br>• Problemas técnicos<br><br>📞 <i>Para ayuda personalizada: soporte@reservatuscanchas.cl</i><br>🏟️ <i>Para MagnaSports: naxiin320@gmail.com</i>';
+        return '🤔 No estoy seguro de entender tu pregunta. ¿Podrías ser más específico?<br><br>💡 <b>Puedo ayudarte con:</b><br>• Precios de MagnaSports ($5.000/hora)<br>• Horarios (16:00-23:00 L-V, 12:00-23:00 S-D)<br>• Cómo hacer reservas paso a paso<br>• Códigos de descuento (RESERVATUSCANCHAS20, BIENVENIDA15, FIDELIDAD10)<br>• Información de contacto<br>• Ubicación en Los Ángeles<br>• Problemas técnicos<br><br>📞 <i>Para ayuda personalizada: soporte@reservatuscanchas.cl</i><br>🏟️ <i>Para MagnaSports: naxiin320@gmail.com</i>';
     }
 }
 
