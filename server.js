@@ -2378,6 +2378,26 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
   }
 });
 
+// DEBUG: Endpoint temporal para verificar precios
+app.get('/api/debug-precios', async (req, res) => {
+  try {
+    console.log('🔍 DEBUG: Verificando precios en servidor...');
+    const canchas = await db.query(
+      'SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2 ORDER BY nombre',
+      [1, 'futbol']
+    );
+    console.log('🔍 DEBUG: Resultado de consulta:', canchas.rows);
+    res.json({
+      message: 'Debug de precios',
+      canchas: canchas.rows,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ DEBUG: Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Obtener tipos de cancha disponibles por complejo
 app.get('/api/tipos-canchas/:complejoId', async (req, res) => {
   try {
