@@ -587,10 +587,28 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     console.log('📋 Datos recibidos:', { cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id });
     
     // Verificar que todos los campos requeridos estén presentes
-    if (!cancha_id || !nombre_cliente || !email_cliente || !fecha || !hora_inicio || !hora_fin || !precio_total || !session_id) {
+    const camposRequeridos = {
+      cancha_id: cancha_id,
+      nombre_cliente: nombre_cliente,
+      email_cliente: email_cliente,
+      fecha: fecha,
+      hora_inicio: hora_inicio,
+      hora_fin: hora_fin,
+      precio_total: precio_total,
+      session_id: session_id
+    };
+    
+    const camposFaltantes = Object.entries(camposRequeridos)
+      .filter(([key, value]) => !value)
+      .map(([key]) => key);
+    
+    if (camposFaltantes.length > 0) {
+      console.log('❌ Campos faltantes:', camposFaltantes);
       return res.status(400).json({ 
         success: false, 
-        error: 'Faltan campos requeridos para crear el bloqueo temporal' 
+        error: 'Faltan campos requeridos para crear el bloqueo temporal',
+        campos_faltantes: camposFaltantes,
+        datos_recibidos: camposRequeridos
       });
     }
     
