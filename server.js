@@ -2406,30 +2406,31 @@ app.get('/api/complejos/:ciudadId', async (req, res) => {
 app.get('/api/canchas', async (req, res) => {
   try {
     console.log('⚽ Obteniendo todas las canchas...');
-    console.log('🔍 Tipo de db:', typeof db);
-    console.log('🔍 Método query disponible:', typeof db.query);
-    
-    // Probar consulta simple primero
-    const testQuery = await db.query('SELECT COUNT(*) as count FROM canchas');
-    console.log('🔍 Test query result:', testQuery);
-    
     const canchas = await db.query(
       'SELECT * FROM canchas ORDER BY complejo_id, nombre'
     );
-    
-    console.log('🔍 Resultado de query:', typeof canchas);
-    console.log('🔍 canchas.rows:', canchas.rows);
-    console.log('🔍 canchas:', canchas);
-    
-    if (canchas && canchas.rows) {
-      console.log(`✅ ${canchas.rows.length} canchas encontradas`);
-      res.json(canchas.rows);
-    } else {
-      console.log('⚠️ canchas.rows no disponible, devolviendo array vacío');
-      res.json([]);
-    }
+    console.log(`✅ ${canchas.rows ? canchas.rows.length : 0} canchas encontradas`);
+    res.json(canchas.rows || []);
   } catch (error) {
     console.error('❌ Error obteniendo canchas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint de diagnóstico para precios
+app.get('/api/debug/precios', async (req, res) => {
+  try {
+    console.log('🔍 Verificando precios en tiempo real...');
+    const canchas = await db.query('SELECT id, nombre, precio_hora FROM canchas ORDER BY id');
+    
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      canchas: canchas.rows || [],
+      total: canchas.rows ? canchas.rows.length : 0
+    });
+  } catch (error) {
+    console.error('❌ Error verificando precios:', error);
     res.status(500).json({ error: error.message });
   }
 });
