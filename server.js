@@ -2405,6 +2405,10 @@ app.get('/api/canchas', async (req, res) => {
     console.log('🔍 Tipo de db:', typeof db);
     console.log('🔍 Método query disponible:', typeof db.query);
     
+    // Probar consulta simple primero
+    const testQuery = await db.query('SELECT COUNT(*) as count FROM canchas');
+    console.log('🔍 Test query result:', testQuery);
+    
     const canchas = await db.query(
       'SELECT * FROM canchas ORDER BY complejo_id, nombre'
     );
