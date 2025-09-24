@@ -41,6 +41,34 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
+
+// Headers de seguridad para Safari y Transbank
+app.use((req, res, next) => {
+  // Headers específicos para Safari y Transbank
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Content Security Policy para permitir Transbank
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://webpay3g.transbank.cl https://*.transbank.cl; " +
+    "style-src 'self' 'unsafe-inline' https://webpay3g.transbank.cl https://*.transbank.cl; " +
+    "img-src 'self' data: https: http:; " +
+    "font-src 'self' data: https:; " +
+    "connect-src 'self' https://webpay3g.transbank.cl https://*.transbank.cl; " +
+    "frame-src 'self' https://webpay3g.transbank.cl https://*.transbank.cl; " +
+    "form-action 'self' https://webpay3g.transbank.cl https://*.transbank.cl;"
+  );
+  
+  // P3P Policy para cookies (requerido por algunos navegadores)
+  res.setHeader('P3P', 'CP="IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT"');
+  
+  next();
+});
+
 app.use(express.json());
 app.use(express.static('public'));
 
