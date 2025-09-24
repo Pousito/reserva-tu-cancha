@@ -511,6 +511,10 @@ app.get('/api/transbank-diagnostic', (req, res) => {
             cors: {
                 origin: process.env.CORS_ORIGIN
             },
+            database: {
+                url: process.env.DATABASE_URL ? 'Configurado' : 'No configurado',
+                type: db.getDatabaseInfo ? db.getDatabaseInfo().type : 'Desconocido'
+            },
             issues: []
         };
 
