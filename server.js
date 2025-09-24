@@ -2405,8 +2405,8 @@ app.get('/api/canchas', async (req, res) => {
     const canchas = await db.query(
       'SELECT * FROM canchas ORDER BY complejo_id, nombre'
     );
-    console.log(`✅ ${canchas.rows.length} canchas encontradas`);
-    res.json(canchas.rows);
+    console.log(`✅ ${canchas.rows ? canchas.rows.length : 0} canchas encontradas`);
+    res.json(canchas.rows || []);
   } catch (error) {
     console.error('❌ Error obteniendo canchas:', error);
     res.status(500).json({ error: error.message });
