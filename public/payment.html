@@ -439,17 +439,51 @@
                 paymentToken = result.token;
 
                 // Mostrar mensaje informativo antes de redirigir
-                showSuccess('Redirigiendo a Transbank... En modo desarrollo, la página puede aparecer en blanco.');
+                showSuccess('Redirigiendo a Transbank...');
                 
-                // Esperar un momento para que el usuario vea el mensaje
+                // Procesar redirección a Transbank correctamente
                 setTimeout(() => {
-                    // Redirigir a Transbank
-                    window.location.href = result.url;
+                    redirectToTransbank(result.token);
                 }, 2000);
 
             } catch (error) {
                 console.error('Error procesando pago:', error);
                 showError('Error procesando pago: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        // Redirigir a Transbank correctamente
+        function redirectToTransbank(token) {
+            try {
+                // Crear un formulario temporal para enviar el token a Transbank
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'https://webpay3g.transbank.cl/webpayserver/init_transaction.cgi';
+                form.target = '_self';
+                form.style.display = 'none';
+                
+                // Agregar el token como campo oculto
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'token_ws';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+                
+                // Agregar el referer de analytics
+                const analyticsInput = document.createElement('input');
+                analyticsInput.type = 'hidden';
+                analyticsInput.name = 'ANALYTICS_REFERER';
+                analyticsInput.value = window.location.origin;
+                form.appendChild(analyticsInput);
+                
+                // Agregar el formulario al DOM y enviarlo
+                document.body.appendChild(form);
+                form.submit();
+                
+            } catch (error) {
+                console.error('Error redirigiendo a Transbank:', error);
+                showError('Error redirigiendo a Transbank. Por favor, intenta nuevamente.');
                 showLoading(false);
             }
         }
