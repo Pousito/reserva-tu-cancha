@@ -2378,57 +2378,6 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
   }
 });
 
-// DEBUG: Endpoint temporal para verificar precios
-app.get('/api/debug-precios', async (req, res) => {
-  try {
-    console.log('🔍 DEBUG: Verificando precios en servidor...');
-    const canchas = await db.query(
-      'SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2 ORDER BY nombre',
-      [1, 'futbol']
-    );
-    console.log('🔍 DEBUG: Resultado de consulta:', canchas.rows);
-    res.json({
-      message: 'Debug de precios',
-      canchas: canchas.rows,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ DEBUG: Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// DEBUG: Endpoint temporal para actualizar precios directamente
-app.post('/api/debug-update-precios', async (req, res) => {
-  try {
-    console.log('🔧 DEBUG: Actualizando precios en servidor...');
-    
-    // Actualizar precios de MagnaSports a $50
-    const result = await db.query(
-      'UPDATE canchas SET precio_hora = $1 WHERE complejo_id = $2',
-      [50, 1]
-    );
-    
-    console.log('🔧 DEBUG: Precios actualizados, filas afectadas:', result.rowCount);
-    
-    // Verificar que se actualizaron
-    const canchas = await db.query(
-      'SELECT * FROM canchas WHERE complejo_id = $1 ORDER BY nombre',
-      [1]
-    );
-    
-    res.json({
-      message: 'Precios actualizados en servidor',
-      filasAfectadas: result.rowCount,
-      canchas: canchas.rows,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ DEBUG: Error actualizando precios:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Obtener tipos de cancha disponibles por complejo
 app.get('/api/tipos-canchas/:complejoId', async (req, res) => {
   try {
