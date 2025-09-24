@@ -79,6 +79,14 @@ function aplicarPermisosPorRol() {
             selectorComplejoCalendario.style.display = 'none';
         }
         
+        // Ocultar columna de comisión para managers
+        document.querySelectorAll('[data-role="commission"]').forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        // Actualizar colspan de la fila de carga
+        actualizarColspanCarga();
+        
         console.log('✅ Elementos ocultados para manager');
     } else if (userRole === 'owner') {
         // Owners no pueden gestionar complejos (solo ver su complejo)
@@ -125,6 +133,20 @@ function aplicarPermisosPorRol() {
     
     // Actualizar título del calendario según el rol y complejo del usuario
     actualizarTituloCalendarioPorRol();
+}
+
+/**
+ * Actualizar el colspan de la fila de carga según el rol del usuario
+ */
+function actualizarColspanCarga() {
+    const user = AdminUtils.getCurrentUser();
+    const isManager = user && user.rol === 'manager';
+    const colspan = isManager ? '10' : '11';
+    
+    const loadingRow = document.getElementById('loadingRow');
+    if (loadingRow) {
+        loadingRow.setAttribute('colspan', colspan);
+    }
 }
 
 function configurarEventListeners() {
@@ -292,11 +314,16 @@ function aplicarFiltros() {
 
 function mostrarReservas(reservasAMostrar) {
     const tbody = document.getElementById('reservationsTableBody');
+    const user = AdminUtils.getCurrentUser();
+    const isManager = user && user.rol === 'manager';
+    
+    // Ajustar colspan según el rol del usuario
+    const colspan = isManager ? '10' : '11';
     
     if (reservasAMostrar.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11" class="text-center text-muted">
+                <td colspan="${colspan}" class="text-center text-muted">
                     <i class="fas fa-inbox"></i> No se encontraron reservas
                 </td>
             </tr>
@@ -339,7 +366,8 @@ function mostrarReservas(reservasAMostrar) {
             comision = Math.round(reserva.precio_total * 0.0175);
         }
         
-        return `
+        // Generar HTML de la fila según el rol del usuario
+        let rowHtml = `
         <tr>
             <td>
                 <code>${codigoResaltado}</code>
@@ -367,14 +395,21 @@ function mostrarReservas(reservasAMostrar) {
                 <span class="badge badge-tipo badge-${tipoReserva}">
                     ${tipoReserva === 'directa' ? 'Web' : 'Admin'}
                 </span>
-            </td>
+            </td>`;
+        
+        // Solo incluir columna de comisión si no es manager
+        if (!isManager) {
+            rowHtml += `
             <td>
                 <div class="comision-info">
                     <strong>$${comision.toLocaleString()}</strong>
                     <br>
                     <small>${porcentajeComision}%</small>
                 </div>
-            </td>
+            </td>`;
+        }
+        
+        rowHtml += `
             <td>
                 <span class="badge badge-status badge-${reserva.estado}">
                     ${reserva.estado.charAt(0).toUpperCase() + reserva.estado.slice(1)}
@@ -395,8 +430,9 @@ function mostrarReservas(reservasAMostrar) {
                     </button>
                 ` : ''}
             </td>
-        </tr>
-    `;
+        </tr>`;
+        
+        return rowHtml;
     }).join('');
     
     tbody.innerHTML = html;
@@ -566,9 +602,13 @@ function formatearFechaHora(fechaHora) {
 
 function mostrarError(mensaje) {
     const tbody = document.getElementById('reservationsTableBody');
+    const user = AdminUtils.getCurrentUser();
+    const isManager = user && user.rol === 'manager';
+    const colspan = isManager ? '10' : '11';
+    
     tbody.innerHTML = `
         <tr>
-            <td colspan="9" class="text-center text-danger">
+            <td colspan="${colspan}" class="text-center text-danger">
                 <i class="fas fa-exclamation-triangle"></i> ${mensaje}
             </td>
         </tr>
@@ -1015,9 +1055,19 @@ function renderizarCalendario(data = null) {
                 horaDisponible = horaNum >= 12 && horaNum <= 23;
             }
             
+            // Verificar si este slot es del pasado
+            const ahora = new Date();
+            const slotDateTime = new Date(fechaObj);
+            slotDateTime.setHours(horaNum, 0, 0, 0);
+            const esPasado = slotDateTime < ahora;
+            
             if (!horaDisponible) {
                 // Hora no disponible para este día
-                html += `<div class="calendar-slot unavailable">
+                let claseUnavailable = 'calendar-slot unavailable';
+                if (esPasado) {
+                    claseUnavailable += ' past';
+                }
+                html += `<div class="${claseUnavailable}">
                     <div class="slot-time">-</div>
                 </div>`;
             } else {
@@ -1052,6 +1102,7 @@ function renderizarCalendario(data = null) {
                 let onclick = '';
                 let title = '';
                 
+                // Determinar el estado base del slot
                 if (canchasOcupadas === 0) {
                     // Todas las canchas disponibles
                     estadoSlot = 'available';
@@ -1070,6 +1121,13 @@ function renderizarCalendario(data = null) {
                     claseSlot = 'calendar-slot occupied';
                     onclick = '';
                     title = `Todas las canchas ocupadas (${canchasOcupadas}/${totalCanchas}) - Click en icono para ver reservas`;
+                }
+                
+                // Si es del pasado, agregar clase 'past' y deshabilitar interacción
+                if (esPasado) {
+                    claseSlot += ' past';
+                    onclick = ''; // Deshabilitar click para slots pasados
+                    title = `Horario pasado - ${title}`;
                 }
                 
                 // Generar HTML del slot
@@ -1453,6 +1511,12 @@ function mostrarInfoReservas(fecha, hora, event) {
         }
     }
     
+    // Debug: Mostrar datos de las reservas
+    console.log('🔍 Datos de reservas en slot:', { fecha, hora, reservasEnSlot });
+    reservasEnSlot.forEach((reserva, index) => {
+        console.log(`🔍 Reserva ${index + 1}:`, reserva);
+    });
+    
     if (reservasEnSlot.length === 0) {
         return;
     }
@@ -1470,18 +1534,42 @@ function mostrarInfoReservas(fecha, hora, event) {
     `;
     
     reservasEnSlot.forEach((reserva, index) => {
+        // Debug: Mostrar estructura completa de la reserva
+        console.log(`🔍 Estructura completa de reserva ${index + 1}:`, Object.keys(reserva));
+        
+        // Determinar el tipo de reserva para mostrar
+        const tipoReserva = reserva.tipo_reserva || reserva.tipo || 'directa';
+        const tipoMostrar = tipoReserva === 'directa' ? 'Web' : 'Admin';
+        
+        // Capitalizar el estado
+        const estadoMostrar = reserva.estado ? 
+            reserva.estado.charAt(0).toUpperCase() + reserva.estado.slice(1) : 'N/A';
+        
+        // Obtener datos con múltiples fallbacks
+        const codigo = reserva.codigo_reserva || reserva.codigo || 'N/A';
+        const cliente = reserva.cliente || reserva.nombre_cliente || reserva.nombre || 'N/A';
+        const cancha = reserva.cancha || reserva.cancha_nombre || reserva.cancha_nombre || 'N/A';
+        const telefono = reserva.telefono || reserva.telefono_cliente || reserva.phone || null;
+        const precio = reserva.precio || reserva.precio_total || reserva.price || 0;
+        
+        // Debug: Mostrar valores extraídos
+        console.log(`🔍 Valores extraídos para reserva ${index + 1}:`, {
+            codigo, cliente, cancha, telefono, precio, tipoMostrar, estadoMostrar
+        });
+        
         modalHtml += `
             <div class="reservation-detail mb-3">
                 <div class="row">
                     <div class="col-md-6">
-                        <strong>Cliente:</strong> ${reserva.cliente || 'N/A'}<br>
-                        <strong>Cancha:</strong> ${reserva.cancha || 'N/A'}<br>
-                        <strong>Estado:</strong> <span class="badge bg-${reserva.estado === 'confirmada' ? 'success' : 'warning'}">${reserva.estado || 'N/A'}</span>
-                        ${reserva.telefono ? `<br><strong>Teléfono:</strong> ${reserva.telefono}` : ''}
+                        <strong>Código:</strong> <code>${codigo}</code><br>
+                        <strong>Cliente:</strong> ${cliente}<br>
+                        <strong>Cancha:</strong> ${cancha}<br>
+                        <strong>Estado:</strong> <span class="badge bg-${reserva.estado === 'confirmada' ? 'success' : 'warning'}">${estadoMostrar}</span>
+                        ${telefono ? `<br><strong>Teléfono:</strong> ${telefono}` : ''}
                     </div>
                     <div class="col-md-6">
-                        <strong>Precio:</strong> $${(reserva.precio || 0).toLocaleString()}<br>
-                        <strong>Tipo:</strong> ${reserva.tipo || 'reserva'}
+                        <strong>Precio:</strong> $${precio.toLocaleString()}<br>
+                        <strong>Tipo:</strong> ${tipoMostrar}
                     </div>
                 </div>
             </div>

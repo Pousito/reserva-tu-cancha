@@ -325,11 +325,17 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             
             calendarioData[fecha][horaInicio].push({
                 reservada: true,
+                codigo_reserva: item.codigo || item.codigo_reserva,
                 cliente: item.nombre_cliente,
                 cancha: `Cancha ${item.cancha_numero}`,
+                cancha_nombre: `Cancha ${item.cancha_numero}`,
                 tipo: item.tipo || 'reserva',
+                tipo_reserva: item.tipo_reserva || 'directa',
                 precio: item.precio_total,
-                estado: item.estado || 'confirmada'
+                precio_total: item.precio_total,
+                estado: item.estado || 'confirmada',
+                telefono_cliente: item.telefono_cliente,
+                telefono: item.telefono_cliente
             });
         });
         

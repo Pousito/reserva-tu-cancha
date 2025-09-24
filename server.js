@@ -351,6 +351,11 @@ const { router: paymentRoutes, setDatabase: setPaymentDatabase } = require('./sr
 setPaymentDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/payments', paymentRoutes);
 
+// ===== RUTAS DE DESCUENTOS =====
+const { router: discountRoutes, setDatabase: setDiscountDatabase } = require('./src/routes/discounts');
+setDiscountDatabase(db); // Pasar la instancia de la base de datos
+app.use('/api/discounts', discountRoutes);
+
 // Ruta de prueba para simular retorno de Transbank en desarrollo
 app.get('/test-payment-return', (req, res) => {
     const { token_ws, TBK_TOKEN } = req.query;
@@ -2426,7 +2431,7 @@ app.get('/api/reservas/:busqueda', async (req, res) => {
 // Crear reserva (ATÓMICA - Previene condiciones de carrera)
 app.post('/api/reservas', async (req, res) => {
   try {
-    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id } = req.body;
+    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id, codigo_descuento } = req.body;
     
     console.log('📝 Creando reserva atómica con datos:', { 
       cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, bloqueo_id 

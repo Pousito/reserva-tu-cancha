@@ -183,6 +183,38 @@ class DatabaseManager {
         )
       `);
 
+      // Crear tabla de códigos de descuento
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS codigos_descuento (
+          id SERIAL PRIMARY KEY,
+          codigo VARCHAR(50) UNIQUE NOT NULL,
+          descripcion TEXT,
+          porcentaje_descuento DECIMAL(5,2) NOT NULL,
+          monto_maximo_descuento INTEGER,
+          fecha_inicio DATE NOT NULL,
+          fecha_fin DATE NOT NULL,
+          usos_maximos INTEGER,
+          usos_actuales INTEGER DEFAULT 0,
+          activo BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Crear tabla de uso de códigos de descuento
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS uso_codigos_descuento (
+          id SERIAL PRIMARY KEY,
+          codigo_id INTEGER REFERENCES codigos_descuento(id),
+          reserva_id INTEGER REFERENCES reservas(id),
+          email_cliente VARCHAR(255) NOT NULL,
+          monto_descuento INTEGER NOT NULL,
+          monto_original INTEGER NOT NULL,
+          monto_final INTEGER NOT NULL,
+          usado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('✅ Tablas PostgreSQL creadas/verificadas exitosamente');
       
     } catch (error) {

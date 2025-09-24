@@ -260,11 +260,37 @@
                             </div>
                         </div>
                         
+                        <!-- Código de descuento -->
+                        <div class="mb-3">
+                            <label for="codigoDescuento" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Código de descuento (opcional)
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="codigoDescuento" 
+                                       placeholder="Ingresa tu código de descuento">
+                                <button class="btn btn-outline-primary" type="button" id="aplicarDescuento">
+                                    <i class="fas fa-check me-1"></i>Aplicar
+                                </button>
+                            </div>
+                            <div id="mensajeDescuento" class="form-text d-none"></div>
+                        </div>
+                        
                         <!-- Resumen de la reserva -->
                         <div class="card bg-light">
                             <div class="card-body">
                                 <h6>Resumen de la Reserva:</h6>
                                 <div id="resumenReserva"></div>
+                                <div id="resumenDescuento" class="mt-2 d-none">
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Descuento aplicado:</span>
+                                        <span class="text-success" id="montoDescuento">-$0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between fw-bold">
+                                        <span>Total a pagar:</span>
+                                        <span class="text-primary" id="totalFinal">$0</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         

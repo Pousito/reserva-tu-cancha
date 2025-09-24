@@ -3580,11 +3580,16 @@ function mostrarModalReserva() {
          </div>
          <div class="row">
              <div class="col-6"><strong>Precio:</strong></div>
-             <div class="col-6">$${canchaSeleccionada.precio_hora.toLocaleString()}</div>
+             <div class="col-6" id="precioOriginal">$${canchaSeleccionada.precio_hora.toLocaleString()}</div>
          </div>
      `;
     
     modal.show();
+    
+    // Limpiar descuento aplicado después de mostrar el modal
+    setTimeout(() => {
+        limpiarDescuento();
+    }, 100);
 }
 
 function limpiarFormularioReserva() {
@@ -3786,7 +3791,8 @@ async function confirmarReserva() {
         rut_cliente: document.getElementById('rutCliente').value,
         email_cliente: document.getElementById('emailCliente').value,
         telefono_cliente: document.getElementById('telefonoCliente').value,
-        precio_total: canchaSeleccionada.precio_hora
+        precio_total: descuentoAplicado ? descuentoAplicado.monto_final : canchaSeleccionada.precio_hora,
+        codigo_descuento: descuentoAplicado ? descuentoAplicado.codigo : null
     };
     
     // Mostrar indicador de procesamiento
@@ -4135,3 +4141,169 @@ function scrollToReservar() {
     console.log('🚀 SCROLLTORESERVAR LLAMADA');
     scrollToStep4();
 }
+
+// ===== SISTEMA DE CÓDIGOS DE DESCUENTO =====
+
+// Variables globales para descuentos
+let descuentoAplicado = null;
+let precioOriginal = 0;
+let precioConDescuento = 0;
+
+// Función para limpiar descuento aplicado
+function limpiarDescuento() {
+    descuentoAplicado = null;
+    precioConDescuento = 0;
+    
+    // Ocultar sección de descuento
+    const resumenDescuento = document.getElementById('resumenDescuento');
+    if (resumenDescuento) {
+        resumenDescuento.classList.add('d-none');
+    }
+    
+    // Limpiar mensaje
+    const mensajeDescuento = document.getElementById('mensajeDescuento');
+    if (mensajeDescuento) {
+        mensajeDescuento.classList.add('d-none');
+        mensajeDescuento.textContent = '';
+    }
+    
+    // Limpiar campo de código
+    const codigoInput = document.getElementById('codigoDescuento');
+    if (codigoInput) {
+        codigoInput.value = '';
+    }
+}
+
+// Función para validar y aplicar código de descuento
+async function validarCodigoDescuento() {
+    const codigoInput = document.getElementById('codigoDescuento');
+    const mensajeDescuento = document.getElementById('mensajeDescuento');
+    const aplicarBtn = document.getElementById('aplicarDescuento');
+    
+    if (!codigoInput || !codigoInput.value.trim()) {
+        mostrarMensajeDescuento('Por favor ingresa un código de descuento', 'error');
+        return;
+    }
+    
+    const codigo = codigoInput.value.trim().toUpperCase();
+    const emailCliente = document.getElementById('emailCliente').value;
+    
+    if (!emailCliente) {
+        mostrarMensajeDescuento('Por favor ingresa tu email primero', 'error');
+        return;
+    }
+    
+    if (!canchaSeleccionada || !canchaSeleccionada.precio_hora) {
+        mostrarMensajeDescuento('Por favor selecciona una cancha primero', 'error');
+        return;
+    }
+    
+    // Mostrar loading
+    aplicarBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validando...';
+    aplicarBtn.disabled = true;
+    
+    try {
+        console.log('🎫 Validando código de descuento:', {
+            codigo: codigo,
+            email: emailCliente,
+            precio: canchaSeleccionada.precio_hora
+        });
+        
+        const response = await fetch('/api/discounts/validar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                codigo: codigo,
+                email_cliente: emailCliente,
+                monto_original: canchaSeleccionada.precio_hora
+            })
+        });
+        
+        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+        
+        const data = await response.json();
+        
+        if (response.ok && data.valido) {
+            // Aplicar descuento
+            descuentoAplicado = data;
+            precioOriginal = data.monto_original;
+            precioConDescuento = data.monto_final;
+            
+            // Mostrar resumen de descuento
+            mostrarResumenDescuento(data);
+            mostrarMensajeDescuento(`¡Descuento aplicado! ${data.porcentaje_descuento}% de descuento`, 'success');
+            
+            // Actualizar precio en el resumen
+            const precioOriginalElement = document.getElementById('precioOriginal');
+            if (precioOriginalElement) {
+                precioOriginalElement.innerHTML = `
+                    <span class="text-decoration-line-through text-muted">$${data.monto_original.toLocaleString()}</span>
+                    <span class="text-primary fw-bold ms-2">$${data.monto_final.toLocaleString()}</span>
+                `;
+            }
+            
+        } else {
+            mostrarMensajeDescuento(data.error || 'Código de descuento no válido', 'error');
+            limpiarDescuento();
+        }
+        
+    } catch (error) {
+        console.error('Error validando código de descuento:', error);
+        mostrarMensajeDescuento('Error al validar el código. Intenta nuevamente.', 'error');
+    } finally {
+        // Restaurar botón
+        aplicarBtn.innerHTML = '<i class="fas fa-check me-1"></i>Aplicar';
+        aplicarBtn.disabled = false;
+    }
+}
+
+// Función para mostrar mensaje de descuento
+function mostrarMensajeDescuento(mensaje, tipo) {
+    const mensajeDescuento = document.getElementById('mensajeDescuento');
+    if (!mensajeDescuento) return;
+    
+    mensajeDescuento.textContent = mensaje;
+    mensajeDescuento.classList.remove('d-none', 'text-success', 'text-danger');
+    
+    if (tipo === 'success') {
+        mensajeDescuento.classList.add('text-success');
+    } else if (tipo === 'error') {
+        mensajeDescuento.classList.add('text-danger');
+    }
+}
+
+// Función para mostrar resumen de descuento
+function mostrarResumenDescuento(descuento) {
+    const resumenDescuento = document.getElementById('resumenDescuento');
+    const montoDescuento = document.getElementById('montoDescuento');
+    const totalFinal = document.getElementById('totalFinal');
+    
+    if (!resumenDescuento || !montoDescuento || !totalFinal) return;
+    
+    montoDescuento.textContent = `-$${descuento.monto_descuento.toLocaleString()}`;
+    totalFinal.textContent = `$${descuento.monto_final.toLocaleString()}`;
+    
+    resumenDescuento.classList.remove('d-none');
+}
+
+// Event listeners para códigos de descuento
+document.addEventListener('DOMContentLoaded', function() {
+    // Botón aplicar descuento
+    const aplicarBtn = document.getElementById('aplicarDescuento');
+    if (aplicarBtn) {
+        aplicarBtn.addEventListener('click', validarCodigoDescuento);
+    }
+    
+    // Enter en el campo de código
+    const codigoInput = document.getElementById('codigoDescuento');
+    if (codigoInput) {
+        codigoInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                validarCodigoDescuento();
+            }
+        });
+    }
+});

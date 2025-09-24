@@ -34,7 +34,7 @@ router.post('/init', async (req, res) => {
         // Verificar que el bloqueo temporal existe
         console.log('🔍 Buscando bloqueo temporal...');
         const bloqueo = await db.get(
-            'SELECT * FROM bloqueos_temporales WHERE session_id = ? AND expira_en > datetime("now")',
+            'SELECT * FROM bloqueos_temporales WHERE session_id = $1 AND expira_en > NOW()',
             [sessionId]
         );
 
@@ -70,7 +70,7 @@ router.post('/init', async (req, res) => {
         // Guardar información del pago en la base de datos
         await db.run(
             `INSERT INTO pagos (bloqueo_id, transbank_token, order_id, amount, status, reservation_code) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6)`,
             [bloqueo.id, transactionResult.token, orderId, amount, 'pending', reservationCode]
         );
 
@@ -119,7 +119,7 @@ router.post('/confirm', async (req, res) => {
         console.log('🔍 Método get disponible:', typeof db.get);
         
         const payment = await db.get(
-            'SELECT * FROM pagos WHERE transbank_token = ?',
+            'SELECT * FROM pagos WHERE transbank_token = $1',
             [token_ws]
         );
         console.log('📊 Pago encontrado:', payment);
@@ -165,14 +165,14 @@ router.post('/confirm', async (req, res) => {
         if (!confirmResult || !confirmResult.success) {
             // Actualizar estado del pago como fallido
             await db.run(
-                'UPDATE pagos SET status = ? WHERE transbank_token = ?',
+                'UPDATE pagos SET status = $1 WHERE transbank_token = $2',
                 ['failed', token_ws]
             );
 
             // No necesitamos actualizar reserva ya que aún no existe
             // Solo eliminamos el bloqueo temporal
             if (payment.bloqueo_id) {
-                await db.run('DELETE FROM bloqueos_temporales WHERE id = ?', [payment.bloqueo_id]);
+                await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
             }
 
             return res.status(500).json({
@@ -184,14 +184,14 @@ router.post('/confirm', async (req, res) => {
         // Actualizar información del pago
         await db.run(
             `UPDATE pagos SET 
-             status = ?, 
-             authorization_code = ?, 
-             payment_type_code = ?, 
-             response_code = ?, 
-             installments_number = ?, 
-             transaction_date = ?,
-             updated_at = CURRENT_TIMESTAMP
-             WHERE transbank_token = ?`,
+             status = $1, 
+             authorization_code = $2, 
+             payment_type_code = $3, 
+             response_code = $4, 
+             installments_number = $5, 
+             transaction_date = $6,
+             updated_at = NOW()
+             WHERE transbank_token = $7`,
             [
                 'approved',
                 confirmResult.authorizationCode,
@@ -206,7 +206,7 @@ router.post('/confirm', async (req, res) => {
         // Crear la reserva real después del pago exitoso
         // Primero, obtener los datos del bloqueo temporal
         const bloqueoData = await db.get(
-            'SELECT * FROM bloqueos_temporales WHERE id = ?',
+            'SELECT * FROM bloqueos_temporales WHERE id = $1',
             [payment.bloqueo_id]
         );
 
@@ -222,7 +222,7 @@ router.post('/confirm', async (req, res) => {
                 cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
                 codigo_reserva, estado, estado_pago, fecha_creacion, es_dato_produccion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
@@ -241,7 +241,7 @@ router.post('/confirm', async (req, res) => {
         ]);
 
         // Eliminar el bloqueo temporal
-        await db.run('DELETE FROM bloqueos_temporales WHERE id = ?', [payment.bloqueo_id]);
+        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
 
         console.log(`✅ Reserva creada exitosamente: ${payment.reservation_code}`);
 
@@ -253,7 +253,7 @@ router.post('/confirm', async (req, res) => {
                 FROM reservas r
                 JOIN canchas c ON r.cancha_id = c.id
                 JOIN complejos co ON c.complejo_id = co.id
-                WHERE r.codigo_reserva = ?
+                WHERE r.codigo_reserva = $1
             `, [payment.reservation_code]);
 
             if (reservaInfo) {
@@ -316,7 +316,7 @@ router.get('/status/:token', async (req, res) => {
             `SELECT p.*, r.codigo_reserva, r.estado, r.estado_pago 
              FROM pagos p 
              JOIN reservas r ON p.reserva_id = r.id 
-             WHERE p.transbank_token = ?`,
+             WHERE p.transbank_token = $1`,
             [token]
         );
 
@@ -369,7 +369,7 @@ router.post('/refund', async (req, res) => {
 
         // Buscar información del pago
         const payment = await db.get(
-            'SELECT * FROM pagos WHERE transbank_token = ? AND status = ?',
+            'SELECT * FROM pagos WHERE transbank_token = $1 AND status = $2',
             [token, 'approved']
         );
 
@@ -392,13 +392,13 @@ router.post('/refund', async (req, res) => {
 
         // Actualizar estado del pago
         await db.run(
-            'UPDATE pagos SET status = ? WHERE transbank_token = ?',
+            'UPDATE pagos SET status = $1 WHERE transbank_token = $2',
             ['refunded', token]
         );
 
         // Actualizar estado de la reserva
         await db.run(
-            'UPDATE reservas SET estado = ?, estado_pago = ? WHERE id = ?',
+            'UPDATE reservas SET estado = $1, estado_pago = $2 WHERE id = $3',
             ['cancelada', 'reembolsado', payment.reserva_id]
         );
 
@@ -436,7 +436,7 @@ router.get('/history/:reservationCode', async (req, res) => {
             `SELECT p.*, r.codigo_reserva, r.estado, r.estado_pago 
              FROM pagos p 
              JOIN reservas r ON p.reserva_id = r.id 
-             WHERE r.codigo_reserva = ? 
+             WHERE r.codigo_reserva = $1 
              ORDER BY p.created_at DESC`,
             [reservationCode]
         );
