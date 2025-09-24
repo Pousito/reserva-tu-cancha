@@ -2402,11 +2402,24 @@ app.get('/api/complejos/:ciudadId', async (req, res) => {
 app.get('/api/canchas', async (req, res) => {
   try {
     console.log('⚽ Obteniendo todas las canchas...');
+    console.log('🔍 Tipo de db:', typeof db);
+    console.log('🔍 Método query disponible:', typeof db.query);
+    
     const canchas = await db.query(
       'SELECT * FROM canchas ORDER BY complejo_id, nombre'
     );
-    console.log(`✅ ${canchas.rows ? canchas.rows.length : 0} canchas encontradas`);
-    res.json(canchas.rows || []);
+    
+    console.log('🔍 Resultado de query:', typeof canchas);
+    console.log('🔍 canchas.rows:', canchas.rows);
+    console.log('🔍 canchas:', canchas);
+    
+    if (canchas && canchas.rows) {
+      console.log(`✅ ${canchas.rows.length} canchas encontradas`);
+      res.json(canchas.rows);
+    } else {
+      console.log('⚠️ canchas.rows no disponible, devolviendo array vacío');
+      res.json([]);
+    }
   } catch (error) {
     console.error('❌ Error obteniendo canchas:', error);
     res.status(500).json({ error: error.message });
