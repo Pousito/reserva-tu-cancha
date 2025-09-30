@@ -488,49 +488,77 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Programar envío de email en segundo plano usando endpoint separado
+        // Enviar email directamente con retry y fallback
         let emailSent = false;
-        try {
-            console.log('📧 PROGRAMANDO ENVÍO DE EMAIL');
-            const emailData = {
-                codigo_reserva: codigoReserva,
-                nombre_cliente: datosLimpios.nombre_cliente,
-                email_cliente: datosLimpios.email_cliente,
-                fecha: bloqueoData.fecha,
-                hora_inicio: bloqueoData.hora_inicio,
-                hora_fin: bloqueoData.hora_fin,
-                precio_total: datosLimpios.precio_total,
-                complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
-                cancha: canchaInfo?.cancha_nombre || 'Cancha'
-            };
-            
-            // Hacer petición HTTP interna para enviar emails
-            const fetch = require('node-fetch');
-            const baseUrl = process.env.NODE_ENV === 'production' 
-                ? 'https://reserva-tu-cancha.onrender.com' 
-                : `http://localhost:${process.env.PORT || 3000}`;
-            
-            fetch(`${baseUrl}/api/send-confirmation-email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(emailData),
-                timeout: 5000
-            }).then(response => {
-                console.log('📧 Respuesta del endpoint de email:', response.status);
-                if (response.ok) {
-                    console.log('✅ Email enviado exitosamente via endpoint');
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts && !emailSent) {
+            attempts++;
+            try {
+                console.log(`📧 INTENTO ${attempts}/${maxAttempts} - ENVIANDO EMAIL DIRECTAMENTE`);
+                
+                const EmailService = require('./src/services/emailService');
+                const emailService = new EmailService();
+                
+                const emailData = {
+                    codigo_reserva: codigoReserva,
+                    nombre_cliente: datosLimpios.nombre_cliente,
+                    email_cliente: datosLimpios.email_cliente,
+                    fecha: bloqueoData.fecha,
+                    hora_inicio: bloqueoData.hora_inicio,
+                    hora_fin: bloqueoData.hora_fin,
+                    precio_total: datosLimpios.precio_total,
+                    complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+                    cancha: canchaInfo?.cancha_nombre || 'Cancha'
+                };
+                
+                // Intentar envío directo con timeout corto
+                const emailPromise = emailService.sendConfirmationEmails(emailData);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 8000) // 8 segundos
+                );
+                
+                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+                console.log(`✅ Intento ${attempts}: Emails enviados exitosamente:`, emailResults);
+                emailSent = true;
+                break;
+                
+            } catch (emailError) {
+                console.error(`❌ Intento ${attempts} falló:`, emailError.message);
+                
+                if (attempts < maxAttempts) {
+                    console.log(`⏳ Esperando 2 segundos antes del siguiente intento...`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 } else {
-                    console.log('❌ Error en endpoint de email:', response.status);
+                    console.error('❌ Todos los intentos fallaron');
+                    
+                    // Fallback: Intentar endpoint HTTP
+                    try {
+                        console.log('🔄 FALLBACK: Intentando endpoint HTTP interno...');
+                        const fetch = require('node-fetch');
+                        const baseUrl = process.env.NODE_ENV === 'production' 
+                            ? 'https://reserva-tu-cancha.onrender.com' 
+                            : `http://localhost:${process.env.PORT || 3000}`;
+                        
+                        const response = await fetch(`${baseUrl}/api/send-confirmation-email`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(emailData),
+                            timeout: 5000
+                        });
+                        
+                        if (response.ok) {
+                            console.log('✅ Fallback exitoso: Email enviado via endpoint HTTP');
+                            emailSent = true;
+                        } else {
+                            console.log('❌ Fallback falló:', response.status);
+                        }
+                    } catch (fallbackError) {
+                        console.error('❌ Fallback también falló:', fallbackError.message);
+                    }
                 }
-            }).catch(err => {
-                console.log('📧 Endpoint de email no disponible:', err.message);
-            });
-            
-            console.log('📧 Email programado para envío');
-            emailSent = true; // Asumir que se enviará
-        } catch (emailError) {
-            console.error('❌ Error programando email:', emailError.message);
-            emailSent = false;
+            }
         }
 
         // Responder con información del estado del email
