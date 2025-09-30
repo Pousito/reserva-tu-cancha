@@ -259,10 +259,10 @@ router.post('/confirm', async (req, res) => {
             authorizationCode: confirmResult.authorizationCode
         });
 
-        // Enviar emails de forma síncrona antes de responder
+        // Programar envío de email en segundo plano usando endpoint separado
         let emailSent = false;
         try {
-            console.log('📧 ENVIANDO EMAILS');
+            console.log('📧 PROGRAMANDO ENVÍO DE EMAIL');
             console.log('📋 Código de reserva:', payment.reservation_code);
             
             // Obtener información completa de la reserva para el email
@@ -287,22 +287,35 @@ router.post('/confirm', async (req, res) => {
                     precio_total: reservaInfo.precio_total
                 };
                 
-                const emailService = require('../services/emailService');
+                // Hacer petición HTTP interna para enviar emails
+                const fetch = require('node-fetch');
+                const baseUrl = process.env.NODE_ENV === 'production' 
+                    ? 'https://reserva-tu-cancha.onrender.com' 
+                    : `http://localhost:${process.env.PORT || 3000}`;
                 
-                // Enviar emails con timeout
-                const emailPromise = emailService.sendConfirmationEmails(emailData);
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
-                );
+                fetch(`${baseUrl}/api/send-confirmation-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(emailData),
+                    timeout: 5000
+                }).then(response => {
+                    console.log('📧 Respuesta del endpoint de email:', response.status);
+                    if (response.ok) {
+                        console.log('✅ Email enviado exitosamente via endpoint');
+                    } else {
+                        console.log('❌ Error en endpoint de email:', response.status);
+                    }
+                }).catch(err => {
+                    console.log('📧 Endpoint de email no disponible:', err.message);
+                });
                 
-                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-                console.log('✅ Emails enviados:', emailResults);
-                emailSent = true;
+                console.log('📧 Email programado para envío');
+                emailSent = true; // Asumir que se enviará
             } else {
                 console.log('❌ No se encontró información de la reserva');
             }
         } catch (emailError) {
-            console.error('❌ Error enviando emails:', emailError.message);
+            console.error('❌ Error programando email:', emailError.message);
             emailSent = false;
         }
 

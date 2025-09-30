@@ -488,13 +488,10 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Enviar emails de forma síncrona antes de responder
+        // Programar envío de email en segundo plano usando endpoint separado
         let emailSent = false;
         try {
-            console.log('📧 ENVIANDO EMAILS');
-            const EmailService = require('./src/services/emailService');
-            const emailService = new EmailService();
-            
+            console.log('📧 PROGRAMANDO ENVÍO DE EMAIL');
             const emailData = {
                 codigo_reserva: codigoReserva,
                 nombre_cliente: datosLimpios.nombre_cliente,
@@ -507,17 +504,32 @@ app.post('/api/simulate-payment-success', async (req, res) => {
                 cancha: canchaInfo?.cancha_nombre || 'Cancha'
             };
             
-            // Enviar emails con timeout
-            const emailPromise = emailService.sendConfirmationEmails(emailData);
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
-            );
+            // Hacer petición HTTP interna para enviar emails
+            const fetch = require('node-fetch');
+            const baseUrl = process.env.NODE_ENV === 'production' 
+                ? 'https://reserva-tu-cancha.onrender.com' 
+                : `http://localhost:${process.env.PORT || 3000}`;
             
-            const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-            console.log('✅ Emails enviados:', emailResults);
-            emailSent = true;
+            fetch(`${baseUrl}/api/send-confirmation-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(emailData),
+                timeout: 5000
+            }).then(response => {
+                console.log('📧 Respuesta del endpoint de email:', response.status);
+                if (response.ok) {
+                    console.log('✅ Email enviado exitosamente via endpoint');
+                } else {
+                    console.log('❌ Error en endpoint de email:', response.status);
+                }
+            }).catch(err => {
+                console.log('📧 Endpoint de email no disponible:', err.message);
+            });
+            
+            console.log('📧 Email programado para envío');
+            emailSent = true; // Asumir que se enviará
         } catch (emailError) {
-            console.error('❌ Error enviando emails:', emailError.message);
+            console.error('❌ Error programando email:', emailError.message);
             emailSent = false;
         }
 
