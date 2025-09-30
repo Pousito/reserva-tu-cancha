@@ -450,9 +450,8 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             INSERT INTO reservas (
                 cancha_id, nombre_cliente, email_cliente, telefono_cliente,
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion,
-                tipo_reserva, comision_aplicada
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                codigo_reserva, estado, estado_pago, fecha_creacion
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
@@ -466,9 +465,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             codigoReserva,
             'confirmada',
             'pagado',
-            new Date().toISOString(),
-            'directa',
-            comisionWeb
+            new Date().toISOString()
         ]);
 
         console.log('✅ Reserva creada con ID:', reservaId);
