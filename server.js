@@ -496,30 +496,31 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             codigo_reserva: codigoReserva
         });
 
-        // Enviar emails en segundo plano (no bloquear la respuesta)
-        setImmediate(async () => {
-            try {
-                const EmailService = require('./src/services/emailService');
-                const emailService = new EmailService();
-                
-                const emailData = {
-                    codigo_reserva: codigoReserva,
-                    nombre_cliente: datosLimpios.nombre_cliente,
-                    email_cliente: datosLimpios.email_cliente,
-                    fecha: bloqueoData.fecha, // Usar fecha del bloqueo temporal (ya corregida en el backend)
-                    hora_inicio: bloqueoData.hora_inicio,
-                    hora_fin: bloqueoData.hora_fin,
-                    precio_total: datosLimpios.precio_total,
-                    complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
-                    cancha: canchaInfo?.cancha_nombre || 'Cancha'
-                };
-                
-                const emailResults = await emailService.sendConfirmationEmails(emailData);
-                console.log('📧 Emails de confirmación enviados en segundo plano:', emailResults);
-            } catch (emailError) {
-                console.error('❌ Error enviando emails en segundo plano:', emailError);
-            }
-        });
+        // Enviar emails usando endpoint separado (más confiable que setImmediate)
+        try {
+            const emailPayload = {
+                codigo_reserva: codigoReserva,
+                nombre_cliente: datosLimpios.nombre_cliente,
+                email_cliente: datosLimpios.email_cliente,
+                fecha: bloqueoData.fecha,
+                hora_inicio: bloqueoData.hora_inicio,
+                hora_fin: bloqueoData.hora_fin,
+                precio_total: datosLimpios.precio_total,
+                complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+                cancha: canchaInfo?.cancha_nombre || 'Cancha'
+            };
+            
+            // Hacer petición HTTP interna para enviar emails
+            fetch('http://localhost:' + (process.env.PORT || 3000) + '/api/send-confirmation-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(emailPayload)
+            }).catch(err => console.log('📧 Email endpoint no disponible:', err.message));
+            
+            console.log('📧 Email de confirmación programado para envío');
+        } catch (emailError) {
+            console.error('❌ Error programando email:', emailError);
+        }
 
     } catch (error) {
         console.error('❌ Error simulando pago:', error);
@@ -578,6 +579,44 @@ app.get('/api/transbank-diagnostic', (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+// Endpoint separado para enviar emails de confirmación
+app.post('/api/send-confirmation-email', async (req, res) => {
+    try {
+        console.log('📧 ENDPOINT DE EMAIL RECIBIDO');
+        console.log('📋 Datos recibidos:', req.body);
+        
+        const emailData = req.body;
+        
+        if (!emailData.codigo_reserva) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de reserva requerido'
+            });
+        }
+        
+        const EmailService = require('./src/services/emailService');
+        const emailService = new EmailService();
+        
+        console.log('📧 Enviando emails para reserva:', emailData.codigo_reserva);
+        const emailResults = await emailService.sendConfirmationEmails(emailData);
+        
+        console.log('✅ Emails enviados exitosamente:', emailResults);
+        
+        res.json({
+            success: true,
+            message: 'Emails enviados exitosamente',
+            results: emailResults
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en endpoint de email:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error enviando emails: ' + error.message
         });
     }
 });
