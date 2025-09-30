@@ -441,7 +441,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
 
         // Crear la reserva real
         // Generar código de reserva único solo cuando se confirma el pago
-        const codigoReserva = await generarCodigoReservaUnico();
+        const codigoReserva = generarCodigoReserva();
         
         console.log('💾 Insertando reserva en BD (bloqueo temporal):', {
             codigo: codigoReserva,
