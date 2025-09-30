@@ -488,34 +488,37 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Enviar emails de confirmación (cliente + administradores)
-        try {
-            const EmailService = require('./src/services/emailService');
-            const emailService = new EmailService();
-            
-            const emailData = {
-                codigo_reserva: codigoReserva,
-                nombre_cliente: datosLimpios.nombre_cliente,
-                email_cliente: datosLimpios.email_cliente,
-                fecha: bloqueoData.fecha, // Usar fecha del bloqueo temporal (ya corregida en el backend)
-                hora_inicio: bloqueoData.hora_inicio,
-                hora_fin: bloqueoData.hora_fin,
-                precio_total: datosLimpios.precio_total,
-                complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
-                cancha: canchaInfo?.cancha_nombre || 'Cancha'
-            };
-            
-            const emailResults = await emailService.sendConfirmationEmails(emailData);
-            console.log('📧 Emails de confirmación enviados:', emailResults);
-        } catch (emailError) {
-            console.error('❌ Error enviando emails:', emailError);
-        }
-
+        // Responder inmediatamente para evitar timeout
         res.json({
             success: true,
             message: 'Pago simulado exitosamente',
             reserva_id: reservaId,
             codigo_reserva: codigoReserva
+        });
+
+        // Enviar emails en segundo plano (no bloquear la respuesta)
+        setImmediate(async () => {
+            try {
+                const EmailService = require('./src/services/emailService');
+                const emailService = new EmailService();
+                
+                const emailData = {
+                    codigo_reserva: codigoReserva,
+                    nombre_cliente: datosLimpios.nombre_cliente,
+                    email_cliente: datosLimpios.email_cliente,
+                    fecha: bloqueoData.fecha, // Usar fecha del bloqueo temporal (ya corregida en el backend)
+                    hora_inicio: bloqueoData.hora_inicio,
+                    hora_fin: bloqueoData.hora_fin,
+                    precio_total: datosLimpios.precio_total,
+                    complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+                    cancha: canchaInfo?.cancha_nombre || 'Cancha'
+                };
+                
+                const emailResults = await emailService.sendConfirmationEmails(emailData);
+                console.log('📧 Emails de confirmación enviados en segundo plano:', emailResults);
+            } catch (emailError) {
+                console.error('❌ Error enviando emails en segundo plano:', emailError);
+            }
         });
 
     } catch (error) {
