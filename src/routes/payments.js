@@ -259,18 +259,9 @@ router.post('/confirm', async (req, res) => {
             authorizationCode: confirmResult.authorizationCode
         });
 
-        // Responder inmediatamente para evitar timeout
-        res.json({
-            success: true,
-            message: 'Pago confirmado exitosamente',
-            reservationCode: payment.codigo_reserva,
-            amount: confirmResult.amount,
-            authorizationCode: confirmResult.authorizationCode
-        });
-
-        // Enviar emails directamente (más confiable en producción)
+        // Enviar emails ANTES de responder (para asegurar que se ejecute)
         try {
-            console.log('📧 ENVIANDO EMAILS DIRECTAMENTE');
+            console.log('📧 ENVIANDO EMAILS ANTES DE RESPONDER');
             console.log('📋 Código de reserva:', payment.reservation_code);
             
             // Obtener información completa de la reserva para el email
@@ -329,6 +320,15 @@ router.post('/confirm', async (req, res) => {
             console.error('❌ Error enviando emails:', emailError);
             // No fallar el proceso si hay error en emails
         }
+
+        // Responder después de enviar emails
+        res.json({
+            success: true,
+            message: 'Pago confirmado exitosamente',
+            reservationCode: payment.codigo_reserva,
+            amount: confirmResult.amount,
+            authorizationCode: confirmResult.authorizationCode
+        });
 
     } catch (error) {
         console.error('❌ Error confirmando pago:', error);

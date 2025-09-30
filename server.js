@@ -488,17 +488,9 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Responder inmediatamente para evitar timeout
-        res.json({
-            success: true,
-            message: 'Pago simulado exitosamente',
-            reserva_id: reservaId,
-            codigo_reserva: codigoReserva
-        });
-
-        // Enviar emails directamente (más confiable en producción)
+        // Enviar emails ANTES de responder (para asegurar que se ejecute)
         try {
-            console.log('📧 ENVIANDO EMAILS DIRECTAMENTE');
+            console.log('📧 ENVIANDO EMAILS ANTES DE RESPONDER');
             const EmailService = require('./src/services/emailService');
             const emailService = new EmailService();
             
@@ -531,6 +523,14 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             console.error('❌ Error enviando emails:', emailError);
             // No fallar el proceso si hay error en emails
         }
+
+        // Responder después de enviar emails
+        res.json({
+            success: true,
+            message: 'Pago simulado exitosamente',
+            reserva_id: reservaId,
+            codigo_reserva: codigoReserva
+        });
 
     } catch (error) {
         console.error('❌ Error simulando pago:', error);
