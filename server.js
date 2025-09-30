@@ -488,7 +488,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Enviar email usando SendGrid como principal y Nodemailer como fallback
+        // Enviar email usando Zoho Mail directamente
         let emailSent = false;
         
         const emailData = {
@@ -503,46 +503,37 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             cancha: canchaInfo?.cancha_nombre || 'Cancha'
         };
         
-        // Intentar SendGrid primero (más confiable en producción)
+        // Usar Zoho Mail directamente (tu configuración actual)
         try {
-            console.log('📧 INTENTANDO SENDGRID (Principal)...');
-            const SendGridService = require('./src/services/sendGridService');
-            const sendGridService = new SendGridService();
+            console.log('📧 ENVIANDO EMAIL CON ZOHO MAIL...');
+            console.log('📧 Configuración Zoho: reservas@reservatuscanchas.cl');
             
-            if (sendGridService.isConfigured) {
-                const emailPromise = sendGridService.sendConfirmationEmails(emailData);
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
-                );
-                
-                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-                console.log('✅ SendGrid exitoso:', emailResults);
-                emailSent = true;
-            } else {
-                console.log('⚠️ SendGrid no configurado, intentando Nodemailer...');
-                throw new Error('SendGrid no configurado');
-            }
-        } catch (sendGridError) {
-            console.error('❌ SendGrid falló:', sendGridError.message);
+            const EmailService = require('./src/services/emailService');
+            const emailService = new EmailService();
             
-            // Fallback a Nodemailer
-            try {
-                console.log('🔄 FALLBACK: Intentando Nodemailer...');
-                const EmailService = require('./src/services/emailService');
-                const emailService = new EmailService();
-                
-                const emailPromise = emailService.sendConfirmationEmails(emailData);
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
-                );
-                
-                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-                console.log('✅ Nodemailer exitoso:', emailResults);
-                emailSent = true;
-            } catch (nodemailerError) {
-                console.error('❌ Nodemailer también falló:', nodemailerError.message);
-                emailSent = false;
+            // Forzar configuración de Zoho para producción
+            if (process.env.NODE_ENV === 'production') {
+                console.log('📧 Configurando Zoho para producción...');
+                // Asegurar que use la configuración correcta
+                process.env.SMTP_HOST = 'smtp.zoho.com';
+                process.env.SMTP_PORT = '587';
+                process.env.SMTP_USER = 'reservas@reservatuscanchas.cl';
+                process.env.SMTP_PASS = 'L660mKFmcDBk';
             }
+            
+            const emailPromise = emailService.sendConfirmationEmails(emailData);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 15000) // 15 segundos
+            );
+            
+            const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+            console.log('✅ Zoho Mail exitoso:', emailResults);
+            emailSent = true;
+            
+        } catch (emailError) {
+            console.error('❌ Error con Zoho Mail:', emailError.message);
+            console.error('📋 Stack trace:', emailError.stack);
+            emailSent = false;
         }
 
         // Responder con información del estado del email
