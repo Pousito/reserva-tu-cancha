@@ -252,7 +252,11 @@ router.post('/confirm', async (req, res) => {
 
         // Enviar emails de confirmación después de confirmar el pago
         try {
+            console.log('📧 INICIANDO PROCESO DE ENVÍO DE EMAIL');
+            console.log('📋 Código de reserva:', payment.reservation_code);
+            
             // Obtener información completa de la reserva para el email
+            console.log('🔍 Obteniendo información de la reserva...');
             const reservaInfo = await db.get(`
                 SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
                 FROM reservas r
@@ -262,6 +266,14 @@ router.post('/confirm', async (req, res) => {
             `, [payment.reservation_code]);
 
             if (reservaInfo) {
+                console.log('✅ Información de reserva obtenida:', {
+                    codigo: reservaInfo.codigo_reserva,
+                    email: reservaInfo.email_cliente,
+                    nombre: reservaInfo.nombre_cliente,
+                    complejo: reservaInfo.complejo_nombre,
+                    cancha: reservaInfo.cancha_nombre
+                });
+                
                 const emailData = {
                     codigo_reserva: reservaInfo.codigo_reserva,
                     email_cliente: reservaInfo.email_cliente,
@@ -274,13 +286,25 @@ router.post('/confirm', async (req, res) => {
                     precio_total: reservaInfo.precio_total
                 };
 
-                console.log('📧 Enviando emails de confirmación para reserva pagada:', reservaInfo.codigo_reserva);
+                console.log('📧 Datos preparados para email:', emailData);
+                console.log('📧 Inicializando servicio de email...');
+                
                 const emailService = require('../services/emailService');
+                console.log('📧 Servicio de email inicializado, enviando emails...');
+                
                 const emailResults = await emailService.sendConfirmationEmails(emailData);
-                console.log('✅ Emails de confirmación procesados:', emailResults);
+                console.log('✅ Emails de confirmación procesados exitosamente:', emailResults);
+            } else {
+                console.log('❌ No se encontró información de la reserva para el email');
             }
         } catch (emailError) {
             console.error('❌ Error enviando emails de confirmación:', emailError);
+            console.error('📋 Stack trace del error:', emailError.stack);
+            console.error('📋 Detalles del error:', {
+                message: emailError.message,
+                name: emailError.name,
+                code: emailError.code
+            });
             // No fallar el pago si hay error en el email
         }
 
