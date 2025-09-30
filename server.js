@@ -488,76 +488,60 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Enviar email directamente con retry y fallback
+        // Enviar email usando SendGrid como principal y Nodemailer como fallback
         let emailSent = false;
-        let attempts = 0;
-        const maxAttempts = 3;
         
-        while (attempts < maxAttempts && !emailSent) {
-            attempts++;
-            try {
-                console.log(`📧 INTENTO ${attempts}/${maxAttempts} - ENVIANDO EMAIL DIRECTAMENTE`);
-                
-                const EmailService = require('./src/services/emailService');
-                const emailService = new EmailService();
-                
-                const emailData = {
-                    codigo_reserva: codigoReserva,
-                    nombre_cliente: datosLimpios.nombre_cliente,
-                    email_cliente: datosLimpios.email_cliente,
-                    fecha: bloqueoData.fecha,
-                    hora_inicio: bloqueoData.hora_inicio,
-                    hora_fin: bloqueoData.hora_fin,
-                    precio_total: datosLimpios.precio_total,
-                    complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
-                    cancha: canchaInfo?.cancha_nombre || 'Cancha'
-                };
-                
-                // Intentar envío directo con timeout corto
-                const emailPromise = emailService.sendConfirmationEmails(emailData);
+        const emailData = {
+            codigo_reserva: codigoReserva,
+            nombre_cliente: datosLimpios.nombre_cliente,
+            email_cliente: datosLimpios.email_cliente,
+            fecha: bloqueoData.fecha,
+            hora_inicio: bloqueoData.hora_inicio,
+            hora_fin: bloqueoData.hora_fin,
+            precio_total: datosLimpios.precio_total,
+            complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+            cancha: canchaInfo?.cancha_nombre || 'Cancha'
+        };
+        
+        // Intentar SendGrid primero (más confiable en producción)
+        try {
+            console.log('📧 INTENTANDO SENDGRID (Principal)...');
+            const SendGridService = require('./src/services/sendGridService');
+            const sendGridService = new SendGridService();
+            
+            if (sendGridService.isConfigured) {
+                const emailPromise = sendGridService.sendConfirmationEmails(emailData);
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 8000) // 8 segundos
+                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
                 );
                 
                 const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-                console.log(`✅ Intento ${attempts}: Emails enviados exitosamente:`, emailResults);
+                console.log('✅ SendGrid exitoso:', emailResults);
                 emailSent = true;
-                break;
+            } else {
+                console.log('⚠️ SendGrid no configurado, intentando Nodemailer...');
+                throw new Error('SendGrid no configurado');
+            }
+        } catch (sendGridError) {
+            console.error('❌ SendGrid falló:', sendGridError.message);
+            
+            // Fallback a Nodemailer
+            try {
+                console.log('🔄 FALLBACK: Intentando Nodemailer...');
+                const EmailService = require('./src/services/emailService');
+                const emailService = new EmailService();
                 
-            } catch (emailError) {
-                console.error(`❌ Intento ${attempts} falló:`, emailError.message);
+                const emailPromise = emailService.sendConfirmationEmails(emailData);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
+                );
                 
-                if (attempts < maxAttempts) {
-                    console.log(`⏳ Esperando 2 segundos antes del siguiente intento...`);
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                } else {
-                    console.error('❌ Todos los intentos fallaron');
-                    
-                    // Fallback: Intentar endpoint HTTP
-                    try {
-                        console.log('🔄 FALLBACK: Intentando endpoint HTTP interno...');
-                        const fetch = require('node-fetch');
-                        const baseUrl = process.env.NODE_ENV === 'production' 
-                            ? 'https://reserva-tu-cancha.onrender.com' 
-                            : `http://localhost:${process.env.PORT || 3000}`;
-                        
-                        const response = await fetch(`${baseUrl}/api/send-confirmation-email`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(emailData),
-                            timeout: 5000
-                        });
-                        
-                        if (response.ok) {
-                            console.log('✅ Fallback exitoso: Email enviado via endpoint HTTP');
-                            emailSent = true;
-                        } else {
-                            console.log('❌ Fallback falló:', response.status);
-                        }
-                    } catch (fallbackError) {
-                        console.error('❌ Fallback también falló:', fallbackError.message);
-                    }
-                }
+                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+                console.log('✅ Nodemailer exitoso:', emailResults);
+                emailSent = true;
+            } catch (nodemailerError) {
+                console.error('❌ Nodemailer también falló:', nodemailerError.message);
+                emailSent = false;
             }
         }
 
