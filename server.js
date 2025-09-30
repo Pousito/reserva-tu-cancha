@@ -496,9 +496,13 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             codigo_reserva: codigoReserva
         });
 
-        // Enviar emails usando endpoint separado (más confiable que setImmediate)
+        // Enviar emails directamente (más confiable en producción)
         try {
-            const emailPayload = {
+            console.log('📧 ENVIANDO EMAILS DIRECTAMENTE');
+            const EmailService = require('./src/services/emailService');
+            const emailService = new EmailService();
+            
+            const emailData = {
                 codigo_reserva: codigoReserva,
                 nombre_cliente: datosLimpios.nombre_cliente,
                 email_cliente: datosLimpios.email_cliente,
@@ -510,16 +514,22 @@ app.post('/api/simulate-payment-success', async (req, res) => {
                 cancha: canchaInfo?.cancha_nombre || 'Cancha'
             };
             
-            // Hacer petición HTTP interna para enviar emails
-            fetch('http://localhost:' + (process.env.PORT || 3000) + '/api/send-confirmation-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(emailPayload)
-            }).catch(err => console.log('📧 Email endpoint no disponible:', err.message));
+            // Enviar emails con timeout para evitar que Render cancele
+            const emailPromise = emailService.sendConfirmationEmails(emailData);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 25000) // 25 segundos
+            );
             
-            console.log('📧 Email de confirmación programado para envío');
+            try {
+                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+                console.log('✅ Emails enviados exitosamente:', emailResults);
+            } catch (timeoutError) {
+                console.log('⏰ Timeout en envío de emails, pero reserva creada exitosamente');
+                // No fallar el proceso si hay timeout en emails
+            }
         } catch (emailError) {
-            console.error('❌ Error programando email:', emailError);
+            console.error('❌ Error enviando emails:', emailError);
+            // No fallar el proceso si hay error en emails
         }
 
     } catch (error) {

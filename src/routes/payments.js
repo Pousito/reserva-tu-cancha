@@ -268,9 +268,9 @@ router.post('/confirm', async (req, res) => {
             authorizationCode: confirmResult.authorizationCode
         });
 
-        // Enviar emails usando endpoint separado (más confiable que setImmediate)
+        // Enviar emails directamente (más confiable en producción)
         try {
-            console.log('📧 PROGRAMANDO ENVÍO DE EMAIL');
+            console.log('📧 ENVIANDO EMAILS DIRECTAMENTE');
             console.log('📋 Código de reserva:', payment.reservation_code);
             
             // Obtener información completa de la reserva para el email
@@ -306,24 +306,28 @@ router.post('/confirm', async (req, res) => {
 
                 console.log('📧 Datos preparados para email:', emailData);
                 
-                // Hacer petición HTTP interna para enviar emails
-                const fetch = require('node-fetch');
-                fetch('http://localhost:' + (process.env.PORT || 3000) + '/api/send-confirmation-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(emailData)
-                }).then(response => {
-                    console.log('📧 Respuesta del endpoint de email:', response.status);
-                }).catch(err => {
-                    console.log('📧 Email endpoint no disponible:', err.message);
-                });
+                const emailService = require('../services/emailService');
+                console.log('📧 Servicio de email inicializado, enviando emails...');
                 
-                console.log('📧 Email de confirmación programado para envío');
+                // Enviar emails con timeout para evitar que Render cancele
+                const emailPromise = emailService.sendConfirmationEmails(emailData);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 25000) // 25 segundos
+                );
+                
+                try {
+                    const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+                    console.log('✅ Emails enviados exitosamente:', emailResults);
+                } catch (timeoutError) {
+                    console.log('⏰ Timeout en envío de emails, pero reserva creada exitosamente');
+                    // No fallar el proceso si hay timeout en emails
+                }
             } else {
                 console.log('❌ No se encontró información de la reserva para el email');
             }
         } catch (emailError) {
-            console.error('❌ Error programando email:', emailError);
+            console.error('❌ Error enviando emails:', emailError);
+            // No fallar el proceso si hay error en emails
         }
 
     } catch (error) {
