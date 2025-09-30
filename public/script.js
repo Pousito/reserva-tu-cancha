@@ -1238,6 +1238,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         const urlParams = new URLSearchParams(window.location.search);
         const ciudadParam = urlParams.get('ciudad');
         const complejoParam = urlParams.get('complejo');
+        const paymentParam = urlParams.get('payment');
+        const codeParam = urlParams.get('code');
+        
+        // Manejar redirección después de pago exitoso
+        if (paymentParam === 'success' && codeParam) {
+            console.log('🎉 Pago exitoso detectado, mostrando confirmación...');
+            console.log('🔍 Código de reserva:', codeParam);
+            
+            // Mostrar confirmación de reserva
+            mostrarConfirmacionReserva(codeParam, 'Transbank');
+            
+            // Limpiar URL para evitar que se muestre en futuras cargas
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+            
+            // Scroll al inicio para mostrar la confirmación
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            return; // No continuar con el resto de la inicialización
+        }
         
         if (ciudadParam || complejoParam) {
             console.log('🔄 Parámetros URL detectados, iniciando pre-rellenado...');
