@@ -227,8 +227,8 @@ router.post('/confirm', async (req, res) => {
             INSERT INTO reservas (
                 cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion, es_dato_produccion
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                codigo_reserva, estado, estado_pago, fecha_creacion
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
@@ -242,8 +242,7 @@ router.post('/confirm', async (req, res) => {
             payment.reservation_code,
             'confirmada',
             'pagado',
-            new Date().toISOString(),
-            1
+            new Date().toISOString()
         ]);
 
         // Eliminar el bloqueo temporal
