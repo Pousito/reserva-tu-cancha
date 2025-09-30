@@ -430,20 +430,26 @@ app.post('/api/simulate-payment-success', async (req, res) => {
 
         const datosCliente = JSON.parse(bloqueoData.datos_cliente);
 
+        // Limpiar datos antes de insertar
+        const datosLimpios = {
+            nombre_cliente: datosCliente.nombre_cliente || 'Sin nombre',
+            email_cliente: datosCliente.email_cliente || 'sin@email.com',
+            telefono_cliente: datosCliente.telefono_cliente || null,
+            rut_cliente: datosCliente.rut_cliente ? datosCliente.rut_cliente.replace(/[^0-9kK-]/g, '') : 'No proporcionado',
+            precio_total: parseInt(datosCliente.precio_total) || 0
+        };
+
         // Crear la reserva real
         // Generar código de reserva único solo cuando se confirma el pago
         const codigoReserva = await generarCodigoReservaUnico();
         
-        // Calcular comisión para reserva web (3.5%) - Solo para registro, no se suma al precio
-        const comisionWeb = Math.round(datosCliente.precio_total * 0.035);
-        
         console.log('💾 Insertando reserva en BD (bloqueo temporal):', {
             codigo: codigoReserva,
-            nombre: datosCliente.nombre_cliente,
-            email: datosCliente.email_cliente,
-            telefono: datosCliente.telefono_cliente,
-            rut: datosCliente.rut_cliente,
-            precio: datosCliente.precio_total
+            nombre: datosLimpios.nombre_cliente,
+            email: datosLimpios.email_cliente,
+            telefono: datosLimpios.telefono_cliente,
+            rut: datosLimpios.rut_cliente,
+            precio: datosLimpios.precio_total
         });
         
         const reservaId = await db.run(`
@@ -454,14 +460,14 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         `, [
             bloqueoData.cancha_id,
-            datosCliente.nombre_cliente,
-            datosCliente.email_cliente,
-            datosCliente.telefono_cliente || null,
-            datosCliente.rut_cliente || 'No proporcionado',
+            datosLimpios.nombre_cliente,
+            datosLimpios.email_cliente,
+            datosLimpios.telefono_cliente,
+            datosLimpios.rut_cliente,
             bloqueoData.fecha,
             bloqueoData.hora_inicio,
             bloqueoData.hora_fin,
-            datosCliente.precio_total,
+            datosLimpios.precio_total,
             codigoReserva,
             'confirmada',
             'pagado',
@@ -489,12 +495,12 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             
             const emailData = {
                 codigo_reserva: codigoReserva,
-                nombre_cliente: datosCliente.nombre_cliente,
-                email_cliente: datosCliente.email_cliente,
+                nombre_cliente: datosLimpios.nombre_cliente,
+                email_cliente: datosLimpios.email_cliente,
                 fecha: bloqueoData.fecha, // Usar fecha del bloqueo temporal (ya corregida en el backend)
                 hora_inicio: bloqueoData.hora_inicio,
                 hora_fin: bloqueoData.hora_fin,
-                precio_total: datosCliente.precio_total,
+                precio_total: datosLimpios.precio_total,
                 complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
                 cancha: canchaInfo?.cancha_nombre || 'Cancha'
             };
