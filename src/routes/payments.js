@@ -259,9 +259,10 @@ router.post('/confirm', async (req, res) => {
             authorizationCode: confirmResult.authorizationCode
         });
 
-        // Enviar emails ANTES de responder (para asegurar que se ejecute)
+        // Enviar emails de forma síncrona antes de responder
+        let emailSent = false;
         try {
-            console.log('📧 ENVIANDO EMAILS ANTES DE RESPONDER');
+            console.log('📧 ENVIANDO EMAILS DE FORMA SÍNCRONA');
             console.log('📋 Código de reserva:', payment.reservation_code);
             
             // Obtener información completa de la reserva para el email
@@ -300,34 +301,32 @@ router.post('/confirm', async (req, res) => {
                 const emailService = require('../services/emailService');
                 console.log('📧 Servicio de email inicializado, enviando emails...');
                 
-                // Enviar emails con timeout para evitar que Render cancele
+                // Enviar emails de forma síncrona con timeout
                 const emailPromise = emailService.sendConfirmationEmails(emailData);
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 25000) // 25 segundos
+                    setTimeout(() => reject(new Error('Timeout')), 20000) // 20 segundos
                 );
                 
-                try {
-                    const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-                    console.log('✅ Emails enviados exitosamente:', emailResults);
-                } catch (timeoutError) {
-                    console.log('⏰ Timeout en envío de emails, pero reserva creada exitosamente');
-                    // No fallar el proceso si hay timeout en emails
-                }
+                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+                console.log('✅ Emails enviados exitosamente:', emailResults);
+                emailSent = true;
             } else {
                 console.log('❌ No se encontró información de la reserva para el email');
             }
         } catch (emailError) {
             console.error('❌ Error enviando emails:', emailError);
+            emailSent = false;
             // No fallar el proceso si hay error en emails
         }
 
-        // Responder después de enviar emails
+        // Responder con información del estado del email
         res.json({
             success: true,
             message: 'Pago confirmado exitosamente',
             reservationCode: payment.codigo_reserva,
             amount: confirmResult.amount,
-            authorizationCode: confirmResult.authorizationCode
+            authorizationCode: confirmResult.authorizationCode,
+            email_sent: emailSent
         });
 
     } catch (error) {

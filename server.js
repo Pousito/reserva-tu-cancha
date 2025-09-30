@@ -488,9 +488,10 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Enviar emails ANTES de responder (para asegurar que se ejecute)
+        // Enviar emails de forma síncrona antes de responder
+        let emailSent = false;
         try {
-            console.log('📧 ENVIANDO EMAILS ANTES DE RESPONDER');
+            console.log('📧 ENVIANDO EMAILS DE FORMA SÍNCRONA');
             const EmailService = require('./src/services/emailService');
             const emailService = new EmailService();
             
@@ -506,30 +507,28 @@ app.post('/api/simulate-payment-success', async (req, res) => {
                 cancha: canchaInfo?.cancha_nombre || 'Cancha'
             };
             
-            // Enviar emails con timeout para evitar que Render cancele
+            // Enviar emails de forma síncrona con timeout
             const emailPromise = emailService.sendConfirmationEmails(emailData);
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 25000) // 25 segundos
+                setTimeout(() => reject(new Error('Timeout')), 20000) // 20 segundos
             );
             
-            try {
-                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-                console.log('✅ Emails enviados exitosamente:', emailResults);
-            } catch (timeoutError) {
-                console.log('⏰ Timeout en envío de emails, pero reserva creada exitosamente');
-                // No fallar el proceso si hay timeout en emails
-            }
+            const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+            console.log('✅ Emails enviados exitosamente:', emailResults);
+            emailSent = true;
         } catch (emailError) {
             console.error('❌ Error enviando emails:', emailError);
+            emailSent = false;
             // No fallar el proceso si hay error en emails
         }
 
-        // Responder después de enviar emails
+        // Responder con información del estado del email
         res.json({
             success: true,
             message: 'Pago simulado exitosamente',
             reserva_id: reservaId,
-            codigo_reserva: codigoReserva
+            codigo_reserva: codigoReserva,
+            email_sent: emailSent
         });
 
     } catch (error) {
