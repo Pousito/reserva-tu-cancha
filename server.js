@@ -491,19 +491,9 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         // Enviar emails de forma síncrona antes de responder
         let emailSent = false;
         try {
-            console.log('📧 INICIANDO ENVÍO DE EMAILS');
-            console.log('📧 Variables de entorno:', {
-                SMTP_HOST: process.env.SMTP_HOST ? 'Definido' : 'No definido',
-                SMTP_USER: process.env.SMTP_USER ? 'Definido' : 'No definido',
-                SMTP_PASS: process.env.SMTP_PASS ? 'Definido' : 'No definido',
-                NODE_ENV: process.env.NODE_ENV
-            });
-            
+            console.log('📧 ENVIANDO EMAILS');
             const EmailService = require('./src/services/emailService');
-            console.log('📧 Servicio de email cargado');
-            
             const emailService = new EmailService();
-            console.log('📧 Servicio de email inicializado');
             
             const emailData = {
                 codigo_reserva: codigoReserva,
@@ -517,23 +507,18 @@ app.post('/api/simulate-payment-success', async (req, res) => {
                 cancha: canchaInfo?.cancha_nombre || 'Cancha'
             };
             
-            console.log('📧 Datos del email:', emailData);
-            
-            // Enviar emails con timeout más corto
+            // Enviar emails con timeout
             const emailPromise = emailService.sendConfirmationEmails(emailData);
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 15000) // 15 segundos
+                setTimeout(() => reject(new Error('Timeout')), 10000) // 10 segundos
             );
             
-            console.log('📧 Enviando emails con timeout de 15 segundos...');
             const emailResults = await Promise.race([emailPromise, timeoutPromise]);
-            console.log('✅ Emails enviados exitosamente:', emailResults);
+            console.log('✅ Emails enviados:', emailResults);
             emailSent = true;
         } catch (emailError) {
-            console.error('❌ Error enviando emails:', emailError);
-            console.error('📋 Stack trace:', emailError.stack);
+            console.error('❌ Error enviando emails:', emailError.message);
             emailSent = false;
-            // No fallar el proceso si hay error en emails
         }
 
         // Responder con información del estado del email
