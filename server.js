@@ -413,11 +413,20 @@ app.post('/api/simulate-payment-success', async (req, res) => {
 
         console.log('🧪 Simulando pago exitoso para:', reservationCode);
 
-        // Buscar el bloqueo temporal
-        const bloqueoData = await db.get(
+        // Buscar el bloqueo temporal (intentar por id primero, luego por session_id)
+        let bloqueoData = await db.get(
             'SELECT * FROM bloqueos_temporales WHERE id = $1',
             [reservationCode]
         );
+        
+        // Si no se encuentra por id, buscar por session_id
+        if (!bloqueoData) {
+            console.log('🔍 Bloqueo no encontrado por id, buscando por session_id...');
+            bloqueoData = await db.get(
+                'SELECT * FROM bloqueos_temporales WHERE session_id = $1',
+                [reservationCode]
+            );
+        }
 
         if (!bloqueoData) {
             return res.status(404).json({
