@@ -26,10 +26,10 @@ class EmailService {
       // Usar variables de entorno directamente
       const emailConfig = {
         host: process.env.SMTP_HOST || 'smtp.zoho.com',
-        port: parseInt(process.env.SMTP_PORT) || 465, // Puerto 465 con SSL (funcionaba antes)
+        port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 STARTTLS (configuración del 24-sept)
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
-        secure: true // SSL directo en puerto 465
+        secure: false // STARTTLS (no SSL)
       };
       
       // Debug: Mostrar configuración de email
@@ -52,12 +52,12 @@ class EmailService {
         // Configuración de fallback para producción
         if (process.env.NODE_ENV === 'production') {
           emailConfig.host = 'smtp.zoho.com';
-          emailConfig.port = 465; // Puerto 465 con SSL (configuración que funcionaba)
-          emailConfig.user = 'reservas@reservatuscanchas.cl';
-          emailConfig.pass = 'L660mKFmcDBk';
-          emailConfig.secure = true; // SSL directo
+          emailConfig.port = 587; // Puerto 587 STARTTLS (configuración del 24-sept que funcionaba)
+          emailConfig.user = 'soporte@reservatuscanchas.cl'; // Email de soporte (no reservas)
+          emailConfig.pass = 'KWAX CS8q 61cN'; // Contraseña de soporte
+          emailConfig.secure = false; // STARTTLS
           
-          console.log('📧 Usando configuración de fallback para producción (SSL port 465)');
+          console.log('📧 Usando configuración de fallback para producción (soporte@)');
         } else {
           console.log('⚠️ Email no configurado - usando modo simulación');
           this.isConfigured = false;
@@ -293,10 +293,10 @@ class EmailService {
   createReservasTransporter() {
     const reservasConfig = {
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
-      port: parseInt(process.env.SMTP_PORT) || 465, // Puerto 465 con SSL (configuración que funcionaba)
-      user: process.env.SMTP_RESERVAS_USER || process.env.SMTP_USER || 'reservas@reservatuscanchas.cl',
-      pass: process.env.SMTP_RESERVAS_PASS || process.env.SMTP_PASS || 'L660mKFmcDBk',
-      secure: true // SSL directo
+      port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 STARTTLS (configuración del 24-sept)
+      user: process.env.SMTP_RESERVAS_USER || process.env.SMTP_USER || 'soporte@reservatuscanchas.cl',
+      pass: process.env.SMTP_RESERVAS_PASS || process.env.SMTP_PASS || 'KWAX CS8q 61cN',
+      secure: false // STARTTLS (no SSL)
     };
 
     console.log('📧 Configuración de email para reservas:', {
