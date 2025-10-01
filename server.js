@@ -622,6 +622,81 @@ app.get('/api/reservas/:codigo', async (req, res) => {
     }
 });
 
+// Endpoint para reenviar email de confirmación manualmente
+app.post('/api/reservas/:codigo/reenviar-email', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        
+        console.log('📧 Reenviando email para reserva:', codigo);
+
+        // Obtener información completa de la reserva
+        const reserva = await db.get(`
+            SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+            FROM reservas r
+            JOIN canchas c ON r.cancha_id = c.id
+            JOIN complejos co ON c.complejo_id = co.id
+            WHERE r.codigo_reserva = $1
+        `, [codigo]);
+
+        if (!reserva) {
+            return res.status(404).json({
+                success: false,
+                error: 'Reserva no encontrada'
+            });
+        }
+
+        // Preparar datos para el email
+        const emailData = {
+            codigo_reserva: reserva.codigo_reserva,
+            nombre_cliente: reserva.nombre_cliente,
+            email_cliente: reserva.email_cliente,
+            fecha: reserva.fecha,
+            hora_inicio: reserva.hora_inicio,
+            hora_fin: reserva.hora_fin,
+            precio_total: reserva.precio_total,
+            complejo: reserva.complejo_nombre || 'Complejo Deportivo',
+            cancha: reserva.cancha_nombre || 'Cancha'
+        };
+
+        console.log('📧 Enviando email a:', emailData.email_cliente);
+        console.log('📋 Datos del email:', emailData);
+
+        // Importar y usar el servicio de email
+        const EmailService = require('./src/services/emailService');
+        const emailService = new EmailService();
+        
+        // Enviar emails (esto devolverá el error si hay uno)
+        const emailResults = await emailService.sendConfirmationEmails(emailData);
+        
+        console.log('📧 Resultado del envío:', emailResults);
+
+        if (emailResults.cliente || emailResults.simulated) {
+            res.json({
+                success: true,
+                message: 'Email reenviado exitosamente',
+                codigo_reserva: codigo,
+                email_sent: emailResults.cliente ? 'real' : 'simulated',
+                results: emailResults
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Error enviando email',
+                details: emailResults.error || 'Error desconocido',
+                codigo_reserva: codigo
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error reenviando email:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
 // Endpoint para generar y descargar comprobante PDF
 app.get('/api/reservas/:codigo/pdf', async (req, res) => {
     try {
