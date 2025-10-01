@@ -308,7 +308,8 @@ async function populateSampleData() {
       const usuariosData = [
         { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
         { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
-        { email: 'naxiin_320@hotmail.com', password: 'complejo2024', nombre: 'Dueño MagnaSports', rol: 'admin' }
+        { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Administrador Fundación Gunnen', rol: 'owner' },
+        { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
       ];
       
       for (const usuario of usuariosData) {
@@ -3775,7 +3776,8 @@ app.post('/api/debug/insert-admin-users', async (req, res) => {
     const usuariosData = [
       { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
       { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
-      { email: 'naxiin_320@hotmail.com', password: 'complejo2024', nombre: 'Dueño MagnaSports', rol: 'admin' }
+      { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Administrador Fundación Gunnen', rol: 'owner' },
+      { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
     ];
     
     const insertedUsers = [];
@@ -3934,8 +3936,9 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
       },
       credentials: {
         superAdmin: 'admin@reservatuscanchas.cl / admin123',
-        dueno: 'naxiin_320@hotmail.com / complejo2024',
-        admin: 'naxiin320@gmail.com / magnasports2024'
+        magnasportsAdmin: 'naxiin320@gmail.com / magnasports2024',
+        gunnenAdmin: 'naxiin_320@hotmail.com / gunnen2024',
+        gunnenOwner: 'ignacio.araya.lillito@hotmail.com / gunnen2024'
       }
     });
     
@@ -4613,9 +4616,15 @@ app.post('/api/debug/create-admin-users', async (req, res) => {
       },
       {
         email: 'naxiin_320@hotmail.com',
-        password: 'complejo2024',
-        nombre: 'Dueño MagnaSports',
-        rol: 'admin'
+        password: 'gunnen2024',
+        nombre: 'Administrador Fundación Gunnen',
+        rol: 'owner'
+      },
+      {
+        email: 'ignacio.araya.lillito@hotmail.com',
+        password: 'gunnen2024',
+        nombre: 'Dueño Fundación Gunnen',
+        rol: 'owner'
       }
     ];
     
