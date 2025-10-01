@@ -399,12 +399,23 @@
             const emailStatusText = document.getElementById('emailStatusText');
             
             try {
-                // Simular verificación del estado del email
-                // En un sistema real, esto podría verificar el estado real del envío
-                emailStatusText.textContent = '✅ Email de confirmación enviado';
-                emailStatus.className = 'email-status success';
+                // Obtener el estado real del email desde la URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const emailParam = urlParams.get('email');
+                
+                if (emailParam === 'sent') {
+                    emailStatusText.textContent = '✅ Email de confirmación enviado exitosamente';
+                    emailStatus.className = 'email-status success';
+                } else if (emailParam === 'failed') {
+                    emailStatusText.textContent = '⚠️ El email no se pudo enviar. Contacta a soporte si no recibes confirmación.';
+                    emailStatus.className = 'email-status error';
+                } else {
+                    // Si no hay parámetro, mostrar estado neutral
+                    emailStatusText.textContent = '📧 Revisa tu email para la confirmación';
+                    emailStatus.className = 'email-status';
+                }
             } catch (error) {
-                emailStatusText.textContent = '⚠️ Error verificando email';
+                emailStatusText.textContent = '⚠️ Error verificando estado del email';
                 emailStatus.className = 'email-status error';
             }
         }

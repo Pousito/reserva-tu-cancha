@@ -958,7 +958,9 @@
                 if (result.success) {
                     showSuccess('¡Pago confirmado exitosamente! Tu reserva está activa.');
                     setTimeout(() => {
-                        window.location.href = '/payment-success.html?code=' + result.reservationCode;
+                        // Incluir el estado del email en la URL
+                        const emailParam = result.email_sent ? 'sent' : 'failed';
+                        window.location.href = `/payment-success.html?code=${result.reservationCode}&email=${emailParam}`;
                     }, 3000);
                 } else {
                     throw new Error(result.error || 'Error confirmando pago');

@@ -317,7 +317,7 @@ router.post('/confirm', async (req, res) => {
         res.json({
             success: true,
             message: 'Pago confirmado exitosamente',
-            reservationCode: payment.codigo_reserva,
+            reservationCode: payment.reservation_code,
             amount: confirmResult.amount,
             authorizationCode: confirmResult.authorizationCode,
             email_sent: emailSent
