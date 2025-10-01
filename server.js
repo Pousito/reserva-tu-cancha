@@ -4005,6 +4005,30 @@ app.get('/api/debug/email-service-status', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR BLOQUEOS TEMPORALES =====
+app.get('/api/debug/check-all-blockings', async (req, res) => {
+  try {
+    console.log('🔍 Verificando todos los bloqueos temporales...');
+    
+    const bloqueos = await db.query('SELECT * FROM bloqueos_temporales ORDER BY creado_en DESC LIMIT 10');
+    
+    res.json({
+      success: true,
+      message: 'Bloqueos temporales encontrados',
+      bloqueos: bloqueos,
+      count: bloqueos.length,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando bloqueos temporales:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA VERIFICAR USUARIOS ADMINISTRADORES =====
 app.get('/api/debug/admin-users', async (req, res) => {
   try {
