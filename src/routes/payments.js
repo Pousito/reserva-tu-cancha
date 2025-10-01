@@ -272,7 +272,11 @@ router.post('/confirm', async (req, res) => {
             
             // Obtener información completa de la reserva para el email
             const reservaInfo = await db.get(`
-                SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+                SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente, 
+                       r.telefono_cliente, r.rut_cliente,
+                       TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+                       r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+                       c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
                 FROM reservas r
                 JOIN canchas c ON r.cancha_id = c.id
                 JOIN complejos co ON c.complejo_id = co.id

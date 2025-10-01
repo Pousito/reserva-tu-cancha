@@ -36,11 +36,11 @@ function getEstadisticas(req, res) {
       });
     })
   )).then(results => {
-    // Obtener reservas por día (últimos 7 días)
+    // Obtener reservas por día (últimos 7 días) - Corregido para PostgreSQL
     let reservasPorDiaQuery = `
-      SELECT DATE(r.fecha) as fecha, COUNT(*) as cantidad 
+      SELECT TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha, COUNT(*) as cantidad 
       FROM reservas r
-      WHERE r.fecha >= date('now', '-7 days')
+      WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
     `;
     
     if (req.admin.rol === 'complex_owner') {
@@ -49,7 +49,7 @@ function getEstadisticas(req, res) {
       )`;
     }
     
-    reservasPorDiaQuery += ' GROUP BY DATE(r.fecha) ORDER BY fecha';
+    reservasPorDiaQuery += ' GROUP BY r.fecha::date ORDER BY r.fecha::date';
     
     db.all(reservasPorDiaQuery, params, (err, reservasPorDia) => {
       if (err) {
@@ -77,8 +77,14 @@ function getEstadisticas(req, res) {
  */
 function getReservasRecientes(req, res) {
   let query = `
-    SELECT r.*, c.nombre as complejo_nombre, can.nombre as cancha_nombre,
-           r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, r.email_cliente as cliente_email
+    SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
+           r.telefono_cliente, r.rut_cliente,
+           TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+           r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+           r.estado, r.estado_pago, r.created_at,
+           c.nombre as complejo_nombre, can.nombre as cancha_nombre,
+           r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, 
+           r.email_cliente as cliente_email
     FROM reservas r
     JOIN canchas can ON r.cancha_id = can.id
     JOIN complejos c ON can.complejo_id = c.id
@@ -109,12 +115,18 @@ function getReservasRecientes(req, res) {
  */
 function getReservasHoy(req, res) {
   let query = `
-    SELECT r.*, c.nombre as complejo_nombre, can.nombre as cancha_nombre,
-           r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, r.email_cliente as cliente_email
+    SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente, 
+           r.telefono_cliente, r.rut_cliente,
+           TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+           r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+           r.estado, r.estado_pago,
+           c.nombre as complejo_nombre, can.nombre as cancha_nombre,
+           r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, 
+           r.email_cliente as cliente_email
     FROM reservas r
     JOIN canchas can ON r.cancha_id = can.id
     JOIN complejos c ON can.complejo_id = c.id
-    WHERE DATE(r.fecha) = DATE('now')
+    WHERE r.fecha::date = CURRENT_DATE
   `;
   
   const params = [];
@@ -144,8 +156,14 @@ function getAllReservasAdmin(req, res) {
   const { fecha, complejo_id, estado } = req.query;
   
   let query = `
-    SELECT r.*, c.nombre as complejo_nombre, can.nombre as cancha_nombre,
-           r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, r.email_cliente as cliente_email
+    SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
+           r.telefono_cliente, r.rut_cliente,
+           TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+           r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+           r.estado, r.estado_pago, r.created_at,
+           c.nombre as complejo_nombre, can.nombre as cancha_nombre,
+           r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, 
+           r.email_cliente as cliente_email
     FROM reservas r
     JOIN canchas can ON r.cancha_id = can.id
     JOIN complejos c ON can.complejo_id = c.id
@@ -161,7 +179,7 @@ function getAllReservasAdmin(req, res) {
   }
   
   if (fecha) {
-    query += ' AND DATE(r.fecha) = ?';
+    query += ' AND r.fecha::date = ?';
     params.push(fecha);
   }
   

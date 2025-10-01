@@ -653,7 +653,12 @@ app.get('/api/reservas/:codigo', async (req, res) => {
 
         // Buscar la reserva con información del complejo y cancha
         const reserva = await db.get(`
-            SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+            SELECT r.id, r.cancha_id, r.usuario_id, r.nombre_cliente, r.email_cliente, 
+                   r.telefono_cliente, r.rut_cliente, 
+                   TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+                   r.hora_inicio, r.hora_fin, r.estado, r.estado_pago, 
+                   r.precio_total, r.created_at, r.fecha_creacion, r.codigo_reserva,
+                   c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
             FROM reservas r
             JOIN canchas c ON r.cancha_id = c.id
             JOIN complejos co ON c.complejo_id = co.id
@@ -1433,14 +1438,14 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, requ
     
     // Reservas por día (últimos 7 días) - PostgreSQL unificado
     const reservasPorDia = await db.query(`
-      SELECT r.fecha::date as dia, COUNT(*) as cantidad
+      SELECT TO_CHAR(r.fecha, 'YYYY-MM-DD') as dia, COUNT(*) as cantidad
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
       AND r.estado != 'cancelada'
       ${userRole === 'super_admin' ? '' : 'AND c.complejo_id = $1'}
       GROUP BY r.fecha::date
-      ORDER BY dia
+      ORDER BY r.fecha::date
     `, userRole === 'super_admin' ? [] : [complexFilter]);
     
     const stats = {
@@ -1483,7 +1488,12 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     }
     
     const reservas = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
+             r.telefono_cliente, r.rut_cliente,
+             TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+             r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+             r.estado, r.estado_pago, r.created_at, r.fecha_creacion,
+             c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -1650,12 +1660,17 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
     console.log('📅 Cargando reservas de hoy...');
     
     const reservasHoy = await db.query(`
-      SELECT r.*, c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+      SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
+             r.telefono_cliente, r.rut_cliente,
+             TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+             r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+             r.estado, r.estado_pago, r.created_at, r.fecha_creacion,
+             c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE r.fecha = CURRENT_DATE
+      WHERE r.fecha::date = CURRENT_DATE
       AND r.estado != 'cancelada'
       ORDER BY r.hora_inicio
     `);
