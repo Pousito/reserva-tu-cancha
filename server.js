@@ -361,7 +361,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
     const startTime = Date.now();
     await Promise.race([
       transporter587.verify(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 5s')), 5000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 30s')), 30000))
     ]);
     const elapsed = Date.now() - startTime;
     
@@ -394,7 +394,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
     const startTime = Date.now();
     await Promise.race([
       transporter465.verify(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 5s')), 5000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 30s')), 30000))
     ]);
     const elapsed = Date.now() - startTime;
     
