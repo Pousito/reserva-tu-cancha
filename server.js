@@ -510,23 +510,23 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             cancha: canchaInfo?.cancha_nombre || 'Cancha'
         };
 
-        // Enviar emails con timeout de 10 segundos
+        // Enviar emails con timeout de 20 segundos (aumentado desde 10s por latencia de red en producción)
         let emailSent = false;
         try {
             console.log('📧 Enviando emails...');
             console.log('📧 Destinatario:', emailData.email_cliente);
             const emailService = new EmailService();
             
-            // Timeout de 10 segundos
+            // Timeout de 20 segundos (local tarda ~9s, producción puede tardar más por latencia)
             const emailPromise = emailService.sendConfirmationEmails(emailData);
             const timeoutPromise = new Promise((resolve) => 
-                setTimeout(() => resolve({ timeout: true }), 10000)
+                setTimeout(() => resolve({ timeout: true }), 20000)
             );
             
             const emailResults = await Promise.race([emailPromise, timeoutPromise]);
             
             if (emailResults.timeout) {
-                console.log('⚠️ Timeout de emails después de 10s');
+                console.log('⚠️ Timeout de emails después de 20s');
                 emailSent = 'timeout';
             } else {
                 emailSent = emailResults.cliente || emailResults.simulated || false;
