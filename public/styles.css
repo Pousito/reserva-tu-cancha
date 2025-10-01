@@ -141,12 +141,12 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 95px 25px 15px; /* Padding derecho para la calle */
+    padding: 25px 15px;
     position: relative;
     margin-bottom: 20px;
     max-width: none;
     margin-left: 0;
-    margin-right: 0;
+    margin-right: 85px; /* Espacio para la calle FUERA del contenedor */
     box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
 }
 
@@ -204,9 +204,9 @@ body {
 /* Calle genérica (Monte Perdido o Don Victor) */
 .calle-complejo {
     position: absolute;
-    right: 10px; /* Ahora dentro del padding del contenedor */
-    top: 25px;
-    bottom: 25px;
+    right: -80px; /* FUERA del contenedor verde */
+    top: 0;
+    bottom: 0;
     width: 70px;
     background: #4a4a4a;
     border-radius: 15px;
@@ -270,10 +270,10 @@ body {
     justify-content: flex-start;
     gap: 10px;
     margin-top: 20px;
-    margin-right: 0; /* Sin margin porque ahora usamos padding del contenedor */
+    margin-right: 0;
     max-width: 100%;
     padding-left: 0;
-    padding-right: 0;
+    padding-right: 5px; /* Pequeño padding para que no toque el borde */
 }
 
     .canchas-horizontales .cancha-card {
