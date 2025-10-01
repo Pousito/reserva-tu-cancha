@@ -72,11 +72,6 @@ class EmailService {
         auth: {
           user: emailConfig.user,
           pass: emailConfig.pass
-        },
-        // Opciones adicionales para mejor compatibilidad con Render
-        tls: {
-          rejectUnauthorized: false,
-          ciphers: 'SSLv3'
         }
       });
 
@@ -320,11 +315,6 @@ class EmailService {
       auth: {
         user: reservasConfig.user,
         pass: reservasConfig.pass
-      },
-      // Opciones adicionales para mejor compatibilidad con Render
-      tls: {
-        rejectUnauthorized: false,
-        ciphers: 'SSLv3'
       }
     });
   }
