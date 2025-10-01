@@ -31,7 +31,7 @@ services:
       - key: SMTP_RESERVAS_USER
         value: reservas@reservatuscanchas.cl
       - key: SMTP_RESERVAS_PASS
-        value: L660mKFmcDBk
+        value: Ec7sn9QgQUan
       # Transbank Webpay Plus - Configuración de integración (pruebas)
       - key: TRANSBANK_API_KEY
         value: 579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C
