@@ -354,7 +354,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
       secure: false,
       auth: {
         user: 'reservas@reservatuscanchas.cl',
-        pass: 'Ec7sn9QgQUan'  // Contraseña nueva generada hoy
+        pass: 'L660mKFmcDBk'  // Contraseña que funcionaba antes
       }
     });
     
@@ -387,7 +387,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
       secure: true,
       auth: {
         user: 'reservas@reservatuscanchas.cl',
-        pass: 'Ec7sn9QgQUan'  // Contraseña nueva generada hoy
+        pass: 'L660mKFmcDBk'  // Contraseña que funcionaba antes
       }
     });
     

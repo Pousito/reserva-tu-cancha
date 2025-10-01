@@ -295,7 +295,7 @@ class EmailService {
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
       port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 STARTTLS
       user: process.env.SMTP_RESERVAS_USER || 'reservas@reservatuscanchas.cl', // Email de reservas
-      pass: process.env.SMTP_RESERVAS_PASS || 'Ec7sn9QgQUan', // Contraseña NUEVA generada hoy
+      pass: process.env.SMTP_RESERVAS_PASS || 'L660mKFmcDBk', // Contraseña que funcionaba antes
       secure: false // STARTTLS (no SSL)
     };
 
