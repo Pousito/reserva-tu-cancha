@@ -489,74 +489,78 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueoData.id]);
         console.log('🗑️ Bloqueo temporal eliminado');
 
-        // Obtener información del complejo y cancha
-        const canchaInfo = await db.get(`
-            SELECT c.nombre as cancha_nombre, co.nombre as complejo_nombre 
-            FROM canchas c 
-            JOIN complejos co ON c.complejo_id = co.id 
-            WHERE c.id = $1
-        `, [bloqueoData.cancha_id]);
-
-        // Enviar emails usando el servicio de email real
-        let emailSent = false;
-        
-        const emailData = {
-            codigo_reserva: codigoReserva,
-            nombre_cliente: datosLimpios.nombre_cliente,
-            email_cliente: datosLimpios.email_cliente,
-            fecha: bloqueoData.fecha,
-            hora_inicio: bloqueoData.hora_inicio,
-            hora_fin: bloqueoData.hora_fin,
-            precio_total: datosLimpios.precio_total,
-            complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
-            cancha: canchaInfo?.cancha_nombre || 'Cancha'
-        };
-        
-        // Enviar emails reales usando el servicio
-        try {
-            console.log('📧 ENVIANDO EMAILS REALES...');
-            console.log('📧 Destino:', emailData.email_cliente);
-            console.log('📧 Código:', emailData.codigo_reserva);
-            
-            // Usar el servicio de email para enviar emails reales
-            const emailService = new EmailService();
-            const emailResults = await emailService.sendConfirmationEmails(emailData);
-            
-            console.log('📧 Resultados del envío de emails:', emailResults);
-            
-            // Marcar como enviado si al menos el email al cliente fue exitoso
-            emailSent = emailResults.cliente || emailResults.simulated;
-            
-            if (emailSent) {
-                console.log('✅ EMAILS ENVIADOS EXITOSAMENTE');
-                console.log('📋 Detalles del email enviado:');
-                console.log('   - Desde: reservas@reservatuscanchas.cl');
-                console.log('   - Para: ' + emailData.email_cliente);
-                console.log('   - Asunto: Confirmación de Reserva - ' + emailData.codigo_reserva);
-                console.log('   - Complejo: ' + emailData.complejo);
-                console.log('   - Cancha: ' + emailData.cancha);
-                console.log('   - Fecha: ' + emailData.fecha);
-                console.log('   - Horario: ' + emailData.hora_inicio + ' - ' + emailData.hora_fin);
-                console.log('   - Precio: $' + emailData.precio_total.toLocaleString());
-            } else {
-                console.log('⚠️ Algunos emails no se pudieron enviar');
-            }
-            
-            console.log('🎉 PROCESO COMPLETADO - EMAILS ENVIADOS');
-            
-        } catch (emailError) {
-            console.error('❌ Error enviando emails:', emailError.message);
-            emailSent = false;
-        }
-
-        // Responder con información del estado del email
+        // RESPONDER INMEDIATAMENTE antes de enviar emails para evitar timeout
         res.json({
             success: true,
             message: 'Pago simulado exitosamente',
             reserva_id: reservaId,
             codigo_reserva: codigoReserva,
-            email_sent: emailSent
+            email_sent: 'pending' // Los emails se enviarán en segundo plano
         });
+
+        // Enviar emails de forma asíncrona DESPUÉS de responder
+        // Esto evita que el timeout del servidor afecte la respuesta al cliente
+        (async () => {
+            try {
+                console.log('📧 Iniciando envío de emails en segundo plano...');
+                
+                // Obtener información del complejo y cancha
+                const canchaInfo = await db.get(`
+                    SELECT c.nombre as cancha_nombre, co.nombre as complejo_nombre 
+                    FROM canchas c 
+                    JOIN complejos co ON c.complejo_id = co.id 
+                    WHERE c.id = $1
+                `, [bloqueoData.cancha_id]);
+
+                const emailData = {
+                    codigo_reserva: codigoReserva,
+                    nombre_cliente: datosLimpios.nombre_cliente,
+                    email_cliente: datosLimpios.email_cliente,
+                    fecha: bloqueoData.fecha,
+                    hora_inicio: bloqueoData.hora_inicio,
+                    hora_fin: bloqueoData.hora_fin,
+                    precio_total: datosLimpios.precio_total,
+                    complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
+                    cancha: canchaInfo?.cancha_nombre || 'Cancha'
+                };
+                
+                console.log('📧 Datos del email:', {
+                    destino: emailData.email_cliente,
+                    codigo: emailData.codigo_reserva,
+                    complejo: emailData.complejo,
+                    cancha: emailData.cancha
+                });
+                
+                // Usar el servicio de email para enviar emails reales con timeout
+                const emailService = new EmailService();
+                
+                // Crear una promesa con timeout de 25 segundos
+                const emailPromise = emailService.sendConfirmationEmails(emailData);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Email timeout después de 25s')), 25000)
+                );
+                
+                const emailResults = await Promise.race([emailPromise, timeoutPromise]);
+                
+                console.log('📧 Resultados del envío de emails:', emailResults);
+                
+                if (emailResults.cliente || emailResults.simulated) {
+                    console.log('✅ EMAILS ENVIADOS EXITOSAMENTE');
+                    console.log('📋 Detalles:');
+                    console.log('   - Desde: reservas@reservatuscanchas.cl');
+                    console.log('   - Para:', emailData.email_cliente);
+                    console.log('   - Código:', emailData.codigo_reserva);
+                    console.log('   - Complejo:', emailData.complejo);
+                    console.log('   - Cancha:', emailData.cancha);
+                } else {
+                    console.log('⚠️ Algunos emails no se pudieron enviar');
+                }
+                
+            } catch (emailError) {
+                console.error('❌ Error enviando emails en segundo plano:', emailError.message);
+                // No afecta la reserva ya que fue creada exitosamente
+            }
+        })();
 
     } catch (error) {
         console.error('❌ Error simulando pago:', error);

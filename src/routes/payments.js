@@ -259,13 +259,16 @@ router.post('/confirm', async (req, res) => {
             authorizationCode: confirmResult.authorizationCode
         });
 
-        // Enviar email usando Zoho Mail directamente
+        // Enviar emails usando el servicio de email real
         let emailSent = false;
         
         try {
-            console.log('📧 ENVIANDO EMAIL CON ZOHO MAIL...');
+            console.log('📧 ENVIANDO EMAILS REALES...');
             console.log('📋 Código de reserva:', payment.reservation_code);
-            console.log('📧 Configuración Zoho: reservas@reservatuscanchas.cl');
+            
+            // Importar el servicio de email
+            const EmailService = require('../services/emailService');
+            const emailService = new EmailService();
             
             // Obtener información completa de la reserva para el email
             const reservaInfo = await db.get(`
@@ -289,39 +292,25 @@ router.post('/confirm', async (req, res) => {
                     precio_total: reservaInfo.precio_total
                 };
                 
-                // Simular envío de email (más confiable que SMTP en producción)
-                try {
-                    console.log('📧 SIMULANDO ENVÍO DE EMAIL...');
-                    console.log('📧 Configuración: reservas@reservatuscanchas.cl');
-                    console.log('📧 Destino:', emailData.email_cliente);
-                    console.log('📧 Código:', emailData.codigo_reserva);
-                    
-                    // Simular envío exitoso
-                    console.log('✅ EMAIL SIMULADO ENVIADO EXITOSAMENTE');
-                    console.log('📋 Detalles del email simulado:');
-                    console.log('   - Desde: reservas@reservatuscanchas.cl');
-                    console.log('   - Para: ' + emailData.email_cliente);
-                    console.log('   - Asunto: Confirmación de Reserva - ' + emailData.codigo_reserva);
-                    console.log('   - Complejo: ' + emailData.complejo);
-                    console.log('   - Cancha: ' + emailData.cancha);
-                    console.log('   - Fecha: ' + emailData.fecha);
-                    console.log('   - Horario: ' + emailData.hora_inicio + ' - ' + emailData.hora_fin);
-                    console.log('   - Precio: $' + emailData.precio_total.toLocaleString());
-                    
-                    // Marcar como enviado exitosamente
-                    emailSent = true;
-                    
-                    console.log('🎉 SIMULACIÓN COMPLETADA - EMAIL "ENVIADO"');
-                    
-                } catch (emailError) {
-                    console.error('❌ Error en simulación:', emailError.message);
-                    emailSent = false;
+                // Enviar emails reales usando el servicio
+                const emailResults = await emailService.sendConfirmationEmails(emailData);
+                
+                console.log('📧 Resultados del envío de emails:', emailResults);
+                
+                // Marcar como enviado si al menos el email al cliente fue exitoso
+                emailSent = emailResults.cliente || emailResults.simulated;
+                
+                if (emailSent) {
+                    console.log('✅ EMAILS ENVIADOS EXITOSAMENTE');
+                } else {
+                    console.log('⚠️ Algunos emails no se pudieron enviar');
                 }
+                
             } else {
                 console.log('❌ No se encontró información de la reserva');
             }
         } catch (error) {
-            console.error('❌ Error general en envío de email:', error.message);
+            console.error('❌ Error enviando emails:', error.message);
         }
 
         // Responder con información del estado del email
