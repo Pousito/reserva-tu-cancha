@@ -3,6 +3,11 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const authController = require('../controllers/authController');
 
+// Función para establecer la instancia de la base de datos
+function setDatabase(databaseInstance) {
+    adminController.setDatabase(databaseInstance);
+}
+
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authController.authenticateAdmin);
 
@@ -18,4 +23,4 @@ router.post('/complejos', authController.requireSuperAdmin, adminController.crea
 router.put('/complejos/:id', authController.requireSuperAdmin, adminController.updateComplejo);
 router.delete('/complejos/:id', authController.requireSuperAdmin, adminController.deleteComplejo);
 
-module.exports = router;
+module.exports = { router, setDatabase };

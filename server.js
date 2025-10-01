@@ -1453,7 +1453,10 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, requ
       totalCanchas: totalCanchas.count,
       totalComplejos: totalComplejos.count,
       ingresosTotales: parseInt(ingresosTotales.total || 0),
-      reservasPorDia: reservasPorDia,
+      reservasPorDia: reservasPorDia.map(r => ({
+        dia: r.dia,  // Ya viene como string YYYY-MM-DD sin zona horaria
+        cantidad: parseInt(r.cantidad)
+      })),
       userRole: userRole,
       complexFilter: complexFilter
     };
