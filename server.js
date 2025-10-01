@@ -510,29 +510,34 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             cancha: canchaInfo?.cancha_nombre || 'Cancha'
         };
 
-        // Enviar emails con timeout de 5 segundos
+        // Enviar emails con timeout de 10 segundos
         let emailSent = false;
         try {
             console.log('📧 Enviando emails...');
+            console.log('📧 Destinatario:', emailData.email_cliente);
             const emailService = new EmailService();
             
-            // Timeout de solo 5 segundos para no retrasar mucho la respuesta
+            // Timeout de 10 segundos
             const emailPromise = emailService.sendConfirmationEmails(emailData);
             const timeoutPromise = new Promise((resolve) => 
-                setTimeout(() => resolve({ timeout: true }), 5000)
+                setTimeout(() => resolve({ timeout: true }), 10000)
             );
             
             const emailResults = await Promise.race([emailPromise, timeoutPromise]);
             
             if (emailResults.timeout) {
-                console.log('⚠️ Timeout de emails - continuando en segundo plano');
+                console.log('⚠️ Timeout de emails después de 10s');
                 emailSent = 'timeout';
             } else {
                 emailSent = emailResults.cliente || emailResults.simulated || false;
                 console.log('📧 Resultado emails:', emailSent ? '✅ Enviados' : '❌ Error');
+                if (!emailSent && emailResults.error) {
+                    console.error('📧 Error detallado:', emailResults.error);
+                }
             }
         } catch (emailError) {
             console.error('❌ Error enviando emails:', emailError.message);
+            console.error('📧 Stack:', emailError.stack);
             emailSent = false;
         }
 
