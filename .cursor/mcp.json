@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "reserva-tu-cancha-docs": {
+      "command": "node",
+      "args": [".cursor/mcp-servers/docs-server.js"],
+      "env": {
+        "PROJECT_ROOT": "/Users/pousito/Desktop/Proyecto Reserva Tu Cancha/Programacion/ReservaTuCancha"
+      }
+    },
+    "render-monitor": {
+      "command": "node",
+      "args": [".cursor/mcp-servers/render-monitor.js"],
+      "env": {
+        "RENDER_API_KEY": "${RENDER_API_KEY}",
+        "RENDER_SERVICE_ID": "${RENDER_SERVICE_ID}"
+      }
+    },
+    "neon-db-manager": {
+      "command": "node",
+      "args": [".cursor/mcp-servers/neon-manager.js"],
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}",
+        "PROJECT_ROOT": "/Users/pousito/Desktop/Proyecto Reserva Tu Cancha/Programacion/ReservaTuCancha"
+      }
+    },
+    "deployment-assistant": {
+      "command": "node",
+      "args": [".cursor/mcp-servers/deployment-assistant.js"],
+      "env": {
+        "PROJECT_ROOT": "/Users/pousito/Desktop/Proyecto Reserva Tu Cancha/Programacion/ReservaTuCancha",
+        "GIT_BRANCH": "main"
+      }
+    }
+  }
+}

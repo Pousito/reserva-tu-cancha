@@ -152,14 +152,14 @@
     <!-- Disponibilidad Section -->
     <section id="disponibilidad" class="py-5 bg-light" style="display: none;">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-10 mx-auto">
+            <div class="row justify-content-center">
+                <div class="col-12">
                     <h2 class="text-center mb-5">Disponibilidad de Canchas</h2>
                     
-                    <!-- Filtros de fecha y hora -->
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <div class="date-time-selector">
+                    <!-- Filtros de fecha y hora - Estructura mejorada y simétrica -->
+                    <div class="row mb-5 justify-content-center">
+                        <div class="col-xl-5 col-lg-5 col-md-6 mb-3">
+                            <div class="date-time-selector h-100">
                                 <label for="fechaSelect" class="form-label">
                                     <i class="fas fa-calendar-alt me-2"></i>Fecha de Reserva
                                 </label>
@@ -177,8 +177,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="date-time-selector">
+                        <div class="col-xl-5 col-lg-5 col-md-6 mb-3">
+                            <div class="date-time-selector h-100">
                                 <label for="horaSelect" class="form-label">
                                     <i class="fas fa-clock me-2"></i>Hora de Reserva
                                 </label>
@@ -195,9 +195,15 @@
                         </div>
                     </div>
 
-                    <!-- Mapa de canchas -->
-                    <div class="canchas-grid" id="canchasGrid">
-                        <!-- Las canchas se cargarán dinámicamente aquí -->
+                    <!-- Mapa de canchas - Estructura centrada y simétrica -->
+                    <div class="row justify-content-center">
+                        <div class="col-12">
+                            <div class="canchas-container">
+                                <div class="canchas-grid-expanded" id="canchasGrid">
+                                    <!-- Las canchas se cargarán dinámicamente aquí -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

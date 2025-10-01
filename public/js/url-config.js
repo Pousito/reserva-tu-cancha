@@ -6,17 +6,25 @@
 // Detectar el entorno automáticamente
 const isDevelopment = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' ||
-                     window.location.hostname === '';
+                     window.location.hostname === '' ||
+                     window.location.hostname.startsWith('192.168.') ||
+                     window.location.hostname.startsWith('10.') ||
+                     window.location.hostname.startsWith('172.');
+
+// Obtener el hostname actual para desarrollo
+const currentHost = window.location.hostname;
+const currentPort = window.location.port || '3000';
+const currentBase = `${window.location.protocol}//${currentHost}:${currentPort}`;
 
 // Configuración de URLs
 const URL_CONFIG = {
   development: {
-    base: 'http://localhost:3000',
-    api: 'http://localhost:3000/api',
-    payment: 'http://localhost:3000/payment.html',
-    success: 'http://localhost:3000/?payment=success',
-    admin: 'http://localhost:3000/admin-login.html',
-    reports: 'http://localhost:3000/admin-reports.html'
+    base: currentBase,
+    api: `${currentBase}/api`,
+    payment: `${currentBase}/payment.html`,
+    success: `${currentBase}/?payment=success`,
+    admin: `${currentBase}/admin-login.html`,
+    reports: `${currentBase}/admin-reports.html`
   },
   
   production: {

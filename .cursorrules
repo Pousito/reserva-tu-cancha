@@ -1,0 +1,75 @@
+# Reglas del Proyecto Reserva Tu Cancha
+
+## Contexto del Proyecto
+Este es un sistema de reservas de canchas deportivas que opera en dos entornos:
+- **Desarrollo**: Base de datos PostgreSQL local con datos ficticios
+- **Producción**: Base de datos PostgreSQL en Neon con datos reales
+- **Hosting**: Render con auto-deploy habilitado
+- **Configuración**: PostgreSQL unificado para ambos entornos
+
+## Reglas de Desarrollo
+
+### 1. Estructura de Archivos
+- Mantener la estructura actual: `/public` para frontend, `/src` para backend organizado
+- Scripts de utilidad en `/scripts` organizados por categoría
+- Documentación en `/docs` para cambios importantes
+- Backups automáticos en `/backups`
+
+### 2. Base de Datos
+- **PostgreSQL unificado** para desarrollo y producción
+- **Desarrollo**: PostgreSQL local (`reserva_tu_cancha_local`)
+- **Producción**: PostgreSQL en Neon (datos reales)
+- **NUNCA** modificar datos de producción directamente
+- Usar scripts de migración para cambios de esquema
+- Mantener separación clara entre datos de desarrollo y producción
+- Siempre crear backups antes de cambios importantes
+
+### 3. Deployment
+- El proyecto tiene auto-deploy en Render
+- Hacer cambios incrementales y pequeños
+- Verificar que el deployment se complete antes de continuar
+- Usar scripts de verificación pre-deploy
+
+### 4. Código y Estilo
+- Usar español para comentarios y documentación
+- Mantener consistencia con el estilo actual del proyecto
+- Preferir cambios incrementales sobre refactorizaciones grandes
+- Documentar cambios importantes en `/docs`
+
+### 5. Seguridad
+- Variables sensibles solo en variables de entorno
+- Validar todas las entradas del usuario
+- Usar middleware de seguridad existente
+- No hardcodear credenciales
+
+### 6. Testing
+- Usar los scripts de testing existentes antes de deploy
+- Verificar funcionalidad en localhost antes de push
+- Mantener datos de prueba separados de producción
+
+### 7. Comunicación
+- Responder siempre en español
+- Explicar cambios de manera clara
+- Confirmar antes de hacer cambios importantes
+- Considerar problemas potenciales de localhost vs producción
+
+## Tecnologías Principales
+- Node.js + Express (Backend)
+- PostgreSQL (Desarrollo y Producción unificado)
+- HTML/CSS/JavaScript vanilla (Frontend)
+- Transbank SDK (Pagos)
+- Nodemailer (Emails)
+- Render (Hosting)
+- Neon (Base de datos producción)
+
+## URLs Importantes
+- Producción: https://www.reservatuscanchas.cl
+- Desarrollo: http://localhost:3000
+- Render Dashboard: Para monitorear deployments
+- Neon Dashboard: Para gestión de base de datos
+
+## Scripts Importantes
+- `npm run deploy-safe`: Deploy con verificaciones
+- `npm run test-pre-deploy`: Tests antes de deploy
+- `npm run backup-create`: Crear backup de BD
+- `npm run check-prod-db`: Verificar estado de BD producción

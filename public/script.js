@@ -1209,13 +1209,74 @@ async function preRellenarDesdeURLMejorado() {
     console.log('✅ === PRE-RELLENADO MEJORADO COMPLETADO ===');
 }
 
+// Función de test de conectividad
+async function testConnectivity() {
+    console.log('🔍 === INICIANDO TEST DE CONECTIVIDAD ===');
+    
+    try {
+        console.log('🔍 Probando conectividad básica...');
+        const response = await fetch(`${API_BASE}/ciudades`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Test de conectividad exitoso:', data);
+            return true;
+        } else {
+            console.error('❌ Test de conectividad falló - HTTP:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Test de conectividad falló:', error);
+        console.error('🔍 Detalles del error:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        // Mostrar notificación al usuario
+        mostrarNotificacion(`Error de conexión: ${error.message}`, 'warning');
+        return false;
+    }
+}
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== INICIALIZACIÓN DE LA APLICACIÓN ===');
     console.log('🚀 VERSIÓN CON DEBUGGING MEJORADO Y FIX ENCODING - ' + new Date().toISOString());
     console.log('DOM cargado, inicializando aplicación');
     console.log('🌍 Hostname:', window.location.hostname);
+    
+    // Verificar configuración de URLs
+    console.log('🔧 Verificando configuración de URLs...');
+    console.log('🔗 URL_CONFIG disponible:', typeof window.URL_CONFIG !== 'undefined');
     console.log('🔗 API_BASE configurado como:', API_BASE);
+    console.log('🔗 Tipo de API_BASE:', typeof API_BASE);
+    
+    if (!API_BASE || API_BASE === 'undefined') {
+        console.error('❌ CRÍTICO: API_BASE no está configurado correctamente!');
+        console.error('🔧 Intentando recargar configuración...');
+        
+        // Intentar recargar la configuración
+        if (typeof window.URL_CONFIG !== 'undefined') {
+            window.API_BASE = window.URL_CONFIG.API_URL;
+            console.log('🔧 API_BASE reconfigurado como:', window.API_BASE);
+        } else {
+            console.error('❌ URL_CONFIG tampoco está disponible!');
+            mostrarNotificacion('Error crítico: Configuración de URLs no disponible', 'danger');
+            return;
+        }
+    }
+    
+    // Test de conectividad automático
+    await testConnectivity();
     
     // Generar session ID único para esta sesión (máximo 6 caracteres)
     sessionId = Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -1620,10 +1681,31 @@ async function verificarTodasCanchasOcupadas(fecha, hora) {
 async function verificarDisponibilidadCompleta(complejoId, fecha) {
     try {
         console.log('🚀 Verificando disponibilidad completa para complejo:', complejoId, 'fecha:', fecha);
+        console.log('🚀 API_BASE:', API_BASE);
         
-        const response = await fetch(`${API_BASE}/disponibilidad-completa/${complejoId}/${fecha}`);
+        // Verificar que API_BASE esté definido
+        if (!API_BASE) {
+            console.error('❌ API_BASE no está definido en verificarDisponibilidadCompleta!');
+            throw new Error('API_BASE no está definido');
+        }
+        
+        const url = `${API_BASE}/disponibilidad-completa/${complejoId}/${fecha}`;
+        console.log('🚀 URL de la petición:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        
+        console.log('🚀 Response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
         }
         
         const disponibilidad = await response.json();
@@ -2765,12 +2847,34 @@ async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
     console.log('🏟️ Renderizar visual:', renderizarVisual);
     console.log('🏟️ API_BASE:', API_BASE);
     
+    // Verificar que API_BASE esté definido
+    if (!API_BASE) {
+        console.error('❌ API_BASE no está definido!');
+        mostrarNotificacion('Error de configuración: API_BASE no está definido', 'danger');
+        return;
+    }
+    
     try {
         const url = `${API_BASE}/canchas/${complejoId}/${tipo}`;
         console.log('🏟️ URL de la petición:', url);
         
-        const response = await fetch(url);
+        // Agregar headers y configuración de fetch más robusta
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        
         console.log('🏟️ Response status:', response.status);
+        console.log('🏟️ Response headers:', [...response.headers.entries()]);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
+        }
         
         canchas = await response.json();
         console.log('🏟️ Canchas recibidas:', canchas);
@@ -3393,6 +3497,9 @@ async function renderizarCanchasConDisponibilidad() {
                 <div class="estacionamiento-icon">
                     E
                 </div>
+                <div class="estacionamiento-info-icon" onclick="mostrarModalEstacionamiento()">
+                    <i class="fas fa-info-circle"></i>
+                </div>
             `;
             canchasHorizontales.appendChild(estacionamientos);
         }
@@ -3682,6 +3789,61 @@ function limpiarFormularioReserva() {
     }
     if (window.emailUsuarioHaInteractuado !== undefined) {
         window.emailUsuarioHaInteractuado = false;
+    }
+}
+
+// Función para mostrar el modal de información del estacionamiento
+function mostrarModalEstacionamiento() {
+    // Crear el modal si no existe
+    let modal = document.getElementById('estacionamientoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'estacionamientoModal';
+        modal.className = 'estacionamiento-modal';
+        modal.innerHTML = `
+            <div class="estacionamiento-modal-content">
+                <div class="estacionamiento-modal-header">
+                    <h3 class="estacionamiento-modal-title">
+                        <i class="fas fa-parking"></i>
+                        Estacionamiento
+                    </h3>
+                    <span class="estacionamiento-modal-close" onclick="cerrarModalEstacionamiento()">&times;</span>
+                </div>
+                <div class="estacionamiento-modal-body">
+                    <p>El <span class="highlight">Complejo Fundación Gunnen</span> cuenta con un amplio estacionamiento para tu comodidad.</p>
+                    <p>Disponemos de <span class="highlight">aproximadamente 30 espacios</span> para vehículos menores, garantizando que encuentres un lugar para estacionar tu auto o moto.</p>
+                    <p><i class="fas fa-shield-alt" style="color: #28a745; margin-right: 8px;"></i>Estacionamiento <strong>gratuito</strong> y <strong>seguro</strong> para todos nuestros clientes.</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Mostrar el modal
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+    
+    // Cerrar modal al hacer click fuera del contenido
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            cerrarModalEstacionamiento();
+        }
+    });
+    
+    // Cerrar modal con tecla Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            cerrarModalEstacionamiento();
+        }
+    });
+}
+
+// Función para cerrar el modal de información del estacionamiento
+function cerrarModalEstacionamiento() {
+    const modal = document.getElementById('estacionamientoModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restaurar scroll del body
     }
 }
 

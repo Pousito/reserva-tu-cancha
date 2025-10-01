@@ -39,8 +39,33 @@ function generarCodigoReserva() {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Middleware - CORS configurado para desarrollo y producción
+const corsOptions = {
+  origin: function (origin, callback) {
+    // En desarrollo, permitir cualquier origen
+    if (process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+      return;
+    }
+    
+    // En producción, verificar orígenes permitidos
+    const allowedOrigins = [
+      'https://www.reservatuscanchas.cl',
+      'https://reservatuscanchas.cl'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+};
+
+app.use(cors(corsOptions));
 
 // Headers de seguridad para Safari y Transbank
 app.use((req, res, next) => {
@@ -48,6 +73,12 @@ app.use((req, res, next) => {
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // Headers adicionales para compatibilidad móvil
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   

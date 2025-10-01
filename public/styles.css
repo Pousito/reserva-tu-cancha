@@ -94,6 +94,50 @@ body {
     position: relative;
 }
 
+/* Contenedor principal de canchas - Estructura mejorada */
+.canchas-container {
+    max-width: 1000px; /* Reducir para centrar mejor */
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Hacer el contenedor más ancho en móviles */
+@media (max-width: 991px) {
+    .canchas-container {
+        max-width: 95vw; /* Usar 95% del ancho de la pantalla */
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 767px) {
+    .canchas-container {
+        max-width: 98vw; /* Usar 98% del ancho de la pantalla */
+        padding: 0 5px;
+    }
+}
+
+@media (max-width: 575px) {
+    .canchas-container {
+        max-width: 100vw; /* Usar todo el ancho de la pantalla */
+        padding: 0 2px;
+    }
+}
+
+/* Grid de canchas expandido - Para pantallas grandes */
+.canchas-grid-expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+    margin-top: 50px;
+    position: relative;
+    width: 100%;
+    padding: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
 /* Contenedor del galp�n para MagnaSports */
 .galpon-container {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -106,6 +150,91 @@ body {
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Contenedores de complejos - Estructura mejorada y simétrica */
+.canchas-grid-expanded .galpon-container,
+.canchas-grid-expanded .complejo-abierto-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px;
+    border-radius: 25px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    border: 4px solid;
+    position: relative;
+}
+
+.canchas-grid-expanded .galpon-container {
+    border-color: #6c757d;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.canchas-grid-expanded .complejo-abierto-container {
+    border-color: #4caf50;
+    box-shadow: 0 20px 50px rgba(76, 175, 80, 0.3);
+}
+
+/* Mejoras para canchas en layout expandido */
+.canchas-grid-expanded .cancha {
+    transform: scale(1.3);
+    transition: transform 0.3s ease;
+}
+
+.canchas-grid-expanded .cancha:hover {
+    transform: scale(1.35);
+}
+
+/* Ajustes para elementos dentro del galpón en layout expandido */
+.canchas-grid-expanded .galpon-container .cancha {
+    margin-bottom: 35px;
+}
+
+.canchas-grid-expanded .galpon-container .cancha:last-child {
+    margin-bottom: 0;
+}
+
+/* Canchas más proporcionadas en layout expandido */
+.canchas-grid-expanded .canchas-horizontales .cancha-card {
+    flex: 0 0 220px !important;
+    width: 220px !important;
+    max-width: 220px !important; /* Restricción estricta */
+    min-height: 250px !important;
+    padding: 20px 12px !important;
+    font-size: 1rem !important;
+    border: 3px solid #6c757d !important;
+    border-radius: 15px !important;
+    overflow: visible !important; /* Permitir que se vean completos */
+}
+
+.canchas-grid-expanded .canchas-horizontales .cancha-card h5 {
+    font-size: 1.4rem !important;
+    margin-bottom: 15px !important;
+}
+
+.canchas-grid-expanded .canchas-horizontales .cancha-card .cancha-icon {
+    font-size: 3.5rem !important;
+    margin-bottom: 20px !important;
+}
+
+.canchas-grid-expanded .canchas-horizontales .cancha-card p {
+    font-size: 1rem !important;
+    margin-bottom: 10px !important;
+}
+
+.canchas-grid-expanded .canchas-horizontales .cancha-card .text-info.small {
+    font-size: 0.95rem !important;
+    line-height: 1.4 !important;
+}
+
+.canchas-grid-expanded .canchas-horizontales .cancha-card .estado-disponibilidad {
+    margin-top: 20px !important;
+}
+
+.canchas-grid-expanded .canchas-horizontales .cancha-card .estado-disponibilidad .badge {
+    font-size: 1rem !important;
+    padding: 8px 12px !important;
 }
 
 .galpon-container::before {
@@ -141,19 +270,21 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 30px; /* Padding balanceado por defecto */
+    padding: 25px 30px 25px 30px; /* Padding balanceado - más espacio a la derecha para la calle */
     position: relative;
     margin-bottom: 20px;
     max-width: 900px; /* Centrado en pantalla completa */
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+    overflow: visible; /* Permitir que la calle se vea fuera del contenedor */
+    box-sizing: border-box; /* Incluir padding y border en el cálculo del ancho */
 }
 
 /* Ajustes para pantallas medianas/divididas */
 @media (max-width: 1200px) {
     .complejo-abierto-container {
-        padding: 25px 50px 25px 5px;
+        padding: 25px 50px 25px 25px; /* Padding balanceado para mantener elementos dentro */
         max-width: none;
         margin-left: 0;
         margin-right: 85px; /* Espacio para la calle */
@@ -177,12 +308,14 @@ body {
 
 /* Estacionamientos */
 .estacionamientos {
-    flex: 0 0 95px;
-    width: 95px;
+    flex: 0 0 98px; /* 30% más ancho: 75px * 1.3 = 97.5px ≈ 98px */
+    width: 98px;
+    min-height: 180px; /* Altura similar a las canchas reducidas */
+    max-width: 98px; /* Restricción estricta */
     background: linear-gradient(135deg, #424242 0%, #616161 100%);
     border: 3px solid #ffc107;
     border-radius: 10px;
-    padding: 10px 5px;
+    padding: 15px 4px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -190,6 +323,35 @@ body {
     align-items: center;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
+    z-index: 2; /* Asegurar que esté por encima de la calle */
+    cursor: pointer; /* Hacer clickeable */
+    transition: all 0.3s ease; /* Transición suave */
+}
+
+.estacionamientos:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: #ffeb3b;
+}
+
+/* Ajustar estacionamiento para móvil */
+@media (max-width: 768px) {
+    .estacionamientos {
+        flex: 0 0 72px; /* 30% más ancho: 55px * 1.3 = 71.5px ≈ 72px */
+        width: 72px;
+        min-height: 140px; /* Altura similar a las canchas en móvil */
+        max-width: 72px;
+        padding: 8px 2px; /* Reducir padding más */
+    }
+    
+    .estacionamiento-icon {
+        font-size: 1.8rem; /* Reducir tamaño del icono más */
+    }
+    
+    .estacionamiento-info-icon {
+        font-size: 1rem; /* Tamaño apropiado para móvil */
+        margin-top: 6px;
+    }
 }
 
 .estacionamiento-icon {
@@ -201,23 +363,155 @@ body {
     font-family: 'Arial Black', Arial, sans-serif;
 }
 
-.estacionamientos::after {
-    content: 'Estacionamiento';
-    color: white;
-    font-size: 0.7rem;
+/* Eliminar el texto "Estacionamiento" - ya no se muestra */
+
+/* Ícono de información para estacionamiento */
+.estacionamiento-info-icon {
+    color: #ffc107;
+    font-size: 1.2rem;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.estacionamiento-info-icon:hover {
+    color: #ffeb3b;
+    transform: scale(1.2);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+}
+
+/* Modal de información del estacionamiento */
+.estacionamiento-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    animation: fadeIn 0.3s ease;
+}
+
+.estacionamiento-modal-content {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    margin: 15% auto;
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: slideInUp 0.4s ease;
+    border: 3px solid #ffc107;
+}
+
+.estacionamiento-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.estacionamiento-modal-title {
+    color: #ffc107;
+    font-size: 1.4rem;
     font-weight: bold;
-    margin-top: 4px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.estacionamiento-modal-title i {
+    margin-right: 10px;
+    font-size: 1.6rem;
+}
+
+.estacionamiento-modal-close {
+    color: #6c757d;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    padding: 5px;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.estacionamiento-modal-close:hover {
+    color: #dc3545;
+    background-color: #f8f9fa;
+    transform: scale(1.1);
+}
+
+.estacionamiento-modal-body {
+    color: #495057;
+    font-size: 1rem;
+    line-height: 1.6;
     text-align: center;
-    line-height: 1.2;
+}
+
+.estacionamiento-modal-body p {
+    margin-bottom: 15px;
+}
+
+.estacionamiento-modal-body .highlight {
+    color: #ffc107;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+/* Animaciones para el modal */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive para el modal */
+@media (max-width: 768px) {
+    .estacionamiento-modal-content {
+        margin: 20% auto;
+        padding: 25px;
+        width: 95%;
+        max-width: 350px;
+    }
+    
+    .estacionamiento-modal-title {
+        font-size: 1.2rem;
+    }
+    
+    .estacionamiento-modal-body {
+        font-size: 0.95rem;
+    }
 }
 
 /* Calle genérica (Monte Perdido o Don Victor) */
 .calle-complejo {
     position: absolute;
-    right: -80px; /* FUERA del contenedor verde */
+    right: -120px; /* FUERA del contenedor verde - proporcionada */
     top: 0;
     bottom: 0;
-    width: 70px;
+    width: 120px; /* Ancho proporcionado y equilibrado */
     background: #4a4a4a;
     border-radius: 15px;
     display: flex;
@@ -231,6 +525,7 @@ body {
     transform: rotate(180deg);
     box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
     border: 3px solid #333;
+    z-index: 10; /* Asegurar que esté por debajo del estacionamiento */
 }
 
 .calle-complejo::before {
@@ -245,6 +540,12 @@ body {
 .calle-complejo[data-calle="DON VICTOR"]::before {
     content: 'CALLE DON VICTOR';
 }
+
+/* La calle ya tiene dimensiones consistentes en la definición base */
+
+/* Los ajustes responsive complejos ya no son necesarios - el escalado proporcional se encarga */
+
+
 
 /* Backward compatibility - Mantener clase antigua para MagnaSports */
 .calle-monte-perdido {
@@ -277,19 +578,31 @@ body {
 /* Contenedor horizontal para las canchas de MagnaSports y Fundación Gunnen */
 .canchas-horizontales {
     display: flex;
-    justify-content: center; /* Centrado por defecto (pantalla completa) */
-    gap: 6px;
+    justify-content: center; /* Centrar siempre para mantener elementos dentro del contenedor */
+    align-items: center;
+    flex-wrap: nowrap; /* Mantener en línea horizontal */
+    gap: 12px;
     margin-top: 20px;
     margin-right: 0;
-    max-width: 100%;
-    padding-left: 0;
-    padding-right: 0;
+    width: 100%; /* Usar todo el ancho disponible del contenedor verde */
+    padding: 0 20px; /* Padding uniforme en ambos lados */
+    position: relative;
+    overflow: visible; /* Permitir que se vean completos */
+    z-index: 1; /* Asegurar contexto de apilamiento correcto */
+    box-sizing: border-box; /* Incluir padding en el cálculo del ancho */
 }
 
-/* Para pantallas medianas/divididas - alinear a la izquierda */
+/* Gap proporcionado en layout expandido */
+.canchas-grid-expanded .canchas-horizontales {
+    gap: 25px !important;
+    margin-top: 30px !important;
+}
+
+/* Mantener centrado en todas las pantallas para evitar que el estacionamiento se salga */
 @media (max-width: 1200px) {
     .canchas-horizontales {
-        justify-content: flex-start;
+        justify-content: center; /* Mantener centrado para que el estacionamiento no se salga */
+        padding: 0 15px; /* Reducir padding en pantallas medianas */
     }
 }
 
@@ -297,7 +610,43 @@ body {
 @media (min-width: 1201px) {
     .canchas-horizontales {
         justify-content: center;
+        padding: 0 25px; /* Más padding en pantallas grandes */
     }
+    
+    /* Asegurar alineación perfecta en pantallas grandes */
+    .canchas-grid-expanded {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .canchas-grid-expanded .galpon-container,
+    .canchas-grid-expanded .complejo-abierto-container {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Tamaños aún más grandes para pantallas muy grandes */
+    .canchas-grid-expanded .canchas-horizontales .cancha-card {
+        flex: 0 0 320px !important;
+        width: 320px !important;
+        min-height: 360px !important;
+        padding: 30px 20px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card h5 {
+        font-size: 1.6rem !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .cancha-icon {
+        font-size: 4rem !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales {
+        gap: 50px !important;
+    }
+    
+    /* La calle ya tiene dimensiones correctas en la definición base */
 }
 
     .canchas-horizontales .cancha-card {
@@ -386,7 +735,7 @@ body {
 /* Estilos para validaci�n de RUT */
 .form-control.is-valid {
     border-color: #198754;
-    background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 1.89-1.89-1.89-1.89-.94-.94L2.3 1.89l.94.94L5.13 4.72l-1.89 1.89-.94.94z'/%3e%3c/svg%3e\");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 1.89-1.89-1.89-1.89-.94-.94L2.3 1.89l.94.94L5.13 4.72l-1.89 1.89-.94.94z'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
@@ -394,7 +743,7 @@ body {
 
 .form-control.is-invalid {
     border-color: #dc3545;
-    background-image: url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4 1.4-1.4'/%3e%3c/svg%3e\");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4 1.4-1.4'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
@@ -424,11 +773,22 @@ body {
     margin-top: 30px;
 }
 
+/* Para otros complejos en layout expandido */
+.complejo-otro .canchas-grid-expanded {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+    width: 100%;
+    padding: 0;
+}
+
 /* RESPONSIVE PARA MAGNASPORTS - MANTENER VISTA EN PLANTA EN M�VIL */
 @media (max-width: 768px) {
-    .galpon-container {
-        margin: 20px 10px;
-        padding: 20px 15px;
+    .galpon-container,
+    .complejo-abierto-container {
+        margin: 20px 5px; /* Reducir margen para más espacio */
+        padding: 20px 10px 20px 15px; /* Más padding a la izquierda para centrar mejor */
         max-width: none;
         border-radius: 10px;
         position: relative;
@@ -438,7 +798,8 @@ body {
         visibility: visible !important;
     }
     
-    .galpon-container::before {
+    .galpon-container::before,
+    .complejo-abierto-container::before {
         font-size: 0.7rem;
         padding: 3px 10px;
         top: -12px;
@@ -469,26 +830,48 @@ body {
         transform: rotate(180deg);
     }
     
+    /* Calle para complejo Fundación Gunnen en móvil */
+    .calle-complejo {
+        position: absolute;
+        right: -60px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 50px;
+        height: 100%;
+        border-radius: 8px;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: translateY(-50%) rotate(180deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        padding: 8px 4px;
+        z-index: 5;
+    }
+    
     /* Canchas horizontales - MANTENER ORDEN HORIZONTAL EN M�VIL */
     .canchas-horizontales {
         flex-direction: row !important; /* FORZAR DIRECCI�N HORIZONTAL */
-        gap: 10px;
+        gap: 6px; /* Reducir gap aún más para que quepa todo */
         margin: 20px 0 0 0;
         max-width: none;
         margin-right: 70px !important; /* Espacio para la calle */
         justify-content: center;
         align-items: stretch;
         flex-wrap: nowrap !important; /* EVITAR QUE SE ENVUELVAN */
-        padding-left: 45px; /* Aumentar padding para centrar mejor las canchas */
+        padding: 0 5px; /* Padding mínimo para móvil */
+        box-sizing: border-box; /* Incluir padding en el cálculo */
+        width: calc(100% - 70px); /* Ajustar ancho para dejar espacio a la calle */
     }
     
     .canchas-horizontales .cancha-card {
-        flex: 0 0 180px;
-        width: 180px;
-        min-height: 180px;
-        padding: 15px 8px;
+        flex: 0 0 140px; /* Reducir tamaño aún más para que quepa todo */
+        width: 140px;
+        min-height: 140px;
+        padding: 10px 4px; /* Reducir padding más */
         margin: 0;
-        font-size: 0.9rem;
+        font-size: 0.8rem; /* Reducir tamaño de fuente más */
     }
     
     .canchas-horizontales .cancha-card h5 {
@@ -809,6 +1192,28 @@ section {
         grid-template-columns: 1fr;
     }
     
+    /* Layout expandido en móvil */
+    .canchas-grid-expanded {
+        padding: 0 15px;
+        gap: 25px;
+        margin-top: 30px;
+    }
+    
+    .canchas-grid-expanded .galpon-container {
+        max-width: 100%;
+        padding: 25px;
+        margin: 0 10px;
+    }
+    
+    .canchas-grid-expanded .cancha {
+        transform: none;
+    }
+    
+    .complejo-otro .canchas-grid-expanded {
+        grid-template-columns: 1fr;
+        padding: 0 15px;
+    }
+    
     .btn {
         padding: 10px 20px;
         font-size: 0.9rem;
@@ -919,16 +1324,20 @@ html {
 
 /* ARCHIVO CSS COMPLETAMENTE RECREADO - MEJORAS DE MAGNASPORTS IMPLEMENTADAS */
 
-/* Selectores de fecha y hora modernos */
+/* Selectores de fecha y hora modernos - Estructura mejorada */
 .date-time-selector {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-    border: 2px solid transparent;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e9ecef;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .date-time-selector::before {
@@ -1108,15 +1517,15 @@ html {
     }
 }
 
-/* Responsive para los selectores */
-@media (max-width: 768px) {
+/* Responsive mejorado para los selectores - MANTENER ESTRUCTURA */
+@media (max-width: 991px) {
     .date-time-selector {
-        padding: 15px;
+        padding: 20px;
         margin-bottom: 15px;
     }
     
     .date-time-selector .form-label {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
     
     .date-time-selector .modern-input {
@@ -1136,3 +1545,364 @@ html {
         font-size: 1rem;
     }
 }
+
+@media (max-width: 767px) {
+    .date-time-selector {
+        padding: 18px;
+        margin-bottom: 15px;
+    }
+    
+    .date-time-selector .form-label {
+        font-size: 0.9rem;
+    }
+    
+    .date-time-selector .modern-input {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        min-height: 42px;
+    }
+    
+    .date-time-selector input[type="date"] {
+        padding: 10px 12px !important;
+        font-size: 0.95rem !important;
+        min-height: 42px;
+    }
+    
+    .date-time-selector .input-group-text {
+        padding: 8px 10px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 575px) {
+    .date-time-selector {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .date-time-selector .form-label {
+        font-size: 0.85rem;
+    }
+    
+    .date-time-selector .modern-input {
+        padding: 8px 10px;
+        font-size: 0.9rem;
+        min-height: 40px;
+    }
+    
+    .date-time-selector input[type="date"] {
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+        min-height: 40px;
+    }
+    
+    .date-time-selector .input-group-text {
+        padding: 6px 8px;
+        font-size: 0.9rem;
+    }
+}
+
+/* === MEJORAS DE ESTRUCTURA Y SIMETRÍA === */
+
+/* Asegurar simetría perfecta en pantallas grandes */
+@media (min-width: 1200px) {
+    .canchas-container {
+        padding: 0 40px;
+    }
+    
+    .canchas-grid-expanded .galpon-container,
+    .canchas-grid-expanded .complejo-abierto-container {
+        max-width: 1400px;
+        padding: 70px;
+    }
+}
+
+/* === ESCALADO INTELIGENTE SIN AFECTAR POSICIÓN ABSOLUTA === */
+
+/* Escalado proporcional para pantallas medianas */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .canchas-container {
+        padding: 0 30px;
+    }
+    
+    .canchas-grid-expanded .galpon-container,
+    .canchas-grid-expanded .complejo-abierto-container {
+        transform: scale(0.9);
+        transform-origin: center;
+        margin-bottom: 40px;
+        padding-left: 70px !important; /* Compensar el escalado para evitar que se salga por la izquierda */
+    }
+    
+           .canchas-grid-expanded .calle-complejo {
+               right: -108px !important; /* 120px * 0.9 */
+               width: 108px !important;
+           }
+           
+           .canchas-grid-expanded .canchas-horizontales {
+               gap: 18px !important; /* Reducir gap para que quepa todo */
+               max-width: calc(100% - 60px) !important; /* Ajustar espacio para la calle, más generoso */
+               padding-left: 25px !important; /* Más espacio para la cancha 1 */
+               padding-right: 12px !important;
+           }
+           
+           .canchas-grid-expanded .canchas-horizontales .cancha-card {
+               flex: 0 0 200px !important; /* Reducir tamaño de canchas */
+               width: 200px !important;
+               max-width: 200px !important;
+           }
+}
+
+/* Escalado proporcional para tablets - CORREGIDO */
+@media (max-width: 991px) and (min-width: 768px) {
+    .canchas-container {
+        padding: 0 25px;
+    }
+    
+    .canchas-grid-expanded .galpon-container,
+    .canchas-grid-expanded .complejo-abierto-container {
+        transform: none !important; /* ELIMINAR ESCALADO problemático */
+        transform-origin: center;
+        margin-bottom: 35px;
+        padding: 30px 25px 30px 30px !important; /* Padding balanceado */
+        max-width: 85vw !important; /* Usar la mayoría del ancho de pantalla */
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+    }
+    
+    .canchas-grid-expanded .calle-complejo {
+        right: -70px !important; /* Distancia apropiada para tablet */
+        width: 65px !important; /* Ancho apropiado para tablet */
+        font-size: 0.65rem !important;
+        padding: 8px 4px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales {
+        gap: 15px !important; /* Separación balanceada */
+        max-width: calc(100% - 70px) !important; /* Dejar espacio para la calle */
+        padding: 0 !important;
+        justify-content: center !important; /* Centrar canchas */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card {
+        flex: 0 0 160px !important; /* Tamaño apropiado para tablet */
+        width: 160px !important;
+        max-width: 160px !important;
+        min-height: 160px !important;
+        padding: 12px 8px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card h5 {
+        font-size: 1.1rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .cancha-icon {
+        font-size: 1.6rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card p {
+        font-size: 0.8rem !important;
+        margin-bottom: 6px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .text-info.small {
+        font-size: 0.75rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    /* Ajustar estacionamiento para tablet */
+    .canchas-grid-expanded .estacionamientos {
+        flex: 0 0 91px !important; /* 30% más ancho: 70px * 1.3 = 91px */
+        width: 91px !important;
+        min-height: 160px !important;
+        max-width: 91px !important;
+        padding: 10px 4px !important;
+    }
+    
+    .canchas-grid-expanded .estacionamientos .estacionamiento-icon {
+        font-size: 2rem !important;
+    }
+    
+    .canchas-grid-expanded .estacionamientos::after {
+        font-size: 0.65rem !important;
+    }
+}
+
+/* Escalado proporcional para tablets pequeñas - CORREGIDO */
+@media (max-width: 767px) and (min-width: 576px) {
+    .canchas-container {
+        padding: 0;
+        max-width: 98vw;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .canchas-grid-expanded .galpon-container,
+    .canchas-grid-expanded .complejo-abierto-container {
+        transform: none !important; /* ELIMINAR ESCALADO problemático */
+        transform-origin: center;
+        margin-bottom: 30px;
+        padding: 25px 15px 25px 20px !important; /* Reducir padding derecho para hacer espacio a la calle */
+        max-width: 85vw !important; /* Reducir ancho del complejo para hacer espacio a la calle */
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+    }
+    
+    .canchas-grid-expanded .calle-complejo {
+        right: -45px !important; /* Mover más a la izquierda para que sea visible */
+        width: 50px !important; /* Ancho apropiado para tablet */
+        font-size: 0.6rem !important;
+        padding: 6px 3px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales {
+        gap: 10px !important; /* Reducir separación para hacer espacio */
+        max-width: calc(100% - 50px) !important; /* Ajustar espacio para la calle más pequeña */
+        padding: 0 !important;
+        justify-content: center !important; /* Centrar canchas */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card {
+        flex: 0 0 140px !important; /* Tamaño apropiado para tablet */
+        width: 140px !important;
+        max-width: 140px !important;
+        min-height: 140px !important;
+        padding: 10px 6px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card h5 {
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .cancha-icon {
+        font-size: 1.4rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card p {
+        font-size: 0.75rem !important;
+        margin-bottom: 5px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .text-info.small {
+        font-size: 0.7rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* Ajustar estacionamiento para tablet pequeña */
+    .canchas-grid-expanded .estacionamientos {
+        flex: 0 0 78px !important; /* 30% más ancho: 60px * 1.3 = 78px */
+        width: 78px !important;
+        min-height: 140px !important;
+        max-width: 78px !important;
+        padding: 8px 3px !important;
+    }
+    
+    .canchas-grid-expanded .estacionamientos .estacionamiento-icon {
+        font-size: 1.8rem !important;
+    }
+    
+    .canchas-grid-expanded .estacionamientos::after {
+        font-size: 0.6rem !important;
+    }
+}
+
+/* Escalado proporcional para móviles - CORREGIDO PARA MANTENER CANCHAS DENTRO DEL CONTORNO */
+@media (max-width: 575px) {
+    .canchas-container {
+        padding: 0;
+        max-width: 100vw;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .canchas-grid-expanded .galpon-container,
+    .canchas-grid-expanded .complejo-abierto-container {
+        transform: none !important; /* ELIMINAR ESCALADO que causa problemas */
+        transform-origin: center;
+        margin-bottom: 25px;
+        padding: 20px 10px 20px 15px !important; /* Reducir padding derecho para hacer espacio a la calle */
+        max-width: 85vw !important; /* Reducir ancho del complejo para hacer espacio a la calle */
+        margin-left: auto !important;
+        margin-right: auto !important;
+        overflow: visible !important;
+    }
+    
+    .canchas-grid-expanded .calle-complejo {
+        right: -35px !important; /* Mover más a la izquierda para que sea visible */
+        width: 40px !important; /* Reducir ancho de calle */
+        font-size: 0.5rem !important; /* Reducir texto */
+        padding: 4px 2px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales {
+        gap: 6px !important; /* Reducir gap aún más para que quepa todo */
+        max-width: calc(100% - 40px) !important; /* Ajustar espacio para la calle más pequeña */
+        padding: 0 !important;
+        justify-content: center !important; /* Centrar canchas dentro del contenedor */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        flex-wrap: nowrap !important; /* Mantener en línea horizontal */
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card {
+        flex: 0 0 110px !important; /* Reducir tamaño un poco más para que quepa todo */
+        width: 110px !important;
+        max-width: 110px !important;
+        min-height: 110px !important;
+        padding: 6px 3px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card h5 {
+        font-size: 0.9rem !important;
+        margin-bottom: 6px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .cancha-icon {
+        font-size: 1.2rem !important;
+        margin-bottom: 6px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card p {
+        font-size: 0.7rem !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .canchas-grid-expanded .canchas-horizontales .cancha-card .text-info.small {
+        font-size: 0.65rem !important;
+        line-height: 1.1 !important;
+    }
+    
+    /* Ajustar estacionamiento para móvil */
+    .canchas-grid-expanded .estacionamientos {
+        flex: 0 0 59px !important; /* 30% más ancho: 45px * 1.3 = 58.5px ≈ 59px */
+        width: 59px !important;
+        min-height: 110px !important;
+        max-width: 59px !important;
+        padding: 5px 2px !important;
+    }
+    
+    .canchas-grid-expanded .estacionamientos .estacionamiento-icon {
+        font-size: 1.5rem !important;
+    }
+    
+    .canchas-grid-expanded .estacionamientos::after {
+        font-size: 0.5rem !important;
+    }
+}
+
+
+
