@@ -5644,6 +5644,70 @@ app.post('/debug/add-admin-id-column', async (req, res) => {
   }
 });
 
+// Endpoint para arreglar todas las contraseñas
+app.post('/api/debug/fix-passwords', async (req, res) => {
+  try {
+    console.log('🔧 Arreglando contraseñas...');
+    
+    // Mapeo de usuarios y sus contraseñas correctas
+    const userPasswords = {
+      'admin@reservatuscanchas.cl': 'admin123',
+      'naxiin320@gmail.com': 'magnasports2024',
+      'naxiin_320@hotmail.com': 'gunnen2024',
+      'ignacio.araya.lillito@hotmail.com': 'gunnen2024',
+      'admin@fundaciongunnen.cl': 'gunnen2024'
+    };
+    
+    const results = [];
+    
+    for (const [email, password] of Object.entries(userPasswords)) {
+      try {
+        // Hashear la contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Actualizar en la base de datos
+        const result = await db.run(
+          'UPDATE usuarios SET password = $1 WHERE email = $2',
+          [hashedPassword, email]
+        );
+        
+        if (result.changes > 0) {
+          results.push({
+            email: email,
+            status: 'updated',
+            message: 'Contraseña actualizada correctamente'
+          });
+          console.log(`✅ Contraseña actualizada para: ${email}`);
+        } else {
+          results.push({
+            email: email,
+            status: 'not_found',
+            message: 'Usuario no encontrado'
+          });
+          console.log(`❌ Usuario no encontrado: ${email}`);
+        }
+      } catch (error) {
+        results.push({
+          email: email,
+          status: 'error',
+          message: error.message
+        });
+        console.error(`❌ Error actualizando ${email}:`, error.message);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Proceso de arreglo de contraseñas completado',
+      results: results
+    });
+    
+  } catch (error) {
+    console.error('❌ Error arreglando contraseñas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para debuggear contraseñas
 app.get('/api/debug/passwords', async (req, res) => {
   try {
