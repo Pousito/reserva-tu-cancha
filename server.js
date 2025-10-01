@@ -307,7 +307,7 @@ async function populateSampleData() {
       // Insertar usuarios administradores
       const usuariosData = [
         { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
-        { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
+        { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño MagnaSports', rol: 'owner' },
         { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Administrador Fundación Gunnen', rol: 'owner' },
         { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
       ];
@@ -2194,7 +2194,7 @@ setCalendarDatabase(db); // Pasar la instancia de base de datos
 app.use('/api/admin/calendar', adminCalendarRoutes);
 
 // Endpoint para generar reportes (panel de administración)
-app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin']), async (req, res) => {
+app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     const { dateFrom, dateTo, complexId } = req.body;
     console.log('📊 Generando reportes para administración...', { dateFrom, dateTo, complexId });
@@ -3775,7 +3775,7 @@ app.post('/api/debug/insert-admin-users', async (req, res) => {
     
     const usuariosData = [
       { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
-      { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Administrador MagnaSports', rol: 'admin' },
+      { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño MagnaSports', rol: 'owner' },
       { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Administrador Fundación Gunnen', rol: 'owner' },
       { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
     ];
@@ -3936,7 +3936,7 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
       },
       credentials: {
         superAdmin: 'admin@reservatuscanchas.cl / admin123',
-        magnasportsAdmin: 'naxiin320@gmail.com / magnasports2024',
+        magnasportsOwner: 'naxiin320@gmail.com / magnasports2024',
         gunnenAdmin: 'naxiin_320@hotmail.com / gunnen2024',
         gunnenOwner: 'ignacio.araya.lillito@hotmail.com / gunnen2024'
       }
@@ -4611,8 +4611,8 @@ app.post('/api/debug/create-admin-users', async (req, res) => {
       {
         email: 'naxiin320@gmail.com',
         password: 'magnasports2024',
-        nombre: 'Administrador MagnaSports',
-        rol: 'admin'
+        nombre: 'Dueño MagnaSports',
+        rol: 'owner'
       },
       {
         email: 'naxiin_320@hotmail.com',

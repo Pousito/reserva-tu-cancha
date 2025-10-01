@@ -45,10 +45,10 @@ const requireRolePermission = (allowedRoles, options = {}) => {
       }
 
       req.userPermissions = {
-        canViewFinancials: true,
+        canViewFinancials: true,    // ✅ SÍ puede ver ingresos
         canManageComplexes: false, // Solo puede ver su complejo
         canManageCourts: true,
-        canViewReports: false, // Owners NO pueden ver reportes
+        canViewReports: true,      // ✅ SÍ puede ver reportes (de su complejo)
         canEditReservations: true,
         complexFilter: userComplexId
       };
