@@ -136,7 +136,106 @@ body {
     pointer-events: none;
 }
 
-/* Calle Monte Perdido */
+/* Complejo al aire libre (Fundación Gunnen) */
+.complejo-abierto-container {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 3px dashed #4caf50;
+    border-radius: 15px;
+    padding: 30px;
+    position: relative;
+    margin-bottom: 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+}
+
+.complejo-abierto-container::before {
+    content: 'FUNDACIÓN GUNNEN - AL AIRE LIBRE';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4caf50;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    z-index: 10;
+}
+
+.complejo-abierto-container::after {
+    content: '☀️';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 2rem;
+    opacity: 0.3;
+}
+
+/* Estacionamientos */
+.estacionamientos {
+    flex: 0 0 120px;
+    width: 120px;
+    background: linear-gradient(135deg, #424242 0%, #616161 100%);
+    border: 3px solid #333;
+    border-radius: 10px;
+    padding: 20px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.estacionamiento-icon {
+    color: white;
+    font-size: 3rem;
+    margin-bottom: 5px;
+}
+
+.estacionamiento-icon i {
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Calle genérica (Monte Perdido o Don Victor) */
+.calle-complejo {
+    position: absolute;
+    right: -100px;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    background: #4a4a4a;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    border: 3px solid #333;
+}
+
+.calle-complejo::before {
+    transform: rotate(180deg);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.calle-complejo[data-calle="MONTE PERDIDO"]::before {
+    content: 'CALLE MONTE PERDIDO';
+}
+
+.calle-complejo[data-calle="DON VICTOR"]::before {
+    content: 'CALLE DON VICTOR';
+}
+
+/* Backward compatibility - Mantener clase antigua para MagnaSports */
 .calle-monte-perdido {
     position: absolute;
     right: -100px;

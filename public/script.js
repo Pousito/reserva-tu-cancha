@@ -3274,17 +3274,23 @@ async function renderizarCanchasConDisponibilidad() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Si es MagnaSports, crear estructura especial del galpón
-    if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports') {
-        console.log('🎨 Renderizando MagnaSports con', canchas.length, 'canchas');
-        // Crear contenedor del galpón
-        const galponContainer = document.createElement('div');
-        galponContainer.className = 'galpon-container';
+    // Si es MagnaSports o Fundación Gunnen, crear estructura especial horizontal
+    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen')) {
+        console.log(`🎨 Renderizando ${complejoSeleccionado.nombre} con`, canchas.length, 'canchas');
         
-        // Agregar calle Monte Perdido
-        const calleMontePerdido = document.createElement('div');
-        calleMontePerdido.className = 'calle-monte-perdido';
-        galponContainer.appendChild(calleMontePerdido);
+        // Determinar si es techado o al aire libre
+        const esTechado = complejoSeleccionado.nombre === 'MagnaSports';
+        const nombreCalle = complejoSeleccionado.nombre === 'MagnaSports' ? 'MONTE PERDIDO' : 'DON VICTOR';
+        
+        // Crear contenedor (galpón para MagnaSports, complejo-abierto para Fundación Gunnen)
+        const galponContainer = document.createElement('div');
+        galponContainer.className = esTechado ? 'galpon-container' : 'complejo-abierto-container';
+        
+        // Agregar calle (Monte Perdido o Don Victor)
+        const calle = document.createElement('div');
+        calle.className = 'calle-complejo';
+        calle.setAttribute('data-calle', nombreCalle);
+        galponContainer.appendChild(calle);
         
         // Crear contenedor horizontal para las canchas
         const canchasHorizontales = document.createElement('div');
@@ -3358,13 +3364,17 @@ async function renderizarCanchasConDisponibilidad() {
             }
             
             canchaCard.className = cardClass;
+            
+            // Determinar descripción de cancha
+            const descripcionCancha = esTechado ? 'Techada' : 'Al aire libre';
+            
             canchaCard.innerHTML = `
                 <div class="cancha-icon">
                     <i class="fas ${iconClass}"></i>
                 </div>
                 <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
                 <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
-                <p class="text-info small"><i class="fas fa-info-circle me-1"></i>Techada</p>
+                <p class="text-info small"><i class="fas ${esTechado ? 'fa-home' : 'fa-sun'} me-1"></i>${descripcionCancha}</p>
                 <p class="text-info small"><i class="fas fa-users me-1"></i>7 jugadores por equipo</p>
                 <div class="estado-disponibilidad">
                     ${estadoBadge}
@@ -3373,6 +3383,18 @@ async function renderizarCanchasConDisponibilidad() {
             
             canchaCard.addEventListener('click', () => seleccionarCancha(cancha));
             canchasHorizontales.appendChild(canchaCard);
+        }
+        
+        // Agregar estacionamientos solo para Fundación Gunnen
+        if (!esTechado) {
+            const estacionamientos = document.createElement('div');
+            estacionamientos.className = 'estacionamientos';
+            estacionamientos.innerHTML = `
+                <div class="estacionamiento-icon">
+                    <i class="fas fa-parking"></i>
+                </div>
+            `;
+            canchasHorizontales.appendChild(estacionamientos);
         }
         
         galponContainer.appendChild(canchasHorizontales);
