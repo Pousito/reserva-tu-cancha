@@ -52,12 +52,12 @@ class EmailService {
         // Configuración de fallback para producción
         if (process.env.NODE_ENV === 'production') {
           emailConfig.host = 'smtp.zoho.com';
-          emailConfig.port = 465; // Cambio a puerto 465 con SSL
+          emailConfig.port = 587; // Puerto 587 con STARTTLS (Render bloquea 465)
           emailConfig.user = 'reservas@reservatuscanchas.cl';
           emailConfig.pass = 'L660mKFmcDBk';
-          emailConfig.secure = true; // SSL en lugar de STARTTLS
+          emailConfig.secure = false; // STARTTLS (no SSL directo)
           
-          console.log('📧 Usando configuración de fallback para producción (SSL port 465)');
+          console.log('📧 Usando configuración de fallback para producción (STARTTLS port 587)');
         } else {
           console.log('⚠️ Email no configurado - usando modo simulación');
           this.isConfigured = false;
@@ -72,6 +72,11 @@ class EmailService {
         auth: {
           user: emailConfig.user,
           pass: emailConfig.pass
+        },
+        // Opciones adicionales para mejor compatibilidad con Render
+        tls: {
+          rejectUnauthorized: false,
+          ciphers: 'SSLv3'
         }
       });
 
@@ -293,17 +298,19 @@ class EmailService {
   createReservasTransporter() {
     const reservasConfig = {
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
-      port: parseInt(process.env.SMTP_PORT) || 465, // Puerto 465 para SSL
+      port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 con STARTTLS (Render bloquea 465)
       user: process.env.SMTP_RESERVAS_USER || process.env.SMTP_USER || 'reservas@reservatuscanchas.cl',
       pass: process.env.SMTP_RESERVAS_PASS || process.env.SMTP_PASS || 'L660mKFmcDBk',
-      secure: true // SSL en lugar de STARTTLS
+      secure: false // STARTTLS (no SSL directo) - Render requiere esto
     };
 
     console.log('📧 Configuración de email para reservas:', {
       host: reservasConfig.host,
       port: reservasConfig.port,
       user: reservasConfig.user ? 'Configurado' : 'No configurado',
-      pass: reservasConfig.pass ? 'Configurado' : 'No configurado'
+      pass: reservasConfig.pass ? 'Configurado' : 'No configurado',
+      secure: reservasConfig.secure,
+      env: process.env.NODE_ENV
     });
 
     return nodemailer.createTransport({
@@ -313,6 +320,11 @@ class EmailService {
       auth: {
         user: reservasConfig.user,
         pass: reservasConfig.pass
+      },
+      // Opciones adicionales para mejor compatibilidad con Render
+      tls: {
+        rejectUnauthorized: false,
+        ciphers: 'SSLv3'
       }
     });
   }
