@@ -141,13 +141,23 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 50px 25px 5px; /* Mucho menos padding izquierdo, más derecho */
+    padding: 25px 30px; /* Padding balanceado por defecto */
     position: relative;
     margin-bottom: 20px;
-    max-width: none;
-    margin-left: 0;
-    margin-right: 85px; /* Espacio para la calle FUERA del contenedor */
+    max-width: 900px; /* Centrado en pantalla completa */
+    margin-left: auto;
+    margin-right: auto;
     box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+}
+
+/* Ajustes para pantallas medianas/divididas */
+@media (max-width: 1200px) {
+    .complejo-abierto-container {
+        padding: 25px 50px 25px 5px;
+        max-width: none;
+        margin-left: 0;
+        margin-right: 85px; /* Espacio para la calle */
+    }
 }
 
 .complejo-abierto-container::before {
@@ -267,13 +277,27 @@ body {
 /* Contenedor horizontal para las canchas de MagnaSports y Fundación Gunnen */
 .canchas-horizontales {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center; /* Centrado por defecto (pantalla completa) */
     gap: 6px;
     margin-top: 20px;
     margin-right: 0;
     max-width: 100%;
     padding-left: 0;
     padding-right: 0;
+}
+
+/* Para pantallas medianas/divididas - alinear a la izquierda */
+@media (max-width: 1200px) {
+    .canchas-horizontales {
+        justify-content: flex-start;
+    }
+}
+
+/* Para pantallas completas grandes - mantener centrado */
+@media (min-width: 1201px) {
+    .canchas-horizontales {
+        justify-content: center;
+    }
 }
 
     .canchas-horizontales .cancha-card {
