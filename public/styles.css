@@ -139,19 +139,19 @@ body {
 /* Complejo al aire libre (Fundación Gunnen) */
 .complejo-abierto-container {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-    border: 3px dashed #4caf50;
+    border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 30px;
+    padding: 25px 20px;
     position: relative;
     margin-bottom: 20px;
-    max-width: 900px;
+    max-width: 750px;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
 }
 
 .complejo-abierto-container::before {
-    content: 'FUNDACIÓN GUNNEN - AL AIRE LIBRE';
+    content: 'COMPLEJO FUNDACIÓN GUNNEN';
     position: absolute;
     top: -15px;
     left: 50%;
@@ -165,55 +165,57 @@ body {
     z-index: 10;
 }
 
-.complejo-abierto-container::after {
-    content: '☀️';
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 2rem;
-    opacity: 0.3;
-}
-
 /* Estacionamientos */
 .estacionamientos {
-    flex: 0 0 120px;
-    width: 120px;
+    flex: 0 0 100px;
+    width: 100px;
     background: linear-gradient(135deg, #424242 0%, #616161 100%);
     border: 3px solid #333;
     border-radius: 10px;
-    padding: 20px 10px;
+    padding: 15px 8px;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
 .estacionamiento-icon {
     color: white;
-    font-size: 3rem;
-    margin-bottom: 5px;
+    font-size: 2rem;
+    margin-bottom: 3px;
 }
 
 .estacionamiento-icon i {
     filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
 }
 
+.estacionamientos::after {
+    content: 'Estacionamiento';
+    color: white;
+    font-size: 0.65rem;
+    font-weight: bold;
+    margin-top: 5px;
+    text-align: center;
+    line-height: 1.1;
+}
+
 /* Calle genérica (Monte Perdido o Don Victor) */
 .calle-complejo {
     position: absolute;
-    right: -100px;
+    right: -85px;
     top: 0;
     bottom: 0;
-    width: 80px;
+    width: 70px;
     background: #4a4a4a;
     border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: bold;
     writing-mode: vertical-rl;
     text-orientation: mixed;
@@ -263,31 +265,29 @@ body {
     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Contenedor horizontal para las canchas de MagnaSports */
+/* Contenedor horizontal para las canchas de MagnaSports y Fundación Gunnen */
 .canchas-horizontales {
     display: flex;
     justify-content: center;
-    gap: 30px;
+    gap: 15px;
     margin-top: 20px;
-    margin-right: 120px; /* Espacio para la calle */
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 50px; /* Mover las canchas hacia la derecha */
+    margin-right: 100px; /* Espacio para la calle */
+    max-width: 100%;
+    padding-left: 20px;
 }
 
     .canchas-horizontales .cancha-card {
-        flex: 0 0 250px;
-        width: 250px;
+        flex: 0 0 200px;
+        width: 200px;
         margin: 0;
         background: white;
         border: 2px solid #6c757d;
         border-radius: 10px;
-        padding: 25px 15px;
+        padding: 20px 12px;
         text-align: center;
         transition: all 0.3s ease;
         position: relative;
-        min-height: 280px;
+        min-height: 250px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
