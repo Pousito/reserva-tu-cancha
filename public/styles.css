@@ -141,7 +141,7 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 10px 25px 15px;
+    padding: 25px 95px 25px 15px; /* Padding derecho para la calle */
     position: relative;
     margin-bottom: 20px;
     max-width: none;
@@ -204,9 +204,9 @@ body {
 /* Calle genérica (Monte Perdido o Don Victor) */
 .calle-complejo {
     position: absolute;
-    right: -85px;
-    top: 0;
-    bottom: 0;
+    right: 10px; /* Ahora dentro del padding del contenedor */
+    top: 25px;
+    bottom: 25px;
     width: 70px;
     background: #4a4a4a;
     border-radius: 15px;
@@ -270,7 +270,7 @@ body {
     justify-content: flex-start;
     gap: 10px;
     margin-top: 20px;
-    margin-right: 80px; /* Espacio para la calle */
+    margin-right: 0; /* Sin margin porque ahora usamos padding del contenedor */
     max-width: 100%;
     padding-left: 0;
     padding-right: 0;
