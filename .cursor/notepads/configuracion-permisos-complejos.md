@@ -47,12 +47,13 @@
 ## 🏢 **CONFIGURACIÓN ACTUAL POR COMPLEJO:**
 
 ### **MAGNA SPORTS**
-- **Dueño:** `naxiin320@gmail.com` - Rol: `admin` ❌ (DEBERÍA SER `owner`)
-- **Estado:** NECESITA CORRECCIÓN
+- **Dueño:** `naxiin320@gmail.com` - Rol: `owner` ✅
+- **Administrador:** `admin@magnasports.cl` - Rol: `admin` (PENDIENTE CREAR)
+- **Estado:** DUEÑO CORRECTO
 
 ### **FUNDACIÓN GUNNEN**
-- **Dueño 1:** `naxiin_320@hotmail.com` - Rol: `owner` ✅
-- **Dueño 2:** `ignacio.araya.lillito@hotmail.com` - Rol: `owner` ✅
+- **Dueño:** `ignacio.araya.lillito@hotmail.com` - Rol: `owner` ✅
+- **Administrador:** `naxiin_320@hotmail.com` - Rol: `admin` ✅
 - **Estado:** CORRECTO
 
 ---
