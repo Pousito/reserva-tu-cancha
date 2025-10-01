@@ -2194,7 +2194,7 @@ setCalendarDatabase(db); // Pasar la instancia de base de datos
 app.use('/api/admin/calendar', adminCalendarRoutes);
 
 // Endpoint para generar reportes (panel de administración)
-app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin']), async (req, res) => {
   try {
     const { dateFrom, dateTo, complexId } = req.body;
     console.log('📊 Generando reportes para administración...', { dateFrom, dateTo, complexId });

@@ -173,7 +173,8 @@ function configurarEventListeners() {
 async function cargarComplejos() {
     try {
         // Solo cargar complejos si el usuario tiene permisos
-        if (!AdminUtils.canViewAllComplexes()) {
+        const currentUser = AdminUtils.getCurrentUser();
+        if (!AdminUtils.canViewAllComplexes() && currentUser.rol !== 'owner') {
             console.log('Usuario no tiene permisos para ver todos los complejos');
             return;
         }

@@ -119,7 +119,7 @@ function setupEventListeners() {
 async function loadComplexes() {
     try {
         // Solo cargar complejos si el usuario tiene permisos
-        if (!AdminUtils.canViewAllComplexes()) {
+        if (!AdminUtils.canViewAllComplexes() && currentUser.rol !== 'owner') {
             console.log('Usuario no tiene permisos para ver todos los complejos');
             return;
         }
@@ -376,8 +376,8 @@ function capitalizeCourtType(type) {
 
 // Obtener nombre de complejo
 function getComplexName(complexId) {
-    // Si el usuario es manager y no tiene acceso a complejos, usar su complejo_nombre
-    if (currentUser && currentUser.rol === 'manager' && currentUser.complejo_nombre) {
+    // Si el usuario es manager o owner y no tiene acceso a complejos, usar su complejo_nombre
+    if (currentUser && (currentUser.rol === 'manager' || currentUser.rol === 'owner') && currentUser.complejo_nombre) {
         return currentUser.complejo_nombre;
     }
     
