@@ -141,7 +141,7 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 20px 25px 10px; /* Padding para que todo quepa dentro */
+    padding: 25px 30px 25px 8px; /* Más padding derecho, menos izquierdo */
     position: relative;
     margin-bottom: 20px;
     max-width: none;
@@ -167,12 +167,12 @@ body {
 
 /* Estacionamientos */
 .estacionamientos {
-    flex: 0 0 105px;
-    width: 105px;
+    flex: 0 0 95px;
+    width: 95px;
     background: linear-gradient(135deg, #424242 0%, #616161 100%);
     border: 3px solid #ffc107;
     border-radius: 10px;
-    padding: 12px 6px;
+    padding: 10px 5px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -268,7 +268,7 @@ body {
 .canchas-horizontales {
     display: flex;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 6px;
     margin-top: 20px;
     margin-right: 0;
     max-width: 100%;
@@ -277,17 +277,17 @@ body {
 }
 
     .canchas-horizontales .cancha-card {
-        flex: 0 0 185px;
-        width: 185px;
+        flex: 0 0 170px;
+        width: 170px;
         margin: 0;
         background: white;
         border: 2px solid #6c757d;
         border-radius: 10px;
-        padding: 18px 10px;
+        padding: 16px 8px;
         text-align: center;
         transition: all 0.3s ease;
         position: relative;
-        min-height: 240px;
+        min-height: 230px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
