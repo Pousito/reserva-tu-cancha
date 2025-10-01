@@ -1958,9 +1958,9 @@ function configurarEventListeners() {
             await cargarHorariosComplejo(complejoSeleccionado);
             console.log('🔄 Horarios cargados para:', complejoSeleccionado.nombre);
             
-            // Si es MagnaSports, automáticamente seleccionar fútbol y ocultar opciones de padel
-            if (complejoSeleccionado.nombre === 'MagnaSports') {
-                console.log('⚽ MagnaSports detectado - Configurando automáticamente...');
+            // Si es MagnaSports o Fundación Gunnen, automáticamente seleccionar fútbol y ocultar opciones de padel
+            if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen') {
+                console.log(`⚽ ${complejoSeleccionado.nombre} detectado - Configurando automáticamente...`);
                 
                 // Seleccionar automáticamente fútbol
                 const futbolRadio = document.getElementById('futbol');
@@ -2000,13 +2000,13 @@ function configurarEventListeners() {
                 console.log('✅ Llegando a la parte de carga de canchas...');
                 
                 // NUEVA LÓGICA: Cargar canchas directamente sin depender del event listener
-                console.log('⚽ Cargando canchas directamente para MagnaSports...');
+                console.log(`⚽ Cargando canchas directamente para ${complejoSeleccionado.nombre}...`);
                 console.log('⚽ DEBUG AUTOMÁTICO - complejoSeleccionado:', complejoSeleccionado);
                 console.log('⚽ DEBUG AUTOMÁTICO - tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
                 
                 // Cargar canchas inmediatamente
                 setTimeout(async () => {
-                    console.log('🏟️ Cargando canchas automáticamente para MagnaSports...');
+                    console.log(`🏟️ Cargando canchas automáticamente para ${complejoSeleccionado.nombre}...`);
                     await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, false); // No renderizar visualmente en Fase 4
                     
                     // Verificar disponibilidad si hay fecha
