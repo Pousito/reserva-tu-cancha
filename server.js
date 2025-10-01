@@ -337,6 +337,84 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Endpoint para diagnosticar conexión SMTP desde Render
+app.get('/api/debug/smtp-connection', async (req, res) => {
+  const nodemailer = require('nodemailer');
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    tests: []
+  };
+  
+  // Test 1: Con puerto 587
+  try {
+    const transporter587 = nodemailer.createTransport({
+      host: 'smtp.zoho.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'reservas@reservatuscanchas.cl',
+        pass: 'L660mKFmcDBk'
+      }
+    });
+    
+    const startTime = Date.now();
+    await Promise.race([
+      transporter587.verify(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 5s')), 5000))
+    ]);
+    const elapsed = Date.now() - startTime;
+    
+    diagnostics.tests.push({
+      port: 587,
+      status: 'SUCCESS',
+      time: elapsed + 'ms'
+    });
+  } catch (error) {
+    diagnostics.tests.push({
+      port: 587,
+      status: 'FAILED',
+      error: error.message,
+      code: error.code
+    });
+  }
+  
+  // Test 2: Con puerto 465
+  try {
+    const transporter465 = nodemailer.createTransport({
+      host: 'smtp.zoho.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'reservas@reservatuscanchas.cl',
+        pass: 'L660mKFmcDBk'
+      }
+    });
+    
+    const startTime = Date.now();
+    await Promise.race([
+      transporter465.verify(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout 5s')), 5000))
+    ]);
+    const elapsed = Date.now() - startTime;
+    
+    diagnostics.tests.push({
+      port: 465,
+      status: 'SUCCESS',
+      time: elapsed + 'ms'
+    });
+  } catch (error) {
+    diagnostics.tests.push({
+      port: 465,
+      status: 'FAILED',
+      error: error.message,
+      code: error.code
+    });
+  }
+  
+  res.json(diagnostics);
+});
+
 // Endpoint de prueba simple para insertar una ciudad
 app.get('/api/debug/test-insert', async (req, res) => {
   try {
