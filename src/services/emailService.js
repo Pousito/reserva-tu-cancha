@@ -47,22 +47,16 @@ class EmailService {
       
       // Verificar si las credenciales de email están configuradas
       if (!emailConfig.user || !emailConfig.pass) {
-        console.log('⚠️ Email no configurado - intentando configuración de producción');
+        console.log('⚠️ Email no configurado completamente');
+        console.log('Variables de entorno requeridas:');
+        console.log('- SMTP_HOST:', process.env.SMTP_HOST || 'No definida');
+        console.log('- SMTP_PORT:', process.env.SMTP_PORT || 'No definida');
+        console.log('- SMTP_USER:', process.env.SMTP_USER ? 'Definida' : 'NO DEFINIDA');
+        console.log('- SMTP_PASS:', process.env.SMTP_PASS ? 'Definida' : 'NO DEFINIDA');
         
-        // Configuración de fallback para producción
-        if (process.env.NODE_ENV === 'production') {
-          emailConfig.host = 'smtp.zoho.com';
-          emailConfig.port = 587;
-          emailConfig.user = 'soporte@reservatuscanchas.cl';
-          emailConfig.pass = 'KWAX CS8q 61cN';
-          emailConfig.secure = false;
-          
-          console.log('📧 Usando configuración de fallback para producción');
-        } else {
-          console.log('⚠️ Email no configurado - usando modo simulación');
-          this.isConfigured = false;
-          return;
-        }
+        console.log('⚠️ Email no configurado - usando modo simulación');
+        this.isConfigured = false;
+        return;
       }
 
       this.transporter = nodemailer.createTransport({
@@ -291,11 +285,12 @@ class EmailService {
 
   // Método para crear transporter específico para reservas
   createReservasTransporter() {
+    // Usar las mismas credenciales que el transporter principal
     const reservasConfig = {
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
       port: parseInt(process.env.SMTP_PORT) || 587,
-      user: process.env.SMTP_RESERVAS_USER || 'reservas@reservatuscanchas.cl',
-      pass: process.env.SMTP_RESERVAS_PASS || 'L660mKFmcDBk',
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
       secure: false
     };
 
@@ -305,6 +300,12 @@ class EmailService {
       user: reservasConfig.user ? 'Configurado' : 'No configurado',
       pass: reservasConfig.pass ? 'Configurado' : 'No configurado'
     });
+
+    // Si no hay credenciales, retornar null
+    if (!reservasConfig.user || !reservasConfig.pass) {
+      console.log('⚠️ No se pueden enviar emails - credenciales no configuradas');
+      return null;
+    }
 
     return nodemailer.createTransport({
       host: reservasConfig.host,
@@ -335,6 +336,11 @@ class EmailService {
     try {
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
+      
+      if (!reservasTransporter) {
+        console.log('⚠️ No se puede enviar email - transporter no disponible');
+        return { success: false, error: 'Email no configurado' };
+      }
       
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
@@ -430,6 +436,11 @@ Gracias por elegir Reserva Tu Cancha!
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
       
+      if (!reservasTransporter) {
+        console.log('⚠️ No se puede enviar notificación admin - transporter no disponible');
+        return { success: false, error: 'Email no configurado' };
+      }
+      
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
         to: adminEmail,
@@ -494,6 +505,11 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
     try {
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
+      
+      if (!reservasTransporter) {
+        console.log('⚠️ No se puede enviar notificación super admin - transporter no disponible');
+        return { success: false, error: 'Email no configurado' };
+      }
       
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
