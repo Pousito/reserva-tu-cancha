@@ -4033,6 +4033,8 @@ app.get('/api/debug/env-vars', async (req, res) => {
       SMTP_PORT: process.env.SMTP_PORT ? 'Definido' : 'No definido',
       SMTP_USER: process.env.SMTP_USER ? 'Definido' : 'No definido',
       SMTP_PASS: process.env.SMTP_PASS ? 'Definido' : 'No definido',
+      SMTP_RESERVAS_USER: process.env.SMTP_RESERVAS_USER ? 'Definido' : 'No definido',
+      SMTP_RESERVAS_PASS: process.env.SMTP_RESERVAS_PASS ? 'Definido' : 'No definido',
       DATABASE_URL: process.env.DATABASE_URL ? 'Definido' : 'No definido',
       JWT_SECRET: process.env.JWT_SECRET ? 'Definido' : 'No definido'
     };
