@@ -141,10 +141,10 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 20px;
+    padding: 25px 10px;
     position: relative;
     margin-bottom: 20px;
-    max-width: 750px;
+    max-width: 650px;
     margin-left: auto;
     margin-right: auto;
     box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
@@ -167,12 +167,12 @@ body {
 
 /* Estacionamientos */
 .estacionamientos {
-    flex: 0 0 100px;
-    width: 100px;
+    flex: 0 0 80px;
+    width: 80px;
     background: linear-gradient(135deg, #424242 0%, #616161 100%);
-    border: 3px solid #333;
+    border: 3px solid #ffc107;
     border-radius: 10px;
-    padding: 15px 8px;
+    padding: 10px 5px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -183,21 +183,20 @@ body {
 }
 
 .estacionamiento-icon {
-    color: white;
-    font-size: 2rem;
-    margin-bottom: 3px;
-}
-
-.estacionamiento-icon i {
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+    color: #ffc107;
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin-bottom: 2px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-family: 'Arial Black', Arial, sans-serif;
 }
 
 .estacionamientos::after {
     content: 'Estacionamiento';
     color: white;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: bold;
-    margin-top: 5px;
+    margin-top: 3px;
     text-align: center;
     line-height: 1.1;
 }
@@ -269,11 +268,12 @@ body {
 .canchas-horizontales {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 10px;
     margin-top: 20px;
-    margin-right: 100px; /* Espacio para la calle */
+    margin-right: 80px; /* Espacio para la calle - reducido */
     max-width: 100%;
-    padding-left: 20px;
+    padding-left: 10px;
+    padding-right: 5px;
 }
 
     .canchas-horizontales .cancha-card {

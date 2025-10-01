@@ -3391,7 +3391,7 @@ async function renderizarCanchasConDisponibilidad() {
             estacionamientos.className = 'estacionamientos';
             estacionamientos.innerHTML = `
                 <div class="estacionamiento-icon">
-                    <i class="fas fa-parking"></i>
+                    E
                 </div>
             `;
             canchasHorizontales.appendChild(estacionamientos);
