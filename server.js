@@ -3618,7 +3618,6 @@ app.post('/api/auth/reset-password', async (req, res) => {
     const tokenInfo = tokenData[0];
     
     // Hash de la nueva contraseña
-    const bcrypt = require('bcrypt');
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
     // Actualizar contraseña del usuario
@@ -5645,10 +5644,62 @@ app.post('/debug/add-admin-id-column', async (req, res) => {
   }
 });
 
+// Endpoint para debuggear contraseñas
+app.get('/api/debug/passwords', async (req, res) => {
+  try {
+    console.log('🔍 Debuggeando contraseñas...');
+    
+    // Obtener todos los usuarios
+    const usuarios = await db.query('SELECT email, password, nombre, rol FROM usuarios ORDER BY email');
+    
+    const debugInfo = {
+      totalUsuarios: usuarios.length,
+      usuarios: []
+    };
+    
+    for (const usuario of usuarios) {
+      const userInfo = {
+        email: usuario.email,
+        nombre: usuario.nombre,
+        rol: usuario.rol,
+        passwordHash: usuario.password.substring(0, 20) + '...',
+        passwordsTested: []
+      };
+      
+      // Probar contraseñas conocidas
+      const passwordsToTest = [
+        'admin123',
+        'gunnen2024',
+        'magnasports2024',
+        'admin1234'
+      ];
+      
+      for (const testPassword of passwordsToTest) {
+        const match = await bcrypt.compare(testPassword, usuario.password);
+        userInfo.passwordsTested.push({
+          password: testPassword,
+          match: match
+        });
+        if (match) {
+          userInfo.correctPassword = testPassword;
+          break;
+        }
+      }
+      
+      debugInfo.usuarios.push(userInfo);
+    }
+    
+    res.json(debugInfo);
+    
+  } catch (error) {
+    console.error('❌ Error debuggeando contraseñas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para actualizar credenciales del super admin
 app.post('/debug/update-super-admin', async (req, res) => {
   try {
-    const bcrypt = require('bcrypt');
     const dbInfo = db.getDatabaseInfo();
     
     console.log('🔧 Actualizando credenciales del super admin...');
