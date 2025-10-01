@@ -293,9 +293,9 @@ class EmailService {
   createReservasTransporter() {
     const reservasConfig = {
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
-      port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 STARTTLS (configuración del 24-sept)
+      port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 STARTTLS
       user: process.env.SMTP_RESERVAS_USER || 'reservas@reservatuscanchas.cl', // Email de reservas
-      pass: process.env.SMTP_RESERVAS_PASS || 'L660mKFmcDBk', // Contraseña de reservas
+      pass: process.env.SMTP_RESERVAS_PASS || 'Ec7sn9QgQUan', // Contraseña NUEVA generada hoy
       secure: false // STARTTLS (no SSL)
     };
 

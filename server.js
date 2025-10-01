@@ -346,7 +346,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
     tests: []
   };
   
-  // Test 1: Con puerto 587
+  // Test 1: Con puerto 587 y contraseña NUEVA
   try {
     const transporter587 = nodemailer.createTransport({
       host: 'smtp.zoho.com',
@@ -354,7 +354,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
       secure: false,
       auth: {
         user: 'reservas@reservatuscanchas.cl',
-        pass: 'L660mKFmcDBk'
+        pass: 'Ec7sn9QgQUan'  // Contraseña nueva generada hoy
       }
     });
     
@@ -379,7 +379,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
     });
   }
   
-  // Test 2: Con puerto 465
+  // Test 2: Con puerto 465 y contraseña NUEVA
   try {
     const transporter465 = nodemailer.createTransport({
       host: 'smtp.zoho.com',
@@ -387,7 +387,7 @@ app.get('/api/debug/smtp-connection', async (req, res) => {
       secure: true,
       auth: {
         user: 'reservas@reservatuscanchas.cl',
-        pass: 'L660mKFmcDBk'
+        pass: 'Ec7sn9QgQUan'  // Contraseña nueva generada hoy
       }
     });
     
