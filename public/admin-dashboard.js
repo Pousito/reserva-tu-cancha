@@ -366,7 +366,7 @@ function mostrarReservasHoy(reservas) {
                         <i class="fas fa-building me-1"></i>${reserva.complejo_nombre || 'Sin complejo'}
                     </p>
                     <p class="text-muted mb-1 small">
-                        <i class="fas fa-futbol me-1"></i>Cancha ${reserva.numero_cancha || 'N/A'}
+                        <i class="fas fa-futbol me-1"></i>${reserva.cancha_nombre || 'Cancha N/A'}
                     </p>
                     <p class="text-muted mb-0 small">
                         <i class="fas fa-clock me-1"></i>${formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin)}
@@ -601,21 +601,31 @@ function formatearFechaCorta(fecha) {
     if (!fecha) return 'Sin fecha';
     
     try {
-        // Manejar fechas ISO (2025-09-08T00:00:00.000Z)
-        let fechaObj;
-        if (fecha.includes('T')) {
-            // Fecha ISO - usar directamente para evitar problemas de zona horaria
-            fechaObj = new Date(fecha);
-        } else {
-            // Fecha simple (YYYY-MM-DD) - crear fecha en UTC para evitar problemas de zona horaria
-            const [año, mes, dia] = fecha.split('-').map(Number);
-            fechaObj = new Date(Date.UTC(año, mes - 1, dia));
+        let fechaStr = fecha;
+        
+        // Si tiene timestamp, extraer solo la fecha
+        if (typeof fecha === 'string' && fecha.includes('T')) {
+            fechaStr = fecha.split('T')[0];
         }
         
+        // Parsear fecha YYYY-MM-DD sin convertir a Date (evita problemas de zona horaria)
+        if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+            const [año, mes, dia] = fechaStr.split('-').map(Number);
+            
+            // Crear Date al mediodía para evitar problemas de zona horaria
+            const fechaObj = new Date(año, mes - 1, dia, 12, 0, 0);
+            
+            return fechaObj.toLocaleDateString('es-CL', {
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        
+        // Fallback para otros formatos
+        const fechaObj = new Date(fechaStr);
         return fechaObj.toLocaleDateString('es-CL', {
             month: 'short',
-            day: 'numeric',
-            timeZone: 'America/Santiago' // Forzar zona horaria de Chile
+            day: 'numeric'
         });
     } catch (error) {
         console.error('Error formateando fecha corta:', error, 'Fecha original:', fecha);

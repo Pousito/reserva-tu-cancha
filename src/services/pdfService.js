@@ -125,8 +125,8 @@ class PDFService {
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(127, 140, 141); // #7f8c8d
             
-            const fechaActual = new Date().toLocaleDateString('es-CL');
-            const horaActual = new Date().toLocaleTimeString('es-CL');
+            const fechaActual = new Date().toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
+            const horaActual = new Date().toLocaleTimeString('es-CL', { timeZone: 'America/Santiago' });
             
             doc.text(`Comprobante generado el: ${fechaActual} a las ${horaActual}`, margin, y);
             doc.text('Este comprobante es válido como confirmación de su reserva.', margin, y + 4);
@@ -164,12 +164,32 @@ class PDFService {
      */
     static formatDate(fecha) {
         try {
-            const date = new Date(fecha);
+            let fechaStr = fecha;
+            
+            // Si tiene timestamp, extraer solo la fecha
+            if (typeof fecha === 'string' && fecha.includes('T')) {
+                fechaStr = fecha.split('T')[0];
+            }
+            
+            // Si es formato YYYY-MM-DD, agregar mediodía para evitar desfase
+            if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                const date = new Date(fechaStr + 'T12:00:00');
+                return date.toLocaleDateString('es-CL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'America/Santiago'
+                });
+            }
+            
+            const date = new Date(fechaStr);
             return date.toLocaleDateString('es-CL', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
+                timeZone: 'America/Santiago'
             });
         } catch (error) {
             return fecha;

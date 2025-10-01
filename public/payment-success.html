@@ -425,13 +425,27 @@
             if (!dateString) return 'Fecha no disponible';
             
             try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('es-CL', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                // Si es formato YYYY-MM-DD, agregar hora para evitar desfase de zona horaria
+                if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                    // Agregar 'T12:00:00' para que se interprete al mediodía, evitando problemas de zona horaria
+                    const date = new Date(dateString + 'T12:00:00');
+                    return date.toLocaleDateString('es-CL', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        timeZone: 'America/Santiago'
+                    });
+                } else {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('es-CL', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        timeZone: 'America/Santiago'
+                    });
+                }
             } catch (error) {
                 return dateString;
             }
