@@ -6,55 +6,134 @@
     <title>Pago - Reserva Tu Cancha</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
         .payment-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .payment-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
             text-align: center;
-            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
         }
 
         .payment-header h1 {
-            color: #2c3e50;
+            font-size: 2.5rem;
             margin-bottom: 0.5rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
         }
 
         .payment-header p {
-            color: #7f8c8d;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-content {
+            padding: 2.5rem;
         }
 
         .reservation-summary {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem;
+            border-radius: 15px;
             margin-bottom: 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .reservation-summary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
         }
 
         .reservation-summary h3 {
             color: #2c3e50;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.4rem;
+            font-weight: 600;
         }
 
         .summary-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #e9ecef;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .summary-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
         .summary-item:last-child {
-            border-bottom: none;
             font-weight: bold;
-            font-size: 1.1rem;
-            color: #2c3e50;
+            font-size: 1.2rem;
+            color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
         .payment-methods {
@@ -63,32 +142,58 @@
 
         .payment-methods h3 {
             color: #2c3e50;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.4rem;
+            font-weight: 600;
         }
 
         .payment-method {
             display: flex;
             align-items: center;
-            padding: 1rem;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
+            padding: 1.5rem;
+            border: 2px solid transparent;
+            border-radius: 15px;
             margin-bottom: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-method::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .payment-method:hover::before {
+            left: 100%;
         }
 
         .payment-method:hover {
-            border-color: #3498db;
-            background: #f8f9fa;
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
         }
 
         .payment-method.selected {
-            border-color: #3498db;
-            background: #e3f2fd;
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
         }
 
         .payment-method input[type="radio"] {
             margin-right: 1rem;
+            width: 20px;
+            height: 20px;
+            accent-color: #667eea;
         }
 
         .payment-method .method-info {
@@ -96,61 +201,95 @@
         }
 
         .payment-method .method-name {
-            font-weight: bold;
+            font-weight: 600;
             color: #2c3e50;
+            font-size: 1.1rem;
         }
 
         .payment-method .method-description {
-            color: #7f8c8d;
+            color: #6c757d;
             font-size: 0.9rem;
+            margin-top: 0.25rem;
         }
 
         .payment-actions {
             display: flex;
             gap: 1rem;
             justify-content: center;
+            margin-top: 2rem;
         }
 
         .btn {
-            padding: 1rem 2rem;
+            padding: 1rem 2.5rem;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            display: inline-block;
-            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn-primary {
-            background: #3498db;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary:hover {
-            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
         .btn-secondary {
-            background: #95a5a6;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
         }
 
         .btn-secondary:hover {
-            background: #7f8c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
         }
 
         .btn:disabled {
             background: #bdc3c7;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn:disabled::before {
+            display: none;
         }
 
         .loading {
             display: none;
             text-align: center;
-            margin: 1rem 0;
+            margin: 2rem 0;
         }
 
         .loading.show {
@@ -158,11 +297,11 @@
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border: 4px solid rgba(102, 126, 234, 0.1);
+            border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
             margin: 0 auto 1rem;
         }
@@ -173,48 +312,189 @@
         }
 
         .error-message {
-            background: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
             color: white;
-            padding: 1rem;
-            border-radius: 5px;
+            padding: 1.5rem;
+            border-radius: 12px;
             margin-bottom: 1rem;
             display: none;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
         }
 
         .error-message.show {
             display: block;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         .success-message {
-            background: #27ae60;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
             color: white;
-            padding: 1rem;
-            border-radius: 5px;
+            padding: 1.5rem;
+            border-radius: 12px;
             margin-bottom: 1rem;
             display: none;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
         }
 
         .success-message.show {
             display: block;
+            animation: bounce 0.6s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
         }
 
         .transbank-info {
-            background: #e8f5e8;
-            border: 1px solid #27ae60;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background: linear-gradient(135deg, rgba(39, 174, 96, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%);
+            border: 2px solid #27ae60;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .transbank-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
         }
 
         .transbank-info h4 {
             color: #27ae60;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
         }
 
         .transbank-info p {
             color: #2c3e50;
             margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .test-info {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #856404;
+        }
+
+        .dev-tools {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            border: 2px dashed #6c757d;
+        }
+
+        .dev-tools h4 {
+            color: #6c757d;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .dev-tools p {
+            color: #6c757d;
             font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .dev-tools .btn {
+            font-size: 0.9rem;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .dev-tools .btn[style*="background: #28a745"] {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        }
+
+        .dev-tools .btn[style*="background: #dc3545"] {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%) !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+
+            .payment-container {
+                margin: 0;
+                border-radius: 15px;
+            }
+
+            .payment-header {
+                padding: 2rem 1.5rem;
+            }
+
+            .payment-header h1 {
+                font-size: 2rem;
+            }
+
+            .payment-content {
+                padding: 1.5rem;
+            }
+
+            .payment-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 1.25rem 2rem;
+            }
+
+            .summary-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .dev-tools {
+                padding: 1.5rem;
+            }
+
+            .dev-tools div[style*="display: flex"] {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .payment-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .payment-header p {
+                font-size: 1rem;
+            }
+
+            .reservation-summary {
+                padding: 1.5rem;
+            }
+
+            .payment-method {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
@@ -225,85 +505,89 @@
             <p>Confirma tu reserva completando el pago</p>
         </div>
 
-        <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage"></div>
+        <div class="payment-content">
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
 
-        <div class="reservation-summary" id="reservationSummary">
-            <h3>📋 Resumen de Reserva</h3>
-            <div class="summary-item">
-                <span>Código de Transacción:</span>
-                <span id="reservationCode">-</span>
-            </div>
-            <div class="summary-item" style="font-size: 0.9rem; color: #6c757d; font-style: italic;">
-                <span>ℹ️ El código de reserva se generará después del pago exitoso</span>
-            </div>
-            <div class="summary-item">
-                <span>Cancha:</span>
-                <span id="courtName">-</span>
-            </div>
-            <div class="summary-item">
-                <span>Fecha:</span>
-                <span id="reservationDate">-</span>
-            </div>
-            <div class="summary-item">
-                <span>Horario:</span>
-                <span id="reservationTime">-</span>
-            </div>
-            <div class="summary-item">
-                <span>Cliente:</span>
-                <span id="clientName">-</span>
-            </div>
-            <div class="summary-item">
-                <span>Total a Pagar:</span>
-                <span id="totalAmount">-</span>
-            </div>
-        </div>
-
-        <div class="payment-methods">
-            <h3>💳 Métodos de Pago</h3>
-            
-            <div class="transbank-info">
-                <h4>🔒 Pago Seguro con Transbank</h4>
-                <p>Aceptamos todas las tarjetas de crédito y débito. Tu pago está protegido con la máxima seguridad.</p>
-                <div class="test-info" style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 0.5rem; margin-top: 0.5rem; font-size: 0.8rem; color: #856404;">
-                    <strong>⚠️ Modo Prueba:</strong> En desarrollo, la página de Transbank puede aparecer en blanco. Esto es normal para el entorno de integración.
+            <div class="reservation-summary" id="reservationSummary">
+                <h3>📋 Resumen de Reserva</h3>
+                <div class="summary-item">
+                    <span>Código de Transacción:</span>
+                    <span id="reservationCode">-</span>
+                </div>
+                <div class="summary-item" style="font-size: 0.9rem; color: #6c757d; font-style: italic;">
+                    <span>ℹ️ El código de reserva se generará después del pago exitoso</span>
+                </div>
+                <div class="summary-item">
+                    <span>Cancha:</span>
+                    <span id="courtName">-</span>
+                </div>
+                <div class="summary-item">
+                    <span>Fecha:</span>
+                    <span id="reservationDate">-</span>
+                </div>
+                <div class="summary-item">
+                    <span>Horario:</span>
+                    <span id="reservationTime">-</span>
+                </div>
+                <div class="summary-item">
+                    <span>Cliente:</span>
+                    <span id="clientName">-</span>
+                </div>
+                <div class="summary-item">
+                    <span>Total a Pagar:</span>
+                    <span id="totalAmount">-</span>
                 </div>
             </div>
 
-            <div class="payment-method selected" data-method="transbank">
-                <input type="radio" name="paymentMethod" value="transbank" checked>
-                <div class="method-info">
-                    <div class="method-name">💳 Tarjeta de Crédito/Débito</div>
-                    <div class="method-description">Visa, Mastercard, American Express - Procesado por Transbank</div>
+            <div class="payment-methods">
+                <h3>💳 Métodos de Pago</h3>
+                
+                <div class="transbank-info">
+                    <h4>🔒 Pago Seguro con Transbank</h4>
+                    <p>Aceptamos todas las tarjetas de crédito y débito. Tu pago está protegido con la máxima seguridad.</p>
+                    <div class="test-info">
+                        <strong>⚠️ Modo Prueba:</strong> En desarrollo, la página de Transbank puede aparecer en blanco. Esto es normal para el entorno de integración.
+                    </div>
+                </div>
+
+                <div class="payment-method selected" data-method="transbank">
+                    <input type="radio" name="paymentMethod" value="transbank" checked>
+                    <div class="method-info">
+                        <div class="method-name">💳 Tarjeta de Crédito/Débito</div>
+                        <div class="method-description">Visa, Mastercard, American Express - Procesado por Transbank</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Procesando pago...</p>
-        </div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Procesando pago...</p>
+            </div>
 
-        <div class="payment-actions">
-            <button class="btn btn-secondary" onclick="goBack()">← Volver</button>
-            <button class="btn btn-primary" id="payButton" onclick="processPayment()">
-                💳 Pagar Ahora
-            </button>
-        </div>
-
-        <!-- Botones de simulación para desarrollo -->
-        <div class="dev-tools" style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px dashed #6c757d;">
-            <h4 style="color: #6c757d; margin-bottom: 1rem;">🛠️ Herramientas de Desarrollo</h4>
-            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">
-                En modo desarrollo, puedes simular diferentes resultados de pago:
-            </p>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <button class="btn" style="background: #28a745; color: white; font-size: 0.9rem; padding: 0.5rem 1rem;" onclick="simulateSuccessfulPayment()">
-                    ✅ Simular Pago Exitoso
+            <div class="payment-actions">
+                <button class="btn btn-secondary" onclick="goBack()">
+                    ← Volver
                 </button>
-                <button class="btn" style="background: #dc3545; color: white; font-size: 0.9rem; padding: 0.5rem 1rem;" onclick="simulateCancelledPayment()">
-                    ❌ Simular Pago Cancelado
+                <button class="btn btn-primary" id="payButton" onclick="processPayment()">
+                    💳 Pagar Ahora
                 </button>
+            </div>
+
+            <!-- Botones de simulación para desarrollo -->
+            <div class="dev-tools">
+                <h4>🛠️ Herramientas de Desarrollo</h4>
+                <p>
+                    En modo desarrollo, puedes simular diferentes resultados de pago:
+                </p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn" style="background: #28a745; color: white;" onclick="simulateSuccessfulPayment()">
+                        ✅ Simular Pago Exitoso
+                    </button>
+                    <button class="btn" style="background: #dc3545; color: white;" onclick="simulateCancelledPayment()">
+                        ❌ Simular Pago Cancelado
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -674,7 +958,7 @@
                 if (result.success) {
                     showSuccess('¡Pago confirmado exitosamente! Tu reserva está activa.');
                     setTimeout(() => {
-                        window.location.href = '/?payment=success&code=' + result.reservationCode;
+                        window.location.href = '/payment-success.html?code=' + result.reservationCode;
                     }, 3000);
                 } else {
                     throw new Error(result.error || 'Error confirmando pago');
@@ -713,13 +997,13 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Pago simulado exitosamente!\n\n' +
-                          '📧 Email enviado\n' +
-                          '✅ Reserva confirmada\n' +
-                          '🆔 Código: ' + result.codigo_reserva);
+                    // Mostrar mensaje de éxito temporal
+                    showSuccess('✅ Pago simulado exitosamente! Redirigiendo...');
                     
-                    // Redirigir a la página principal de reservas
-                    window.location.href = '/index.html';
+                    // Redirigir directamente a la página de confirmación de pago
+                    setTimeout(() => {
+                        window.location.href = '/payment-success.html?code=' + result.codigo_reserva;
+                    }, 1500);
                 } else {
                     alert('❌ Error: ' + result.error);
                 }

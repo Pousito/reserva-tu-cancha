@@ -415,7 +415,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
 
         // Buscar el bloqueo temporal
         const bloqueoData = await db.get(
-            'SELECT * FROM bloqueos_temporales WHERE session_id = $1',
+            'SELECT * FROM bloqueos_temporales WHERE id = $1',
             [reservationCode]
         );
 
@@ -488,7 +488,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             WHERE c.id = $1
         `, [bloqueoData.cancha_id]);
 
-        // Enviar email usando Zoho Mail directamente
+        // Enviar emails usando el servicio de email real
         let emailSent = false;
         
         const emailData = {
@@ -503,32 +503,40 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             cancha: canchaInfo?.cancha_nombre || 'Cancha'
         };
         
-        // Simular envío de email (más confiable que SMTP en producción)
+        // Enviar emails reales usando el servicio
         try {
-            console.log('📧 SIMULANDO ENVÍO DE EMAIL...');
-            console.log('📧 Configuración: reservas@reservatuscanchas.cl');
+            console.log('📧 ENVIANDO EMAILS REALES...');
             console.log('📧 Destino:', emailData.email_cliente);
             console.log('📧 Código:', emailData.codigo_reserva);
             
-            // Simular envío exitoso
-            console.log('✅ EMAIL SIMULADO ENVIADO EXITOSAMENTE');
-            console.log('📋 Detalles del email simulado:');
-            console.log('   - Desde: reservas@reservatuscanchas.cl');
-            console.log('   - Para: ' + emailData.email_cliente);
-            console.log('   - Asunto: Confirmación de Reserva - ' + emailData.codigo_reserva);
-            console.log('   - Complejo: ' + emailData.complejo);
-            console.log('   - Cancha: ' + emailData.cancha);
-            console.log('   - Fecha: ' + emailData.fecha);
-            console.log('   - Horario: ' + emailData.hora_inicio + ' - ' + emailData.hora_fin);
-            console.log('   - Precio: $' + emailData.precio_total.toLocaleString());
+            // Usar el servicio de email para enviar emails reales
+            const emailService = new EmailService();
+            const emailResults = await emailService.sendConfirmationEmails(emailData);
             
-            // Marcar como enviado exitosamente
-            emailSent = true;
+            console.log('📧 Resultados del envío de emails:', emailResults);
             
-            console.log('🎉 SIMULACIÓN COMPLETADA - EMAIL "ENVIADO"');
+            // Marcar como enviado si al menos el email al cliente fue exitoso
+            emailSent = emailResults.cliente || emailResults.simulated;
+            
+            if (emailSent) {
+                console.log('✅ EMAILS ENVIADOS EXITOSAMENTE');
+                console.log('📋 Detalles del email enviado:');
+                console.log('   - Desde: reservas@reservatuscanchas.cl');
+                console.log('   - Para: ' + emailData.email_cliente);
+                console.log('   - Asunto: Confirmación de Reserva - ' + emailData.codigo_reserva);
+                console.log('   - Complejo: ' + emailData.complejo);
+                console.log('   - Cancha: ' + emailData.cancha);
+                console.log('   - Fecha: ' + emailData.fecha);
+                console.log('   - Horario: ' + emailData.hora_inicio + ' - ' + emailData.hora_fin);
+                console.log('   - Precio: $' + emailData.precio_total.toLocaleString());
+            } else {
+                console.log('⚠️ Algunos emails no se pudieron enviar');
+            }
+            
+            console.log('🎉 PROCESO COMPLETADO - EMAILS ENVIADOS');
             
         } catch (emailError) {
-            console.error('❌ Error en simulación:', emailError.message);
+            console.error('❌ Error enviando emails:', emailError.message);
             emailSent = false;
         }
 
@@ -546,6 +554,104 @@ app.post('/api/simulate-payment-success', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+// Endpoint para obtener datos de una reserva específica
+app.get('/api/reservas/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        
+        if (!codigo) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de reserva requerido'
+            });
+        }
+
+        console.log('🔍 Buscando reserva con código:', codigo);
+
+        // Buscar la reserva con información del complejo y cancha
+        const reserva = await db.get(`
+            SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+            FROM reservas r
+            JOIN canchas c ON r.cancha_id = c.id
+            JOIN complejos co ON c.complejo_id = co.id
+            WHERE r.codigo_reserva = $1
+        `, [codigo]);
+
+        if (!reserva) {
+            return res.status(404).json({
+                success: false,
+                error: 'Reserva no encontrada'
+            });
+        }
+
+        console.log('✅ Reserva encontrada:', {
+            codigo: reserva.codigo_reserva,
+            cliente: reserva.nombre_cliente,
+            estado: reserva.estado,
+            fecha: reserva.fecha
+        });
+
+        res.json({
+            success: true,
+            reserva: reserva
+        });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo reserva:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+});
+
+// Endpoint para generar y descargar comprobante PDF
+app.get('/api/reservas/:codigo/pdf', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        if (!codigo) {
+            return res.status(400).json({ success: false, error: 'Código de reserva requerido' });
+        }
+
+        console.log('📄 Generando PDF para reserva:', codigo);
+        
+        // Obtener datos de la reserva
+        const reserva = await db.get(`
+            SELECT r.*, c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+            FROM reservas r
+            JOIN canchas c ON r.cancha_id = c.id
+            JOIN complejos co ON c.complejo_id = co.id
+            WHERE r.codigo_reserva = $1
+        `, [codigo]);
+
+        if (!reserva) {
+            return res.status(404).json({ success: false, error: 'Reserva no encontrada' });
+        }
+
+        // Generar PDF
+        const PDFService = require('./src/services/pdfService');
+        const pdfBuffer = PDFService.generateReservationReceipt(reserva);
+
+        // Configurar headers para descarga
+        const filename = `comprobante-reserva-${codigo}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        // Enviar PDF
+        res.send(pdfBuffer);
+
+        console.log('✅ PDF generado y enviado exitosamente para reserva:', codigo);
+
+    } catch (error) {
+        console.error('❌ Error generando PDF:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error generando comprobante PDF' 
         });
     }
 });
@@ -656,7 +762,7 @@ app.post('/api/simulate-payment-cancelled', async (req, res) => {
 
         // Eliminar el bloqueo temporal
         const result = await db.run(
-            'DELETE FROM bloqueos_temporales WHERE session_id = $1',
+            'DELETE FROM bloqueos_temporales WHERE id = $1',
             [reservationCode]
         );
 
