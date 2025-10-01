@@ -21,7 +21,7 @@ services:
       - key: SMTP_HOST
         value: smtp.zoho.com
       - key: SMTP_PORT
-        value: 587
+        value: 465
       - key: SMTP_USER
         value: soporte@reservatuscanchas.cl
       - key: SMTP_PASS

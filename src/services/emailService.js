@@ -26,10 +26,10 @@ class EmailService {
       // Usar variables de entorno directamente
       const emailConfig = {
         host: process.env.SMTP_HOST || 'smtp.zoho.com',
-        port: parseInt(process.env.SMTP_PORT) || 587,
+        port: parseInt(process.env.SMTP_PORT) || 465, // Puerto 465 con SSL (funcionaba antes)
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
-        secure: false
+        secure: true // SSL directo en puerto 465
       };
       
       // Debug: Mostrar configuración de email
@@ -52,12 +52,12 @@ class EmailService {
         // Configuración de fallback para producción
         if (process.env.NODE_ENV === 'production') {
           emailConfig.host = 'smtp.zoho.com';
-          emailConfig.port = 587; // Puerto 587 con STARTTLS (Render bloquea 465)
+          emailConfig.port = 465; // Puerto 465 con SSL (configuración que funcionaba)
           emailConfig.user = 'reservas@reservatuscanchas.cl';
           emailConfig.pass = 'L660mKFmcDBk';
-          emailConfig.secure = false; // STARTTLS (no SSL directo)
+          emailConfig.secure = true; // SSL directo
           
-          console.log('📧 Usando configuración de fallback para producción (STARTTLS port 587)');
+          console.log('📧 Usando configuración de fallback para producción (SSL port 465)');
         } else {
           console.log('⚠️ Email no configurado - usando modo simulación');
           this.isConfigured = false;
@@ -293,10 +293,10 @@ class EmailService {
   createReservasTransporter() {
     const reservasConfig = {
       host: process.env.SMTP_HOST || 'smtp.zoho.com',
-      port: parseInt(process.env.SMTP_PORT) || 587, // Puerto 587 con STARTTLS (Render bloquea 465)
+      port: parseInt(process.env.SMTP_PORT) || 465, // Puerto 465 con SSL (configuración que funcionaba)
       user: process.env.SMTP_RESERVAS_USER || process.env.SMTP_USER || 'reservas@reservatuscanchas.cl',
       pass: process.env.SMTP_RESERVAS_PASS || process.env.SMTP_PASS || 'L660mKFmcDBk',
-      secure: false // STARTTLS (no SSL directo) - Render requiere esto
+      secure: true // SSL directo
     };
 
     console.log('📧 Configuración de email para reservas:', {
