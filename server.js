@@ -5269,17 +5269,17 @@ app.post('/api/debug/migrate-fundacion-gunnen', async (req, res) => {
     console.log('⚽ Insertando canchas de Fundación Gunnen...');
     
     const canchas = [
-      { nombre: 'Cancha 1', tipo: 'futbol', precio: 8000, numero: 1 },
-      { nombre: 'Cancha 2', tipo: 'futbol', precio: 8000, numero: 2 }
+      { nombre: 'Cancha 1', tipo: 'futbol', precio: 8000 },
+      { nombre: 'Cancha 2', tipo: 'futbol', precio: 8000 }
     ];
     
     const canchasCreadas = [];
     for (const cancha of canchas) {
       const canchaResult = await db.query(`
-        INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora, numero) 
-        VALUES ($1, $2, $3, $4, $5) 
+        INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora) 
+        VALUES ($1, $2, $3, $4) 
         RETURNING id
-      `, [complexId, cancha.nombre, cancha.tipo, cancha.precio, cancha.numero]);
+      `, [complexId, cancha.nombre, cancha.tipo, cancha.precio]);
       
       const canchaId = canchaResult.rows && canchaResult.rows[0] ? canchaResult.rows[0].id : null;
       canchasCreadas.push({
