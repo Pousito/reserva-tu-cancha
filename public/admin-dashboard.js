@@ -97,22 +97,24 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarGraficos();
     
     // Aplicar permisos y actualizar info del usuario después de cargar datos (por si acaso)
-    setTimeout(() => {
-        mostrarInfoUsuario();
-        aplicarPermisosPorRol();
-        asegurarVisibilidadReportes();
-    }, 1000);
+    // Comentado para evitar múltiples inicializaciones
+    // setTimeout(() => {
+    //     mostrarInfoUsuario();
+    //     aplicarPermisosPorRol();
+    //     asegurarVisibilidadReportes();
+    // }, 1000);
     
     // Agregar event listener para cuando se hace clic en el dashboard
-    document.addEventListener('click', function(event) {
-        if (event.target.closest('a[href="admin-dashboard.html"]')) {
-            setTimeout(() => {
-                mostrarInfoUsuario();
-                aplicarPermisosPorRol();
-                asegurarVisibilidadReportes();
-            }, 100);
-        }
-    });
+    // Comentado para evitar múltiples inicializaciones
+    // document.addEventListener('click', function(event) {
+    //     if (event.target.closest('a[href="admin-dashboard.html"]')) {
+    //         setTimeout(() => {
+    //             mostrarInfoUsuario();
+    //             aplicarPermisosPorRol();
+    //             asegurarVisibilidadReportes();
+    //         }, 100);
+    //     }
+    // });
 });
 
 function mostrarInfoUsuario() {
