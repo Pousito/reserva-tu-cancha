@@ -396,6 +396,24 @@ async function cargarReservasRecientes() {
                     console.log('  - Por ID recentReservations:', document.getElementById('recentReservations'));
                     console.log('  - Por data-test:', document.querySelector('[data-test="recent-reservations-container"]'));
                     console.log('  - Por clase reservations-content:', document.querySelectorAll('.reservations-content'));
+                    
+                    // Buscar todos los elementos con ID
+                    const allElementsWithId = Array.from(document.querySelectorAll('[id]')).map(el => el.id);
+                    console.log('  - Todos los IDs en el DOM:', allElementsWithId);
+                    
+                    // Buscar elementos que contengan "recent" en cualquier parte
+                    const recentElements = Array.from(document.querySelectorAll('*')).filter(el => 
+                        el.id && el.id.toLowerCase().includes('recent') ||
+                        el.className && el.className.toLowerCase().includes('recent')
+                    );
+                    console.log('  - Elementos con "recent":', recentElements);
+                    
+                    // Buscar el contenedor padre
+                    const parentContainer = document.querySelector('.recent-reservations');
+                    console.log('  - Contenedor padre .recent-reservations:', parentContainer);
+                    if (parentContainer) {
+                        console.log('  - Hijos del contenedor padre:', Array.from(parentContainer.children));
+                    }
                 }
             };
             
