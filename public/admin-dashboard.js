@@ -50,10 +50,13 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarHoraActual();
     setInterval(actualizarHoraActual, 1000);
     
-    // Cargar datos del dashboard
-    cargarEstadisticas();
-    cargarReservasRecientes();
-    cargarReservasHoy();
+    // Cargar datos del dashboard (con delay para asegurar que el token esté disponible)
+    setTimeout(() => {
+        console.log('📊 Cargando datos del dashboard...');
+        cargarEstadisticas();
+        cargarReservasRecientes();
+        cargarReservasHoy();
+    }, 500);
     
     // Inicializar gráficos
     inicializarGraficos();
