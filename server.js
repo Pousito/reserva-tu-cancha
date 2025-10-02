@@ -5147,6 +5147,88 @@ app.get('/api/debug/verify-token', authenticateToken, async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VER CANCHAS =====
+app.get('/api/debug/canchas', async (req, res) => {
+  try {
+    console.log('🔍 Verificando canchas en la base de datos...');
+    
+    const canchas = await db.query(`
+      SELECT c.*, comp.nombre as complejo_nombre 
+      FROM canchas c 
+      LEFT JOIN complejos comp ON c.complejo_id = comp.id 
+      ORDER BY c.id
+    `);
+    
+    console.log(`📊 Encontradas ${canchas.length} canchas en la base de datos`);
+    
+    res.json({
+      success: true,
+      totalCanchas: canchas.length,
+      canchas: canchas
+    });
+  } catch (error) {
+    console.error('❌ Error verificando canchas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== ENDPOINT PARA CREAR CANCHAS DE PRUEBA =====
+app.post('/api/debug/create-courts', async (req, res) => {
+  try {
+    console.log('🏟️ Creando canchas para Fundación Gunnen...');
+    
+    const canchasData = [
+      {
+        complejo_id: 3, // Fundación Gunnen
+        nombre: 'Cancha 1',
+        tipo: 'futbol',
+        precio_hora: 8000,
+        numero: 1
+      },
+      {
+        complejo_id: 3, // Fundación Gunnen
+        nombre: 'Cancha 2',
+        tipo: 'futbol',
+        precio_hora: 8000,
+        numero: 2
+      }
+    ];
+    
+    const results = [];
+    for (const cancha of canchasData) {
+      try {
+        const result = await db.run(`
+          INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora, numero)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [cancha.complejo_id, cancha.nombre, cancha.tipo, cancha.precio_hora, cancha.numero]);
+        
+        results.push({
+          cancha: cancha.nombre,
+          status: 'created',
+          id: result.lastID
+        });
+        console.log(`✅ Cancha creada: ${cancha.nombre} (ID: ${result.lastID})`);
+      } catch (error) {
+        results.push({
+          cancha: cancha.nombre,
+          status: 'error',
+          error: error.message
+        });
+        console.error(`❌ Error creando cancha ${cancha.nombre}:`, error.message);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Proceso de creación de canchas completado',
+      results: results
+    });
+  } catch (error) {
+    console.error('❌ Error creando canchas:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA ACTUALIZAR ROLES =====
 app.post('/api/debug/fix-roles', async (req, res) => {
   try {

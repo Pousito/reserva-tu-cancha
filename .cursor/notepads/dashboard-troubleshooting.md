@@ -88,6 +88,32 @@ curl -s http://localhost:3000/api/debug/passwords | jq '.usuarios[] | select(.em
 curl -X POST http://localhost:3000/api/debug/fix-roles
 ```
 
+### **5. ERROR: "No se encontraron canchas" para Fundación Gunnen** ✅ **RESUELTO**
+**🔍 Síntomas:**
+- Usuario manager de Fundación Gunnen ve "No se encontraron canchas"
+- Debería ver 2 canchas del complejo
+
+**🔧 Causa:**
+- Las canchas existían solo para MagnaSports (complejo_id: 1)
+- Fundación Gunnen (complejo_id: 3) no tenía canchas creadas
+- Usuario manager solo puede ver canchas de su complejo asignado
+
+**✅ Solución:**
+```bash
+# 1. Verificar canchas existentes
+curl -s http://localhost:3000/api/debug/canchas
+
+# 2. Crear canchas para Fundación Gunnen
+curl -X POST http://localhost:3000/api/debug/create-courts
+
+# 3. Verificar que se crearon
+curl -s http://localhost:3000/api/debug/canchas | jq '.canchas[] | {id, nombre, complejo_nombre}'
+```
+
+**📊 Resultado:**
+- **MagnaSports**: 2 canchas techadas a $5,000/hora
+- **Fundación Gunnen**: 2 canchas a $8,000/hora
+
 ---
 
 ## 🔍 **COMANDOS DE DIAGNÓSTICO:**
