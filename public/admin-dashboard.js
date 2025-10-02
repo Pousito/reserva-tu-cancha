@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Aplicar permisos según el rol (con delay para asegurar que el usuario esté cargado)
     setTimeout(() => {
         aplicarPermisosPorRol();
-    }, 100);
+    }, 500);
     
     // Actualizar hora actual
     actualizarHoraActual();
@@ -222,10 +222,14 @@ function aplicarPermisosPorRol() {
         console.log('🔍 Elementos encontrados:', reportElements);
         
         reportElements.forEach((element, index) => {
-            console.log(`❌ Ocultando enlace de reportes ${index + 1}:`, element);
-            element.style.display = 'none';
-            element.style.visibility = 'hidden';
-            console.log(`✅ Enlace de reportes ${index + 1} ocultado para manager`);
+            if (element) {
+                console.log(`❌ Ocultando enlace de reportes ${index + 1}:`, element);
+                element.style.display = 'none';
+                element.style.visibility = 'hidden';
+                console.log(`✅ Enlace de reportes ${index + 1} ocultado para manager`);
+            } else {
+                console.log(`❌ Elemento de reportes ${index + 1} es null`);
+            }
         });
         
         // Ocultar elementos con clase hide-for-manager
