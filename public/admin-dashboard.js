@@ -367,28 +367,35 @@ async function cargarReservasRecientes() {
         if (response && response.ok) {
             const reservas = await response.json();
             
-            // Verificar que el elemento existe antes de mostrar las reservas
-            console.log('🔍 Verificando elementos del DOM para reservas recientes...');
-            const containerById = document.getElementById('recentReservations');
-            const containerByDataTest = document.querySelector('[data-test="recent-reservations-container"]');
-            const containerByClass = document.querySelector('.reservations-content');
-            
-            console.log('  - Por ID:', !!containerById, containerById);
-            console.log('  - Por data-test:', !!containerByDataTest, containerByDataTest);
-            console.log('  - Por clase:', !!containerByClass, containerByClass);
-            
-            const container = containerById || containerByDataTest || containerByClass;
-            
-            if (container) {
-                console.log('✅ Elemento encontrado, mostrando reservas...');
-                mostrarReservasRecientes(reservas);
-                console.log('✅ Reservas recientes cargadas:', reservas.length);
-            } else {
-                console.warn('⚠️ Elemento recentReservations no encontrado, reintentando en 500ms...');
-                setTimeout(() => {
+            // Función para intentar mostrar las reservas con reintentos
+            const intentarMostrarReservas = (intentos = 0) => {
+                console.log(`🔍 Verificando elementos del DOM para reservas recientes (intento ${intentos + 1})...`);
+                
+                const containerById = document.getElementById('recentReservations');
+                const containerByDataTest = document.querySelector('[data-test="recent-reservations-container"]');
+                const containerByClass = document.querySelector('.reservations-content');
+                
+                console.log('  - Por ID:', !!containerById, containerById);
+                console.log('  - Por data-test:', !!containerByDataTest, containerByDataTest);
+                console.log('  - Por clase:', !!containerByClass, containerByClass);
+                
+                const container = containerById || containerByDataTest || containerByClass;
+                
+                if (container) {
+                    console.log('✅ Elemento encontrado, mostrando reservas...');
                     mostrarReservasRecientes(reservas);
-                }, 500);
-            }
+                    console.log('✅ Reservas recientes cargadas:', reservas.length);
+                } else if (intentos < 5) {
+                    console.warn(`⚠️ Elemento recentReservations no encontrado, reintentando en ${(intentos + 1) * 200}ms... (intento ${intentos + 1}/5)`);
+                    setTimeout(() => {
+                        intentarMostrarReservas(intentos + 1);
+                    }, (intentos + 1) * 200);
+                } else {
+                    console.error('❌ No se pudo encontrar el elemento después de 5 intentos');
+                }
+            };
+            
+            intentarMostrarReservas();
         } else {
             console.error('Error cargando reservas recientes:', response?.status);
         }
