@@ -18,10 +18,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (currentUser) {
         document.getElementById('adminWelcome').textContent = `Bienvenido, ${currentUser.nombre || 'Admin'}`;
         
-        // Actualizar información del usuario en el sidebar
-        document.querySelector('[data-user="name"]').textContent = currentUser.nombre || 'Admin';
-        document.querySelector('[data-user="role"]').textContent = AdminUtils.getRoleDisplayName(currentUser.rol);
-        document.querySelector('[data-user="complex"]').textContent = currentUser.complejo_nombre || 'Todos los complejos';
+        // Actualizar información del usuario en el sidebar (si los elementos existen)
+        const nameElement = document.querySelector('[data-user="name"]');
+        const roleElement = document.querySelector('[data-user="role"]');
+        const complexElement = document.querySelector('[data-user="complex"]');
+        
+        if (nameElement) {
+            nameElement.textContent = currentUser.nombre || 'Admin';
+        }
+        if (roleElement) {
+            roleElement.textContent = AdminUtils.getRoleDisplayName(currentUser.rol);
+        }
+        if (complexElement) {
+            complexElement.textContent = currentUser.complejo_nombre || 'Todos los complejos';
+        }
     }
     
     // Aplicar permisos según el rol

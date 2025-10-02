@@ -179,6 +179,30 @@ if (modalComplejoElement) {
 
 ---
 
+### **5. ERROR: Elementos null en página de canchas**
+**🔍 Síntomas:**
+```
+[Error] TypeError: null is not an object (evaluating 'document.querySelector('[data-user="name"]').textContent = currentUser.nombre || 'Admin'')
+```
+
+**🔧 Causa:**
+- Elementos HTML con `data-user` no existen en la página de canchas
+- JavaScript intenta acceder a elementos que no están presentes
+
+**✅ Solución:**
+```javascript
+// ANTES (causa errores)
+document.querySelector('[data-user="name"]').textContent = currentUser.nombre || 'Admin';
+
+// DESPUÉS (con verificación)
+const nameElement = document.querySelector('[data-user="name"]');
+if (nameElement) {
+    nameElement.textContent = currentUser.nombre || 'Admin';
+}
+```
+
+---
+
 ## 🛠️ **SOLUCIONES RÁPIDAS:**
 
 ### **Si hay errores de elementos null:**
