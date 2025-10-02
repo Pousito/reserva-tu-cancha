@@ -21,10 +21,20 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 API_BASE:', API_BASE);
     
     // Verificar autenticación
+    console.log('🔐 Verificando autenticación...');
+    const token = localStorage.getItem('adminToken');
+    const user = localStorage.getItem('adminUser');
+    console.log('🔑 Token presente:', !!token);
+    console.log('👤 Usuario presente:', !!user);
+    console.log('🔍 AdminUtils.isAuthenticated():', AdminUtils.isAuthenticated());
+    
     if (!AdminUtils.isAuthenticated()) {
+        console.log('❌ No autenticado, redirigiendo al login...');
         window.location.href = '../../admin-login.html';
         return;
     }
+    
+    console.log('✅ Usuario autenticado correctamente');
     
     // Mostrar información del usuario (con delay para asegurar que el usuario esté cargado)
     setTimeout(() => {
