@@ -216,30 +216,16 @@ function aplicarPermisosPorRol() {
         // Managers no pueden ver reportes ni información financiera
         console.log('🔐 Aplicando permisos para manager - ocultando reportes');
         
-        // Ocultar enlaces de reportes
-        const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
-        console.log(`📊 Encontrados ${reportElements.length} enlaces de reportes para ocultar`);
-        console.log('🔍 Elementos encontrados:', reportElements);
-        
-        reportElements.forEach((element, index) => {
-            if (element) {
-                console.log(`❌ Ocultando enlace de reportes ${index + 1}:`, element);
-                element.style.display = 'none';
-                element.style.visibility = 'hidden';
-                console.log(`✅ Enlace de reportes ${index + 1} ocultado para manager`);
-            } else {
-                console.log(`❌ Elemento de reportes ${index + 1} es null`);
-            }
-        });
-        
-        // Ocultar elementos con clase hide-for-manager
+        // Los elementos con clase hide-for-manager ya están ocultos por CSS
+        // Solo verificar que se aplicaron correctamente
         const managerElements = document.querySelectorAll('.hide-for-manager');
-        console.log(`🔍 Encontrados ${managerElements.length} elementos para ocultar para manager`);
-        managerElements.forEach(element => {
-            element.style.display = 'none';
+        console.log(`🔍 Encontrados ${managerElements.length} elementos ocultos para manager`);
+        
+        managerElements.forEach((element, index) => {
+            console.log(`✅ Elemento ${index + 1} oculto para manager:`, element);
         });
         
-        console.log('✅ Permisos aplicados para manager - reportes ocultos');
+        console.log('✅ Permisos aplicados para manager - reportes ocultos por CSS');
     }
 }
 
