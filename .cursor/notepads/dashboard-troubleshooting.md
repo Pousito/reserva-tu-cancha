@@ -40,31 +40,32 @@ if (element) {
 
 ---
 
-### **2. ERROR: Manager ve sección de reportes**
+### **2. ERROR: Manager ve secciones no permitidas**
 **🔍 Síntomas:**
-- Usuario manager puede ver enlace "Reportes" en sidebar
+- Usuario manager puede ver enlaces "Reportes" y "Complejos" en sidebar
 - Al hacer click, redirección automática al login
 
 **🔧 Causa:**
+- Manager no debería ver estas secciones (solo puede gestionar su propio complejo)
 - Permisos no se aplican correctamente
-- Timing de aplicación de permisos
 - Elementos no se ocultan
 
 **✅ Solución:**
-```javascript
-// Aplicar permisos con delay para asegurar DOM cargado
-setTimeout(() => {
-    aplicarPermisosPorRol();
-}, 500);
+```html
+<!-- HTML: Agregar clase hide-for-manager -->
+<a class="nav-link hide-for-manager" href="admin-reports.html">
+    <i class="fas fa-chart-bar me-2"></i>Reportes
+</a>
+<a class="nav-link hide-for-manager" href="admin-complexes.html">
+    <i class="fas fa-building me-2"></i>Complejos
+</a>
+```
 
-// Verificar elementos antes de ocultar
-const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
-reportElements.forEach((element, index) => {
-    if (element) {
-        element.style.display = 'none';
-        element.style.visibility = 'hidden';
-    }
-});
+```css
+/* CSS: Ocultar elementos para manager */
+.hide-for-manager {
+    display: none !important;
+}
 ```
 
 ---
@@ -128,8 +129,8 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:3000/api/admin/reports
 ### **Al cargar el dashboard:**
 - [ ] No hay errores de JavaScript en consola
 - [ ] Elementos de estadísticas se actualizan correctamente
-- [ ] Usuario manager NO ve enlace de reportes
-- [ ] Usuario owner SÍ ve enlace de reportes
+- [ ] Usuario manager NO ve enlaces de reportes y complejos
+- [ ] Usuario owner SÍ ve enlaces de reportes y complejos
 - [ ] Usuario super_admin ve todos los enlaces
 
 ### **Al hacer click en reportes (manager):**
