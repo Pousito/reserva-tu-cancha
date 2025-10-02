@@ -5409,6 +5409,72 @@ app.post('/api/debug/delete-duplicates', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA LIMPIAR LOCALHOST =====
+app.post('/api/debug/clean-localhost', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando duplicados en localhost...');
+    
+    // Eliminar IDs 4 y 5, mantener ID 3
+    await db.query('DELETE FROM complejos WHERE id IN ($1, $2)', [4, 5]);
+    console.log('✅ Complejos 4 y 5 eliminados');
+    
+    // Mover canchas al complejo 3
+    await db.query('UPDATE canchas SET complejo_id = $1 WHERE complejo_id IN ($2, $3)', [3, 4, 5]);
+    console.log('✅ Canchas movidas al complejo 3');
+    
+    // Eliminar canchas duplicadas (IDs 8 y 9)
+    await db.query('DELETE FROM canchas WHERE id IN ($1, $2)', [8, 9]);
+    console.log('✅ Canchas duplicadas 8 y 9 eliminadas');
+    
+    res.json({
+      success: true,
+      message: 'Localhost limpiado exitosamente',
+      keptId: 3,
+      deletedComplexes: [4, 5],
+      deletedCanchas: [8, 9]
+    });
+    
+  } catch (error) {
+    console.error('❌ Error limpiando localhost:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ===== ENDPOINT PARA CORREGIR CANCHAS EN PRODUCCIÓN =====
+app.post('/api/debug/fix-canchas-production', async (req, res) => {
+  try {
+    console.log('🔧 Corrigiendo asociaciones de canchas en producción...');
+    
+    // Asociar canchas 3 y 4 al complejo Fundación Gunnen (ID: 2)
+    await db.query('UPDATE canchas SET complejo_id = $1 WHERE id IN ($2, $3)', [2, 3, 4]);
+    console.log('✅ Canchas 3 y 4 asociadas al complejo 2 (Fundación Gunnen)');
+    
+    // Verificar resultado
+    const canchas = await db.query(`
+      SELECT c.id, c.nombre, c.complejo_id, co.nombre as complejo_nombre 
+      FROM canchas c 
+      LEFT JOIN complejos co ON c.complejo_id = co.id 
+      WHERE c.id IN (3, 4)
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Asociaciones de canchas corregidas en producción',
+      canchas: canchas.rows
+    });
+    
+  } catch (error) {
+    console.error('❌ Error corrigiendo canchas:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====
 app.post('/api/debug/fix-complejo-ids', async (req, res) => {
   try {
