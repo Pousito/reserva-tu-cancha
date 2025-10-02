@@ -369,63 +369,37 @@ async function cargarReservasRecientes() {
         if (response && response.ok) {
             const reservas = await response.json();
             
-            // Función para intentar mostrar las reservas con reintentos
-            const intentarMostrarReservas = (intentos = 0) => {
-                console.log(`🔍 Verificando elementos del DOM para reservas recientes (intento ${intentos + 1})...`);
-                console.log('🔍 Estado del DOM:', {
-                    readyState: document.readyState,
-                    bodyExists: !!document.body,
-                    allElements: document.querySelectorAll('*').length
-                });
+            // Función simplificada para mostrar las reservas
+            const mostrarReservas = () => {
+                console.log('🔍 Buscando elemento recentReservations...');
                 
-                const containerById = document.getElementById('recentReservations');
-                const containerByDataTest = document.querySelector('[data-test="recent-reservations-container"]');
-                const containerByClass = document.querySelector('.reservations-content');
+                // Buscar el elemento de forma más directa
+                let container = document.getElementById('recentReservations');
                 
-                console.log('  - Por ID:', !!containerById, containerById);
-                console.log('  - Por data-test:', !!containerByDataTest, containerByDataTest);
-                console.log('  - Por clase:', !!containerByClass, containerByClass);
+                if (!container) {
+                    // Buscar por data-test como fallback
+                    container = document.querySelector('[data-test="recent-reservations-container"]');
+                }
                 
-                // Buscar todos los elementos con ID que contengan 'recent'
-                const allRecentElements = document.querySelectorAll('[id*="recent"]');
-                console.log('  - Todos los elementos con "recent" en ID:', allRecentElements);
-                
-                // Buscar todos los elementos con clase 'reservations'
-                const allReservationElements = document.querySelectorAll('[class*="reservation"]');
-                console.log('  - Todos los elementos con "reservation" en clase:', allReservationElements);
-                
-                const container = containerById || containerByDataTest || containerByClass;
+                if (!container) {
+                    // Buscar por clase como último recurso
+                    container = document.querySelector('.reservations-content');
+                }
                 
                 if (container) {
-                    console.log('✅ Elemento encontrado, mostrando reservas...');
+                    console.log('✅ Elemento encontrado:', container);
                     mostrarReservasRecientes(reservas);
                     console.log('✅ Reservas recientes cargadas:', reservas.length);
-                } else if (intentos < 5) {
-                    console.warn(`⚠️ Elemento recentReservations no encontrado, reintentando en ${(intentos + 1) * 200}ms... (intento ${intentos + 1}/5)`);
-                    setTimeout(() => {
-                        intentarMostrarReservas(intentos + 1);
-                    }, (intentos + 1) * 200);
                 } else {
-                    console.error('❌ No se pudo encontrar el elemento después de 5 intentos');
-                    console.log('🔍 Intentando crear el elemento manualmente...');
-                    
-                    // Intentar crear el elemento si no existe
-                    const parentContainer = document.querySelector('.recent-reservations');
-                    if (parentContainer) {
-                        const newContainer = document.createElement('div');
-                        newContainer.id = 'recentReservations';
-                        newContainer.className = 'reservations-content';
-                        newContainer.setAttribute('data-test', 'recent-reservations-container');
-                        parentContainer.appendChild(newContainer);
-                        console.log('✅ Elemento recentReservations creado manualmente:', newContainer);
-                        mostrarReservasRecientes(reservas);
-                    } else {
-                        console.error('❌ No se pudo crear el elemento - contenedor padre no encontrado');
-                    }
+                    console.error('❌ No se pudo encontrar el elemento recentReservations');
+                    console.log('🔍 Elementos disponibles en el DOM:');
+                    console.log('  - Por ID recentReservations:', document.getElementById('recentReservations'));
+                    console.log('  - Por data-test:', document.querySelector('[data-test="recent-reservations-container"]'));
+                    console.log('  - Por clase reservations-content:', document.querySelectorAll('.reservations-content'));
                 }
             };
             
-            intentarMostrarReservas();
+            mostrarReservas();
         } else {
             console.error('Error cargando reservas recientes:', response?.status);
         }
