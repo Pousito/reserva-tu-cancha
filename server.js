@@ -5308,6 +5308,76 @@ app.post('/api/debug/migrate-fundacion-gunnen', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA LIMPIAR DUPLICADOS DE FUNDACIÓN GUNNEN =====
+app.post('/api/debug/clean-duplicate-complexes', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando complejos duplicados de Fundación Gunnen...');
+    
+    // 1. Obtener todos los registros de Fundación Gunnen
+    const duplicates = await db.query(
+      'SELECT id, nombre FROM complejos WHERE nombre = $1 ORDER BY id',
+      ['Fundación Gunnen']
+    );
+    
+    if (!duplicates.rows || duplicates.rows.length <= 1) {
+      return res.json({
+        success: true,
+        message: 'No hay duplicados de Fundación Gunnen',
+        totalFound: duplicates.rows ? duplicates.rows.length : 0
+      });
+    }
+    
+    // 2. Mantener el primer registro (ID más bajo) y eliminar el resto
+    const keepId = duplicates.rows[0].id;
+    const deleteIds = duplicates.rows.slice(1).map(row => row.id);
+    
+    console.log(`✅ Manteniendo complejo ID: ${keepId}`);
+    console.log(`🗑️ Eliminando IDs: ${deleteIds.join(', ')}`);
+    
+    // 3. Mover canchas de complejos duplicados al complejo principal
+    for (const deleteId of deleteIds) {
+      await db.query(
+        'UPDATE canchas SET complejo_id = $1 WHERE complejo_id = $2',
+        [keepId, deleteId]
+      );
+      console.log(`🔄 Canchas movidas de complejo ${deleteId} a ${keepId}`);
+    }
+    
+    // 4. Eliminar complejos duplicados
+    for (const deleteId of deleteIds) {
+      await db.query('DELETE FROM complejos WHERE id = $1', [deleteId]);
+      console.log(`🗑️ Complejo duplicado ${deleteId} eliminado`);
+    }
+    
+    // 5. Verificar resultado
+    const finalComplexes = await db.query(
+      'SELECT * FROM complejos WHERE nombre = $1',
+      ['Fundación Gunnen']
+    );
+    
+    const finalCanchas = await db.query(
+      'SELECT COUNT(*) as count FROM canchas WHERE complejo_id = $1',
+      [keepId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Duplicados de Fundación Gunnen eliminados exitosamente',
+      keptComplexId: keepId,
+      deletedIds: deleteIds,
+      finalCount: finalComplexes.rows.length,
+      canchasCount: finalCanchas.rows && finalCanchas.rows[0] ? finalCanchas.rows[0].count : 0
+    });
+    
+  } catch (error) {
+    console.error('❌ Error limpiando duplicados:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====
 app.post('/api/debug/fix-complejo-ids', async (req, res) => {
   try {
