@@ -82,28 +82,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Verificar que los elementos del DOM estén disponibles
         const recentContainer = document.getElementById('recentReservations');
-        const todayContainer = document.getElementById('todayReservationsList');
+        const todayContainer = document.getElementById('todayReservations');
         
         console.log('🔍 Verificando elementos del DOM:');
         console.log('  - recentReservations:', !!recentContainer);
-        console.log('  - todayReservationsList:', !!todayContainer);
-        
-        // Si el elemento no existe, intentar crearlo o buscar alternativas
-        if (!recentContainer) {
-            console.warn('⚠️ Elemento recentReservations no encontrado, buscando alternativas...');
-            
-            // Buscar elementos con clases similares
-            const alternatives = document.querySelectorAll('.reservations-content, [class*="reservation"], [id*="recent"]');
-            console.log('🔍 Elementos alternativos encontrados:', alternatives);
-            
-            // Buscar en el HTML completo
-            const allElements = document.querySelectorAll('*');
-            const elementsWithRecent = Array.from(allElements).filter(el => 
-                el.id && el.id.toLowerCase().includes('recent') ||
-                el.className && el.className.toLowerCase().includes('recent')
-            );
-            console.log('🔍 Elementos con "recent" en ID o clase:', elementsWithRecent);
-        }
+        console.log('  - todayReservations:', !!todayContainer);
         
         cargarEstadisticas();
         cargarReservasRecientes();
