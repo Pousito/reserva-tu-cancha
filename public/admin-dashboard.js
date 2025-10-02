@@ -218,10 +218,14 @@ function aplicarPermisosPorRol() {
         
         // Ocultar enlaces de reportes
         const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
-        console.log(`📊 Ocultando ${reportElements.length} enlaces de reportes para manager`);
+        console.log(`📊 Encontrados ${reportElements.length} enlaces de reportes para ocultar`);
+        console.log('🔍 Elementos encontrados:', reportElements);
+        
         reportElements.forEach((element, index) => {
+            console.log(`❌ Ocultando enlace de reportes ${index + 1}:`, element);
             element.style.display = 'none';
-            console.log(`❌ Enlace de reportes ${index + 1} ocultado para manager`);
+            element.style.visibility = 'hidden';
+            console.log(`✅ Enlace de reportes ${index + 1} ocultado para manager`);
         });
         
         // Ocultar elementos con clase hide-for-manager
@@ -299,10 +303,23 @@ async function cargarEstadisticas() {
             const data = await response.json();
             
             // Actualizar tarjetas de estadísticas
-            document.getElementById('totalReservas').textContent = data.totalReservas || '0';
-            document.getElementById('totalCanchas').textContent = data.totalCanchas || '0';
-            document.getElementById('totalComplejos').textContent = data.totalComplejos || '0';
-            document.getElementById('ingresosTotales').textContent = `$${data.ingresosTotales?.toLocaleString() || '0'}`;
+            const totalReservationsElement = document.getElementById('totalReservations');
+            const totalCourtsElement = document.getElementById('totalCourts');
+            const totalComplexesElement = document.getElementById('totalComplexes');
+            const totalRevenueElement = document.getElementById('totalRevenue');
+            
+            if (totalReservationsElement) {
+                totalReservationsElement.textContent = data.totalReservas || '0';
+            }
+            if (totalCourtsElement) {
+                totalCourtsElement.textContent = data.totalCanchas || '0';
+            }
+            if (totalComplexesElement) {
+                totalComplexesElement.textContent = data.totalComplejos || '0';
+            }
+            if (totalRevenueElement) {
+                totalRevenueElement.textContent = `$${data.ingresosTotales?.toLocaleString() || '0'}`;
+            }
             
             // Actualizar gráfico de reservas por día
             if (data.reservasPorDia && data.reservasPorDia.length > 0) {
@@ -351,7 +368,12 @@ async function cargarReservasHoy() {
 }
 
 function mostrarReservasRecientes(reservas) {
-    const container = document.getElementById('recentReservations');
+    const container = document.getElementById('recentReservationsList');
+    
+    if (!container) {
+        console.error('❌ Elemento recentReservationsList no encontrado');
+        return;
+    }
     
     if (!reservas || reservas.length === 0) {
         container.innerHTML = `
@@ -391,7 +413,12 @@ function mostrarReservasRecientes(reservas) {
 }
 
 function mostrarReservasHoy(reservas) {
-    const container = document.getElementById('todayReservations');
+    const container = document.getElementById('todayReservationsList');
+    
+    if (!container) {
+        console.error('❌ Elemento todayReservationsList no encontrado');
+        return;
+    }
     
     if (!reservas || reservas.length === 0) {
         container.innerHTML = `
