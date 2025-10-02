@@ -299,6 +299,53 @@ configurarElemento('modalComplejo', (elemento) => {
 });
 ```
 
+### **4. ERROR: Owner no puede ver reportes en sidebar de reservas/canchas** ✅ **RESUELTO**
+**🔍 Síntomas:**
+- Usuario owner ve reportes en dashboard pero no en páginas de reservas/canchas
+- Al navegar a reservas o canchas, se oculta la sección de reportes
+- CSS `hide-for-manager` oculta elementos para todos los usuarios
+
+**🔧 Causa:**
+- CSS `hide-for-manager` oculta elementos para todos los usuarios
+- No hay lógica JavaScript para mostrar/ocultar según el rol específico
+- Owner debería ver reportes pero no complejos
+
+**✅ Solución:**
+```javascript
+// Modificar función aplicarPermisosPorRol() en admin-reservations.js y admin-courts.js
+function aplicarPermisosPorRol() {
+    const user = AdminUtils.getCurrentUser();
+    if (!user) return;
+    
+    const userRole = user.rol;
+    
+    // Aplicar visibilidad del sidebar según el rol
+    const complejosLink = document.querySelector('a[href="admin-complexes.html"]');
+    const reportesLink = document.querySelector('a[href="admin-reports.html"]');
+    
+    if (userRole === 'manager') {
+        // Managers no pueden ver complejos ni reportes
+        if (complejosLink) complejosLink.style.display = 'none';
+        if (reportesLink) reportesLink.style.display = 'none';
+    } else if (userRole === 'owner') {
+        // Owners pueden ver reportes pero no complejos
+        if (complejosLink) complejosLink.style.display = 'none';
+        if (reportesLink) reportesLink.style.display = 'block';
+    } else if (userRole === 'super_admin') {
+        // Super admin puede ver todo
+        if (complejosLink) complejosLink.style.display = 'block';
+        if (reportesLink) reportesLink.style.display = 'block';
+    }
+}
+```
+
+**📋 Cambios realizados:**
+1. Removido `hide-for-manager` de enlaces HTML en todas las páginas admin
+2. Agregada lógica JavaScript para controlar visibilidad por rol
+3. Owner: ve reportes pero no complejos
+4. Manager: no ve reportes ni complejos
+5. Super Admin: ve todo
+
 ---
 
 ## 🔄 **FLUJO DE RESERVAS:**

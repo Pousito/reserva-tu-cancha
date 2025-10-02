@@ -53,6 +53,27 @@ function aplicarPermisosPorRol() {
     const userRole = user.rol;
     console.log('🔐 Aplicando permisos para rol:', userRole);
     
+    // Aplicar visibilidad del sidebar según el rol
+    const complejosLink = document.querySelector('a[href="admin-complexes.html"]');
+    const reportesLink = document.querySelector('a[href="admin-reports.html"]');
+    
+    if (userRole === 'manager') {
+        // Managers no pueden ver complejos ni reportes
+        if (complejosLink) complejosLink.style.display = 'none';
+        if (reportesLink) reportesLink.style.display = 'none';
+        console.log('✅ Ocultados complejos y reportes para manager');
+    } else if (userRole === 'owner') {
+        // Owners pueden ver reportes pero no complejos (solo ven su propio complejo)
+        if (complejosLink) complejosLink.style.display = 'none';
+        if (reportesLink) reportesLink.style.display = 'block';
+        console.log('✅ Ocultados complejos, mostrados reportes para owner');
+    } else if (userRole === 'super_admin') {
+        // Super admin puede ver todo
+        if (complejosLink) complejosLink.style.display = 'block';
+        if (reportesLink) reportesLink.style.display = 'block';
+        console.log('✅ Mostrados todos los enlaces para super_admin');
+    }
+    
     // Ocultar elementos según el rol
     if (userRole === 'manager') {
         // Managers no pueden ver información financiera ni gestionar complejos/reportes
