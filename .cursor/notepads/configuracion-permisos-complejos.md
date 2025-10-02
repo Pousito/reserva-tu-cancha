@@ -53,8 +53,51 @@
 
 ### **FUNDACIÓN GUNNEN**
 - **Dueño:** `ignacio.araya.lillito@hotmail.com` - Rol: `owner` ✅
-- **Manager:** `naxiin_320@hotmail.com` - Rol: `manager` ✅
-- **Estado:** CORRECTO
+- **Manager:** `naxiin_320@hotmail.com` - Rol: `manager` ✅ **CORREGIDO**
+- **Estado:** CORRECTO (rol actualizado de admin a manager)
+
+---
+
+## 🔧 **TROUBLESHOOTING - PROBLEMAS COMUNES:**
+
+### **Problema: "Rol no válido para esta operación"**
+**🔍 Síntomas:**
+- Login exitoso pero redirección inmediata al login
+- Error en consola: "Rol no válido para esta operación"
+- Loop infinito de redirección
+
+**🔧 Diagnóstico:**
+```bash
+# 1. Verificar rol del usuario en la base de datos
+curl -s http://localhost:3000/api/debug/passwords | jq '.usuarios[] | select(.email == "EMAIL") | {email, rol}'
+
+# 2. Probar endpoint que falla
+curl -H "Authorization: Bearer TOKEN" /api/admin/estadisticas
+# Si devuelve "Rol no válido" = problema de roles
+```
+
+**✅ Solución:**
+```bash
+# 1. Actualizar rol en la base de datos
+curl -X POST http://localhost:3000/api/debug/fix-roles
+
+# 2. Verificar que se actualizó
+curl -s http://localhost:3000/api/debug/passwords | jq '.usuarios[] | select(.email == "EMAIL") | {email, rol}'
+
+# 3. Hacer nuevo login para obtener token con rol correcto
+curl -X POST http://localhost:3000/api/admin/login -H "Content-Type: application/json" -d '{"email":"EMAIL","password":"PASSWORD"}'
+```
+
+### **Problema: "Contraseña incorrecta"**
+**🔍 Síntomas:**
+- Login falla con contraseña correcta
+- Error: "Credenciales inválidas"
+
+**✅ Solución:**
+```bash
+# Arreglar contraseñas en la base de datos
+curl -X POST http://localhost:3000/api/debug/fix-passwords
+```
 
 ---
 

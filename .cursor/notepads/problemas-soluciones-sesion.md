@@ -141,6 +141,50 @@ app.post('/api/debug/fix-passwords', async (req, res) => {
 
 ---
 
+### **6. PROBLEMA DE ROLES - Redirección Infinita al Login**
+**🔍 Problema:**
+- Login exitoso pero redirección inmediata al login
+- Error: "Rol no válido para esta operación"
+- Loop infinito de redirección
+
+**🔧 Causa:**
+- Usuario tenía rol `admin` en la base de datos
+- Endpoints de admin solo permiten roles `['super_admin', 'owner', 'manager']`
+- `authenticatedFetch()` detecta error 401/403 y redirige automáticamente
+
+**✅ Solución:**
+```javascript
+// 1. Crear endpoint para actualizar roles
+app.post('/api/debug/fix-roles', async (req, res) => {
+    const roleUpdates = [
+        { email: 'naxiin_320@hotmail.com', rol: 'manager' }
+    ];
+    // Actualizar roles en la base de datos
+});
+
+// 2. Ejecutar actualización
+curl -X POST http://localhost:3000/api/debug/fix-roles
+
+// 3. Verificar que funciona
+curl -H "Authorization: Bearer TOKEN" /api/admin/estadisticas
+```
+
+**📁 Archivos Modificados:**
+- `server.js` (endpoint fix-roles)
+- Base de datos (actualización de rol de usuario)
+
+**🔍 Diagnóstico:**
+```bash
+# Verificar rol del usuario
+curl -s http://localhost:3000/api/debug/passwords | jq '.usuarios[] | select(.email == "EMAIL") | {email, rol}'
+
+# Probar endpoint que falla
+curl -H "Authorization: Bearer TOKEN" /api/admin/estadisticas
+# Si devuelve "Rol no válido" = problema de roles
+```
+
+---
+
 ## 📋 **CONFIGURACIÓN ACTUAL DE USUARIOS:**
 
 ### **SUPER ADMIN**
@@ -154,8 +198,8 @@ app.post('/api/debug/fix-passwords', async (req, res) => {
 - **Manager:** `admin@magnasports.cl` / `magnasports2024` (rol: `manager`) - PENDIENTE CREAR
 
 ### **FUNDACIÓN GUNNEN**
-- **Dueño:** `ignacio.araya.lillito@hotmail.com` / `gunnen2024` (rol: `owner`)
-- **Manager:** `naxiin_320@hotmail.com` / `gunnen2024` (rol: `manager`)
+- **Dueño:** `ignacio.araya.lillito@hotmail.com` / `gunnen2024` (rol: `owner`) ✅
+- **Manager:** `naxiin_320@hotmail.com` / `gunnen2024` (rol: `manager`) ✅ **CORREGIDO**
 
 ---
 
