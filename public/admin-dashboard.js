@@ -229,7 +229,20 @@ function actualizarHoraActual() {
         minute: '2-digit',
         second: '2-digit'
     });
-    document.getElementById('currentTime').textContent = timeString;
+    
+    // Buscar elemento para mostrar la hora
+    const currentTimeElement = document.getElementById('currentTime');
+    if (currentTimeElement) {
+        currentTimeElement.textContent = timeString;
+    } else {
+        // Si no existe el elemento, intentar actualizar el adminWelcome con la hora
+        const adminWelcomeElement = document.getElementById('adminWelcome');
+        if (adminWelcomeElement) {
+            const user = AdminUtils.getCurrentUser();
+            const userName = user ? (user.nombre || user.email) : 'Admin';
+            adminWelcomeElement.textContent = `Bienvenido, ${userName} - ${timeString}`;
+        }
+    }
 }
 
 async function cargarEstadisticas() {
