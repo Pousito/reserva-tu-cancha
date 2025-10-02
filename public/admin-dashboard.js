@@ -414,6 +414,21 @@ async function cargarReservasRecientes() {
                     if (parentContainer) {
                         console.log('  - Hijos del contenedor padre:', Array.from(parentContainer.children));
                     }
+                    
+                    // SOLUCIÓN TEMPORAL: Crear el elemento si no existe
+                    console.log('🔧 Creando elemento recentReservations manualmente...');
+                    const parentContainer2 = document.querySelector('.recent-reservations');
+                    if (parentContainer2) {
+                        const newContainer = document.createElement('div');
+                        newContainer.id = 'recentReservations';
+                        newContainer.className = 'reservations-content';
+                        newContainer.setAttribute('data-test', 'recent-reservations-container');
+                        parentContainer2.appendChild(newContainer);
+                        console.log('✅ Elemento recentReservations creado:', newContainer);
+                        mostrarReservasRecientes(reservas);
+                    } else {
+                        console.error('❌ No se pudo crear el elemento - contenedor padre no encontrado');
+                    }
                 }
             };
             
