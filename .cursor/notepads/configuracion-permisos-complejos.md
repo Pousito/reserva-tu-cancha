@@ -23,7 +23,7 @@
   - ❌ No puede ver otros complejos
   - ❌ No puede ver reportes globales
 
-### 👤 **ADMIN (Administrador del Complejo)**
+### 👤 **MANAGER (Administrador del Complejo)**
 - **Acceso:** LIMITADO - solo operaciones básicas
 - **Permisos:**
   - ✅ Dashboard básico
@@ -53,7 +53,7 @@
 
 ### **FUNDACIÓN GUNNEN**
 - **Dueño:** `ignacio.araya.lillito@hotmail.com` - Rol: `owner` ✅
-- **Administrador:** `naxiin_320@hotmail.com` - Rol: `admin` ✅
+- **Manager:** `naxiin_320@hotmail.com` - Rol: `manager` ✅
 - **Estado:** CORRECTO
 
 ---

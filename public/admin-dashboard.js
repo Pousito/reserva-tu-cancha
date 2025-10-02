@@ -196,6 +196,26 @@ function aplicarPermisosPorRol() {
         
         // Asegurar visibilidad de reportes
         asegurarVisibilidadReportes();
+    } else if (userRole === 'manager') {
+        // Managers no pueden ver reportes ni información financiera
+        console.log('🔐 Aplicando permisos para manager - ocultando reportes');
+        
+        // Ocultar enlaces de reportes
+        const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
+        console.log(`📊 Ocultando ${reportElements.length} enlaces de reportes para manager`);
+        reportElements.forEach((element, index) => {
+            element.style.display = 'none';
+            console.log(`❌ Enlace de reportes ${index + 1} ocultado para manager`);
+        });
+        
+        // Ocultar elementos con clase hide-for-manager
+        const managerElements = document.querySelectorAll('.hide-for-manager');
+        console.log(`🔍 Encontrados ${managerElements.length} elementos para ocultar para manager`);
+        managerElements.forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        console.log('✅ Permisos aplicados para manager - reportes ocultos');
     }
 }
 

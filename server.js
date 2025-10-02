@@ -308,7 +308,7 @@ async function populateSampleData() {
       const usuariosData = [
         { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
         { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño MagnaSports', rol: 'owner' },
-        { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Administrador Fundación Gunnen', rol: 'admin' },
+        { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Manager Fundación Gunnen', rol: 'manager' },
         { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
       ];
       
