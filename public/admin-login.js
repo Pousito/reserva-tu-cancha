@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar si ya está logueado
     if (localStorage.getItem('adminToken')) {
-        window.location.href = 'admin-dashboard.html';
+        window.location.href = 'pages/admin/admin-dashboard.html';
         return;
     }
     
@@ -52,7 +52,7 @@ async function handleLogin(event) {
             
             // Redirigir al dashboard después de un breve delay
             setTimeout(() => {
-                window.location.href = 'admin-dashboard.html';
+                window.location.href = 'pages/admin/admin-dashboard.html';
             }, 1500);
         } else {
             mostrarNotificacion(result.error || 'Credenciales inválidas', 'danger');
