@@ -5380,6 +5380,35 @@ app.post('/api/debug/clean-duplicate-complexes', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT SIMPLE PARA ELIMINAR DUPLICADOS =====
+app.post('/api/debug/delete-duplicates', async (req, res) => {
+  try {
+    console.log('🗑️ Eliminando duplicados de Fundación Gunnen...');
+    
+    // Eliminar directamente los IDs 3 y 4, mantener el 2
+    await db.query('DELETE FROM complejos WHERE id IN ($1, $2)', [3, 4]);
+    console.log('✅ Duplicados eliminados');
+    
+    // Mover canchas al complejo 2
+    await db.query('UPDATE canchas SET complejo_id = $1 WHERE complejo_id IN ($2, $3)', [2, 3, 4]);
+    console.log('✅ Canchas movidas al complejo 2');
+    
+    res.json({
+      success: true,
+      message: 'Duplicados eliminados exitosamente',
+      keptId: 2,
+      deletedIds: [3, 4]
+    });
+    
+  } catch (error) {
+    console.error('❌ Error eliminando duplicados:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====
 app.post('/api/debug/fix-complejo-ids', async (req, res) => {
   try {
