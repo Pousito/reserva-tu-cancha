@@ -33,10 +33,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (adminUser) {
         document.getElementById('adminWelcome').textContent = `Bienvenido, ${adminUser.nombre || 'Admin'}`;
         
-        // Actualizar información del usuario en el sidebar
-        document.querySelector('[data-user="name"]').textContent = adminUser.nombre || 'Admin';
-        document.querySelector('[data-user="role"]').textContent = AdminUtils.getRoleDisplayName(adminUser.rol);
-        document.querySelector('[data-user="complex"]').textContent = adminUser.complejo_nombre || 'Todos los complejos';
+        // Actualizar información del usuario en el sidebar (si los elementos existen)
+        const nameElement = document.querySelector('[data-user="name"]');
+        const roleElement = document.querySelector('[data-user="role"]');
+        const complexElement = document.querySelector('[data-user="complex"]');
+        
+        if (nameElement) {
+            nameElement.textContent = adminUser.nombre || 'Admin';
+        }
+        if (roleElement) {
+            roleElement.textContent = AdminUtils.getRoleDisplayName(adminUser.rol);
+        }
+        if (complexElement) {
+            complexElement.textContent = adminUser.complejo_nombre || 'Todos los complejos';
+        }
     }
     
     // Aplicar permisos según el rol
@@ -2407,8 +2417,11 @@ function validarCampoTiempoReal(input, funcionValidacion, mensajeValido) {
 
 // Event listeners para el modal
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar canchas cuando cambia el complejo
-    document.getElementById('modalComplejo').addEventListener('change', cargarCanchasModal);
+    // Cargar canchas cuando cambia el complejo (si el elemento existe)
+    const modalComplejoElement = document.getElementById('modalComplejo');
+    if (modalComplejoElement) {
+        modalComplejoElement.addEventListener('change', cargarCanchasModal);
+    }
     
     // Calcular precio cuando cambian los campos
     // document.getElementById('modalCancha').addEventListener('change', calcularPrecioModal);

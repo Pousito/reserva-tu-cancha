@@ -145,6 +145,40 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:3000/api/admin/reports
 
 ---
 
+### **4. ERROR: Elementos null en página de reservas**
+**🔍 Síntomas:**
+```
+[Error] TypeError: null is not an object (evaluating 'document.querySelector('[data-user="name"]').textContent = adminUser.nombre || 'Admin'')
+[Error] TypeError: null is not an object (evaluating 'document.getElementById('modalComplejo').addEventListener')
+```
+
+**🔧 Causa:**
+- Elementos HTML no existen en la página de reservas
+- JavaScript intenta acceder a elementos que no están presentes
+
+**✅ Solución:**
+```javascript
+// ANTES (causa errores)
+document.querySelector('[data-user="name"]').textContent = adminUser.nombre;
+
+// DESPUÉS (con verificación)
+const nameElement = document.querySelector('[data-user="name"]');
+if (nameElement) {
+    nameElement.textContent = adminUser.nombre || 'Admin';
+}
+
+// ANTES (causa errores)
+document.getElementById('modalComplejo').addEventListener('change', cargarCanchasModal);
+
+// DESPUÉS (con verificación)
+const modalComplejoElement = document.getElementById('modalComplejo');
+if (modalComplejoElement) {
+    modalComplejoElement.addEventListener('change', cargarCanchasModal);
+}
+```
+
+---
+
 ## 🛠️ **SOLUCIONES RÁPIDAS:**
 
 ### **Si hay errores de elementos null:**
