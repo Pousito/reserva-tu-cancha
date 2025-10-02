@@ -160,24 +160,47 @@ function actualizarColspanCarga() {
 }
 
 function configurarEventListeners() {
-    // Event listeners para filtros
-    document.getElementById('complejoFilter').addEventListener('change', aplicarFiltros);
-    document.getElementById('estadoFilter').addEventListener('change', aplicarFiltros);
-    document.getElementById('tipoReservaFilter').addEventListener('change', aplicarFiltros);
-    document.getElementById('fechaDesde').addEventListener('change', aplicarFiltros);
-    document.getElementById('fechaHasta').addEventListener('change', aplicarFiltros);
-    document.getElementById('ordenamientoFilter').addEventListener('change', aplicarFiltros);
+    // Event listeners para filtros (con verificación de elementos)
+    const complejoFilter = document.getElementById('complejoFilter');
+    const estadoFilter = document.getElementById('estadoFilter');
+    const tipoReservaFilter = document.getElementById('tipoReservaFilter');
+    const fechaDesde = document.getElementById('fechaDesde');
+    const fechaHasta = document.getElementById('fechaHasta');
+    const ordenamientoFilter = document.getElementById('ordenamientoFilter');
+    
+    if (complejoFilter) {
+        complejoFilter.addEventListener('change', aplicarFiltros);
+    }
+    if (estadoFilter) {
+        estadoFilter.addEventListener('change', aplicarFiltros);
+    }
+    if (tipoReservaFilter) {
+        tipoReservaFilter.addEventListener('change', aplicarFiltros);
+    }
+    if (fechaDesde) {
+        fechaDesde.addEventListener('change', aplicarFiltros);
+    }
+    if (fechaHasta) {
+        fechaHasta.addEventListener('change', aplicarFiltros);
+    }
+    if (ordenamientoFilter) {
+        ordenamientoFilter.addEventListener('change', aplicarFiltros);
+    }
     
     // Event listeners para cerrar calendarios automáticamente
-    document.getElementById('fechaDesde').addEventListener('change', function() {
-        // Cerrar el calendario después de seleccionar fecha
-        this.blur();
-    });
+    if (fechaDesde) {
+        fechaDesde.addEventListener('change', function() {
+            // Cerrar el calendario después de seleccionar fecha
+            this.blur();
+        });
+    }
     
-    document.getElementById('fechaHasta').addEventListener('change', function() {
-        // Cerrar el calendario después de seleccionar fecha
-        this.blur();
-    });
+    if (fechaHasta) {
+        fechaHasta.addEventListener('change', function() {
+            // Cerrar el calendario después de seleccionar fecha
+            this.blur();
+        });
+    }
 }
 
 async function cargarComplejos() {
