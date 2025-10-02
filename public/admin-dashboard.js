@@ -370,6 +370,11 @@ async function cargarReservasRecientes() {
             // Función para intentar mostrar las reservas con reintentos
             const intentarMostrarReservas = (intentos = 0) => {
                 console.log(`🔍 Verificando elementos del DOM para reservas recientes (intento ${intentos + 1})...`);
+                console.log('🔍 Estado del DOM:', {
+                    readyState: document.readyState,
+                    bodyExists: !!document.body,
+                    allElements: document.querySelectorAll('*').length
+                });
                 
                 const containerById = document.getElementById('recentReservations');
                 const containerByDataTest = document.querySelector('[data-test="recent-reservations-container"]');
@@ -378,6 +383,14 @@ async function cargarReservasRecientes() {
                 console.log('  - Por ID:', !!containerById, containerById);
                 console.log('  - Por data-test:', !!containerByDataTest, containerByDataTest);
                 console.log('  - Por clase:', !!containerByClass, containerByClass);
+                
+                // Buscar todos los elementos con ID que contengan 'recent'
+                const allRecentElements = document.querySelectorAll('[id*="recent"]');
+                console.log('  - Todos los elementos con "recent" en ID:', allRecentElements);
+                
+                // Buscar todos los elementos con clase 'reservations'
+                const allReservationElements = document.querySelectorAll('[class*="reservation"]');
+                console.log('  - Todos los elementos con "reservation" en clase:', allReservationElements);
                 
                 const container = containerById || containerByDataTest || containerByClass;
                 
@@ -392,6 +405,21 @@ async function cargarReservasRecientes() {
                     }, (intentos + 1) * 200);
                 } else {
                     console.error('❌ No se pudo encontrar el elemento después de 5 intentos');
+                    console.log('🔍 Intentando crear el elemento manualmente...');
+                    
+                    // Intentar crear el elemento si no existe
+                    const parentContainer = document.querySelector('.recent-reservations');
+                    if (parentContainer) {
+                        const newContainer = document.createElement('div');
+                        newContainer.id = 'recentReservations';
+                        newContainer.className = 'reservations-content';
+                        newContainer.setAttribute('data-test', 'recent-reservations-container');
+                        parentContainer.appendChild(newContainer);
+                        console.log('✅ Elemento recentReservations creado manualmente:', newContainer);
+                        mostrarReservasRecientes(reservas);
+                    } else {
+                        console.error('❌ No se pudo crear el elemento - contenedor padre no encontrado');
+                    }
                 }
             };
             
