@@ -2,6 +2,21 @@
 let reservationsChart;
 let currentPeriod = '7d'; // Período actual seleccionado
 
+// Funciones de formateo de tiempo (backup en caso de que time-utils.js no cargue)
+function formatearHora(hora) {
+    if (!hora) return '';
+    // Si tiene segundos, los eliminamos
+    if (hora.includes(':')) {
+        const partes = hora.split(':');
+        return `${partes[0]}:${partes[1]}`;
+    }
+    return hora;
+}
+
+function formatearRangoHoras(horaInicio, horaFin) {
+    return `${formatearHora(horaInicio)} - ${formatearHora(horaFin)}`;
+}
+
 // Inicialización cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== ADMIN DASHBOARD SIMPLE INICIALIZADO ===');
@@ -14,6 +29,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (typeof Chart === 'undefined') {
         console.error('❌ Chart.js no está cargado');
+        return;
+    }
+    
+    // Verificar que las funciones de formateo estén disponibles
+    if (typeof formatearHora === 'undefined') {
+        console.error('❌ formatearHora no está definida');
+        return;
+    }
+    
+    if (typeof formatearRangoHoras === 'undefined') {
+        console.error('❌ formatearRangoHoras no está definida');
         return;
     }
     
@@ -53,10 +79,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar datos del dashboard (con delay para asegurar que el token esté disponible)
     setTimeout(() => {
         console.log('📊 Cargando datos del dashboard...');
+        
+        // Verificar que los elementos del DOM estén disponibles
+        const recentContainer = document.getElementById('recentReservations');
+        const todayContainer = document.getElementById('todayReservationsList');
+        
+        console.log('🔍 Verificando elementos del DOM:');
+        console.log('  - recentReservations:', !!recentContainer);
+        console.log('  - todayReservationsList:', !!todayContainer);
+        
+        // Si el elemento no existe, intentar crearlo o buscar alternativas
+        if (!recentContainer) {
+            console.warn('⚠️ Elemento recentReservations no encontrado, buscando alternativas...');
+            
+            // Buscar elementos con clases similares
+            const alternatives = document.querySelectorAll('.reservations-content, [class*="reservation"], [id*="recent"]');
+            console.log('🔍 Elementos alternativos encontrados:', alternatives);
+            
+            // Buscar en el HTML completo
+            const allElements = document.querySelectorAll('*');
+            const elementsWithRecent = Array.from(allElements).filter(el => 
+                el.id && el.id.toLowerCase().includes('recent') ||
+                el.className && el.className.toLowerCase().includes('recent')
+            );
+            console.log('🔍 Elementos con "recent" en ID o clase:', elementsWithRecent);
+        }
+        
         cargarEstadisticas();
         cargarReservasRecientes();
         cargarReservasHoy();
-    }, 500);
+    }, 500); // Reducir el delay para mejor rendimiento
     
     // Inicializar gráficos
     inicializarGraficos();
@@ -331,8 +383,20 @@ async function cargarReservasRecientes() {
         
         if (response && response.ok) {
             const reservas = await response.json();
-            mostrarReservasRecientes(reservas);
-            console.log('✅ Reservas recientes cargadas:', reservas.length);
+            
+            // Verificar que el elemento existe antes de mostrar las reservas
+            const container = document.getElementById('recentReservations') || 
+                             document.querySelector('[data-test="recent-reservations-container"]') ||
+                             document.querySelector('.reservations-content');
+            if (container) {
+                mostrarReservasRecientes(reservas);
+                console.log('✅ Reservas recientes cargadas:', reservas.length);
+            } else {
+                console.warn('⚠️ Elemento recentReservations no encontrado, reintentando en 500ms...');
+                setTimeout(() => {
+                    mostrarReservasRecientes(reservas);
+                }, 500);
+            }
         } else {
             console.error('Error cargando reservas recientes:', response?.status);
         }
@@ -358,12 +422,70 @@ async function cargarReservasHoy() {
 }
 
 function mostrarReservasRecientes(reservas) {
-    const container = document.getElementById('recentReservationsList');
+    console.log('🔍 Buscando elemento recentReservations...');
+    
+    // Verificar si el elemento existe en el DOM
+    let container = document.getElementById('recentReservations');
     
     if (!container) {
-        console.error('❌ Elemento recentReservationsList no encontrado');
-        return;
+        console.log('🔧 Elemento recentReservations no encontrado por ID, buscando alternativas...');
+        
+        // Buscar por atributo data-test como alternativa
+        container = document.querySelector('[data-test="recent-reservations-container"]');
+        
+        if (container) {
+            console.log('✅ Elemento encontrado por data-test:', container);
+        } else {
+            // Buscar el elemento por clase como alternativa
+            console.log('🔧 Buscando elemento por clase reservations-content...');
+            const reservationsContentElements = document.querySelectorAll('.reservations-content');
+            console.log('🔍 Elementos con clase reservations-content encontrados:', reservationsContentElements.length);
+        
+            if (reservationsContentElements.length > 0) {
+                // Usar el primer elemento que tenga la clase reservations-content
+                container = reservationsContentElements[0];
+                console.log('✅ Usando el primer elemento con clase reservations-content:', container);
+            } else {
+                // Buscar por contenido específico
+                console.log('🔧 Buscando elemento por contenido "Cargando reservas"...');
+                const loadingElements = Array.from(document.querySelectorAll('*')).filter(el => 
+                    el.textContent && el.textContent.includes('Cargando reservas')
+                );
+                console.log('🔍 Elementos con "Cargando reservas" encontrados:', loadingElements.length);
+                
+                if (loadingElements.length > 0) {
+                    // Buscar el contenedor padre que tenga la clase reservations-content
+                    let parentElement = loadingElements[0].parentElement;
+                    while (parentElement && !parentElement.classList.contains('reservations-content')) {
+                        parentElement = parentElement.parentElement;
+                    }
+                    
+                    if (parentElement) {
+                        container = parentElement;
+                        console.log('✅ Elemento encontrado por contenido:', container);
+                    }
+                }
+            }
+        }
     }
+    
+    if (!container) {
+        // Intentar crear el elemento si no existe
+        console.log('🔧 Intentando crear elemento recentReservations...');
+        const parentContainer = document.querySelector('.recent-reservations');
+        if (parentContainer) {
+            container = document.createElement('div');
+            container.id = 'recentReservations';
+            container.className = 'reservations-content';
+            parentContainer.appendChild(container);
+            console.log('✅ Elemento recentReservations creado:', container);
+        } else {
+            console.error('❌ No se pudo crear el elemento - contenedor padre no encontrado');
+            return;
+        }
+    }
+    
+    console.log('✅ Elemento recentReservations encontrado/creado:', container);
     
     if (!reservas || reservas.length === 0) {
         container.innerHTML = `
@@ -382,20 +504,29 @@ function mostrarReservasRecientes(reservas) {
         <div class="reservation-item">
             <div class="d-flex justify-content-between align-items-start">
                 <div class="flex-grow-1">
-                    <div class="d-flex align-items-center mb-1">
-                        <span class="badge bg-light text-dark me-2">#${index + 1}</span>
-                        <h6 class="mb-0">${reserva.nombre_cliente || 'Sin nombre'}</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2" style="font-size: 0.75rem;">#${index + 1}</span>
+                        <h6 class="mb-0 text-dark">${reserva.nombre_cliente || 'Sin nombre'}</h6>
                     </div>
-                    <p class="text-muted mb-1 small">
-                        <i class="fas fa-building me-1"></i>${reserva.complejo_nombre || 'Sin complejo'}
-                    </p>
-                    <p class="text-muted mb-0 small">
-                        <i class="fas fa-calendar me-1"></i>${formatearFechaCorta(reserva.fecha)} - ${formatearHora(reserva.hora_inicio)}
-                    </p>
+                    <div class="mb-1">
+                        <small class="text-muted">
+                            <i class="fas fa-building me-1"></i>${reserva.complejo_nombre || 'Sin complejo'}
+                        </small>
+                    </div>
+                    <div class="mb-1">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>${formatearFechaCorta(reserva.fecha)}
+                        </small>
+                    </div>
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${formatearHora(reserva.hora_inicio)}
+                        </small>
+                    </div>
                 </div>
                 <div class="text-end">
-                    ${reserva.precio_total ? `<span class="badge bg-primary fs-6">$${reserva.precio_total}</span><br>` : ''}
-                    <small class="text-muted">${reserva.codigo_reserva || 'Sin código'}</small>
+                    ${reserva.precio_total ? `<span class="badge bg-success mb-1">$${reserva.precio_total}</span><br>` : ''}
+                    <small class="text-muted" style="font-size: 0.7rem;">${reserva.codigo_reserva || 'Sin código'}</small>
                 </div>
             </div>
         </div>
