@@ -371,10 +371,10 @@ async function cargarReservasRecientes() {
             
             // Función simplificada para mostrar las reservas
             const mostrarReservas = () => {
-                console.log('🔍 Buscando elemento recentReservations...');
+                console.log('🔍 Buscando elemento para reservas recientes...');
                 
-                // Buscar el elemento de forma más directa
-                let container = document.getElementById('recentReservations');
+                // Buscar el elemento correcto (recentReservationsList)
+                let container = document.getElementById('recentReservationsList');
                 
                 if (!container) {
                     // Buscar por data-test como fallback
@@ -391,44 +391,7 @@ async function cargarReservasRecientes() {
                     mostrarReservasRecientes(reservas);
                     console.log('✅ Reservas recientes cargadas:', reservas.length);
                 } else {
-                    console.error('❌ No se pudo encontrar el elemento recentReservations');
-                    console.log('🔍 Elementos disponibles en el DOM:');
-                    console.log('  - Por ID recentReservations:', document.getElementById('recentReservations'));
-                    console.log('  - Por data-test:', document.querySelector('[data-test="recent-reservations-container"]'));
-                    console.log('  - Por clase reservations-content:', document.querySelectorAll('.reservations-content'));
-                    
-                    // Buscar todos los elementos con ID
-                    const allElementsWithId = Array.from(document.querySelectorAll('[id]')).map(el => el.id);
-                    console.log('  - Todos los IDs en el DOM:', allElementsWithId);
-                    
-                    // Buscar elementos que contengan "recent" en cualquier parte
-                    const recentElements = Array.from(document.querySelectorAll('*')).filter(el => 
-                        el.id && el.id.toLowerCase().includes('recent') ||
-                        el.className && el.className.toLowerCase().includes('recent')
-                    );
-                    console.log('  - Elementos con "recent":', recentElements);
-                    
-                    // Buscar el contenedor padre
-                    const parentContainer = document.querySelector('.recent-reservations');
-                    console.log('  - Contenedor padre .recent-reservations:', parentContainer);
-                    if (parentContainer) {
-                        console.log('  - Hijos del contenedor padre:', Array.from(parentContainer.children));
-                    }
-                    
-                    // SOLUCIÓN TEMPORAL: Crear el elemento si no existe
-                    console.log('🔧 Creando elemento recentReservations manualmente...');
-                    const parentContainer2 = document.querySelector('.recent-reservations');
-                    if (parentContainer2) {
-                        const newContainer = document.createElement('div');
-                        newContainer.id = 'recentReservations';
-                        newContainer.className = 'reservations-content';
-                        newContainer.setAttribute('data-test', 'recent-reservations-container');
-                        parentContainer2.appendChild(newContainer);
-                        console.log('✅ Elemento recentReservations creado:', newContainer);
-                        mostrarReservasRecientes(reservas);
-                    } else {
-                        console.error('❌ No se pudo crear el elemento - contenedor padre no encontrado');
-                    }
+                    console.error('❌ No se pudo encontrar el elemento para reservas recientes');
                 }
             };
             
@@ -458,10 +421,10 @@ async function cargarReservasHoy() {
 }
 
 function mostrarReservasRecientes(reservas) {
-    console.log('🔍 Buscando elemento recentReservations...');
+    console.log('🔍 Buscando elemento para mostrar reservas recientes...');
     
     // Verificar si el elemento existe en el DOM
-    let container = document.getElementById('recentReservations');
+    let container = document.getElementById('recentReservationsList');
     
     if (!container) {
         console.log('🔧 Elemento recentReservations no encontrado por ID, buscando alternativas...');
