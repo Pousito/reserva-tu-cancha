@@ -172,6 +172,31 @@ function configurarEventListeners() {
 - `.calendar-slot` - Casillas de tiempo (disponible, ocupado, parcial)
 - `.calendar-time-slot` - Columna de horas
 
+### **3. ERROR: Elemento rangoSemana no encontrado** ✅ **RESUELTO**
+**🔍 Síntomas:**
+```
+[Error] TypeError: null is not an object (evaluating 'document.getElementById('rangoSemana').textContent = rangoTexto')
+```
+
+**🔧 Causa:**
+- JavaScript busca elemento `rangoSemana` para mostrar el rango de fechas
+- Elemento no existe en el HTML del calendario
+- Función `actualizarRangoSemana()` falla al intentar actualizar el texto
+
+**✅ Solución:**
+```html
+<!-- Agregar elemento rangoSemana en la sección del calendario -->
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <h6 class="mb-0" id="tituloCalendario">
+            <i class="fas fa-calendar-week me-2"></i>Calendario Semanal
+        </h6>
+        <small class="text-muted" id="rangoSemana">Cargando...</small>
+    </div>
+    <!-- ... resto de controles ... -->
+</div>
+```
+
 ---
 
 ## 🔍 **COMANDOS DE DIAGNÓSTICO:**
