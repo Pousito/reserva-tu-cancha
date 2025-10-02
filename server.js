@@ -5708,6 +5708,24 @@ app.post('/api/debug/fix-passwords', async (req, res) => {
   }
 });
 
+// Endpoint para debuggear tokens JWT
+app.get('/api/debug/verify-token', authenticateToken, (req, res) => {
+  try {
+    console.log('🔍 Verificando token JWT...');
+    console.log('👤 Usuario autenticado:', req.user);
+    
+    res.json({
+      success: true,
+      message: 'Token válido',
+      user: req.user,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error verificando token:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para debuggear contraseñas
 app.get('/api/debug/passwords', async (req, res) => {
   try {
