@@ -5229,6 +5229,79 @@ app.post('/api/debug/create-courts', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====
+app.post('/api/debug/fix-complejo-ids', async (req, res) => {
+  try {
+    console.log('🔧 Corrigiendo complejo_id de usuarios...');
+    
+    // Actualizar usuarios de Fundación Gunnen (complejo_id = 3)
+    const usuariosGunnen = [
+      { email: 'ignacio.araya.lillito@hotmail.com', complejo_id: 3 },
+      { email: 'naxiin_320@hotmail.com', complejo_id: 3 },
+      { email: 'admin@fundaciongunnen.cl', complejo_id: 3 }
+    ];
+    
+    // Actualizar usuarios de MagnaSports (complejo_id = 1)
+    const usuariosMagna = [
+      { email: 'naxiin320@gmail.com', complejo_id: 1 }
+    ];
+    
+    const allUsers = [...usuariosGunnen, ...usuariosMagna];
+    const results = [];
+    
+    for (const usuario of allUsers) {
+      try {
+        const result = await db.run(
+          'UPDATE usuarios SET complejo_id = $1 WHERE email = $2',
+          [usuario.complejo_id, usuario.email]
+        );
+        
+        if (result.changes > 0) {
+          results.push({ 
+            email: usuario.email, 
+            status: 'updated', 
+            message: `Complejo_id actualizado a ${usuario.complejo_id}` 
+          });
+        } else {
+          results.push({ 
+            email: usuario.email, 
+            status: 'not_found', 
+            message: 'Usuario no encontrado' 
+          });
+        }
+      } catch (error) {
+        results.push({ 
+          email: usuario.email, 
+          status: 'error', 
+          message: error.message 
+        });
+      }
+    }
+    
+    // Verificar resultados
+    const usuarios = await db.query(`
+      SELECT u.email, u.nombre, u.rol, u.complejo_id, c.nombre as complejo_nombre
+      FROM usuarios u 
+      LEFT JOIN complejos c ON u.complejo_id = c.id
+      ORDER BY u.complejo_id, u.rol
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Corrección de complejo_id completada',
+      results: results,
+      usuarios: usuarios.rows
+    });
+    
+  } catch (error) {
+    console.error('❌ Error corrigiendo complejo_id:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA ACTUALIZAR ROLES =====
 app.post('/api/debug/fix-roles', async (req, res) => {
   try {
