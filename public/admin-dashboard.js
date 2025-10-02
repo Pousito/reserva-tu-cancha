@@ -71,7 +71,10 @@ function mostrarInfoUsuario() {
     const user = AdminUtils.getCurrentUser();
     if (user) {
         // Actualizar nombre en el header
-        document.getElementById('adminName').textContent = user.nombre || user.email;
+        const adminWelcomeElement = document.getElementById('adminWelcome');
+        if (adminWelcomeElement) {
+            adminWelcomeElement.textContent = `Bienvenido, ${user.nombre || user.email}`;
+        }
         
         // Actualizar información del usuario en el sidebar
         const nameElement = document.querySelector('[data-user="name"]');
@@ -88,8 +91,8 @@ function mostrarInfoUsuario() {
             complexElement.textContent = user.complejo_nombre || 'Todos los complejos';
         }
         
-        console.log('✅ Información del usuario actualizada:', {
-            nombre: user.nombre,
+        console.log('✅ Información de usuario actualizada:', {
+            nombre: user.nombre || user.email,
             rol: user.rol,
             complejo: user.complejo_nombre
         });
