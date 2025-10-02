@@ -368,10 +368,19 @@ async function cargarReservasRecientes() {
             const reservas = await response.json();
             
             // Verificar que el elemento existe antes de mostrar las reservas
-            const container = document.getElementById('recentReservations') || 
-                             document.querySelector('[data-test="recent-reservations-container"]') ||
-                             document.querySelector('.reservations-content');
+            console.log('🔍 Verificando elementos del DOM para reservas recientes...');
+            const containerById = document.getElementById('recentReservations');
+            const containerByDataTest = document.querySelector('[data-test="recent-reservations-container"]');
+            const containerByClass = document.querySelector('.reservations-content');
+            
+            console.log('  - Por ID:', !!containerById, containerById);
+            console.log('  - Por data-test:', !!containerByDataTest, containerByDataTest);
+            console.log('  - Por clase:', !!containerByClass, containerByClass);
+            
+            const container = containerById || containerByDataTest || containerByClass;
+            
             if (container) {
+                console.log('✅ Elemento encontrado, mostrando reservas...');
                 mostrarReservasRecientes(reservas);
                 console.log('✅ Reservas recientes cargadas:', reservas.length);
             } else {
