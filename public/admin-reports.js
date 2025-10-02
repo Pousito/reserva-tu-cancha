@@ -1162,5 +1162,5 @@ function showNotification(message, type) {
 function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    window.location.href = 'admin-login.html';
+    window.location.href = '../../admin-login.html';
 }

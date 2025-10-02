@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar autenticación
     if (!AdminUtils.isAuthenticated()) {
-        window.location.href = 'admin-login.html';
+        window.location.href = '../../admin-login.html';
         return;
     }
     
@@ -619,7 +619,7 @@ function mostrarError(mensaje) {
 function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    window.location.href = 'admin-login.html';
+    window.location.href = '../../admin-login.html';
 }
 
 function mostrarNotificacion(mensaje, tipo, duracion = 5000) {

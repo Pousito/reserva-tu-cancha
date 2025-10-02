@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar autenticación
     if (!AdminUtils.isAuthenticated()) {
-        window.location.href = 'admin-login.html';
+        window.location.href = '../../admin-login.html';
         return;
     }
     
@@ -479,7 +479,7 @@ async function saveCourt() {
         const token = localStorage.getItem('adminToken');
         if (!token) {
             showNotification('Sesión expirada. Por favor, inicie sesión nuevamente.', 'error');
-            window.location.href = 'admin-login.html';
+            window.location.href = '../../admin-login.html';
             return;
         }
         
@@ -581,5 +581,5 @@ function showNotification(message, type) {
 function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    window.location.href = 'admin-login.html';
+    window.location.href = '../../admin-login.html';
 }
