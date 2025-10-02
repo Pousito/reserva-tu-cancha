@@ -5147,6 +5147,58 @@ app.get('/api/debug/verify-token', authenticateToken, async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA ACTUALIZAR ROLES =====
+app.post('/api/debug/fix-roles', async (req, res) => {
+  try {
+    console.log('🔧 Arreglando roles...');
+    const roleUpdates = [
+      { email: 'naxiin_320@hotmail.com', rol: 'manager' }
+    ];
+    
+    const results = [];
+    for (const update of roleUpdates) {
+      try {
+        const result = await db.run(
+          'UPDATE usuarios SET rol = $1 WHERE email = $2',
+          [update.rol, update.email]
+        );
+        
+        if (result.changes > 0) {
+          results.push({ 
+            email: update.email, 
+            status: 'updated', 
+            message: `Rol actualizado a ${update.rol}` 
+          });
+          console.log(`✅ Rol actualizado para: ${update.email} -> ${update.rol}`);
+        } else {
+          results.push({ 
+            email: update.email, 
+            status: 'not_found', 
+            message: 'Usuario no encontrado' 
+          });
+          console.log(`❌ Usuario no encontrado: ${update.email}`);
+        }
+      } catch (error) {
+        results.push({ 
+          email: update.email, 
+          status: 'error', 
+          message: error.message 
+        });
+        console.error(`❌ Error actualizando ${update.email}:`, error.message);
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Proceso de arreglo de roles completado', 
+      results: results 
+    });
+  } catch (error) {
+    console.error('❌ Error arreglando roles:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ===== ENDPOINT PARA VER USUARIOS =====
 app.get('/api/debug/list-users', async (req, res) => {
   try {
