@@ -100,6 +100,78 @@ function configurarEventListeners() {
 }
 ```
 
+### **2. ERROR: Calendario faltante en página de reservas** ✅ **RESUELTO**
+**🔍 Síntomas:**
+- Página de reservas no muestra opción de calendario
+- Solo se ve la vista de lista
+- JavaScript tiene código del calendario pero HTML no tiene elementos
+
+**🔧 Causa:**
+- HTML de `admin-reservations.html` no tenía los elementos del calendario
+- Faltaban botones de vista (Lista/Calendario)
+- Faltaba la sección `vistaCalendario` y `calendarGrid`
+- Faltaban estilos CSS para el calendario
+
+**✅ Solución:**
+```html
+<!-- Botones de Vista -->
+<div class="filter-card">
+    <div class="d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="fas fa-eye me-2"></i>Vista de Reservas
+        </h6>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-primary" id="btnLista" onclick="mostrarVista('lista')">
+                <i class="fas fa-list me-2"></i>Lista
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="btnCalendario" onclick="mostrarVista('calendario')">
+                <i class="fas fa-calendar-week me-2"></i>Calendario
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Vista Calendario -->
+<div class="reservations-table" id="vistaCalendario" style="display: none;">
+    <div class="p-3 border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0" id="tituloCalendario">
+                <i class="fas fa-calendar-week me-2"></i>Calendario Semanal
+            </h6>
+            <div class="d-flex align-items-center gap-3">
+                <select class="form-select form-select-sm" id="complejoCalendario" style="width: auto;">
+                    <option value="">Todos los complejos</option>
+                </select>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="navegarSemana(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="irAHoy()">
+                        Hoy
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="navegarSemana(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="p-3">
+        <div id="calendarGrid" class="calendar-grid">
+            <div class="text-center p-4">
+                <i class="fas fa-spinner fa-spin me-2"></i>Cargando calendario...
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+**🎨 Estilos CSS agregados:**
+- `.calendar-grid` - Grid principal del calendario
+- `.calendar-header` - Encabezados de días
+- `.calendar-slot` - Casillas de tiempo (disponible, ocupado, parcial)
+- `.calendar-time-slot` - Columna de horas
+
 ---
 
 ## 🔍 **COMANDOS DE DIAGNÓSTICO:**
