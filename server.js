@@ -5229,6 +5229,85 @@ app.post('/api/debug/create-courts', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA MIGRAR FUNDACIÓN GUNNEN =====
+app.post('/api/debug/migrate-fundacion-gunnen', async (req, res) => {
+  try {
+    console.log('🚀 Iniciando migración de Fundación Gunnen...');
+    
+    // Verificar si el complejo ya existe
+    const existingComplex = await db.query(
+      'SELECT id FROM complejos WHERE nombre = $1',
+      ['Fundación Gunnen']
+    );
+    
+    if (existingComplex.rows && existingComplex.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'Fundación Gunnen ya existe en la base de datos',
+        complexId: existingComplex.rows[0].id
+      });
+    }
+    
+    // 1. Insertar el complejo Fundación Gunnen
+    console.log('📝 Insertando complejo Fundación Gunnen...');
+    const complexResult = await db.query(`
+      INSERT INTO complejos (nombre, ciudad_id, direccion, telefono, email) 
+      VALUES ($1, $2, $3, $4, $5) 
+      RETURNING id
+    `, [
+      'Fundación Gunnen',
+      1, // Ciudad ID: Los Ángeles
+      'Calle Don Victor 1310',
+      '+56972815810',
+      'naxiin_320@hotmail.com'
+    ]);
+    
+    const complexId = complexResult.rows && complexResult.rows[0] ? complexResult.rows[0].id : null;
+    console.log(`✅ Complejo Fundación Gunnen creado con ID: ${complexId}`);
+    
+    // 2. Insertar las canchas
+    console.log('⚽ Insertando canchas de Fundación Gunnen...');
+    
+    const canchas = [
+      { nombre: 'Cancha 1', tipo: 'futbol', precio: 8000, numero: 1 },
+      { nombre: 'Cancha 2', tipo: 'futbol', precio: 8000, numero: 2 }
+    ];
+    
+    const canchasCreadas = [];
+    for (const cancha of canchas) {
+      const canchaResult = await db.query(`
+        INSERT INTO canchas (complejo_id, nombre, tipo, precio_hora, numero) 
+        VALUES ($1, $2, $3, $4, $5) 
+        RETURNING id
+      `, [complexId, cancha.nombre, cancha.tipo, cancha.precio, cancha.numero]);
+      
+      const canchaId = canchaResult.rows && canchaResult.rows[0] ? canchaResult.rows[0].id : null;
+      canchasCreadas.push({
+        id: canchaId,
+        nombre: cancha.nombre,
+        precio: cancha.precio
+      });
+      
+      console.log(`✅ Cancha "${cancha.nombre}" creada con ID: ${canchaId}`);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Migración de Fundación Gunnen completada exitosamente',
+      complexId: complexId,
+      canchasCreadas: canchasCreadas,
+      totalCanchas: canchasCreadas.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en la migración:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====
 app.post('/api/debug/fix-complejo-ids', async (req, res) => {
   try {
