@@ -8,6 +8,20 @@ let filtrosActivos = {};
 // Usar la variable API_BASE global definida en url-config.js
 // No definir aquí para evitar conflictos
 
+// Función de respaldo para formatearHora si no está disponible desde time-utils.js
+if (typeof formatearHora === 'undefined') {
+    function formatearHora(hora) {
+        if (!hora) return '';
+        // Si tiene segundos, los eliminamos
+        if (hora.includes(':')) {
+            const partes = hora.split(':');
+            return `${partes[0]}:${partes[1]}`;
+        }
+        return hora;
+    }
+    console.log('🔧 Función formatearHora definida como respaldo');
+}
+
 // Variables para el calendario
 let vistaActual = 'lista';
 let semanaActual = new Date();
