@@ -297,7 +297,10 @@ class ReportService {
         }
 
             console.log('📄 PDF generado exitosamente');
-            return doc.output('arraybuffer');
+            const buffer = doc.output('arraybuffer');
+            const uint8Array = new Uint8Array(buffer);
+            console.log('📄 Tamaño del PDF:', uint8Array.length, 'bytes');
+            return buffer;
         } catch (error) {
             console.error('❌ Error generando PDF:', error);
             throw error;
