@@ -908,7 +908,18 @@ async function updateTopComplexesTable() {
         
         const dateFrom = document.getElementById('dateFrom')?.value;
         const dateTo = document.getElementById('dateTo')?.value;
-        const complexId = document.getElementById('complexFilter')?.value;
+        
+        // Usar la misma lógica que getFilters() para obtener complexId
+        const user = AdminUtils.getCurrentUser();
+        let complexId = null;
+        
+        // Para owners, usar automáticamente su complejo
+        if (user && user.rol === 'owner' && user.complejo_id) {
+            complexId = user.complejo_id;
+        } else {
+            const complexFilter = document.getElementById('complexFilter');
+            complexId = complexFilter ? complexFilter.value : null;
+        }
         
         if (!dateFrom || !dateTo) {
             console.log('⚠️ Fechas no disponibles para Top Complejos');
@@ -993,7 +1004,18 @@ async function updateTopCourtsTable() {
         
         const dateFrom = document.getElementById('dateFrom')?.value;
         const dateTo = document.getElementById('dateTo')?.value;
-        const complexId = document.getElementById('complexFilter')?.value;
+        
+        // Usar la misma lógica que getFilters() para obtener complexId
+        const user = AdminUtils.getCurrentUser();
+        let complexId = null;
+        
+        // Para owners, usar automáticamente su complejo
+        if (user && user.rol === 'owner' && user.complejo_id) {
+            complexId = user.complejo_id;
+        } else {
+            const complexFilter = document.getElementById('complexFilter');
+            complexId = complexFilter ? complexFilter.value : null;
+        }
         
         if (!dateFrom || !dateTo) {
             console.log('⚠️ Fechas no disponibles para Top Canchas');
@@ -1079,7 +1101,19 @@ async function updateCustomersTable() {
         
         const dateFrom = document.getElementById('dateFrom')?.value;
         const dateTo = document.getElementById('dateTo')?.value;
-        const complexId = document.getElementById('complexFilter')?.value;
+        
+        // Usar la misma lógica que getFilters() para obtener complexId
+        const user = AdminUtils.getCurrentUser();
+        let complexId = null;
+        
+        // Para owners, usar automáticamente su complejo
+        if (user && user.rol === 'owner' && user.complejo_id) {
+            complexId = user.complejo_id;
+            console.log('🏢 Owner detectado en customers, usando complejo automático:', complexId);
+        } else {
+            const complexFilter = document.getElementById('complexFilter');
+            complexId = complexFilter ? complexFilter.value : null;
+        }
         
         console.log('📅 Fechas obtenidas:', { dateFrom, dateTo, complexId });
         
