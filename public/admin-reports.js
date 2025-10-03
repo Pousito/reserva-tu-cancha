@@ -10,7 +10,7 @@ let occupancyChart = null;
 let hoursChart = null;
 
 // Inicializar la página
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Verificar que Chart.js esté disponible
     if (typeof Chart === 'undefined') {
         console.error('❌ Chart.js no está disponible');
