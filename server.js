@@ -2203,6 +2203,13 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     const userRole = req.user.rol;
     const userComplexFilter = req.complexFilter;
     
+    console.log('🔍 Filtros de usuario:', {
+      userRole,
+      userComplexFilter,
+      complexIdFromBody: complexId,
+      userEmail: req.user.email
+    });
+    
     // Construir filtros SQL según el rol
     let whereClause = `WHERE r.fecha::date BETWEEN $1 AND $2`;
     let params = [dateFrom, dateTo];
@@ -2213,12 +2220,17 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
       if (complexId) {
         whereClause += ` AND co.id = $3`;
         params.push(complexId);
+        console.log('🔍 Super admin filtrando por complejo:', complexId);
       }
     } else if (userRole === 'owner' || userRole === 'manager') {
       // Dueños y administradores solo pueden ver su complejo
       whereClause += ` AND co.id = $3`;
       params.push(userComplexFilter);
+      console.log('🔍 Owner/Manager filtrando por complejo:', userComplexFilter);
     }
+    
+    console.log('🔍 SQL final:', whereClause);
+    console.log('🔍 Parámetros:', params);
     
     // Métricas generales
     const totalReservas = await db.get(`
