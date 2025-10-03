@@ -1037,11 +1037,221 @@ async function cargarCalendario() {
             renderizarCalendario(data);
             actualizarRangoSemana();
         } else {
-            console.error('Error al cargar calendario:', response.statusText);
+            console.error('Error al cargar calendario:', response.status, response.statusText);
+            
+            // Mostrar mensaje de error más amigable
+            const calendarGrid = document.getElementById('calendarGrid');
+            if (calendarGrid) {
+                calendarGrid.innerHTML = `
+                    <div class="text-center p-4">
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error al cargar el calendario</strong>
+                            <br>
+                            <small>Error ${response.status}: ${response.statusText}</small>
+                            <br>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarCalendario()">
+                                <i class="fas fa-redo me-1"></i>Reintentar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Intentar cargar datos básicos como respaldo
+            await cargarCalendarioRespaldo(fechaInicio, fechaFin, complejoId);
         }
     } catch (error) {
         console.error('Error al cargar calendario:', error);
+        
+        // Mostrar mensaje de error en caso de excepción
+        const calendarGrid = document.getElementById('calendarGrid');
+        if (calendarGrid) {
+            calendarGrid.innerHTML = `
+                <div class="text-center p-4">
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Error de conexión</strong>
+                        <br>
+                        <small>No se pudo conectar con el servidor</small>
+                        <br>
+                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarCalendario()">
+                            <i class="fas fa-redo me-1"></i>Reintentar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
     }
+}
+
+/**
+ * Función de respaldo para cargar calendario con datos básicos
+ */
+async function cargarCalendarioRespaldo(fechaInicio, fechaFin, complejoId) {
+    try {
+        console.log('🔄 Intentando cargar calendario de respaldo...');
+        
+        // Intentar cargar solo las reservas básicas
+        const response = await fetch(`${API_BASE}/admin/reservas?fechaDesde=${fechaInicio}&fechaHasta=${fechaFin}`, {
+            headers: {
+                'Authorization': `Bearer ${AdminUtils.getAuthToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const reservas = data.reservas || [];
+            
+            console.log('📅 Datos de respaldo cargados:', reservas.length, 'reservas');
+            
+            // Crear estructura básica de calendario
+            const calendarioBasico = {
+                semana: {
+                    inicio: fechaInicio,
+                    fin: fechaFin,
+                    dias: generarDiasSemana(fechaInicio)
+                },
+                canchas: [],
+                horarios: generarHorariosBasicos(),
+                reservas: reservas,
+                bloqueos: [],
+                calendario: procesarReservasParaCalendario(reservas)
+            };
+            
+            // Renderizar calendario básico
+            renderizarCalendarioBasico(calendarioBasico);
+            
+        } else {
+            console.log('❌ No se pudieron cargar datos de respaldo');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en función de respaldo:', error);
+    }
+}
+
+/**
+ * Generar días de la semana básicos
+ */
+function generarDiasSemana(fechaInicio) {
+    const dias = [];
+    const inicio = new Date(fechaInicio);
+    
+    for (let i = 0; i < 7; i++) {
+        const dia = new Date(inicio);
+        dia.setDate(inicio.getDate() + i);
+        dias.push({
+            fecha: `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`,
+            dia: dia.getDate(),
+            nombre: dia.toLocaleDateString('es-CL', { weekday: 'short' }),
+            nombreCompleto: dia.toLocaleDateString('es-CL', { weekday: 'long' })
+        });
+    }
+    
+    return dias;
+}
+
+/**
+ * Generar horarios básicos
+ */
+function generarHorariosBasicos() {
+    const horarios = [];
+    
+    for (let i = 0; i < 7; i++) {
+        const horariosDia = [];
+        for (let hora = 8; hora <= 23; hora++) {
+            horariosDia.push({
+                hora: hora,
+                label: `${hora.toString().padStart(2, '0')}:00`
+            });
+        }
+        horarios.push({
+            dia: i,
+            horarios: horariosDia
+        });
+    }
+    
+    return horarios;
+}
+
+/**
+ * Procesar reservas para el calendario básico
+ */
+function procesarReservasParaCalendario(reservas) {
+    const calendario = {};
+    
+    reservas.forEach(reserva => {
+        const fecha = reserva.fecha.split('T')[0];
+        const hora = reserva.hora_inicio.split(':').slice(0, 2).join(':');
+        
+        if (!calendario[fecha]) {
+            calendario[fecha] = {};
+        }
+        
+        if (!calendario[fecha][hora]) {
+            calendario[fecha][hora] = [];
+        }
+        
+        calendario[fecha][hora].push({
+            reservada: true,
+            codigo_reserva: reserva.codigo_reserva,
+            cliente: reserva.nombre_cliente,
+            cancha: `Cancha ${reserva.cancha_numero || 'N/A'}`,
+            tipo: 'reserva',
+            estado: reserva.estado,
+            precio: reserva.precio_total
+        });
+    });
+    
+    return calendario;
+}
+
+/**
+ * Renderizar calendario básico
+ */
+function renderizarCalendarioBasico(data) {
+    const calendarGrid = document.getElementById('calendarGrid');
+    if (!calendarGrid) return;
+    
+    let html = '<div class="calendar-grid-basic">';
+    
+    // Encabezados de días
+    html += '<div class="calendar-header">';
+    html += '<div class="calendar-time-slot">Hora</div>';
+    data.semana.dias.forEach(dia => {
+        html += `<div class="calendar-day-header">${dia.nombre}<br><small>${dia.dia}</small></div>`;
+    });
+    html += '</div>';
+    
+    // Slots de tiempo
+    const horarios = data.horarios[0]?.horarios || [];
+    horarios.forEach(horario => {
+        html += '<div class="calendar-time-slot">';
+        html += `<div class="time-label">${horario.label}</div>`;
+        
+        data.semana.dias.forEach(dia => {
+            const reservasHora = data.calendario[dia.fecha]?.[horario.label] || [];
+            const clase = reservasHora.length > 0 ? 'calendar-slot occupied' : 'calendar-slot available';
+            
+            html += `<div class="${clase}">`;
+            if (reservasHora.length > 0) {
+                reservasHora.forEach(reserva => {
+                    html += `<div class="reservation-item">${reserva.cliente}</div>`;
+                });
+            }
+            html += '</div>';
+        });
+        
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    
+    calendarGrid.innerHTML = html;
+    
+    // Actualizar rango de semana
+    actualizarRangoSemana();
 }
 
 /**
