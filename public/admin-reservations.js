@@ -1240,7 +1240,7 @@ function renderizarCalendarioOffline(data) {
     html += `
         <div class="alert alert-warning mb-3" role="alert">
             <i class="fas fa-wifi me-2"></i>
-            <strong>Modo Offline</strong> - Mostrando datos limitados
+            <strong>Modo Offline</strong> - Mostrando datos limitados (${data.reservas.length} reservas)
             <button class="btn btn-sm btn-outline-primary ms-2" onclick="cargarCalendario()">
                 <i class="fas fa-sync me-1"></i>Reintentar
             </button>
@@ -1255,9 +1255,11 @@ function renderizarCalendarioOffline(data) {
     });
     html += '</div>';
     
-    // Slots de tiempo
+    // Slots de tiempo (solo mostrar horarios relevantes: 8:00 a 22:00)
     const horarios = data.horarios[0]?.horarios || [];
-    horarios.forEach(horario => {
+    const horariosRelevantes = horarios.filter(h => h.hora >= 8 && h.hora <= 22);
+    
+    horariosRelevantes.forEach(horario => {
         html += '<div class="calendar-time-slot">';
         html += `<div class="time-label">${horario.label}</div>`;
         
@@ -1268,8 +1270,21 @@ function renderizarCalendarioOffline(data) {
             html += `<div class="${clase}">`;
             if (reservasHora.length > 0) {
                 reservasHora.forEach(reserva => {
-                    html += `<div class="reservation-item">${reserva.cliente}</div>`;
+                    const clienteNombre = reserva.cliente || 'Cliente';
+                    const canchaInfo = reserva.cancha || 'Cancha N/A';
+                    const estado = reserva.estado || 'confirmada';
+                    const precio = reserva.precio || 0;
+                    
+                    html += `
+                        <div class="reservation-item" title="${canchaInfo} - $${precio} - ${estado}">
+                            <div class="fw-bold">${clienteNombre}</div>
+                            <small class="text-muted">${canchaInfo}</small>
+                            ${precio > 0 ? `<small class="d-block text-success">$${precio}</small>` : ''}
+                        </div>
+                    `;
                 });
+            } else {
+                html += '<div class="text-muted small">Disponible</div>';
             }
             html += '</div>';
         });
