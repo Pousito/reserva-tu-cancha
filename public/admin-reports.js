@@ -139,6 +139,17 @@ async function loadComplexes() {
 // Poblar filtro de complejos
 function populateComplexFilter() {
     const select = document.getElementById('complexFilter');
+    if (!select) return; // Si no existe el selector, no hacer nada
+    
+    const user = AdminUtils.getCurrentUser();
+    if (!user) return;
+    
+    // Solo poblar el selector si el usuario no es owner
+    if (user.rol === 'owner') {
+        // Para owners, no poblar el selector ya que está oculto
+        return;
+    }
+    
     select.innerHTML = '<option value="">Todos los complejos</option>';
     complexes.forEach(complex => {
         const option = document.createElement('option');
@@ -170,10 +181,22 @@ function getFilters() {
     const dateTo = document.getElementById('dateTo');
     const complexFilter = document.getElementById('complexFilter');
     
+    const user = AdminUtils.getCurrentUser();
+    let complexId = null;
+    
+    // Para owners, usar automáticamente su complejo
+    if (user && user.rol === 'owner' && user.complejo_id) {
+        complexId = user.complejo_id;
+        console.log('🏢 Owner detectado, usando complejo automático:', complexId);
+    } else if (complexFilter) {
+        // Para super_admin y otros roles, usar el selector
+        complexId = complexFilter.value || null;
+    }
+    
     return {
         dateFrom: dateFrom ? dateFrom.value : '',
         dateTo: dateTo ? dateTo.value : '',
-        complexId: complexFilter ? complexFilter.value || null : null,
+        complexId: complexId,
         sport: null
     };
 }
