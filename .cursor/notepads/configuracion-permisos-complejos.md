@@ -183,6 +183,68 @@ psql -d reserva_tu_cancha_local -c "SELECT u.email, u.rol, c.nombre FROM usuario
 
 ---
 
-**📅 Última actualización:** $(date)
+## 🔧 **PROBLEMAS RESUELTOS - REPORTES DE OWNERS**
+
+### ❌ **Problema: Selector de complejo visible para owners en reportes**
+**Fecha:** 2025-10-03
+**Descripción:** Los owners podían ver y seleccionar complejo en la sección de reportes, lo cual era innecesario ya que solo pueden ver datos de su propio complejo.
+
+**Solución:**
+```javascript
+// En populateComplexFilter()
+if (user.rol === 'owner') {
+    // Para owners, no poblar el selector ya que está oculto
+    return;
+}
+
+// En getFilters()
+if (user && user.rol === 'owner' && user.complejo_id) {
+    complexId = user.complejo_id;
+    console.log('🏢 Owner detectado, usando complejo automático:', complexId);
+}
+```
+
+### ❌ **Problema: Análisis de clientes mostraba datos de todos los complejos**
+**Fecha:** 2025-10-03
+**Descripción:** El análisis de clientes mostraba 3 clientes en lugar de 1 para el owner de Fundación Gunnen, porque no enviaba el `complexId` en la URL.
+
+**Causa:** Las funciones `updateCustomersTable()`, `updateTopComplexesTable()` y `updateTopCourtsTable()` intentaban obtener `complexId` del selector oculto.
+
+**Solución:**
+```javascript
+// Aplicar misma lógica que getFilters() en todas las funciones
+const user = AdminUtils.getCurrentUser();
+let complexId = null;
+
+// Para owners, usar automáticamente su complejo
+if (user && user.rol === 'owner' && user.complejo_id) {
+    complexId = user.complejo_id;
+    console.log('🏢 Owner detectado en customers, usando complejo automático:', complexId);
+} else {
+    const complexFilter = document.getElementById('complexFilter');
+    complexId = complexFilter ? complexFilter.value : null;
+}
+```
+
+**Resultado:**
+- ✅ Owners NO ven selector de complejo
+- ✅ Reportes se generan automáticamente para su complejo
+- ✅ Análisis de clientes muestra solo datos del complejo del owner
+- ✅ URL incluye `&complexId=3` para Fundación Gunnen
+
+### 🔍 **Debugging implementado:**
+```javascript
+// Logging detallado en endpoint /admin/reports
+console.log('🔍 Filtros de usuario:', {
+    userRole,
+    userComplexFilter,
+    complexIdFromBody: complexId,
+    userEmail: req.user.email
+});
+```
+
+---
+
+**📅 Última actualización:** 2025-10-03
 **👤 Creado por:** Asistente IA
 **🎯 Propósito:** Guía para configuración correcta de permisos por complejo
