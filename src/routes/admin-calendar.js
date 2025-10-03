@@ -112,7 +112,6 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                 r.hora_fin,
                 r.precio_total,
                 r.estado,
-                r.tipo_reserva,
                 r.creada_por_admin,
                 r.metodo_contacto,
                 r.comision_aplicada,
@@ -409,9 +408,9 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         // Log adicional para debugging en producción
         console.error('❌ Debug info:', {
-            fechaInicio,
-            fechaFin,
-            complejoId,
+            fechaInicio: req.query.fechaInicio || 'no definida',
+            fechaFin: req.query.fechaFin || 'no definida',
+            complejoId: req.query.complejoId || 'no definido',
             userEmail: user?.email,
             userRole: user?.rol,
             userComplejoId: user?.complejo_id
@@ -422,9 +421,9 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             error: 'Error interno del servidor al cargar calendario',
             details: error.message,
             debug: {
-                fechaInicio,
-                fechaFin,
-                complejoId,
+                fechaInicio: req.query.fechaInicio || 'no definida',
+                fechaFin: req.query.fechaFin || 'no definida',
+                complejoId: req.query.complejoId || 'no definido',
                 userRole: user?.rol
             },
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
