@@ -142,7 +142,9 @@ class ReportService {
      * Generar reporte en PDF
      */
     async generatePDFReport(complex, incomeData, dailySummary, reservationDetails, dateFrom, dateTo) {
-        const doc = new jsPDF();
+        try {
+            console.log('📄 Iniciando generación de PDF...');
+            const doc = new jsPDF();
         
         // Configuración de colores
         const primaryColor = [41, 128, 185]; // Azul
@@ -294,14 +296,21 @@ class ReportService {
             doc.text('Generado por Reserva Tu Cancha', doc.internal.pageSize.width - 80, doc.internal.pageSize.height - 10);
         }
 
-        return doc.output('arraybuffer');
+            console.log('📄 PDF generado exitosamente');
+            return doc.output('arraybuffer');
+        } catch (error) {
+            console.error('❌ Error generando PDF:', error);
+            throw error;
+        }
     }
 
     /**
      * Generar reporte en Excel
      */
     async generateExcelReport(complex, incomeData, dailySummary, reservationDetails, dateFrom, dateTo) {
-        const workbook = new ExcelJS.Workbook();
+        try {
+            console.log('📊 Iniciando generación de Excel...');
+            const workbook = new ExcelJS.Workbook();
         
         // Configuración del workbook
         workbook.creator = 'Reserva Tu Cancha';
@@ -480,7 +489,12 @@ class ReportService {
             ];
         }
 
-        return await workbook.xlsx.writeBuffer();
+            console.log('📊 Excel generado exitosamente');
+            return await workbook.xlsx.writeBuffer();
+        } catch (error) {
+            console.error('❌ Error generando Excel:', error);
+            throw error;
+        }
     }
 
     /**

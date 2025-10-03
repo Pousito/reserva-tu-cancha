@@ -2487,7 +2487,13 @@ app.get('/api/admin/reports/income/:format', authenticateToken, requireComplexAc
     console.log('🔍 Generando reporte para complejo:', targetComplexId);
     
     // Generar reporte
+    console.log('🔄 Iniciando generación de reporte...');
     const reportBuffer = await reportService.generateIncomeReport(targetComplexId, dateFrom, dateTo, format);
+    console.log('📊 Reporte generado, tamaño del buffer:', reportBuffer ? reportBuffer.length : 'undefined');
+    
+    if (!reportBuffer || reportBuffer.length === 0) {
+      throw new Error('El reporte generado está vacío');
+    }
     
     // Configurar headers según el formato
     const filename = `reporte_ingresos_${dateFrom}_${dateTo}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
@@ -2495,11 +2501,14 @@ app.get('/api/admin/reports/income/:format', authenticateToken, requireComplexAc
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', reportBuffer.length);
     } else {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', reportBuffer.length);
     }
     
+    console.log('📤 Enviando archivo al cliente...');
     res.send(Buffer.from(reportBuffer));
     console.log(`✅ Reporte ${format.toUpperCase()} generado exitosamente: ${filename}`);
     
