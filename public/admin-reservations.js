@@ -1150,12 +1150,20 @@ async function cargarCalendarioOffline(fechaInicio, fechaFin) {
     try {
         console.log('📅 Cargando calendario offline con datos existentes...');
         
+        // Validar parámetros
+        if (!fechaInicio || !fechaFin) {
+            console.error('❌ Fechas no válidas para calendario offline');
+            mostrarCalendarioVacio(fechaInicio || 'N/A', fechaFin || 'N/A');
+            return;
+        }
+        
         // Usar las reservas que ya se cargaron en la página
         const reservasExistentes = window.reservasData || [];
         console.log('📊 Reservas disponibles para calendario offline:', reservasExistentes.length);
         
-        if (reservasExistentes.length === 0) {
+        if (!Array.isArray(reservasExistentes) || reservasExistentes.length === 0) {
             // Si no hay reservas, mostrar calendario vacío
+            console.log('⚠️ No hay reservas válidas para calendario offline');
             mostrarCalendarioVacio(fechaInicio, fechaFin);
             return;
         }
@@ -1164,9 +1172,9 @@ async function cargarCalendarioOffline(fechaInicio, fechaFin) {
         const reservasFiltradas = reservasExistentes.filter(reserva => {
             const fechaReserva = new Date(reserva.fecha);
             const fechaIni = new Date(fechaInicio);
-            const fechaFin = new Date(fechaFin);
+            const fechaFinFiltro = new Date(fechaFin);
             
-            return fechaReserva >= fechaIni && fechaReserva <= fechaFin;
+            return fechaReserva >= fechaIni && fechaReserva <= fechaFinFiltro;
         });
         
         console.log('📅 Reservas filtradas para la semana:', reservasFiltradas.length);
@@ -1327,27 +1335,51 @@ function generarHorariosBasicos() {
 function procesarReservasParaCalendario(reservas) {
     const calendario = {};
     
+    if (!Array.isArray(reservas)) {
+        console.warn('⚠️ procesarReservasParaCalendario: reservas no es un array');
+        return calendario;
+    }
+    
     reservas.forEach(reserva => {
-        const fecha = reserva.fecha.split('T')[0];
-        const hora = reserva.hora_inicio.split(':').slice(0, 2).join(':');
-        
-        if (!calendario[fecha]) {
-            calendario[fecha] = {};
+        try {
+            // Validar que la reserva tenga los campos necesarios
+            if (!reserva.fecha || !reserva.hora_inicio) {
+                console.warn('⚠️ Reserva sin fecha o hora:', reserva);
+                return;
+            }
+            
+            // Procesar fecha (manejar diferentes formatos)
+            let fecha;
+            if (typeof reserva.fecha === 'string') {
+                fecha = reserva.fecha.includes('T') ? reserva.fecha.split('T')[0] : reserva.fecha;
+            } else {
+                fecha = reserva.fecha.toISOString().split('T')[0];
+            }
+            
+            // Procesar hora
+            const hora = reserva.hora_inicio.split(':').slice(0, 2).join(':');
+            
+            if (!calendario[fecha]) {
+                calendario[fecha] = {};
+            }
+            
+            if (!calendario[fecha][hora]) {
+                calendario[fecha][hora] = [];
+            }
+            
+            calendario[fecha][hora].push({
+                reservada: true,
+                codigo_reserva: reserva.codigo_reserva || 'N/A',
+                cliente: reserva.nombre_cliente || 'Cliente',
+                cancha: `Cancha ${reserva.cancha_numero || reserva.cancha_nombre || 'N/A'}`,
+                tipo: 'reserva',
+                estado: reserva.estado || 'confirmada',
+                precio: reserva.precio_total || 0
+            });
+            
+        } catch (error) {
+            console.warn('⚠️ Error procesando reserva:', error, reserva);
         }
-        
-        if (!calendario[fecha][hora]) {
-            calendario[fecha][hora] = [];
-        }
-        
-        calendario[fecha][hora].push({
-            reservada: true,
-            codigo_reserva: reserva.codigo_reserva,
-            cliente: reserva.nombre_cliente,
-            cancha: `Cancha ${reserva.cancha_numero || 'N/A'}`,
-            tipo: 'reserva',
-            estado: reserva.estado,
-            precio: reserva.precio_total
-        });
     });
     
     return calendario;
