@@ -1,6 +1,6 @@
 const ExcelJS = require('exceljs');
 const { jsPDF } = require('jspdf');
-require('jspdf-autotable');
+const { autoTable } = require('jspdf-autotable');
 
 class ReportService {
     constructor(database) {
@@ -191,7 +191,7 @@ class ReportService {
             ['Ticket Promedio', `$${this.formatNumber(incomeData.ticket_promedio)}`]
         ];
 
-        doc.autoTable({
+        autoTable(doc, {
             startY: yPosition,
             head: [['Concepto', 'Valor']],
             body: summaryData,
@@ -219,7 +219,7 @@ class ReportService {
                 `$${this.formatNumber(day.ingresos_netos)}`
             ]);
 
-            doc.autoTable({
+            autoTable(doc, {
                 startY: yPosition,
                 head: [['Fecha', 'Total Reservas', 'Confirmadas', 'Ingresos Brutos', 'Comisión', 'Ingresos Netos']],
                 body: dailyData,
@@ -259,7 +259,7 @@ class ReportService {
                 res.estado
             ]);
 
-            doc.autoTable({
+            autoTable(doc, {
                 startY: yPosition,
                 head: [['Código', 'Fecha', 'Hora', 'Cancha', 'Cliente', 'Monto', 'Estado']],
                 body: detailsData,
