@@ -112,9 +112,6 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                 r.hora_fin,
                 r.precio_total,
                 r.estado,
-                r.creada_por_admin,
-                r.metodo_contacto,
-                r.comision_aplicada,
                 r.nombre_cliente,
                 r.email_cliente,
                 r.telefono_cliente,
@@ -411,9 +408,9 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             fechaInicio: req.query.fechaInicio || 'no definida',
             fechaFin: req.query.fechaFin || 'no definida',
             complejoId: req.query.complejoId || 'no definido',
-            userEmail: user?.email,
-            userRole: user?.rol,
-            userComplejoId: user?.complejo_id
+            userEmail: req.user?.email || 'no definido',
+            userRole: req.user?.rol || 'no definido',
+            userComplejoId: req.user?.complejo_id || 'no definido'
         });
         
         // Respuesta más detallada para debugging
@@ -424,7 +421,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                 fechaInicio: req.query.fechaInicio || 'no definida',
                 fechaFin: req.query.fechaFin || 'no definida',
                 complejoId: req.query.complejoId || 'no definido',
-                userRole: user?.rol
+                userRole: req.user?.rol || 'no definido'
             },
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
