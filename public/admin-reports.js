@@ -31,10 +31,12 @@ document.addEventListener('DOMContentLoaded', function() {
     currentUser = AdminUtils.getCurrentUser();
     document.getElementById('adminWelcome').textContent = `Bienvenido, ${currentUser.nombre}`;
     
-    // Aplicar permisos según el rol
+    // Cargar complejos primero, luego aplicar permisos
+    await loadComplexes();
+    
+    // Aplicar permisos después de cargar complejos
     aplicarPermisosPorRol();
     
-    loadComplexes();
     setupEventListeners();
     setDefaultDates();
     generateReports();
@@ -98,6 +100,15 @@ function aplicarPermisosPorRol() {
         ownerElements.forEach(element => {
             element.style.display = 'none';
         });
+        
+        // Asegurar que el selector de complejo esté oculto específicamente
+        const complexFilter = document.getElementById('complexFilter');
+        const complexFilterContainer = complexFilter ? complexFilter.closest('.filter-item') : null;
+        if (complexFilterContainer) {
+            complexFilterContainer.style.display = 'none';
+            console.log('✅ Selector de complejo ocultado específicamente para owner');
+        }
+        
         console.log('✅ Elementos ocultados para owner');
     } else if (userRole === 'super_admin') {
         // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
