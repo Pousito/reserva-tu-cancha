@@ -54,7 +54,7 @@ class ReportService {
     async getComplexInfo(complexId) {
         const complex = await this.db.get(`
             SELECT c.id, c.nombre, c.direccion, c.telefono, c.email,
-                   ci.nombre as ciudad_nombre, ci.region
+                   ci.nombre as ciudad_nombre
             FROM complejos c
             JOIN ciudades ci ON c.ciudad_id = ci.id
             WHERE c.id = $1
