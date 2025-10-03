@@ -362,6 +362,10 @@ async function cargarReservas() {
             }
             
             reservasFiltradas = [...reservas]; // Inicializar reservas filtradas
+            
+            // Almacenar reservas globalmente para uso offline
+            window.reservasData = reservas;
+            
             console.log('✅ Reservas cargadas:', reservas.length);
             mostrarReservas(reservasFiltradas);
             actualizarContador();
@@ -1124,11 +1128,153 @@ async function cargarCalendarioRespaldo(fechaInicio, fechaFin, complejoId) {
             
         } else {
             console.log('❌ No se pudieron cargar datos de respaldo');
+            
+            // Último recurso: usar datos ya cargados en la página
+            console.log('🔄 Intentando calendario offline con datos existentes...');
+            await cargarCalendarioOffline(fechaInicio, fechaFin);
         }
         
     } catch (error) {
         console.error('❌ Error en función de respaldo:', error);
+        
+        // Si todo falla, intentar calendario offline
+        console.log('🔄 Último recurso: calendario offline...');
+        await cargarCalendarioOffline(fechaInicio, fechaFin);
     }
+}
+
+/**
+ * Función de último recurso: calendario offline usando datos ya cargados
+ */
+async function cargarCalendarioOffline(fechaInicio, fechaFin) {
+    try {
+        console.log('📅 Cargando calendario offline con datos existentes...');
+        
+        // Usar las reservas que ya se cargaron en la página
+        const reservasExistentes = window.reservasData || [];
+        console.log('📊 Reservas disponibles para calendario offline:', reservasExistentes.length);
+        
+        if (reservasExistentes.length === 0) {
+            // Si no hay reservas, mostrar calendario vacío
+            mostrarCalendarioVacio(fechaInicio, fechaFin);
+            return;
+        }
+        
+        // Filtrar reservas por el rango de fechas
+        const reservasFiltradas = reservasExistentes.filter(reserva => {
+            const fechaReserva = new Date(reserva.fecha);
+            const fechaIni = new Date(fechaInicio);
+            const fechaFin = new Date(fechaFin);
+            
+            return fechaReserva >= fechaIni && fechaReserva <= fechaFin;
+        });
+        
+        console.log('📅 Reservas filtradas para la semana:', reservasFiltradas.length);
+        
+        // Crear estructura de calendario offline
+        const calendarioOffline = {
+            semana: {
+                inicio: fechaInicio,
+                fin: fechaFin,
+                dias: generarDiasSemana(fechaInicio)
+            },
+            canchas: [],
+            horarios: generarHorariosBasicos(),
+            reservas: reservasFiltradas,
+            bloqueos: [],
+            calendario: procesarReservasParaCalendario(reservasFiltradas)
+        };
+        
+        // Renderizar calendario offline
+        renderizarCalendarioOffline(calendarioOffline);
+        
+    } catch (error) {
+        console.error('❌ Error en calendario offline:', error);
+        mostrarCalendarioVacio(fechaInicio, fechaFin);
+    }
+}
+
+/**
+ * Mostrar calendario vacío cuando no hay datos
+ */
+function mostrarCalendarioVacio(fechaInicio, fechaFin) {
+    const calendarGrid = document.getElementById('calendarGrid');
+    if (!calendarGrid) return;
+    
+    calendarGrid.innerHTML = `
+        <div class="text-center p-4">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-calendar-alt me-2"></i>
+                <strong>Calendario Offline</strong>
+                <br>
+                <small>Mostrando calendario básico para ${fechaInicio} a ${fechaFin}</small>
+                <br>
+                <small class="text-muted">No hay reservas en este rango de fechas</small>
+                <br>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarCalendario()">
+                    <i class="fas fa-sync me-1"></i>Reintentar Conexión
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Renderizar calendario offline
+ */
+function renderizarCalendarioOffline(data) {
+    const calendarGrid = document.getElementById('calendarGrid');
+    if (!calendarGrid) return;
+    
+    let html = '<div class="calendar-grid-offline">';
+    
+    // Banner de modo offline
+    html += `
+        <div class="alert alert-warning mb-3" role="alert">
+            <i class="fas fa-wifi me-2"></i>
+            <strong>Modo Offline</strong> - Mostrando datos limitados
+            <button class="btn btn-sm btn-outline-primary ms-2" onclick="cargarCalendario()">
+                <i class="fas fa-sync me-1"></i>Reintentar
+            </button>
+        </div>
+    `;
+    
+    // Encabezados de días
+    html += '<div class="calendar-header">';
+    html += '<div class="calendar-time-slot">Hora</div>';
+    data.semana.dias.forEach(dia => {
+        html += `<div class="calendar-day-header">${dia.nombre}<br><small>${dia.dia}</small></div>`;
+    });
+    html += '</div>';
+    
+    // Slots de tiempo
+    const horarios = data.horarios[0]?.horarios || [];
+    horarios.forEach(horario => {
+        html += '<div class="calendar-time-slot">';
+        html += `<div class="time-label">${horario.label}</div>`;
+        
+        data.semana.dias.forEach(dia => {
+            const reservasHora = data.calendario[dia.fecha]?.[horario.label] || [];
+            const clase = reservasHora.length > 0 ? 'calendar-slot occupied' : 'calendar-slot available';
+            
+            html += `<div class="${clase}">`;
+            if (reservasHora.length > 0) {
+                reservasHora.forEach(reserva => {
+                    html += `<div class="reservation-item">${reserva.cliente}</div>`;
+                });
+            }
+            html += '</div>';
+        });
+        
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    
+    calendarGrid.innerHTML = html;
+    
+    // Actualizar rango de semana
+    actualizarRangoSemana();
 }
 
 /**
