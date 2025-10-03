@@ -162,7 +162,7 @@ class ReportService {
         doc.setTextColor(...secondaryColor);
         doc.text(`${complex.nombre}`, 20, 45);
         doc.text(`${complex.direccion}`, 20, 52);
-        doc.text(`${complex.ciudad_nombre}, ${complex.region}`, 20, 59);
+        doc.text(`${complex.ciudad_nombre}`, 20, 59);
         if (complex.telefono) doc.text(`Tel: ${complex.telefono}`, 20, 66);
         if (complex.email) doc.text(`Email: ${complex.email}`, 20, 73);
 
