@@ -762,12 +762,12 @@ function toggleFiltrosAvanzados() {
  * Aplicar filtros avanzados
  */
 function aplicarFiltrosAvanzados() {
-    const complejoFilter = document.getElementById('complejoFilter').value;
-    const estadoFilter = document.getElementById('estadoFilter').value;
-    const tipoReservaFilter = document.getElementById('tipoReservaFilter').value;
-    const fechaDesde = document.getElementById('fechaDesde').value;
-    const fechaHasta = document.getElementById('fechaHasta').value;
-    const ordenamientoFilter = document.getElementById('ordenamientoFilter').value;
+    const complejoFilter = document.getElementById('complejoFilter')?.value || '';
+    const estadoFilter = document.getElementById('estadoFilter')?.value || '';
+    const tipoReservaFilter = document.getElementById('tipoReservaFilter')?.value || '';
+    const fechaDesde = document.getElementById('fechaDesde')?.value || '';
+    const fechaHasta = document.getElementById('fechaHasta')?.value || '';
+    const ordenamientoFilter = document.getElementById('ordenamientoFilter')?.value || '';
     
     // Guardar filtros activos
     filtrosActivos = {
@@ -910,12 +910,19 @@ function limpiarFiltros() {
     busquedaActual = '';
     
     // Limpiar filtros avanzados
-    document.getElementById('complejoFilter').value = '';
-    document.getElementById('estadoFilter').value = '';
-    document.getElementById('tipoReservaFilter').value = '';
-    document.getElementById('fechaDesde').value = '';
-    document.getElementById('fechaHasta').value = '';
-    document.getElementById('ordenamientoFilter').value = '';
+    const complejoFilter = document.getElementById('complejoFilter');
+    const estadoFilter = document.getElementById('estadoFilter');
+    const tipoReservaFilter = document.getElementById('tipoReservaFilter');
+    const fechaDesde = document.getElementById('fechaDesde');
+    const fechaHasta = document.getElementById('fechaHasta');
+    const ordenamientoFilter = document.getElementById('ordenamientoFilter');
+    
+    if (complejoFilter) complejoFilter.value = '';
+    if (estadoFilter) estadoFilter.value = '';
+    if (tipoReservaFilter) tipoReservaFilter.value = '';
+    if (fechaDesde) fechaDesde.value = '';
+    if (fechaHasta) fechaHasta.value = '';
+    if (ordenamientoFilter) ordenamientoFilter.value = '';
     
     // Resetear variables
     filtrosActivos = {};
@@ -1001,7 +1008,8 @@ async function cargarCalendario() {
             complejoId = user.complejo_id || '';
         } else if (user && user.rol === 'super_admin') {
             // Para super admin, usar el selector
-            complejoId = document.getElementById('complejoCalendario').value;
+            const complejoCalendarioElement = document.getElementById('complejoCalendario');
+            complejoId = complejoCalendarioElement ? complejoCalendarioElement.value : '';
         }
         
         const fechaInicio = obtenerInicioSemana(semanaActual);
