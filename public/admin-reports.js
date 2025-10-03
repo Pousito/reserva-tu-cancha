@@ -40,6 +40,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
     setDefaultDates();
     generateReports();
+    
+    // Verificar que los botones de descarga estén disponibles
+    setTimeout(() => {
+        verifyDownloadButtons();
+    }, 1000);
 });
 
 // Configurar event listeners
@@ -107,6 +112,16 @@ function aplicarPermisosPorRol() {
         if (complexFilterContainer) {
             complexFilterContainer.style.display = 'none';
             console.log('✅ Selector de complejo ocultado específicamente para owner');
+        }
+        
+        // Asegurar que los botones de descarga estén visibles para owners
+        const downloadButtons = document.getElementById('downloadButtons');
+        if (downloadButtons) {
+            downloadButtons.style.display = 'block';
+            downloadButtons.style.visibility = 'visible';
+            console.log('✅ Botones de descarga configurados como visibles para owner');
+        } else {
+            console.log('⚠️ Elemento downloadButtons no encontrado');
         }
         
         console.log('✅ Elementos ocultados para owner');
@@ -899,6 +914,38 @@ async function updateTables() {
     } catch (error) {
         console.error('❌ Error en updateTables:', error);
     }
+}
+
+// Verificar que los botones de descarga estén disponibles
+function verifyDownloadButtons() {
+    const downloadButtons = document.getElementById('downloadButtons');
+    const user = AdminUtils.getCurrentUser();
+    
+    console.log('🔍 Verificando botones de descarga...');
+    console.log('👤 Usuario:', user ? user.rol : 'No encontrado');
+    console.log('🔘 Elemento downloadButtons:', downloadButtons ? 'Encontrado' : 'No encontrado');
+    
+    if (downloadButtons) {
+        const computedStyle = window.getComputedStyle(downloadButtons);
+        console.log('📊 Estilo del elemento:');
+        console.log('  - display:', computedStyle.display);
+        console.log('  - visibility:', computedStyle.visibility);
+        console.log('  - opacity:', computedStyle.opacity);
+        
+        if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+            console.log('⚠️ Botones de descarga están ocultos, forzando visibilidad...');
+            downloadButtons.style.display = 'block';
+            downloadButtons.style.visibility = 'visible';
+            downloadButtons.style.opacity = '1';
+        }
+    }
+    
+    // Verificar botones individuales
+    const pdfButton = document.querySelector('button[onclick*="downloadIncomeReport(\'pdf\')"]');
+    const excelButton = document.querySelector('button[onclick*="downloadIncomeReport(\'excel\')"]');
+    
+    console.log('📄 Botón PDF:', pdfButton ? 'Encontrado' : 'No encontrado');
+    console.log('📊 Botón Excel:', excelButton ? 'Encontrado' : 'No encontrado');
 }
 
 // Descargar reporte de ingresos
