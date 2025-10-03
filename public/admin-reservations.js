@@ -1258,6 +1258,9 @@ function renderizarCalendarioOffline(data) {
                 <button class="btn btn-sm btn-outline-primary me-2" onclick="cargarCalendario()">
                     <i class="fas fa-sync me-1"></i>Reintentar Conexión
                 </button>
+                <button class="btn btn-sm btn-outline-success me-2" onclick="limpiarCacheYRecargar()">
+                    <i class="fas fa-broom me-1"></i>Limpiar Caché
+                </button>
                 <button class="btn btn-sm btn-outline-info" onclick="mostrarInfoOffline()">
                     <i class="fas fa-info-circle me-1"></i>¿Por qué offline?
                 </button>
@@ -3098,7 +3101,16 @@ async function verificarEstadoServidor() {
 🔐 Endpoint calendario: ${authStatus}
 📅 Estado actual: Modo offline activado
 
-El modo offline se activa cuando el servidor tiene problemas temporales. Los datos mostrados son de respaldo basados en las reservas ya cargadas en la página.`);
+🔍 DIAGNÓSTICO:
+• El servidor está funcionando correctamente (Status 200)
+• La base de datos está conectada (PostgreSQL)
+• El problema es específico del navegador o autenticación
+• Posibles causas: Token expirado, CORS, Cloudflare, caché
+
+🛠️ SOLUCIONES:
+• Recargar la página para obtener nuevo token
+• Limpiar caché del navegador
+• Verificar que el token de autenticación sea válido`);
         
     } catch (error) {
         console.error('Error verificando servidor:', error);
@@ -3132,4 +3144,41 @@ function mostrarInfoOffline() {
 • El servidor se recupera automáticamente
 • Haz click en "Reintentar" para probar la conexión
 • El calendario volverá al formato normal`);
+}
+
+/**
+ * Limpiar caché y recargar página
+ */
+function limpiarCacheYRecargar() {
+    try {
+        console.log('🧹 Limpiando caché y recargando...');
+        
+        // Limpiar localStorage
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('reservasData');
+        
+        // Limpiar sessionStorage
+        sessionStorage.clear();
+        
+        // Limpiar caché del navegador (si es posible)
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        // Mostrar mensaje
+        alert('🧹 Caché limpiado exitosamente.\n\nSe recargará la página para obtener un nuevo token de autenticación.');
+        
+        // Recargar la página
+        window.location.reload();
+        
+    } catch (error) {
+        console.error('Error limpiando caché:', error);
+        alert('Error al limpiar el caché. Recargando página de todas formas...');
+        window.location.reload();
+    }
 }
