@@ -2509,7 +2509,11 @@ app.get('/api/admin/reports/income/:format', authenticateToken, requireComplexAc
     }
     
     console.log('📤 Enviando archivo al cliente...');
-    res.send(Buffer.from(reportBuffer));
+    console.log('📤 Tamaño del archivo:', reportBuffer.length, 'bytes');
+    console.log('📤 Tipo de archivo:', format);
+    
+    // Enviar el buffer directamente sin conversión adicional
+    res.send(reportBuffer);
     console.log(`✅ Reporte ${format.toUpperCase()} generado exitosamente: ${filename}`);
     
   } catch (error) {

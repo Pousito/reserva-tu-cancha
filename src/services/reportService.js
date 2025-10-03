@@ -297,9 +297,15 @@ class ReportService {
         }
 
             console.log('📄 PDF generado exitosamente');
-            const buffer = doc.output('arraybuffer');
-            const uint8Array = new Uint8Array(buffer);
-            console.log('📄 Tamaño del PDF:', uint8Array.length, 'bytes');
+            
+            // Usar datauristring y extraer el buffer correctamente
+            const dataUri = doc.output('datauristring');
+            const base64Data = dataUri.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            console.log('📄 Tamaño del PDF:', buffer.length, 'bytes');
+            console.log('📄 Primeros bytes del PDF:', buffer.slice(0, 10).toString('hex'));
+            
             return buffer;
         } catch (error) {
             console.error('❌ Error generando PDF:', error);
