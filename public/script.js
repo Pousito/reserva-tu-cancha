@@ -2998,6 +2998,30 @@ async function cargarHorariosComplejo(complejo) {
             console.log('No hay fecha seleccionada, usando horarios de lunes a viernes por defecto');
             horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         }
+    } else if (complejo.nombre === 'Fundación Gunnen') {
+        // Fundación Gunnen: 14:00-22:00 entre semana, 10:00-22:00 fines de semana
+        const fecha = document.getElementById('fechaSelect').value;
+        if (fecha) {
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            const fechaObj = new Date(año, mes - 1, dia);
+            const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
+            
+            console.log('Fundación Gunnen - Fecha:', fecha, 'Día de semana:', diaSemana, 'Día nombre:', ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][diaSemana]);
+            
+            if (diaSemana === 0 || diaSemana === 6) {
+                // Fines de semana: 10:00-22:00
+                console.log('Cargando horarios de fin de semana (10:00-22:00)');
+                horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+            } else {
+                // Lunes a viernes: 14:00-22:00
+                console.log('Cargando horarios de lunes a viernes (14:00-22:00)');
+                horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+            }
+        } else {
+            // Si no hay fecha seleccionada, usar horarios de lunes a viernes por defecto
+            console.log('No hay fecha seleccionada, usando horarios de lunes a viernes por defecto');
+            horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+        }
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3140,6 +3164,23 @@ async function cargarHorariosBasicos() {
             // Si no hay fecha, usar horarios de lunes a viernes por defecto
             horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         }
+    } else if (complejoSeleccionado.nombre === 'Fundación Gunnen') {
+        if (fecha) {
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            const fechaObj = new Date(año, mes - 1, dia);
+            const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
+            
+            if (diaSemana === 0 || diaSemana === 6) {
+                // Fines de semana: 10:00-22:00
+                horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+            } else {
+                // Lunes a viernes: 14:00-22:00
+                horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+            }
+        } else {
+            // Si no hay fecha, usar horarios de lunes a viernes por defecto
+            horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+        }
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3227,6 +3268,14 @@ async function cargarHorariosConDisponibilidadInmediata() {
         } else {
             // Lunes a viernes: 16:00-23:00
             horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        }
+    } else if (complejoSeleccionado.nombre === 'Fundación Gunnen') {
+        if (diaSemana === 0 || diaSemana === 6) {
+            // Fines de semana: 10:00-22:00
+            horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+        } else {
+            // Lunes a viernes: 14:00-22:00
+            horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
         }
     } else {
         // Otros complejos: horario estándar
