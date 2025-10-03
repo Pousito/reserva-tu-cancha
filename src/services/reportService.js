@@ -198,7 +198,11 @@ class ReportService {
             theme: 'grid',
             headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] },
             alternateRowStyles: { fillColor: [245, 245, 245] },
-            margin: { left: 20, right: 20 }
+            margin: { left: 20, right: 20 },
+            columnStyles: {
+                0: { cellWidth: 80 },
+                1: { cellWidth: 50 }
+            }
         });
 
         yPosition = doc.lastAutoTable.finalY + 20;
@@ -228,7 +232,7 @@ class ReportService {
                 alternateRowStyles: { fillColor: [245, 245, 245] },
                 margin: { left: 20, right: 20 },
                 columnStyles: {
-                    0: { cellWidth: 25 },
+                    0: { cellWidth: 20 },
                     1: { cellWidth: 20 },
                     2: { cellWidth: 20 },
                     3: { cellWidth: 25 },
