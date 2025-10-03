@@ -62,6 +62,15 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         console.log('📅 Obteniendo datos del calendario semanal:', { fechaInicio, fechaFin, complejoId, user: user.email });
         
+        // Validar que el usuario tenga los datos necesarios
+        if (!user || !user.rol) {
+            throw new Error('Usuario no autenticado o sin rol asignado');
+        }
+        
+        if ((user.rol === 'owner' || user.rol === 'manager') && !user.complejo_id) {
+            throw new Error(`Usuario ${user.rol} sin complejo_id asignado`);
+        }
+        
         // Usar fechas proporcionadas o calcular semana actual
         let startOfWeek, endOfWeek;
         
@@ -141,7 +150,18 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         console.log('🔍 Query SQL:', query);
         console.log('🔍 Parámetros:', queryParams);
         
+        // Validar que la base de datos esté disponible
+        if (!db) {
+            throw new Error('Base de datos no disponible');
+        }
+        
         const reservations = await db.query(query, queryParams);
+        
+        // Validar que la consulta se ejecutó correctamente
+        if (!reservations) {
+            console.warn('⚠️ Consulta de reservas devolvió null/undefined');
+            reservations = [];
+        }
         
         // Debug: Mostrar reservas obtenidas
         console.log('🔍 Reservas obtenidas de la BD:', reservations);
@@ -183,6 +203,12 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         const canchas = await db.query(canchasQuery, canchasParams);
         
+        // Validar que la consulta de canchas se ejecutó correctamente
+        if (!canchas) {
+            console.warn('⚠️ Consulta de canchas devolvió null/undefined');
+            canchas = [];
+        }
+        
         // Obtener bloqueos temporales
         let bloqueosQuery = `
             SELECT 
@@ -214,6 +240,12 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         }
         
         const bloqueos = await db.query(bloqueosQuery, bloqueosParams);
+        
+        // Validar que la consulta de bloqueos se ejecutó correctamente
+        if (!bloqueos) {
+            console.warn('⚠️ Consulta de bloqueos devolvió null/undefined');
+            bloqueos = [];
+        }
         
         // Procesar bloqueos temporales
         const bloqueosProcesados = (bloqueos || []).map(bloqueo => {
@@ -374,10 +406,28 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
     } catch (error) {
         console.error('❌ Error obteniendo datos del calendario:', error);
         console.error('❌ Stack trace:', error.stack);
+        
+        // Log adicional para debugging en producción
+        console.error('❌ Debug info:', {
+            fechaInicio,
+            fechaFin,
+            complejoId,
+            userEmail: user?.email,
+            userRole: user?.rol,
+            userComplejoId: user?.complejo_id
+        });
+        
+        // Respuesta más detallada para debugging
         res.status(500).json({ 
-            error: 'Error interno del servidor',
+            error: 'Error interno del servidor al cargar calendario',
             details: error.message,
-            stack: error.stack
+            debug: {
+                fechaInicio,
+                fechaFin,
+                complejoId,
+                userRole: user?.rol
+            },
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
