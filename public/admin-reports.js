@@ -938,6 +938,10 @@ function verifyDownloadButtons() {
             downloadButtons.style.visibility = 'visible';
             downloadButtons.style.opacity = '1';
         }
+    } else {
+        // Si no se encuentra el elemento, crearlo dinámicamente
+        console.log('⚠️ Elemento downloadButtons no encontrado, creando dinámicamente...');
+        createDownloadButtons();
     }
     
     // Verificar botones individuales
@@ -946,6 +950,71 @@ function verifyDownloadButtons() {
     
     console.log('📄 Botón PDF:', pdfButton ? 'Encontrado' : 'No encontrado');
     console.log('📊 Botón Excel:', excelButton ? 'Encontrado' : 'No encontrado');
+}
+
+// Crear botones de descarga dinámicamente
+function createDownloadButtons() {
+    try {
+        // Buscar el contenedor de filtros
+        const filtersContainer = document.querySelector('.filter-group');
+        if (!filtersContainer) {
+            console.log('❌ No se encontró el contenedor de filtros');
+            return;
+        }
+        
+        // Crear el contenedor de botones de descarga
+        const downloadContainer = document.createElement('div');
+        downloadContainer.className = 'filter-item';
+        downloadContainer.id = 'downloadButtons';
+        
+        // Crear el label
+        const label = document.createElement('label');
+        label.className = 'form-label';
+        label.textContent = 'Reportes de Ingresos';
+        
+        // Crear el grupo de botones
+        const buttonGroup = document.createElement('div');
+        buttonGroup.className = 'btn-group';
+        buttonGroup.setAttribute('role', 'group');
+        
+        // Crear botón PDF
+        const pdfButton = document.createElement('button');
+        pdfButton.className = 'btn btn-success';
+        pdfButton.innerHTML = '<i class="fas fa-file-pdf me-2"></i>PDF';
+        pdfButton.title = 'Descargar reporte de ingresos en PDF';
+        pdfButton.onclick = () => downloadIncomeReport('pdf');
+        
+        // Crear botón Excel
+        const excelButton = document.createElement('button');
+        excelButton.className = 'btn btn-success';
+        excelButton.innerHTML = '<i class="fas fa-file-excel me-2"></i>Excel';
+        excelButton.title = 'Descargar reporte de ingresos en Excel';
+        excelButton.onclick = () => downloadIncomeReport('excel');
+        
+        // Ensamblar los elementos
+        buttonGroup.appendChild(pdfButton);
+        buttonGroup.appendChild(excelButton);
+        downloadContainer.appendChild(label);
+        downloadContainer.appendChild(buttonGroup);
+        
+        // Insertar después del botón "Generar Reportes"
+        const generateButton = document.querySelector('button[onclick="generateReports()"]');
+        if (generateButton) {
+            const generateContainer = generateButton.closest('.filter-item');
+            if (generateContainer && generateContainer.nextSibling) {
+                generateContainer.parentNode.insertBefore(downloadContainer, generateContainer.nextSibling);
+            } else {
+                filtersContainer.appendChild(downloadContainer);
+            }
+        } else {
+            filtersContainer.appendChild(downloadContainer);
+        }
+        
+        console.log('✅ Botones de descarga creados dinámicamente');
+        
+    } catch (error) {
+        console.error('❌ Error creando botones de descarga:', error);
+    }
 }
 
 // Descargar reporte de ingresos
