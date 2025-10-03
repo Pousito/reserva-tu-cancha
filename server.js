@@ -185,6 +185,10 @@ let db;
 // Sistema de emails
 const emailService = new EmailService();
 
+// Sistema de reportes
+const ReportService = require('./src/services/reportService');
+let reportService;
+
 // Función helper para obtener la función de fecha actual según el tipo de BD
 const getCurrentTimestampFunction = () => {
   if (!db) return 'NOW()'; // Default a PostgreSQL
@@ -203,6 +207,10 @@ async function initializeDatabase() {
     const atomicManager = new AtomicReservationManager(db);
     global.atomicReservationManager = atomicManager;
     console.log('🔒 Sistema de reservas atómicas inicializado');
+    
+    // Inicializar sistema de reportes
+    reportService = new ReportService(db);
+    console.log('📊 Sistema de reportes inicializado');
     
     // Poblar con datos de ejemplo si está vacía
     await populateSampleData();
@@ -2442,6 +2450,61 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     res.json(reportData);
   } catch (error) {
     console.error('❌ Error generando reportes:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para generar reportes de ingresos en PDF/Excel
+app.get('/api/admin/reports/income/:format', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    const { format } = req.params;
+    const { dateFrom, dateTo, complexId } = req.query;
+    
+    console.log('📊 Generando reporte de ingresos...', { format, dateFrom, dateTo, complexId });
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    // Validar formato
+    if (!['pdf', 'excel'].includes(format)) {
+      return res.status(400).json({ error: 'Formato no válido. Use "pdf" o "excel"' });
+    }
+    
+    // Validar fechas
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({ error: 'Fechas de inicio y fin son requeridas' });
+    }
+    
+    // Determinar complejo según el rol
+    let targetComplexId = complexId;
+    if (req.user.rol === 'owner' || req.user.rol === 'manager') {
+      // Owners y managers solo pueden generar reportes de su complejo
+      targetComplexId = req.complexFilter;
+    }
+    
+    if (!targetComplexId) {
+      return res.status(400).json({ error: 'ID de complejo requerido' });
+    }
+    
+    console.log('🔍 Generando reporte para complejo:', targetComplexId);
+    
+    // Generar reporte
+    const reportBuffer = await reportService.generateIncomeReport(targetComplexId, dateFrom, dateTo, format);
+    
+    // Configurar headers según el formato
+    const filename = `reporte_ingresos_${dateFrom}_${dateTo}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+    
+    if (format === 'pdf') {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    } else {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    }
+    
+    res.send(Buffer.from(reportBuffer));
+    console.log(`✅ Reporte ${format.toUpperCase()} generado exitosamente: ${filename}`);
+    
+  } catch (error) {
+    console.error('❌ Error generando reporte de ingresos:', error);
     res.status(500).json({ error: error.message });
   }
 });

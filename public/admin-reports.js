@@ -901,6 +901,93 @@ async function updateTables() {
     }
 }
 
+// Descargar reporte de ingresos
+async function downloadIncomeReport(format) {
+    try {
+        console.log(`📥 Descargando reporte de ingresos en formato ${format.toUpperCase()}...`);
+        
+        // Obtener fechas actuales
+        const dateFrom = document.getElementById('dateFrom')?.value;
+        const dateTo = document.getElementById('dateTo')?.value;
+        
+        if (!dateFrom || !dateTo) {
+            showNotification('Por favor selecciona las fechas de inicio y fin', 'error');
+            return;
+        }
+        
+        // Obtener complejo según el rol del usuario
+        const user = AdminUtils.getCurrentUser();
+        let complexId = null;
+        
+        // Para owners, usar automáticamente su complejo
+        if (user && user.rol === 'owner' && user.complejo_id) {
+            complexId = user.complejo_id;
+        } else {
+            const complexFilter = document.getElementById('complexFilter');
+            complexId = complexFilter ? complexFilter.value : null;
+        }
+        
+        if (!complexId) {
+            showNotification('Por favor selecciona un complejo', 'error');
+            return;
+        }
+        
+        console.log('🔍 Parámetros del reporte:', { format, dateFrom, dateTo, complexId });
+        
+        // Mostrar indicador de carga
+        showNotification(`Generando reporte ${format.toUpperCase()}...`, 'info');
+        
+        // Construir URL
+        const url = `${API_BASE}/admin/reports/income/${format}?dateFrom=${dateFrom}&dateTo=${dateTo}&complexId=${complexId}`;
+        
+        // Crear enlace de descarga
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `reporte_ingresos_${dateFrom}_${dateTo}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+        
+        // Agregar token de autorización
+        const token = AdminUtils.getAuthToken();
+        if (token) {
+            // Para descargas con autenticación, usar fetch
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error generando reporte');
+            }
+            
+            // Obtener el archivo como blob
+            const blob = await response.blob();
+            
+            // Crear URL del blob y descargar
+            const blobUrl = window.URL.createObjectURL(blob);
+            link.href = blobUrl;
+            
+            // Simular click para descargar
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Limpiar URL del blob
+            window.URL.revokeObjectURL(blobUrl);
+            
+            showNotification(`Reporte ${format.toUpperCase()} descargado exitosamente`, 'success');
+            console.log(`✅ Reporte ${format.toUpperCase()} descargado exitosamente`);
+        } else {
+            throw new Error('No se encontró token de autorización');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error descargando reporte:', error);
+        showNotification(`Error descargando reporte: ${error.message}`, 'error');
+    }
+}
+
 // Actualizar tabla de Top Complejos
 async function updateTopComplexesTable() {
     try {
