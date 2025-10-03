@@ -1043,6 +1043,14 @@ async function cargarCalendario() {
         } else {
             console.error('Error al cargar calendario:', response.status, response.statusText);
             
+            // Si es error 401, puede ser problema de autenticación
+            if (response.status === 401) {
+                console.log('🔐 Error de autenticación - intentando recargar token...');
+                // Recargar la página para obtener nuevo token
+                window.location.reload();
+                return;
+            }
+            
             // Mostrar mensaje de error más amigable
             const calendarGrid = document.getElementById('calendarGrid');
             if (calendarGrid) {
@@ -1241,9 +1249,19 @@ function renderizarCalendarioOffline(data) {
         <div class="alert alert-warning mb-3" role="alert">
             <i class="fas fa-wifi me-2"></i>
             <strong>Modo Offline</strong> - Mostrando datos limitados (${data.reservas.length} reservas)
-            <button class="btn btn-sm btn-outline-primary ms-2" onclick="cargarCalendario()">
-                <i class="fas fa-sync me-1"></i>Reintentar
-            </button>
+            <br>
+            <small class="text-muted">
+                El servidor tiene problemas temporales. Usando datos de respaldo.
+                <a href="#" onclick="verificarEstadoServidor()" class="text-decoration-none">Verificar estado del servidor</a>
+            </small>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="cargarCalendario()">
+                    <i class="fas fa-sync me-1"></i>Reintentar Conexión
+                </button>
+                <button class="btn btn-sm btn-outline-info" onclick="mostrarInfoOffline()">
+                    <i class="fas fa-info-circle me-1"></i>¿Por qué offline?
+                </button>
+            </div>
         </div>
     `;
     
@@ -3055,4 +3073,63 @@ async function liberarBloqueoTemporalAdmin() {
     } finally {
         bloqueoTemporalAdmin = null;
     }
+}
+
+/**
+ * Verificar estado del servidor
+ */
+async function verificarEstadoServidor() {
+    try {
+        console.log('🔍 Verificando estado del servidor...');
+        
+        // Verificar endpoint de salud
+        const healthResponse = await fetch(`${API_BASE.replace('/api', '')}/health`);
+        const healthStatus = healthResponse.ok ? '✅ Funcionando' : '❌ Con problemas';
+        
+        // Verificar endpoint de autenticación
+        const authResponse = await fetch(`${API_BASE}/admin/calendar/week`);
+        const authStatus = authResponse.status === 401 ? '✅ Requiere autenticación (normal)' : 
+                          authResponse.status === 502 ? '❌ Error 502 (problema interno)' :
+                          authResponse.status === 200 ? '✅ Funcionando' : `⚠️ Estado ${authResponse.status}`;
+        
+        alert(`Estado del Servidor:
+        
+🏥 Salud del servidor: ${healthStatus}
+🔐 Endpoint calendario: ${authStatus}
+📅 Estado actual: Modo offline activado
+
+El modo offline se activa cuando el servidor tiene problemas temporales. Los datos mostrados son de respaldo basados en las reservas ya cargadas en la página.`);
+        
+    } catch (error) {
+        console.error('Error verificando servidor:', error);
+        alert('No se pudo verificar el estado del servidor. Error: ' + error.message);
+    }
+}
+
+/**
+ * Mostrar información sobre el modo offline
+ */
+function mostrarInfoOffline() {
+    alert(`¿Por qué está en modo offline?
+
+🔍 DIAGNÓSTICO:
+• El calendario normal requiere conexión al servidor
+• El servidor está devolviendo errores 502 (Bad Gateway)
+• Esto indica un problema interno del servidor de producción
+
+🛠️ SOLUCIONES:
+• El modo offline usa datos ya cargados en la página
+• Muestra las reservas disponibles pero con funcionalidad limitada
+• Puedes reintentar la conexión con el botón "Reintentar"
+
+📊 DATOS DISPONIBLES:
+• ${window.reservasData?.length || 0} reservas cargadas
+• Vista de calendario básica
+• Información de clientes y canchas
+• Horarios de 8:00 a 22:00
+
+🔄 CUANDO SE RESTAURA:
+• El servidor se recupera automáticamente
+• Haz click en "Reintentar" para probar la conexión
+• El calendario volverá al formato normal`);
 }
