@@ -34,14 +34,18 @@ async function getComplejosByCiudad(req, res) {
 /**
  * Obtener canchas por complejo y tipo
  * Soporta búsqueda flexible: "futbol" encontrará "futbol", "baby futbol", etc.
+ * Incluye información de promociones activas
  */
 async function getCanchasByComplejoAndTipo(req, res) {
   console.log('🚨 FUNCIÓN getCanchasByComplejoAndTipo LLAMADA');
   console.log('🚨 req.params:', req.params);
   try {
     const { complejoId, tipo } = req.params;
+    const { fecha, hora } = req.query; // Parámetros opcionales para calcular precio promocional
     
     console.log('🏟️ Buscando canchas para complejo:', complejoId, 'tipo:', tipo);
+    if (fecha) console.log('📅 Fecha para verificar promociones:', fecha);
+    if (hora) console.log('🕐 Hora para verificar promociones:', hora);
     
     // Si el tipo es "futbol", buscar cualquier tipo que contenga "futbol"
     // Esto incluye "futbol", "baby futbol", "futbol 7", etc.
@@ -62,7 +66,39 @@ async function getCanchasByComplejoAndTipo(req, res) {
     
     const rows = await db.query(query, params);
     console.log('✅ Canchas encontradas:', rows.length);
-    res.json(rows);
+    
+    // Si se proporciona fecha, agregar información de promociones
+    if (fecha) {
+      const promocionesHelper = require('../utils/promociones-helper');
+      
+      const canchasConPromociones = await Promise.all(
+        rows.map(async (cancha) => {
+          const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
+            cancha.id,
+            fecha,
+            hora
+          );
+          
+          return {
+            ...cancha,
+            precio_actual: precioInfo.precio,
+            precio_original: cancha.precio_hora,
+            tiene_promocion: precioInfo.tienePromocion,
+            promocion_info: precioInfo.tienePromocion ? {
+              nombre: precioInfo.promocionNombre,
+              descuento: precioInfo.descuento,
+              porcentaje_descuento: precioInfo.porcentajeDescuento
+            } : null
+          };
+        })
+      );
+      
+      console.log('✅ Precios promocionales calculados');
+      res.json(canchasConPromociones);
+    } else {
+      // Sin fecha, retornar canchas normales
+      res.json(rows);
+    }
   } catch (err) {
     console.error('Error obteniendo canchas:', err);
     res.status(500).json({ error: err.message });

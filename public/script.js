@@ -2863,7 +2863,20 @@ async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
     }
     
     try {
-        const url = `${API_BASE}/canchas/${complejoId}/${tipo}`;
+        // Construir URL con parámetros de fecha/hora si están disponibles para obtener precios promocionales
+        let url = `${API_BASE}/canchas/${complejoId}/${tipo}`;
+        const fecha = document.getElementById('fechaSelect')?.value;
+        const hora = document.getElementById('horaSelect')?.value;
+        
+        // Si hay fecha seleccionada, agregarla como query parameter para obtener precios promocionales
+        if (fecha) {
+            url += `?fecha=${fecha}`;
+            if (hora) {
+                url += `&hora=${hora}`;
+            }
+            console.log('📅 Fecha seleccionada para verificar promociones:', fecha, hora ? `hora: ${hora}` : '');
+        }
+        
         console.log('🏟️ URL de la petición:', url);
         
         // Agregar headers y configuración de fetch más robusta
@@ -2886,6 +2899,17 @@ async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
         
         canchas = await response.json();
         console.log('🏟️ Canchas recibidas:', canchas);
+        
+        // Log promociones encontradas
+        const canchasConPromocion = canchas.filter(c => c.tiene_promocion);
+        if (canchasConPromocion.length > 0) {
+            console.log('🎉 Promociones encontradas:', canchasConPromocion.map(c => ({
+                cancha: c.nombre,
+                precioOriginal: c.precio_original,
+                precioPromocional: c.precio_actual,
+                descuento: c.promocion_info?.porcentaje_descuento + '%'
+            })));
+        }
         
         // Solo renderizar visualmente si se solicita
         if (renderizarVisual) {
@@ -3479,7 +3503,7 @@ async function renderizarCanchasConDisponibilidad() {
         for (const cancha of canchasOrdenadas) {
             const canchaCard = document.createElement('div');
             canchaCard.dataset.canchaId = cancha.id;
-            canchaCard.dataset.precio = cancha.precio_hora;
+            canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
             
             const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
             
@@ -3541,12 +3565,27 @@ async function renderizarCanchasConDisponibilidad() {
             const descripcionCancha = esTechado ? 'Techada' : 'Al aire libre';
             const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' ? '5 jugadores por equipo' : '7 jugadores por equipo';
             
+            // Construir HTML del precio (con promoción si aplica)
+            let precioHTML = '';
+            if (cancha.tiene_promocion && cancha.precio_actual < cancha.precio_original) {
+                precioHTML = `
+                    <p class="mb-1">
+                        <span class="text-decoration-line-through text-muted small">$${cancha.precio_original.toLocaleString()}</span>
+                        <span class="text-success fw-bold ms-2">$${cancha.precio_actual.toLocaleString()}</span>
+                        <span class="badge bg-success ms-1">${cancha.promocion_info?.porcentaje_descuento}% OFF</span>
+                    </p>
+                    <p class="text-muted small mb-0">por hora</p>
+                `;
+            } else {
+                precioHTML = `<p class="text-muted">$${(cancha.precio_actual || cancha.precio_hora).toLocaleString()} por hora</p>`;
+            }
+            
             canchaCard.innerHTML = `
                 <div class="cancha-icon">
                     <i class="fas ${iconClass}"></i>
                 </div>
                 <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
-                <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
+                ${precioHTML}
                 ${esTechado ? '<p class="text-info small"><i class="fas fa-home me-1"></i>Techada</p>' : ''}
                 <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>
                 <div class="estado-disponibilidad">
@@ -3580,7 +3619,7 @@ async function renderizarCanchasConDisponibilidad() {
         for (const cancha of canchas) {
             const canchaCard = document.createElement('div');
             canchaCard.dataset.canchaId = cancha.id;
-            canchaCard.dataset.precio = cancha.precio_hora;
+            canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
             
             const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
             
@@ -3632,12 +3671,28 @@ async function renderizarCanchasConDisponibilidad() {
             }
             
             canchaCard.className = cardClass;
+            
+            // Construir HTML del precio (con promoción si aplica)
+            let precioHTML = '';
+            if (cancha.tiene_promocion && cancha.precio_actual < cancha.precio_original) {
+                precioHTML = `
+                    <p class="mb-1">
+                        <span class="text-decoration-line-through text-muted small">$${cancha.precio_original.toLocaleString()}</span>
+                        <span class="text-success fw-bold ms-2">$${cancha.precio_actual.toLocaleString()}</span>
+                        <span class="badge bg-success ms-1">${cancha.promocion_info?.porcentaje_descuento}% OFF</span>
+                    </p>
+                    <p class="text-muted small mb-0">por hora</p>
+                `;
+            } else {
+                precioHTML = `<p class="text-muted">$${(cancha.precio_actual || cancha.precio_hora).toLocaleString()} por hora</p>`;
+            }
+            
             canchaCard.innerHTML = `
                 <div class="cancha-icon">
                     <i class="fas ${iconClass}"></i>
                 </div>
                 <h5>${cancha.nombre}</h5>
-                <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
+                ${precioHTML}
                 <div class="estado-disponibilidad">
                     ${estadoBadge}
                 </div>
@@ -3683,7 +3738,7 @@ async function renderizarCanchasConDisponibilidad() {
              const canchaCard = document.createElement('div');
              canchaCard.className = 'cancha-card disponible';
              canchaCard.dataset.canchaId = cancha.id;
-             canchaCard.dataset.precio = cancha.precio_hora;
+             canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
              
              const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
              
@@ -3717,7 +3772,7 @@ async function renderizarCanchasConDisponibilidad() {
              const canchaCard = document.createElement('div');
              canchaCard.className = 'cancha-card disponible';
              canchaCard.dataset.canchaId = cancha.id;
-             canchaCard.dataset.precio = cancha.precio_hora;
+             canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
              
              const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
              

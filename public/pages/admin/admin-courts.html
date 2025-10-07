@@ -571,10 +571,253 @@
         </div>
     </div>
 
+    <!-- Modal para Gestionar Promociones -->
+    <div class="modal fade" id="promocionesModal" tabindex="-1" aria-labelledby="promocionesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <div>
+                        <h5 class="modal-title" id="promocionesModalLabel">
+                            <i class="fas fa-percent me-2"></i>Gestionar Promociones
+                        </h5>
+                        <small id="promocionesModalSubtitle"></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Botón para crear nueva promoción -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="mb-0">Promociones Activas</h6>
+                        <button class="btn btn-success btn-sm" onclick="openPromocionForm()">
+                            <i class="fas fa-plus me-1"></i>Nueva Promoción
+                        </button>
+                    </div>
+
+                    <!-- Lista de promociones existentes -->
+                    <div id="promocionesListContainer" class="mb-4">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Cargando promociones...</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulario para crear/editar promoción -->
+                    <div id="promocionFormContainer" style="display: none;">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0" id="promocionFormTitle">
+                                    <i class="fas fa-plus-circle me-2"></i>Nueva Promoción
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="promocionForm">
+                                    <input type="hidden" id="promocionId">
+                                    <input type="hidden" id="promocionCanchaId">
+
+                                    <!-- Nombre y Precio -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="promocionNombre" class="form-label">Nombre de la Promoción</label>
+                                            <input type="text" class="form-control" id="promocionNombre" 
+                                                   placeholder="Ej: Promoción Mediodía Lunes-Viernes" required>
+                                            <small class="text-muted">Nombre descriptivo para identificar la promoción</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="promocionPrecio" class="form-label">
+                                                Precio Promocional ($)
+                                                <span class="text-muted" id="precioNormalLabel"></span>
+                                            </label>
+                                            <input type="number" class="form-control" id="promocionPrecio" 
+                                                   min="1000" step="500" required>
+                                            <small class="text-muted">Debe ser menor que el precio normal</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tipo de Fecha -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Tipo de Aplicación de Fechas</label>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipoFecha" 
+                                                           id="tipoFechaEspecifico" value="especifico" checked>
+                                                    <label class="form-check-label" for="tipoFechaEspecifico">
+                                                        <i class="fas fa-calendar-day me-1"></i>Día Específico
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipoFecha" 
+                                                           id="tipoFechaRango" value="rango">
+                                                    <label class="form-check-label" for="tipoFechaRango">
+                                                        <i class="fas fa-calendar-week me-1"></i>Rango de Fechas
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipoFecha" 
+                                                           id="tipoFechaRecurrente" value="recurrente_semanal">
+                                                    <label class="form-check-label" for="tipoFechaRecurrente">
+                                                        <i class="fas fa-sync me-1"></i>Recurrente Semanal
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos de fecha (condicionales) -->
+                                    <div id="fechaEspecificoContainer" class="mb-3">
+                                        <label for="fechaEspecifica" class="form-label">Fecha Específica</label>
+                                        <input type="date" class="form-control" id="fechaEspecifica">
+                                        <div class="alert alert-info mt-2 mb-0" id="alertFechaEspecifica">
+                                            <small><i class="fas fa-info-circle me-1"></i>La promoción solo aplicará este día específico.</small>
+                                        </div>
+                                    </div>
+
+                                    <div id="fechaRangoContainer" class="mb-3" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                                                <input type="date" class="form-control" id="fechaInicio">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="fechaFin" class="form-label">Fecha Fin</label>
+                                                <input type="date" class="form-control" id="fechaFin">
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-info mt-2 mb-0" id="alertFechaRango">
+                                            <small><i class="fas fa-info-circle me-1"></i>La promoción aplicará todos los días dentro de este rango.</small>
+                                        </div>
+                                    </div>
+
+                                    <div id="fechaRecurrenteContainer" class="mb-3" style="display: none;">
+                                        <label class="form-label">Días de la Semana</label>
+                                        <div class="row">
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaLunes" value="lunes">
+                                                    <label class="form-check-label" for="diaLunes">Lunes</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaMartes" value="martes">
+                                                    <label class="form-check-label" for="diaMartes">Martes</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaMiercoles" value="miércoles">
+                                                    <label class="form-check-label" for="diaMiercoles">Miércoles</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaJueves" value="jueves">
+                                                    <label class="form-check-label" for="diaJueves">Jueves</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaViernes" value="viernes">
+                                                    <label class="form-check-label" for="diaViernes">Viernes</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaSabado" value="sábado">
+                                                    <label class="form-check-label" for="diaSabado">Sábado</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="diaDomingo" value="domingo">
+                                                    <label class="form-check-label" for="diaDomingo">Domingo</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-warning mt-2 mb-0" id="alertFechaRecurrente">
+                                            <small><i class="fas fa-exclamation-triangle me-1"></i>Las promociones recurrentes comenzarán a aplicarse a partir del próximo lunes.</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tipo de Horario -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Tipo de Aplicación de Horarios</label>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipoHorario" 
+                                                           id="tipoHorarioEspecifico" value="especifico" checked>
+                                                    <label class="form-check-label" for="tipoHorarioEspecifico">
+                                                        <i class="fas fa-clock me-1"></i>Horario Específico
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipoHorario" 
+                                                           id="tipoHorarioRango" value="rango">
+                                                    <label class="form-check-label" for="tipoHorarioRango">
+                                                        <i class="fas fa-clock me-1"></i>Rango de Horarios
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos de horario (condicionales) -->
+                                    <div id="horarioEspecificoContainer" class="mb-3">
+                                        <label for="horaEspecifica" class="form-label">Hora Específica</label>
+                                        <input type="time" class="form-control" id="horaEspecifica">
+                                        <small class="text-muted">Ej: 14:00 (solo aplica a esta hora exacta)</small>
+                                    </div>
+
+                                    <div id="horarioRangoContainer" class="mb-3" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="horaInicio" class="form-label">Hora Inicio</label>
+                                                <input type="time" class="form-control" id="horaInicio">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="horaFin" class="form-label">Hora Fin</label>
+                                                <input type="time" class="form-control" id="horaFin">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Ej: De 12:00 a 16:00 (aplica a todas las horas en este rango)</small>
+                                    </div>
+
+                                    <!-- Descripción -->
+                                    <div class="mb-3">
+                                        <label for="promocionDescripcion" class="form-label">Descripción (Opcional)</label>
+                                        <textarea class="form-control" id="promocionDescripcion" rows="2" 
+                                                  placeholder="Descripción adicional de la promoción"></textarea>
+                                    </div>
+
+                                    <!-- Botones -->
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-secondary" onclick="cancelPromocionForm()">
+                                            <i class="fas fa-times me-1"></i>Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save me-1"></i>Guardar Promoción
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Scripts necesarios para el sistema de autenticación -->
     <script src="../../js/url-config.js"></script>
     <script src="../../js/admin-utils.js"></script>
-    <script src="../../admin-courts.js?v=1.5"></script>
+    <script src="../../admin-courts.js?v=1.6"></script>
 </body>
 </html>

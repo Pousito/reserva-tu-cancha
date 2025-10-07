@@ -382,6 +382,10 @@ function displayCourts(courtsToShow) {
                 <div class="col-md-4 text-end">
                     ${currentUser && currentUser.rol !== 'manager' ? `
                     <div class="btn-group-vertical" role="group">
+                        <button class="btn btn-outline-primary btn-sm mb-2" onclick="openPromocionesModal(${court.id}, '${court.nombre.replace(/'/g, "\\'")}', ${court.precio_hora})">
+                            <i class="fas fa-percent me-1"></i>
+                            Promociones
+                        </button>
                         <button class="btn btn-outline-warning btn-sm mb-2" onclick="editCourt(${court.id})">
                             <i class="fas fa-edit me-1"></i>
                             Editar
@@ -616,4 +620,470 @@ function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     window.location.href = '../../admin-login.html';
+}
+
+// ============================================
+// SISTEMA DE PROMOCIONES Y PRECIOS DINÁMICOS
+// ============================================
+
+let currentCanchaPromocion = null;
+let currentCanchaNombre = '';
+let currentCanchaPrecio = 0;
+let currentPromocionEdit = null;
+
+/**
+ * Abrir modal de gestión de promociones para una cancha
+ */
+async function openPromocionesModal(canchaId, canchaNombre, canchaPrecio) {
+    currentCanchaPromocion = canchaId;
+    currentCanchaNombre = canchaNombre;
+    currentCanchaPrecio = canchaPrecio;
+    currentPromocionEdit = null;
+    
+    // Actualizar título del modal
+    document.getElementById('promocionesModalSubtitle').textContent = 
+        `Cancha: ${canchaNombre} - Precio normal: $${canchaPrecio.toLocaleString()}`;
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('promocionesModal'));
+    modal.show();
+    
+    // Ocultar formulario y mostrar lista
+    document.getElementById('promocionFormContainer').style.display = 'none';
+    document.getElementById('promocionesListContainer').style.display = 'block';
+    
+    // Cargar promociones
+    await loadPromociones();
+}
+
+/**
+ * Cargar promociones de la cancha actual
+ */
+async function loadPromociones() {
+    const container = document.getElementById('promocionesListContainer');
+    container.innerHTML = `
+        <div class="text-center text-muted py-4">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+            <p>Cargando promociones...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await AdminUtils.authenticatedFetch(`/api/promociones/cancha/${currentCanchaPromocion}`);
+        
+        if (!response.ok) {
+            throw new Error('Error cargando promociones');
+        }
+        
+        const promociones = await response.json();
+        
+        if (promociones.length === 0) {
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay promociones configuradas para esta cancha. Haz clic en "Nueva Promoción" para crear una.
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar lista de promociones
+        container.innerHTML = promociones.map(promo => {
+            const descuento = currentCanchaPrecio - promo.precio_promocional;
+            const porcentaje = Math.round((descuento / currentCanchaPrecio) * 100);
+            
+            return `
+                <div class="card mb-3 ${!promo.activo ? 'border-secondary' : 'border-success'}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-2">
+                                    ${promo.nombre || 'Promoción sin nombre'}
+                                    ${!promo.activo ? '<span class="badge bg-secondary ms-2">Inactiva</span>' : '<span class="badge bg-success ms-2">Activa</span>'}
+                                </h6>
+                                <p class="mb-2">
+                                    <strong class="text-success">$${promo.precio_promocional.toLocaleString()}</strong>
+                                    <span class="text-muted ms-2">(${porcentaje}% desc.)</span>
+                                </p>
+                                <div class="text-muted small">
+                                    <div><i class="fas fa-calendar me-1"></i>${formatPromocionFechas(promo)}</div>
+                                    <div><i class="fas fa-clock me-1"></i>${formatPromocionHorarios(promo)}</div>
+                                    ${promo.descripcion ? `<div class="mt-1"><i class="fas fa-info-circle me-1"></i>${promo.descripcion}</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="btn-group-vertical ms-3">
+                                <button class="btn btn-sm btn-outline-${promo.activo ? 'warning' : 'success'}" onclick="togglePromocionActiva(${promo.id}, ${!promo.activo})">
+                                    <i class="fas fa-${promo.activo ? 'pause' : 'play'} me-1"></i>${promo.activo ? 'Desactivar' : 'Activar'}
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editPromocion(${promo.id})">
+                                    <i class="fas fa-edit me-1"></i>Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deletePromocion(${promo.id}, '${(promo.nombre || 'esta promoción').replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error cargando promociones:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error cargando promociones. Por favor, intenta nuevamente.
+            </div>
+        `;
+    }
+}
+
+/**
+ * Formatear información de fechas para mostrar
+ */
+function formatPromocionFechas(promo) {
+    if (promo.tipo_fecha === 'especifico') {
+        return `Fecha específica: ${new Date(promo.fecha_especifica + 'T00:00:00').toLocaleDateString('es-CL')}`;
+    } else if (promo.tipo_fecha === 'rango') {
+        return `Del ${new Date(promo.fecha_inicio + 'T00:00:00').toLocaleDateString('es-CL')} al ${new Date(promo.fecha_fin + 'T00:00:00').toLocaleDateString('es-CL')}`;
+    } else if (promo.tipo_fecha === 'recurrente_semanal') {
+        return `Recurrente: ${promo.dias_semana.join(', ')}`;
+    }
+    return 'Fechas no especificadas';
+}
+
+/**
+ * Formatear información de horarios para mostrar
+ */
+function formatPromocionHorarios(promo) {
+    if (promo.tipo_horario === 'especifico') {
+        return `Hora: ${promo.hora_especifica.substring(0, 5)}`;
+    } else if (promo.tipo_horario === 'rango') {
+        return `De ${promo.hora_inicio.substring(0, 5)} a ${promo.hora_fin.substring(0, 5)}`;
+    }
+    return 'Horarios no especificados';
+}
+
+/**
+ * Abrir formulario para crear nueva promoción
+ */
+function openPromocionForm() {
+    currentPromocionEdit = null;
+    
+    // Limpiar formulario
+    document.getElementById('promocionForm').reset();
+    document.getElementById('promocionId').value = '';
+    document.getElementById('promocionCanchaId').value = currentCanchaPromocion;
+    
+    // Actualizar título
+    document.getElementById('promocionFormTitle').innerHTML = 
+        '<i class="fas fa-plus-circle me-2"></i>Nueva Promoción';
+    
+    // Mostrar precio normal
+    document.getElementById('precioNormalLabel').textContent = 
+        `(Normal: $${currentCanchaPrecio.toLocaleString()})`;
+    
+    // Configurar fecha mínima (7 días de anticipación)
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 7);
+    const minDateStr = minDate.toISOString().split('T')[0];
+    document.getElementById('fechaEspecifica').min = minDateStr;
+    document.getElementById('fechaInicio').min = minDateStr;
+    document.getElementById('fechaFin').min = minDateStr;
+    
+    // Mostrar formulario, ocultar lista
+    document.getElementById('promocionesListContainer').style.display = 'none';
+    document.getElementById('promocionFormContainer').style.display = 'block';
+    
+    // Configurar campos condicionales iniciales
+    updatePromocionFields();
+}
+
+/**
+ * Cancelar edición/creación de promoción
+ */
+function cancelPromocionForm() {
+    document.getElementById('promocionFormContainer').style.display = 'none';
+    document.getElementById('promocionesListContainer').style.display = 'block';
+}
+
+/**
+ * Actualizar campos del formulario según tipo seleccionado
+ */
+function updatePromocionFields() {
+    const tipoFecha = document.querySelector('input[name="tipoFecha"]:checked').value;
+    const tipoHorario = document.querySelector('input[name="tipoHorario"]:checked').value;
+    
+    // Mostrar/ocultar campos de fecha
+    document.getElementById('fechaEspecificoContainer').style.display = 
+        tipoFecha === 'especifico' ? 'block' : 'none';
+    document.getElementById('fechaRangoContainer').style.display = 
+        tipoFecha === 'rango' ? 'block' : 'none';
+    document.getElementById('fechaRecurrenteContainer').style.display = 
+        tipoFecha === 'recurrente_semanal' ? 'block' : 'none';
+    
+    // Mostrar/ocultar campos de horario
+    document.getElementById('horarioEspecificoContainer').style.display = 
+        tipoHorario === 'especifico' ? 'block' : 'none';
+    document.getElementById('horarioRangoContainer').style.display = 
+        tipoHorario === 'rango' ? 'block' : 'none';
+}
+
+// Event listeners para cambios en tipo de fecha/horario
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que los radio buttons estén disponibles
+    setTimeout(() => {
+        const tipoFechaRadios = document.querySelectorAll('input[name="tipoFecha"]');
+        const tipoHorarioRadios = document.querySelectorAll('input[name="tipoHorario"]');
+        
+        tipoFechaRadios.forEach(radio => {
+            radio.addEventListener('change', updatePromocionFields);
+        });
+        
+        tipoHorarioRadios.forEach(radio => {
+            radio.addEventListener('change', updatePromocionFields);
+        });
+        
+        // Manejar submit del formulario
+        const form = document.getElementById('promocionForm');
+        if (form) {
+            form.addEventListener('submit', savePromocion);
+        }
+    }, 1000);
+});
+
+/**
+ * Guardar promoción (crear o editar)
+ */
+async function savePromocion(e) {
+    e.preventDefault();
+    
+    const tipoFecha = document.querySelector('input[name="tipoFecha"]:checked').value;
+    const tipoHorario = document.querySelector('input[name="tipoHorario"]:checked').value;
+    
+    // Recopilar datos del formulario
+    const data = {
+        cancha_id: currentCanchaPromocion,
+        nombre: document.getElementById('promocionNombre').value.trim(),
+        precio_promocional: parseFloat(document.getElementById('promocionPrecio').value),
+        tipo_fecha: tipoFecha,
+        tipo_horario: tipoHorario,
+        descripcion: document.getElementById('promocionDescripcion').value.trim() || null
+    };
+    
+    // Validar precio
+    if (data.precio_promocional >= currentCanchaPrecio) {
+        showNotification('El precio promocional debe ser menor que el precio normal de la cancha', 'error');
+        return;
+    }
+    
+    // Agregar campos según tipo de fecha
+    if (tipoFecha === 'especifico') {
+        data.fecha_especifica = document.getElementById('fechaEspecifica').value;
+        if (!data.fecha_especifica) {
+            showNotification('Por favor, selecciona una fecha específica', 'error');
+            return;
+        }
+    } else if (tipoFecha === 'rango') {
+        data.fecha_inicio = document.getElementById('fechaInicio').value;
+        data.fecha_fin = document.getElementById('fechaFin').value;
+        if (!data.fecha_inicio || !data.fecha_fin) {
+            showNotification('Por favor, selecciona las fechas de inicio y fin', 'error');
+            return;
+        }
+        if (data.fecha_inicio > data.fecha_fin) {
+            showNotification('La fecha de inicio debe ser anterior a la fecha de fin', 'error');
+            return;
+        }
+    } else if (tipoFecha === 'recurrente_semanal') {
+        // Recopilar días seleccionados
+        const dias = [];
+        ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].forEach(dia => {
+            const checkbox = document.getElementById(`dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`);
+            if (checkbox && checkbox.checked) {
+                dias.push(dia);
+            }
+        });
+        
+        if (dias.length === 0) {
+            showNotification('Por favor, selecciona al menos un día de la semana', 'error');
+            return;
+        }
+        
+        data.dias_semana = dias;
+    }
+    
+    // Agregar campos según tipo de horario
+    if (tipoHorario === 'especifico') {
+        data.hora_especifica = document.getElementById('horaEspecifica').value;
+        if (!data.hora_especifica) {
+            showNotification('Por favor, selecciona una hora específica', 'error');
+            return;
+        }
+    } else if (tipoHorario === 'rango') {
+        data.hora_inicio = document.getElementById('horaInicio').value;
+        data.hora_fin = document.getElementById('horaFin').value;
+        if (!data.hora_inicio || !data.hora_fin) {
+            showNotification('Por favor, selecciona las horas de inicio y fin', 'error');
+            return;
+        }
+        if (data.hora_inicio >= data.hora_fin) {
+            showNotification('La hora de inicio debe ser anterior a la hora de fin', 'error');
+            return;
+        }
+    }
+    
+    // Determinar si es creación o edición
+    const promocionId = document.getElementById('promocionId').value;
+    const isEdit = promocionId !== '';
+    const url = isEdit ? `/api/promociones/${promocionId}` : '/api/promociones';
+    const method = isEdit ? 'PUT' : 'POST';
+    
+    try {
+        const response = await AdminUtils.authenticatedFetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.mensaje || `Promoción ${isEdit ? 'actualizada' : 'creada'} exitosamente`, 'success');
+            
+            // Recargar lista
+            cancelPromocionForm();
+            await loadPromociones();
+        } else {
+            showNotification(result.mensaje || result.error || 'Error al guardar promoción', 'error');
+        }
+    } catch (error) {
+        console.error('Error guardando promoción:', error);
+        showNotification('Error de conexión al guardar promoción', 'error');
+    }
+}
+
+/**
+ * Editar una promoción existente
+ */
+async function editPromocion(promocionId) {
+    try {
+        // Cargar datos de la promoción
+        const response = await AdminUtils.authenticatedFetch(`/api/promociones/cancha/${currentCanchaPromocion}`);
+        const promociones = await response.json();
+        const promo = promociones.find(p => p.id === promocionId);
+        
+        if (!promo) {
+            showNotification('Promoción no encontrada', 'error');
+            return;
+        }
+        
+        currentPromocionEdit = promo;
+        
+        // Llenar formulario
+        document.getElementById('promocionId').value = promo.id;
+        document.getElementById('promocionCanchaId').value = currentCanchaPromocion;
+        document.getElementById('promocionNombre').value = promo.nombre || '';
+        document.getElementById('promocionPrecio').value = promo.precio_promocional;
+        document.getElementById('promocionDescripcion').value = promo.descripcion || '';
+        
+        // Seleccionar tipo de fecha
+        document.getElementById(`tipoFecha${promo.tipo_fecha.charAt(0).toUpperCase() + promo.tipo_fecha.slice(1).replace('_semanal', '').replace('recurrente', 'Recurrente')}`).checked = true;
+        
+        // Llenar campos de fecha
+        if (promo.tipo_fecha === 'especifico') {
+            document.getElementById('fechaEspecifica').value = promo.fecha_especifica;
+        } else if (promo.tipo_fecha === 'rango') {
+            document.getElementById('fechaInicio').value = promo.fecha_inicio;
+            document.getElementById('fechaFin').value = promo.fecha_fin;
+        } else if (promo.tipo_fecha === 'recurrente_semanal') {
+            promo.dias_semana.forEach(dia => {
+                const checkbox = document.getElementById(`dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        
+        // Seleccionar tipo de horario
+        document.getElementById(`tipoHorario${promo.tipo_horario.charAt(0).toUpperCase() + promo.tipo_horario.slice(1)}`).checked = true;
+        
+        // Llenar campos de horario
+        if (promo.tipo_horario === 'especifico') {
+            document.getElementById('horaEspecifica').value = promo.hora_especifica.substring(0, 5);
+        } else if (promo.tipo_horario === 'rango') {
+            document.getElementById('horaInicio').value = promo.hora_inicio.substring(0, 5);
+            document.getElementById('horaFin').value = promo.hora_fin.substring(0, 5);
+        }
+        
+        // Actualizar campos visibles
+        updatePromocionFields();
+        
+        // Actualizar título
+        document.getElementById('promocionFormTitle').innerHTML = 
+            '<i class="fas fa-edit me-2"></i>Editar Promoción';
+        
+        // Mostrar precio normal
+        document.getElementById('precioNormalLabel').textContent = 
+            `(Normal: $${currentCanchaPrecio.toLocaleString()})`;
+        
+        // Mostrar formulario
+        document.getElementById('promocionesListContainer').style.display = 'none';
+        document.getElementById('promocionFormContainer').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error cargando promoción para editar:', error);
+        showNotification('Error cargando datos de la promoción', 'error');
+    }
+}
+
+/**
+ * Eliminar una promoción
+ */
+async function deletePromocion(promocionId, nombrePromocion) {
+    const confirmar = confirm(`¿Estás seguro de eliminar la promoción "${nombrePromocion}"?`);
+    
+    if (!confirmar) return;
+    
+    try {
+        const response = await AdminUtils.authenticatedFetch(`/api/promociones/${promocionId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Promoción eliminada exitosamente', 'success');
+            await loadPromociones();
+        } else {
+            showNotification(result.error || 'Error al eliminar promoción', 'error');
+        }
+    } catch (error) {
+        console.error('Error eliminando promoción:', error);
+        showNotification('Error de conexión al eliminar promoción', 'error');
+    }
+}
+
+/**
+ * Activar/Desactivar una promoción
+ */
+async function togglePromocionActiva(promocionId, nuevoEstado) {
+    try {
+        const response = await AdminUtils.authenticatedFetch(`/api/promociones/${promocionId}/toggle`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activo: nuevoEstado })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Promoción ${nuevoEstado ? 'activada' : 'desactivada'} exitosamente`, 'success');
+            await loadPromociones();
+        } else {
+            showNotification(result.error || 'Error al cambiar estado de promoción', 'error');
+        }
+    } catch (error) {
+        console.error('Error cambiando estado de promoción:', error);
+        showNotification('Error de conexión al cambiar estado', 'error');
+    }
 }

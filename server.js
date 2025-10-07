@@ -508,6 +508,10 @@ const { router: gastosRoutes, setDatabase: setGastosDatabase } = require('./src/
 setGastosDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/gastos', gastosRoutes);
 
+// ===== RUTAS DE PROMOCIONES Y PRECIOS DINÁMICOS =====
+const promocionesRoutes = require('./src/routes/promociones');
+app.use('/api/promociones', promocionesRoutes);
+
 // Ruta de prueba para simular retorno de Transbank en desarrollo
 app.get('/test-payment-return', (req, res) => {
     const { token_ws, TBK_TOKEN } = req.query;
