@@ -59,7 +59,7 @@ Cerrar Sesión
 **Automática:**
 | Categoría | Descripción | Ícono |
 |-----------|-------------|-------|
-| **Comisión Plataforma** | Comisión cobrada por uso de la plataforma web (10%) | % |
+| **Comisión Plataforma** | Comisión cobrada por uso de la plataforma web (3.5% o 1.75% + IVA) | % |
 
 ---
 
@@ -115,10 +115,11 @@ Cerrar Sesión
 #### Ejemplo:
 
 ```
-Reserva confirmada:
+Reserva Web confirmada:
 - Código: ABC123
 - Cliente: Juan Pérez
 - Precio: $8,000
+- Tipo: directa (web)
 - Fecha: 2025-10-10
 
 Automáticamente se crean:
@@ -132,8 +133,8 @@ INGRESO:
 
 GASTO:
 - Categoría: Comisión Plataforma  
-- Monto: $800 (10%)
-- Descripción: "Comisión Reserva #ABC123 (10%)"
+- Monto: $333 (3.5% + IVA = 4.165%)
+- Descripción: "Comisión Reserva #ABC123 - Web (3.5% + IVA)"
 - Fecha: 2025-10-10
 - Método: automático
 ```
@@ -238,10 +239,10 @@ Crear UI en el frontend para:
 - Eliminar categorías (con validación)
 
 ### 2. Configuración de Comisión
-Permitir que cada complejo configure su porcentaje de comisión:
-- Por defecto: 10%
-- Personalizable por complejo
-- Almacenado en tabla `complejos`
+El sistema ya calcula automáticamente las comisiones correctas:
+- Reservas web directas: 3.5% + IVA (19%) = 4.165%
+- Reservas administrativas: 1.75% + IVA (19%) = 2.0825%
+- Configuración en: `src/config/commissions.js`
 
 ### 3. Reportes Avanzados
 - Resumen mensual de ingresos vs gastos
@@ -263,10 +264,12 @@ Permitir que cada complejo configure su porcentaje de comisión:
    - Reservas antiguas NO se sincronizan automáticamente
    - Si se necesita, ejecutar script de sincronización manual
 
-3. **Comisión:**
-   - Actualmente fija en 10%
-   - Solo para reservas web (tipo="directa" o metodo_pago="webpay")
-   - Reservas presenciales NO generan comisión
+3. **Comisión Variable:**
+   - El sistema usa la comisión REAL ya calculada en cada reserva
+   - Reservas web directas: 3.5% + IVA (19%) = 4.165%
+   - Reservas administrativas: 1.75% + IVA (19%) = 2.0825%
+   - La comisión se obtiene del campo `comision_aplicada` en la tabla reservas
+   - Todas las reservas confirmadas con precio > 0 registran su comisión
 
 ---
 

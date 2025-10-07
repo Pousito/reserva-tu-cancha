@@ -22,7 +22,7 @@ DECLARE
     categoria_comision_id INTEGER;
     precio_total DECIMAL(10,2);
     comision_monto DECIMAL(10,2);
-    comision_porcentaje DECIMAL(5,2) := 0.10; -- 10% de comisión
+    tipo_reserva_texto TEXT;
 BEGIN
     -- Solo procesar cuando el estado cambia a 'confirmada'
     IF NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada') THEN
@@ -42,9 +42,16 @@ BEGIN
             RETURN NEW;
         END IF;
         
-        -- Calcular monto total y comisión
+        -- Obtener precio total y comisión REAL ya calculada en la reserva
         precio_total := COALESCE(NEW.precio_total, 0);
-        comision_monto := ROUND(precio_total * comision_porcentaje, 0); -- Redondear a entero
+        comision_monto := COALESCE(NEW.comision_aplicada, 0); -- Usar comisión ya calculada
+        
+        -- Determinar tipo de reserva para descripción
+        tipo_reserva_texto := CASE 
+            WHEN NEW.tipo_reserva = 'directa' THEN 'Web (3.5% + IVA)'
+            WHEN NEW.tipo_reserva = 'administrativa' THEN 'Admin (1.75% + IVA)'
+            ELSE 'Reserva'
+        END;
         
         -- Solo crear registros si hay un precio válido
         IF precio_total > 0 THEN
@@ -91,8 +98,8 @@ BEGIN
                 AND tipo = 'gasto'
             ) THEN
                 
-                -- 2. Registrar GASTO por comisión (solo para reservas web, no presenciales)
-                IF NEW.tipo = 'directa' OR NEW.metodo_pago = 'webpay' THEN
+                -- 2. Registrar GASTO por comisión (solo si hay comisión > 0)
+                IF comision_monto > 0 THEN
                     INSERT INTO gastos_ingresos (
                         complejo_id,
                         categoria_id,
@@ -108,12 +115,12 @@ BEGIN
                         'gasto',
                         comision_monto,
                         NEW.fecha::DATE,
-                        'Comisión Reserva #' || NEW.codigo_reserva || ' (' || (comision_porcentaje * 100)::INTEGER || '%)',
+                        'Comisión Reserva #' || NEW.codigo_reserva || ' - ' || tipo_reserva_texto,
                         'automatico',
                         NULL
                     );
                     
-                    RAISE NOTICE 'Comisión registrada: $% (Reserva #%)', comision_monto, NEW.codigo_reserva;
+                    RAISE NOTICE 'Comisión registrada: $% (Reserva #% - %)', comision_monto, NEW.codigo_reserva, tipo_reserva_texto;
                 END IF;
             END IF;
         END IF;
