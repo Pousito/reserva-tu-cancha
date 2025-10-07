@@ -221,11 +221,30 @@ function aplicarPermisosPorRol() {
             console.log(`📊 Enlace ${index + 1} después:`, {
                 display: element.style.display,
                 visibility: element.style.visibility,
+                computedDisplay: window.getComputedStyle(element).display,
+                computedVisibility: window.getComputedStyle(element).visibility
+            });
+        });
+        console.log(`🔧 Asegurando visibilidad de ${reportElements.length} enlaces de reportes para owner`);
+        
+        // Asegurar que los elementos de Control de Gastos estén visibles para owners
+        const gastosElements = document.querySelectorAll('a[href="admin-gastos.html"]');
+        console.log(`💰 Enlaces de Control de Gastos encontrados: ${gastosElements.length}`);
+        gastosElements.forEach((element, index) => {
+            // Remover clase hide-for-manager y forzar visibilidad
+            element.classList.remove('hide-for-manager');
+            element.style.display = 'block';
+            element.style.visibility = 'visible';
+            
+            console.log(`💰 Enlace ${index + 1} después:`, {
+                display: element.style.display,
+                visibility: element.style.visibility,
                 classes: element.className,
                 computedDisplay: window.getComputedStyle(element).display,
                 computedVisibility: window.getComputedStyle(element).visibility
             });
         });
+        console.log(`🔧 Asegurando visibilidad de ${gastosElements.length} enlaces de Control de Gastos para owner`);
         
         // Asegurar visibilidad de reportes después de aplicar permisos
         asegurarVisibilidadReportes();
