@@ -419,6 +419,7 @@
         .modal-content {
             border-radius: 16px;
             border: none;
+            background: white;
         }
 
         .modal-header {
@@ -432,10 +433,29 @@
             filter: brightness(0) invert(1);
         }
 
+        .modal-body {
+            padding: 1.5rem;
+            background: white;
+        }
+
+        /* Labels dentro del modal deben ser oscuros */
+        .modal-body .form-label {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        /* Labels en la página principal (fuera del modal) permanecen blancos */
         .form-label {
             font-weight: 600;
             color: white;
             margin-bottom: 0.5rem;
+        }
+
+        .modal-body .text-muted {
+            color: #6b7280 !important;
+            font-size: 0.85rem;
         }
 
         .form-control, .form-select {
@@ -451,6 +471,69 @@
             background: white;
             border-color: white;
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Inputs dentro del modal con mejor contraste */
+        .modal-body .form-control,
+        .modal-body .form-select {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+        }
+
+        .modal-body .form-control:focus,
+        .modal-body .form-select:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Color picker más grande y visible */
+        .modal-body .form-control-color {
+            height: 50px;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Alert dentro del modal */
+        .modal-body .alert-info {
+            background: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            color: #0c4a6e;
+            border-radius: 8px;
+        }
+
+        /* Footer del modal */
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .modal-footer .btn {
+            padding: 0.625rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .modal-footer .btn-secondary {
+            background: #6b7280;
+            border: none;
+        }
+
+        .modal-footer .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .modal-footer .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+        }
+
+        .modal-footer .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
         /* Loading */
@@ -706,7 +789,7 @@
             <div class="filters-grid">
                 <div>
                     <label class="form-label">Tipo</label>
-                    <select class="form-select" id="filterTipo" onchange="applyFilters()">
+                    <select class="form-select" id="filterTipo" onchange="updateCategoriasFilter()">
                         <option value="">Todos</option>
                         <option value="ingreso">Ingresos</option>
                         <option value="gasto">Gastos</option>
@@ -780,7 +863,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="movimientoForm">
+                    <form id="movimientoForm" novalidate>
                         <input type="hidden" id="movimientoId">
                         <input type="hidden" id="movimientoTipo">
                         
@@ -844,7 +927,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="categoriaForm">
+                    <form id="categoriaForm" novalidate>
                         <input type="hidden" id="categoriaId">
                         <input type="hidden" id="categoriaTipo">
                         
@@ -892,7 +975,7 @@
                         
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Nota:</strong> Las categorías predefinidas del sistema no se pueden editar ni eliminar.
+                            <strong>Nota:</strong> Puedes editar cualquier categoría. No podrás eliminar categorías que tengan movimientos asociados.
                         </div>
                     </form>
                 </div>

@@ -554,14 +554,6 @@ async function updateCategoria(req, res) {
             });
         }
         
-        // No permitir modificar categorías predefinidas
-        if (categoria.es_predefinida) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'No se pueden modificar categorías predefinidas' 
-            });
-        }
-        
         // Verificar nombre duplicado si se está cambiando
         if (nombre && nombre !== categoria.nombre) {
             const existente = await db.get(
@@ -624,14 +616,6 @@ async function deleteCategoria(req, res) {
             return res.status(404).json({ 
                 success: false, 
                 message: 'Categoría no encontrada' 
-            });
-        }
-        
-        // No permitir eliminar categorías predefinidas
-        if (categoria.es_predefinida) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'No se pueden eliminar categorías predefinidas' 
             });
         }
         

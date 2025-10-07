@@ -688,6 +688,33 @@ async function eliminarMovimiento(id) {
 // FILTROS
 // ============================================
 
+// Actualizar categorías según tipo seleccionado
+function updateCategoriasFilter() {
+    const tipoSeleccionado = document.getElementById('filterTipo').value;
+    const filterCategoria = document.getElementById('filterCategoria');
+    
+    // Limpiar y agregar opción "Todas"
+    filterCategoria.innerHTML = '<option value="">Todas</option>';
+    
+    // Filtrar categorías según el tipo
+    let categoriasFiltradas = categorias;
+    
+    if (tipoSeleccionado) {
+        categoriasFiltradas = categorias.filter(cat => cat.tipo === tipoSeleccionado);
+    }
+    
+    // Agregar opciones filtradas
+    categoriasFiltradas.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.nombre;
+        filterCategoria.appendChild(option);
+    });
+    
+    // Aplicar filtros después de actualizar categorías
+    applyFilters();
+}
+
 function applyFilters() {
     cargarMovimientos();
 }
@@ -927,17 +954,15 @@ function renderizarTablaCategorias(tbodyId, categorias) {
     }
     
     tbody.innerHTML = categorias.map(cat => {
-        const esPredefinida = cat.es_predefinida;
-        const botonesAccion = esPredefinida 
-            ? `<span class="badge bg-secondary">Sistema</span>`
-            : `
-                <button class="btn btn-sm btn-primary" onclick="abrirModalCategoria(${cat.id}, '${cat.tipo}')" title="Editar">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger ms-1" onclick="eliminarCategoria(${cat.id})" title="Eliminar">
-                    <i class="fas fa-trash"></i>
-                </button>
-            `;
+        // Botones de edición y eliminación para todas las categorías
+        const botonesAccion = `
+            <button class="btn btn-sm btn-primary" onclick="abrirModalCategoria(${cat.id}, '${cat.tipo}')" title="Editar">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger ms-1" onclick="eliminarCategoria(${cat.id})" title="Eliminar">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
         
         return `
             <tr style="color: white;">
@@ -973,15 +998,6 @@ async function abrirModalCategoria(categoriaId, tipo) {
             
             if (!categoria) {
                 throw new Error('Categoría no encontrada');
-            }
-            
-            if (categoria.es_predefinida) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'No Editable',
-                    text: 'Las categorías predefinidas del sistema no se pueden editar'
-                });
-                return;
             }
             
             // Llenar formulario

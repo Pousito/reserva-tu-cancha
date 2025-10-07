@@ -1,0 +1,154 @@
+{
+  "complejo": {
+    "id": 6,
+    "nombre": "Espacio Deportivo Borde Río",
+    "ciudad_id": 6,
+    "direccion": "Ruta Q-575, Quilleco, Bio Bio",
+    "telefono": "+56999820929",
+    "email": "admin@borderio.cl"
+  },
+  "canchas": [
+    {
+      "id": 10,
+      "complejo_id": 6,
+      "nombre": "Cancha Principal",
+      "tipo": "futbol",
+      "precio_hora": 8000,
+      "numero": null
+    }
+  ],
+  "usuarios": [
+    {
+      "id": 36,
+      "email": "manager@borderio.cl",
+      "password": "$2a$12$oAQkI/cORrwzQU0BQMq4kuNsNMzmAgjLKACSNwuTGhesmkd1wkaLq",
+      "nombre": "Manager Borde Rio",
+      "rol": "manager",
+      "activo": true,
+      "complejo_id": 6,
+      "created_at": "2025-10-07T18:18:59.359Z"
+    },
+    {
+      "id": 35,
+      "email": "admin@borderio.cl",
+      "password": "$2a$10$xxPf6VV2tRugXmHq1G1kUO0S3FbUoVwAj0Kpeitnd8nPDsTW4O2jq",
+      "nombre": "Administrador Borde Rio",
+      "rol": "owner",
+      "activo": true,
+      "complejo_id": 6,
+      "created_at": "2025-10-07T18:18:59.359Z"
+    }
+  ],
+  "categorias": [
+    {
+      "id": 224,
+      "nombre": "Agua",
+      "descripcion": "Cuenta de agua",
+      "icono": "fas fa-tint",
+      "color": "#3498db",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.142Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 219,
+      "nombre": "Aseo",
+      "descripcion": "Productos de limpieza y aseo",
+      "icono": "fas fa-broom",
+      "color": "#16a085",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.140Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 243,
+      "nombre": "Comisión Plataforma",
+      "descripcion": "Comisión cobrada por uso de la plataforma web",
+      "icono": "fas fa-percent",
+      "color": "#e91e63",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:39:05.926Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 217,
+      "nombre": "Internet",
+      "descripcion": "Internet y teléfono",
+      "icono": "fas fa-wifi",
+      "color": "#1abc9c",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.139Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 216,
+      "nombre": "Luz",
+      "descripcion": "Cuenta de electricidad",
+      "icono": "fas fa-bolt",
+      "color": "#f39c12",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.137Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 218,
+      "nombre": "Mantención Cancha",
+      "descripcion": "Arreglos y mantención de canchas",
+      "icono": "fas fa-tools",
+      "color": "#27ae60",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.140Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 221,
+      "nombre": "Otros Gastos",
+      "descripcion": "Otros gastos varios",
+      "icono": "fas fa-ellipsis-h",
+      "color": "#bdc3c7",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.141Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 220,
+      "nombre": "Publicidad",
+      "descripcion": "Carteles, volantes, redes sociales",
+      "icono": "fas fa-ad",
+      "color": "#e91e63",
+      "tipo": "gasto",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.140Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 222,
+      "nombre": "Reservas Web",
+      "descripcion": "Reservas hechas por la página web",
+      "icono": "fas fa-globe",
+      "color": "#27ae60",
+      "tipo": "ingreso",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.141Z",
+      "complejo_id": 6
+    },
+    {
+      "id": 223,
+      "nombre": "Reservas en Cancha",
+      "descripcion": "Reservas hechas directamente en la cancha",
+      "icono": "fas fa-hand-holding-usd",
+      "color": "#2ecc71",
+      "tipo": "ingreso",
+      "es_predefinida": true,
+      "creado_en": "2025-10-07T22:29:05.142Z",
+      "complejo_id": 6
+    }
+  ]
+}

@@ -69,17 +69,28 @@ const requireOwnerOrAdmin = (req, res, next) => {
 // RUTAS Y CONTROLADORES
 // ============================================
 
-// GET /categorias - Obtener todas las categorías
+// GET /categorias - Obtener categorías del complejo
 router.get('/categorias', authenticateToken, async (req, res) => {
     try {
+        const usuario = req.user;
         const { tipo } = req.query;
         
-        let query = 'SELECT * FROM categorias_gastos';
+        let query = 'SELECT * FROM categorias_gastos WHERE 1=1';
         let params = [];
+        let paramIndex = 1;
+        
+        // Filtrar por complejo del usuario (owners/managers ven solo su complejo)
+        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
+            query += ` AND complejo_id = $${paramIndex}`;
+            params.push(usuario.complejo_id);
+            paramIndex++;
+        }
+        // super_admin ve categorías de todos los complejos
         
         if (tipo) {
-            query += ' WHERE tipo = $1';
+            query += ` AND tipo = $${paramIndex}`;
             params.push(tipo);
+            paramIndex++;
         }
         
         query += ' ORDER BY nombre ASC';
@@ -378,25 +389,35 @@ router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, r
             });
         }
         
-        // Verificar si ya existe
+        // Obtener complejo_id del usuario
+        const complejo_id = usuario.complejo_id;
+        
+        if (!complejo_id) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Usuario no tiene complejo asignado' 
+            });
+        }
+        
+        // Verificar si ya existe en este complejo
         const existente = await db.get(
-            'SELECT id FROM categorias_gastos WHERE nombre = $1',
-            [nombre]
+            'SELECT id FROM categorias_gastos WHERE nombre = $1 AND complejo_id = $2',
+            [nombre, complejo_id]
         );
         
         if (existente) {
             return res.status(409).json({ 
                 success: false, 
-                message: 'Ya existe una categoría con ese nombre' 
+                message: 'Ya existe una categoría con ese nombre en tu complejo' 
             });
         }
         
-        // Crear categoría
+        // Crear categoría asociada al complejo
         const result = await db.run(`
-            INSERT INTO categorias_gastos (nombre, descripcion, icono, color, tipo, es_predefinida)
-            VALUES ($1, $2, $3, $4, $5, false)
+            INSERT INTO categorias_gastos (complejo_id, nombre, descripcion, icono, color, tipo, es_predefinida)
+            VALUES ($1, $2, $3, $4, $5, $6, false)
             RETURNING *
-        `, [nombre, descripcion, icono || 'fas fa-circle', color || '#95a5a6', tipo]);
+        `, [complejo_id, nombre, descripcion, icono || 'fas fa-circle', color || '#95a5a6', tipo]);
         
         console.log(`✅ Categoría creada: ${nombre} (${tipo})`);
         
@@ -418,6 +439,7 @@ router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, r
 // PUT /categorias/:id - Actualizar categoría
 router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
     try {
+        const usuario = req.user;
         const { id } = req.params;
         const { nombre, descripcion, icono, color } = req.body;
         
@@ -434,25 +456,27 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
             });
         }
         
-        // No permitir modificar predefinidas
-        if (categoria.es_predefinida) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'No se pueden modificar categorías predefinidas' 
-            });
+        // Verificar que pertenece al complejo del usuario (owners/managers)
+        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
+            if (categoria.complejo_id !== usuario.complejo_id) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'No tienes permiso para editar esta categoría' 
+                });
+            }
         }
         
-        // Verificar nombre duplicado
+        // Verificar nombre duplicado en el mismo complejo
         if (nombre && nombre !== categoria.nombre) {
             const existente = await db.get(
-                'SELECT id FROM categorias_gastos WHERE nombre = $1 AND id != $2',
-                [nombre, id]
+                'SELECT id FROM categorias_gastos WHERE nombre = $1 AND complejo_id = $2 AND id != $3',
+                [nombre, categoria.complejo_id, id]
             );
             
             if (existente) {
                 return res.status(409).json({ 
                     success: false, 
-                    message: 'Ya existe otra categoría con ese nombre' 
+                    message: 'Ya existe otra categoría con ese nombre en tu complejo' 
                 });
             }
         }
@@ -487,6 +511,7 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
 // DELETE /categorias/:id - Eliminar categoría
 router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
     try {
+        const usuario = req.user;
         const { id } = req.params;
         
         // Verificar que existe
@@ -502,12 +527,14 @@ router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (
             });
         }
         
-        // No permitir eliminar predefinidas
-        if (categoria.es_predefinida) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'No se pueden eliminar categorías predefinidas' 
-            });
+        // Verificar que pertenece al complejo del usuario (owners/managers)
+        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
+            if (categoria.complejo_id !== usuario.complejo_id) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'No tienes permiso para eliminar esta categoría' 
+                });
+            }
         }
         
         // Verificar si hay movimientos
