@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Aplicar permisos según el rol
     aplicarPermisosPorRol();
     
+    // Aplicar sistema centralizado de roles de AdminUtils
+    AdminUtils.hideElementsByRole();
+    
     // Configurar logout
     AdminUtils.setupLogout();
     

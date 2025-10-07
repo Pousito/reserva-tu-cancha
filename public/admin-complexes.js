@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // Aplicar sistema centralizado de roles de AdminUtils
+    AdminUtils.hideElementsByRole();
+    
     // Configurar logout
     AdminUtils.setupLogout();
     

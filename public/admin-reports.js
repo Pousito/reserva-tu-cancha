@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Aplicar permisos después de cargar complejos
     aplicarPermisosPorRol();
     
+    // Aplicar sistema centralizado de roles de AdminUtils
+    AdminUtils.hideElementsByRole();
+    
     setupEventListeners();
     setDefaultDates();
     generateReports();
