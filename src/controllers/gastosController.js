@@ -472,11 +472,209 @@ async function getEstadisticas(req, res) {
     }
 }
 
+// ============================================
+// CREAR CATEGORÍA PERSONALIZADA
+// ============================================
+
+async function createCategoria(req, res) {
+    try {
+        const { nombre, descripcion, icono, color, tipo } = req.body;
+        
+        // Validaciones
+        if (!nombre || !tipo) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Faltan campos requeridos: nombre, tipo' 
+            });
+        }
+        
+        if (!['gasto', 'ingreso'].includes(tipo)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Tipo inválido. Debe ser "gasto" o "ingreso"' 
+            });
+        }
+        
+        // Verificar si ya existe una categoría con ese nombre
+        const existente = await db.get(
+            'SELECT id FROM categorias_gastos WHERE nombre = $1',
+            [nombre]
+        );
+        
+        if (existente) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Ya existe una categoría con ese nombre' 
+            });
+        }
+        
+        // Crear categoría (personalizada, no predefinida)
+        const result = await db.run(`
+            INSERT INTO categorias_gastos (nombre, descripcion, icono, color, tipo, es_predefinida)
+            VALUES ($1, $2, $3, $4, $5, false)
+            RETURNING *
+        `, [nombre, descripcion, icono || 'fas fa-circle', color || '#95a5a6', tipo]);
+        
+        console.log(`✅ Categoría creada: ${nombre} (${tipo})`);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Categoría creada correctamente',
+            data: result
+        });
+    } catch (error) {
+        console.error('❌ Error al crear categoría:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al crear categoría',
+            error: error.message 
+        });
+    }
+}
+
+// ============================================
+// ACTUALIZAR CATEGORÍA
+// ============================================
+
+async function updateCategoria(req, res) {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion, icono, color } = req.body;
+        
+        // Verificar que la categoría existe
+        const categoria = await db.get(
+            'SELECT * FROM categorias_gastos WHERE id = $1',
+            [id]
+        );
+        
+        if (!categoria) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Categoría no encontrada' 
+            });
+        }
+        
+        // No permitir modificar categorías predefinidas
+        if (categoria.es_predefinida) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'No se pueden modificar categorías predefinidas' 
+            });
+        }
+        
+        // Verificar nombre duplicado si se está cambiando
+        if (nombre && nombre !== categoria.nombre) {
+            const existente = await db.get(
+                'SELECT id FROM categorias_gastos WHERE nombre = $1 AND id != $2',
+                [nombre, id]
+            );
+            
+            if (existente) {
+                return res.status(409).json({ 
+                    success: false, 
+                    message: 'Ya existe otra categoría con ese nombre' 
+                });
+            }
+        }
+        
+        // Actualizar categoría
+        const result = await db.run(`
+            UPDATE categorias_gastos 
+            SET 
+                nombre = COALESCE($1, nombre),
+                descripcion = COALESCE($2, descripcion),
+                icono = COALESCE($3, icono),
+                color = COALESCE($4, color)
+            WHERE id = $5
+            RETURNING *
+        `, [nombre, descripcion, icono, color, id]);
+        
+        console.log(`✅ Categoría actualizada: ${id}`);
+        
+        res.json({
+            success: true,
+            message: 'Categoría actualizada correctamente',
+            data: result
+        });
+    } catch (error) {
+        console.error('❌ Error al actualizar categoría:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al actualizar categoría',
+            error: error.message 
+        });
+    }
+}
+
+// ============================================
+// ELIMINAR CATEGORÍA
+// ============================================
+
+async function deleteCategoria(req, res) {
+    try {
+        const { id } = req.params;
+        
+        // Verificar que la categoría existe
+        const categoria = await db.get(
+            'SELECT * FROM categorias_gastos WHERE id = $1',
+            [id]
+        );
+        
+        if (!categoria) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Categoría no encontrada' 
+            });
+        }
+        
+        // No permitir eliminar categorías predefinidas
+        if (categoria.es_predefinida) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'No se pueden eliminar categorías predefinidas' 
+            });
+        }
+        
+        // Verificar si hay movimientos con esta categoría
+        const movimientos = await db.get(
+            'SELECT COUNT(*) as total FROM gastos_ingresos WHERE categoria_id = $1',
+            [id]
+        );
+        
+        if (movimientos.total > 0) {
+            return res.status(409).json({ 
+                success: false, 
+                message: `No se puede eliminar. Hay ${movimientos.total} movimiento(s) usando esta categoría` 
+            });
+        }
+        
+        // Eliminar categoría
+        await db.run('DELETE FROM categorias_gastos WHERE id = $1', [id]);
+        
+        console.log(`✅ Categoría eliminada: ${id}`);
+        
+        res.json({
+            success: true,
+            message: 'Categoría eliminada correctamente'
+        });
+    } catch (error) {
+        console.error('❌ Error al eliminar categoría:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al eliminar categoría',
+            error: error.message 
+        });
+    }
+}
+
 module.exports = {
     getCategorias,
     getMovimientos,
     createMovimiento,
     updateMovimiento,
     deleteMovimiento,
-    getEstadisticas
+    getEstadisticas,
+    createCategoria,
+    updateCategoria,
+    deleteCategoria
 };

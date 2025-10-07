@@ -358,5 +358,247 @@ router.delete('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async 
     }
 });
 
+// POST /categorias - Crear categoría personalizada
+router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
+    try {
+        const { nombre, descripcion, icono, color, tipo } = req.body;
+        
+        // Validaciones
+        if (!nombre || !tipo) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Faltan campos requeridos: nombre, tipo' 
+            });
+        }
+        
+        if (!['gasto', 'ingreso'].includes(tipo)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Tipo inválido. Debe ser "gasto" o "ingreso"' 
+            });
+        }
+        
+        // Verificar si ya existe
+        const existente = await db.get(
+            'SELECT id FROM categorias_gastos WHERE nombre = $1',
+            [nombre]
+        );
+        
+        if (existente) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Ya existe una categoría con ese nombre' 
+            });
+        }
+        
+        // Crear categoría
+        const result = await db.run(`
+            INSERT INTO categorias_gastos (nombre, descripcion, icono, color, tipo, es_predefinida)
+            VALUES ($1, $2, $3, $4, $5, false)
+            RETURNING *
+        `, [nombre, descripcion, icono || 'fas fa-circle', color || '#95a5a6', tipo]);
+        
+        console.log(`✅ Categoría creada: ${nombre} (${tipo})`);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Categoría creada correctamente',
+            data: result
+        });
+    } catch (error) {
+        console.error('❌ Error al crear categoría:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al crear categoría',
+            error: error.message 
+        });
+    }
+});
+
+// PUT /categorias/:id - Actualizar categoría
+router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion, icono, color } = req.body;
+        
+        // Verificar que existe
+        const categoria = await db.get(
+            'SELECT * FROM categorias_gastos WHERE id = $1',
+            [id]
+        );
+        
+        if (!categoria) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Categoría no encontrada' 
+            });
+        }
+        
+        // No permitir modificar predefinidas
+        if (categoria.es_predefinida) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'No se pueden modificar categorías predefinidas' 
+            });
+        }
+        
+        // Verificar nombre duplicado
+        if (nombre && nombre !== categoria.nombre) {
+            const existente = await db.get(
+                'SELECT id FROM categorias_gastos WHERE nombre = $1 AND id != $2',
+                [nombre, id]
+            );
+            
+            if (existente) {
+                return res.status(409).json({ 
+                    success: false, 
+                    message: 'Ya existe otra categoría con ese nombre' 
+                });
+            }
+        }
+        
+        // Actualizar
+        const result = await db.run(`
+            UPDATE categorias_gastos 
+            SET 
+                nombre = COALESCE($1, nombre),
+                descripcion = COALESCE($2, descripcion),
+                icono = COALESCE($3, icono),
+                color = COALESCE($4, color)
+            WHERE id = $5
+            RETURNING *
+        `, [nombre, descripcion, icono, color, id]);
+        
+        res.json({
+            success: true,
+            message: 'Categoría actualizada correctamente',
+            data: result
+        });
+    } catch (error) {
+        console.error('❌ Error al actualizar categoría:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al actualizar categoría',
+            error: error.message 
+        });
+    }
+});
+
+// DELETE /categorias/:id - Eliminar categoría
+router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Verificar que existe
+        const categoria = await db.get(
+            'SELECT * FROM categorias_gastos WHERE id = $1',
+            [id]
+        );
+        
+        if (!categoria) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Categoría no encontrada' 
+            });
+        }
+        
+        // No permitir eliminar predefinidas
+        if (categoria.es_predefinida) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'No se pueden eliminar categorías predefinidas' 
+            });
+        }
+        
+        // Verificar si hay movimientos
+        const movimientos = await db.get(
+            'SELECT COUNT(*) as total FROM gastos_ingresos WHERE categoria_id = $1',
+            [id]
+        );
+        
+        if (movimientos.total > 0) {
+            return res.status(409).json({ 
+                success: false, 
+                message: `No se puede eliminar. Hay ${movimientos.total} movimiento(s) usando esta categoría` 
+            });
+        }
+        
+        // Eliminar
+        await db.run('DELETE FROM categorias_gastos WHERE id = $1', [id]);
+        
+        res.json({
+            success: true,
+            message: 'Categoría eliminada correctamente'
+        });
+    } catch (error) {
+        console.error('❌ Error al eliminar categoría:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al eliminar categoría',
+            error: error.message 
+        });
+    }
+});
+
+// GET /estadisticas - Obtener estadísticas
+router.get('/estadisticas', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
+    try {
+        const usuario = req.user;
+        const { fecha_desde, fecha_hasta } = req.query;
+        
+        let whereClause = '1=1';
+        const params = [];
+        let paramIndex = 1;
+        
+        // Filtrar por complejo
+        if (usuario.rol !== 'super_admin') {
+            whereClause += ` AND complejo_id = $${paramIndex}`;
+            params.push(usuario.complejo_id);
+            paramIndex++;
+        }
+        
+        // Filtrar por fechas
+        if (fecha_desde) {
+            whereClause += ` AND fecha >= $${paramIndex}`;
+            params.push(fecha_desde);
+            paramIndex++;
+        }
+        
+        if (fecha_hasta) {
+            whereClause += ` AND fecha <= $${paramIndex}`;
+            params.push(fecha_hasta);
+            paramIndex++;
+        }
+        
+        // Obtener resumen
+        const resumen = await db.get(`
+            SELECT 
+                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
+                SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
+                SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance,
+                COUNT(*) as total_movimientos
+            FROM gastos_ingresos
+            WHERE ${whereClause}
+        `, params);
+        
+        res.json({
+            success: true,
+            data: {
+                total_ingresos: Number(resumen.total_ingresos || 0),
+                total_gastos: Number(resumen.total_gastos || 0),
+                balance: Number(resumen.balance || 0),
+                total_movimientos: Number(resumen.total_movimientos || 0)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error al obtener estadísticas:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al obtener estadísticas',
+            error: error.message 
+        });
+    }
+});
+
 // Exportar router y función setDatabase
 module.exports = { router, setDatabase };
