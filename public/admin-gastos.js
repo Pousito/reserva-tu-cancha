@@ -46,30 +46,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkAuth() {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        // Usar adminToken en lugar de token
+        const token = localStorage.getItem('adminToken');
+        const userStr = localStorage.getItem('adminUser');
+        
+        if (!token || !userStr) {
+            console.log('❌ No hay token o usuario, redirigiendo al login...');
             window.location.href = '/admin-login.html';
             return;
         }
 
-        const response = await fetch(`${window.API_CONFIG.apiUrl}/admin/me`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('No autenticado');
-        }
-
-        userData = await response.json();
+        // Obtener datos del usuario desde localStorage
+        userData = JSON.parse(userStr);
+        
+        console.log('👤 Usuario cargado:', userData);
         
         // Verificar que sea owner o super_admin
         if (!['owner', 'super_admin'].includes(userData.rol)) {
+            console.log('❌ Rol no autorizado:', userData.rol);
             Swal.fire({
                 icon: 'error',
                 title: 'Acceso Denegado',
-                text: 'No tienes permisos para acceder a esta sección',
+                text: 'No tienes permisos para acceder a esta sección. Solo owners y super admins pueden ver Control de Gastos.',
                 confirmButtonText: 'Volver'
             }).then(() => {
                 window.location.href = '/admin-reservations.html';
@@ -78,18 +76,32 @@ async function checkAuth() {
         }
 
         // Mostrar info del usuario
-        document.getElementById('userInfo').textContent = `${userData.nombre} (${userData.rol})`;
+        const userInfoElement = document.getElementById('userInfo');
+        if (userInfoElement) {
+            userInfoElement.textContent = `${userData.nombre} (${getRoleDisplayName(userData.rol)})`;
+        }
         
-        console.log('✅ Usuario autenticado:', userData.nombre);
+        console.log('✅ Usuario autenticado:', userData.nombre, 'Rol:', userData.rol);
     } catch (error) {
         console.error('❌ Error de autenticación:', error);
-        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
         window.location.href = '/admin-login.html';
     }
 }
 
+function getRoleDisplayName(role) {
+    const roleNames = {
+        'super_admin': 'Super Administrador',
+        'owner': 'Dueño de Complejo',
+        'manager': 'Administrador de Complejo'
+    };
+    return roleNames[role] || role;
+}
+
 function logout() {
-    localStorage.removeItem('token');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
     window.location.href = '/admin-login.html';
 }
 
@@ -100,9 +112,9 @@ function logout() {
 async function cargarCategorias() {
     try {
         showLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('adminToken');
         
-        const response = await fetch(`${window.API_CONFIG.apiUrl}/gastos/categorias`, {
+        const response = await fetch(`${API_BASE}/gastos/categorias`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -143,7 +155,7 @@ async function cargarCategorias() {
 async function cargarMovimientos() {
     try {
         showLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('adminToken');
         
         // Obtener filtros
         const params = new URLSearchParams();
@@ -157,7 +169,7 @@ async function cargarMovimientos() {
         if (fechaDesde) params.append('fecha_desde', fechaDesde);
         if (fechaHasta) params.append('fecha_hasta', fechaHasta);
         
-        const response = await fetch(`${window.API_CONFIG.apiUrl}/gastos/movimientos?${params}`, {
+        const response = await fetch(`${API_BASE}/gastos/movimientos?${params}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -507,7 +519,7 @@ async function guardarMovimiento() {
         }
         
         showLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('adminToken');
         
         const id = document.getElementById('movimientoId').value;
         const tipo = document.getElementById('movimientoTipo').value;
@@ -529,8 +541,8 @@ async function guardarMovimiento() {
         };
         
         const url = id 
-            ? `${window.API_CONFIG.apiUrl}/gastos/movimientos/${id}`
-            : `${window.API_CONFIG.apiUrl}/gastos/movimientos`;
+            ? `${API_BASE}/gastos/movimientos/${id}`
+            : `${API_BASE}/gastos/movimientos`;
         
         const method = id ? 'PUT' : 'POST';
         
@@ -591,9 +603,9 @@ async function eliminarMovimiento(id) {
     
     try {
         showLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('adminToken');
         
-        const response = await fetch(`${window.API_CONFIG.apiUrl}/gastos/movimientos/${id}`, {
+        const response = await fetch(`${API_BASE}/gastos/movimientos/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
