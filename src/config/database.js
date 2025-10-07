@@ -10,9 +10,9 @@ class DatabaseManager {
     this.isProduction = process.env.NODE_ENV === 'production';
     this.databaseUrl = process.env.DATABASE_URL;
     
-    // Validar que DATABASE_URL esté configurado
-    if (!this.databaseUrl) {
-      throw new Error('DATABASE_URL no está configurado. PostgreSQL es requerido para ambos ambientes.');
+    // Validar configuración: DATABASE_URL o variables separadas
+    if (!this.databaseUrl && !process.env.DB_HOST) {
+      throw new Error('DATABASE_URL o DB_HOST deben estar configurados. PostgreSQL es requerido para ambos ambientes.');
     }
   }
 
@@ -29,12 +29,34 @@ class DatabaseManager {
 
   async connectPostgreSQL() {
     try {
-      this.pgPool = new Pool({
-        connectionString: this.databaseUrl,
-        ssl: {
-          rejectUnauthorized: false
+      const poolConfig = {};
+      
+      // Opción 1: Variables separadas (recomendado para desarrollo)
+      if (process.env.DB_HOST) {
+        poolConfig.host = process.env.DB_HOST;
+        poolConfig.port = process.env.DB_PORT || 5432;
+        poolConfig.database = process.env.DB_NAME;
+        poolConfig.user = process.env.DB_USER;
+        // Solo agregar password si está definida
+        if (process.env.DB_PASSWORD) {
+          poolConfig.password = process.env.DB_PASSWORD;
         }
-      });
+        console.log('🔧 Usando configuración con variables separadas');
+        console.log('👤 Usuario:', poolConfig.user, '| Host:', poolConfig.host);
+      }
+      // Opción 2: DATABASE_URL (para producción)
+      else if (this.databaseUrl) {
+        poolConfig.connectionString = this.databaseUrl;
+        // Solo usar SSL en producción
+        if (this.isProduction) {
+          poolConfig.ssl = {
+            rejectUnauthorized: false
+          };
+        }
+        console.log('🔧 Usando DATABASE_URL');
+      }
+      
+      this.pgPool = new Pool(poolConfig);
 
       // Probar conexión y configurar zona horaria
       const client = await this.pgPool.connect();

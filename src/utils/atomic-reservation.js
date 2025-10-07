@@ -27,7 +27,8 @@ class AtomicReservationManager {
             precio_total,
             tipo_reserva = 'directa',
             admin_id = null,
-            bloqueo_id = null
+            bloqueo_id = null,
+            porcentaje_pagado = 100
         } = reservationData;
 
         const {
@@ -148,8 +149,8 @@ class AtomicReservationManager {
                     codigo_reserva, cancha_id, fecha, hora_inicio, hora_fin,
                     nombre_cliente, email_cliente, telefono_cliente, rut_cliente,
                     precio_total, estado, fecha_creacion, tipo_reserva, 
-                    comision_aplicada, creada_por_admin, admin_id
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                    comision_aplicada, creada_por_admin, admin_id, porcentaje_pagado
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 RETURNING *
             `;
             
@@ -185,7 +186,7 @@ class AtomicReservationManager {
                 codigo_reserva, cancha_id, fechaParaBD, hora_inicio, hora_fin,
                 nombre_cliente, email_cliente || null, telefono_cliente || null, rut_cliente || null,
                 precio_total, 'confirmada', new Date().toISOString(), tipo_reserva,
-                comision, admin_id !== null, admin_id
+                comision, admin_id !== null, admin_id, porcentaje_pagado
             ];
             
             const insertResult = await client.query(insertQuery, insertParams);

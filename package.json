@@ -39,7 +39,7 @@
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js",
     "setup-postgresql": "node scripts/setup-postgresql-local.js",
-    "dev-postgresql": "NODE_ENV=development DATABASE_URL=postgresql://postgres@localhost:5432/reserva_tu_cancha_local npm start",
+    "dev-postgresql": "NODE_ENV=development node -r dotenv/config server.js dotenv_config_path=env.postgresql",
     "cleanup-locks": "node scripts/maintenance/cleanup-temporary-locks.js",
     "migrate": "node scripts/migration/migration-manager.js",
     "test-pre-deploy": "node scripts/testing/pre-deploy-tests.js",

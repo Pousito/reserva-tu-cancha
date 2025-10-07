@@ -292,7 +292,7 @@ body {
 }
 
 .complejo-abierto-container::before {
-    content: 'COMPLEJO FUNDACIÓN GUNNEN';
+    content: attr(data-complejo);
     position: absolute;
     top: -15px;
     left: 50%;
@@ -539,6 +539,10 @@ body {
 
 .calle-complejo[data-calle="DON VICTOR"]::before {
     content: 'CALLE DON VICTOR';
+}
+
+.calle-complejo[data-calle="RUTA Q-575"]::before {
+    content: 'RUTA Q-575';
 }
 
 /* La calle ya tiene dimensiones consistentes en la definición base */

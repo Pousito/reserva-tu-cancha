@@ -56,6 +56,19 @@
 - **Manager:** `naxiin_320@hotmail.com` - Rol: `manager` ✅ **CORREGIDO**
 - **Estado:** CORRECTO (rol actualizado de admin a manager)
 
+### **BORDE RIO (QUILLECO)**
+- **Dueño:** `admin@borderio.cl` - Rol: `owner` ✅
+- **Manager:** `manager@borderio.cl` - Rol: `manager` ✅
+- **Estado:** COMPLETO Y FUNCIONAL
+- **Características:**
+  - 📍 Ciudad: Quilleco, Bio Bio
+  - 📍 Dirección: Ruta Q-575
+  - ⚽ Cancha: Baby Fútbol (7 vs 7)
+  - 💰 Precio: $8,000/hora
+  - 📱 Teléfono: +56 9 9982 0929
+  - 📸 Instagram: @espaciodeportivoborderio
+  - 🕐 Horario: Lunes a domingo, 10:00 AM - 00:00 AM
+
 ---
 
 ## 🔧 **TROUBLESHOOTING - PROBLEMAS COMUNES:**

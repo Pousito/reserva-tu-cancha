@@ -9,6 +9,7 @@ const db = require('./config/database');
 const reservationRoutes = require('./routes/reservations');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const gastosRoutes = require('./routes/gastos');
 
 const app = express();
 const PORT = config.server.port;
@@ -19,17 +20,20 @@ const { authLimiter, apiLimiter, reservationLimiter } = securityMiddleware(app);
 // Middleware básico
 app.use(cors(config.cors));
 app.use(express.json());
-app.use(express.static('public'));
 
 // Rate limiting
 app.use('/api/admin/login', authLimiter);
 app.use('/api', apiLimiter);
 app.use('/api/reservas', reservationLimiter);
 
-// Rutas API
+// Rutas API (DEBEN IR ANTES del middleware de archivos estáticos)
 app.use('/api', reservationRoutes);
 app.use('/api/admin', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/gastos', gastosRoutes);
+
+// Archivos estáticos (DEBE IR DESPUÉS de las rutas API)
+app.use(express.static('public'));
 
 // Ruta principal
 app.get('/', (req, res) => {

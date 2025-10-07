@@ -73,8 +73,18 @@ class ReportService {
                 COUNT(CASE WHEN estado = 'confirmada' THEN 1 END) as reservas_confirmadas,
                 COUNT(CASE WHEN estado = 'cancelada' THEN 1 END) as reservas_canceladas,
                 COALESCE(SUM(CASE WHEN estado = 'confirmada' THEN precio_total ELSE 0 END), 0) as ingresos_brutos,
-                COALESCE(SUM(CASE WHEN estado = 'confirmada' THEN (precio_total * 0.05) ELSE 0 END), 0) as comision_plataforma,
-                COALESCE(SUM(CASE WHEN estado = 'confirmada' THEN (precio_total * 0.95) ELSE 0 END), 0) as ingresos_netos,
+                COALESCE(SUM(CASE 
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'directa' THEN (precio_total * 0.035)
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'administrativa' THEN (precio_total * 0.0175)
+                    WHEN estado = 'confirmada' AND tipo_reserva IS NULL THEN (precio_total * 0.035)
+                    ELSE 0 
+                END), 0) as comision_plataforma,
+                COALESCE(SUM(CASE 
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'directa' THEN (precio_total * 0.965)
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'administrativa' THEN (precio_total * 0.9825)
+                    WHEN estado = 'confirmada' AND tipo_reserva IS NULL THEN (precio_total * 0.965)
+                    ELSE 0 
+                END), 0) as ingresos_netos,
                 COALESCE(AVG(CASE WHEN estado = 'confirmada' THEN precio_total END), 0) as ticket_promedio
             FROM reservas r
             JOIN canchas c ON r.cancha_id = c.id
@@ -95,8 +105,18 @@ class ReportService {
                 COUNT(*) as total_reservas,
                 COUNT(CASE WHEN r.estado = 'confirmada' THEN 1 END) as reservas_confirmadas,
                 COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN r.precio_total ELSE 0 END), 0) as ingresos_brutos,
-                COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN (r.precio_total * 0.05) ELSE 0 END), 0) as comision_plataforma,
-                COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN (r.precio_total * 0.95) ELSE 0 END), 0) as ingresos_netos
+                COALESCE(SUM(CASE 
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'directa' THEN (r.precio_total * 0.035)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'administrativa' THEN (r.precio_total * 0.0175)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva IS NULL THEN (r.precio_total * 0.035)
+                    ELSE 0 
+                END), 0) as comision_plataforma,
+                COALESCE(SUM(CASE 
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'directa' THEN (r.precio_total * 0.965)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'administrativa' THEN (r.precio_total * 0.9825)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva IS NULL THEN (r.precio_total * 0.965)
+                    ELSE 0 
+                END), 0) as ingresos_netos
             FROM reservas r
             JOIN canchas c ON r.cancha_id = c.id
             WHERE c.complejo_id = $1 
@@ -180,13 +200,17 @@ class ReportService {
         doc.text('RESUMEN GENERAL', 20, yPosition);
         yPosition += 15;
 
+        // Calcular porcentaje de comisión real
+        const porcentajeComision = incomeData.ingresos_brutos > 0 ? 
+            ((incomeData.comision_plataforma / incomeData.ingresos_brutos) * 100).toFixed(2) : '0.00';
+
         // Tabla de resumen
         const summaryData = [
             ['Total de Reservas', incomeData.total_reservas.toString()],
             ['Reservas Confirmadas', incomeData.reservas_confirmadas.toString()],
             ['Reservas Canceladas', incomeData.reservas_canceladas.toString()],
             ['Ingresos Brutos', `$${this.formatNumber(incomeData.ingresos_brutos)}`],
-            ['Comisión Plataforma (5%)', `$${this.formatNumber(incomeData.comision_plataforma)}`],
+            [`Comisión Plataforma (${porcentajeComision}%)`, `$${this.formatNumber(incomeData.comision_plataforma)}`],
             ['Ingresos Netos', `$${this.formatNumber(incomeData.ingresos_netos)}`],
             ['Ticket Promedio', `$${this.formatNumber(incomeData.ticket_promedio)}`]
         ];
@@ -200,8 +224,8 @@ class ReportService {
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { left: 20, right: 20 },
             columnStyles: {
-                0: { cellWidth: 80 },
-                1: { cellWidth: 50 }
+                0: { cellWidth: 100 }, // Concepto - más ancho para "Comisión Plataforma (5%)"
+                1: { cellWidth: 50 }   // Valor
             }
         });
 
@@ -346,7 +370,7 @@ class ReportService {
         summarySheet.getCell('A4').value = 'Dirección:';
         summarySheet.getCell('B4').value = complex.direccion;
         summarySheet.getCell('A5').value = 'Ciudad:';
-        summarySheet.getCell('B5').value = `${complex.ciudad_nombre}, ${complex.region}`;
+        summarySheet.getCell('B5').value = complex.ciudad_nombre;
         if (complex.telefono) {
             summarySheet.getCell('A6').value = 'Teléfono:';
             summarySheet.getCell('B6').value = complex.telefono;
@@ -366,33 +390,35 @@ class ReportService {
         summarySheet.getCell('A12').value = 'RESUMEN GENERAL';
         summarySheet.getCell('A12').font = { size: 14, bold: true, color: { argb: 'FF2980B9' } };
 
+        // Calcular porcentaje de comisión real
+        const porcentajeComision = incomeData.ingresos_brutos > 0 ? 
+            ((incomeData.comision_plataforma / incomeData.ingresos_brutos) * 100).toFixed(2) : '0.00';
+
         const summaryData = [
             ['Concepto', 'Valor'],
-            ['Total de Reservas', incomeData.total_reservas],
-            ['Reservas Confirmadas', incomeData.reservas_confirmadas],
-            ['Reservas Canceladas', incomeData.reservas_canceladas],
-            ['Ingresos Brutos', incomeData.ingresos_brutos],
-            ['Comisión Plataforma (5%)', incomeData.comision_plataforma],
-            ['Ingresos Netos', incomeData.ingresos_netos],
-            ['Ticket Promedio', incomeData.ticket_promedio]
+            ['Total de Reservas', Math.round(incomeData.total_reservas)],
+            ['Reservas Confirmadas', Math.round(incomeData.reservas_confirmadas)],
+            ['Reservas Canceladas', Math.round(incomeData.reservas_canceladas)],
+            ['Ingresos Brutos', Math.round(incomeData.ingresos_brutos)],
+            [`Comisión Plataforma (${porcentajeComision}%)`, Math.round(incomeData.comision_plataforma)],
+            ['Ingresos Netos', Math.round(incomeData.ingresos_netos)],
+            ['Ticket Promedio', Math.round(incomeData.ticket_promedio)]
         ];
 
         summarySheet.addRows(summaryData);
 
-        // Formatear la tabla de resumen
-        const summaryRange = summarySheet.getRange('A13:B20');
-        summaryRange.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-        };
+        // Ajustar ancho de columnas
+        summarySheet.getColumn('A').width = 25; // Concepto - más ancho para "Comisión Plataforma (5%)"
+        summarySheet.getColumn('B').width = 15; // Valor
 
-        // Formatear números como moneda
-        summarySheet.getCell('B16').numFmt = '"$"#,##0.00';
-        summarySheet.getCell('B17').numFmt = '"$"#,##0.00';
-        summarySheet.getCell('B18').numFmt = '"$"#,##0.00';
-        summarySheet.getCell('B19').numFmt = '"$"#,##0.00';
+        // Formatear números como enteros (sin decimales)
+        summarySheet.getCell('B14').numFmt = '0'; // Total de Reservas
+        summarySheet.getCell('B15').numFmt = '0'; // Reservas Confirmadas
+        summarySheet.getCell('B16').numFmt = '0'; // Reservas Canceladas
+        summarySheet.getCell('B17').numFmt = '"$"#,##0'; // Ingresos Brutos
+        summarySheet.getCell('B18').numFmt = '"$"#,##0'; // Comisión Plataforma
+        summarySheet.getCell('B19').numFmt = '"$"#,##0'; // Ingresos Netos
+        summarySheet.getCell('B20').numFmt = '"$"#,##0'; // Ticket Promedio
 
         // Hoja 2: Resumen por Día
         if (dailySummary.length > 0) {
@@ -417,28 +443,29 @@ class ReportService {
             dailySummary.forEach(day => {
                 dailySheet.addRow([
                     day.fecha,
-                    day.total_reservas,
-                    day.reservas_confirmadas,
-                    day.ingresos_brutos,
-                    day.comision_plataforma,
-                    day.ingresos_netos
+                    Math.round(day.total_reservas),
+                    Math.round(day.reservas_confirmadas),
+                    Math.round(day.ingresos_brutos),
+                    Math.round(day.comision_plataforma),
+                    Math.round(day.ingresos_netos)
                 ]);
             });
 
-            // Formatear columnas de moneda
-            dailySheet.getColumn('D').numFmt = '"$"#,##0.00';
-            dailySheet.getColumn('E').numFmt = '"$"#,##0.00';
-            dailySheet.getColumn('F').numFmt = '"$"#,##0.00';
-
             // Ajustar ancho de columnas
-            dailySheet.columns = [
-                { width: 15 },
-                { width: 15 },
-                { width: 15 },
-                { width: 18 },
-                { width: 15 },
-                { width: 18 }
-            ];
+            dailySheet.getColumn('A').width = 12; // Fecha
+            dailySheet.getColumn('B').width = 15; // Total Reservas
+            dailySheet.getColumn('C').width = 12; // Confirmadas
+            dailySheet.getColumn('D').width = 15; // Ingresos Brutos
+            dailySheet.getColumn('E').width = 12; // Comisión
+            dailySheet.getColumn('F').width = 15; // Ingresos Netos
+
+            // Formatear columnas de moneda (sin decimales)
+            dailySheet.getColumn('B').numFmt = '0'; // Total Reservas
+            dailySheet.getColumn('C').numFmt = '0'; // Confirmadas
+            dailySheet.getColumn('D').numFmt = '"$"#,##0'; // Ingresos Brutos
+            dailySheet.getColumn('E').numFmt = '"$"#,##0'; // Comisión
+            dailySheet.getColumn('F').numFmt = '"$"#,##0'; // Ingresos Netos
+
         }
 
         // Hoja 3: Detalles de Reservas

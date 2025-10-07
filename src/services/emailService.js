@@ -106,7 +106,8 @@ class EmailService {
       fecha, 
       hora_inicio, 
       hora_fin, 
-      precio_total 
+      precio_total,
+      porcentaje_pagado = 100
     } = reservaData;
 
     // CORRECCIÓN CRÍTICA: Formatear fecha correctamente para zona horaria de Chile
@@ -263,10 +264,33 @@ class EmailService {
                     <span class="detail-value">${formatearHora(hora_inicio)} - ${formatearHora(hora_fin)}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Total Pagado:</span>
+                    <span class="detail-label">Precio Total Reserva:</span>
                     <span class="detail-value">$${precio_total.toLocaleString()}</span>
                 </div>
+                ${porcentaje_pagado === 50 ? `
+                <div class="detail-row">
+                    <span class="detail-label">Pagado Online:</span>
+                    <span class="detail-value" style="color: #28a745; font-weight: bold;">$${Math.round(precio_total / 2).toLocaleString()} (50%)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Pendiente en Complejo:</span>
+                    <span class="detail-value" style="color: #dc3545; font-weight: bold;">$${Math.round(precio_total / 2).toLocaleString()} (50%)</span>
+                </div>
+                ` : `
+                <div class="detail-row">
+                    <span class="detail-label">Pagado Online:</span>
+                    <span class="detail-value" style="color: #28a745; font-weight: bold;">$${precio_total.toLocaleString()} (100%)</span>
+                </div>
+                `}
             </div>
+
+            ${porcentaje_pagado === 50 ? `
+            <div class="instructions" style="background-color: #fff3cd; border-color: #ffc107;">
+                <h3 style="color: #856404;">⚠️ Pago Parcial (50%)</h3>
+                <p><strong>Has pagado $${Math.round(precio_total / 2).toLocaleString()} (50% de $${precio_total.toLocaleString()}).</strong></p>
+                <p>El 50% restante ($${Math.round(precio_total / 2).toLocaleString()}) debe ser cancelado <strong>directamente en el complejo deportivo</strong> antes o al momento de usar la cancha.</p>
+            </div>
+            ` : ''}
 
             <div class="instructions">
                 <h3>📝 Instrucciones Importantes</h3>
@@ -274,6 +298,7 @@ class EmailService {
                     <li><strong>Guarda este email</strong> como comprobante de tu reserva</li>
                     <li><strong>Presenta el código de reserva</strong> al llegar al complejo</li>
                     <li><strong>Llega 10 minutos antes</strong> de tu horario reservado</li>
+                    ${porcentaje_pagado === 50 ? '<li><strong>Recuerda llevar el 50% restante</strong> para pagar en el complejo</li>' : ''}
                     <li><strong>Las cancelaciones o cambios se deben realizar con 24 horas de anticipación.</strong> Para esto contactar a <a href="mailto:soporte@reservatuscanchas.cl">soporte@reservatuscanchas.cl</a></li>
                 </ul>
             </div>
@@ -432,13 +457,17 @@ Gracias por elegir Reserva Tu Cancha!
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
       
+      const porcentajePagado = reservaData.porcentaje_pagado || 100;
+      const pagoMitad = porcentajePagado === 50;
+      
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
         to: adminEmail,
-        subject: `🔔 Nueva Reserva en ${reservaData.complejo} - ${reservaData.codigo_reserva}`,
+        subject: `🔔 Nueva Reserva en ${reservaData.complejo} - ${reservaData.codigo_reserva}${pagoMitad ? ' (Pago Parcial 50%)' : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #007bff;">🔔 Nueva Reserva en tu Complejo</h2>
+            ${pagoMitad ? '<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; margin: 15px 0;"><strong>⚠️ Pago Parcial:</strong> El cliente pagó solo el 50% online. Debe pagar el 50% restante en el complejo.</div>' : ''}
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #495057; margin-top: 0;">Detalles de la Reserva</h3>
               <p><strong>Código:</strong> <span style="background-color: #007bff; color: white; padding: 4px 8px; border-radius: 4px;">${reservaData.codigo_reserva}</span></p>
@@ -453,7 +482,9 @@ Gracias por elegir Reserva Tu Cancha!
                 day: 'numeric'
               })}</p>
               <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
-              <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
+              <p><strong>Precio Total Reserva:</strong> $${reservaData.precio_total.toLocaleString()}</p>
+              <p><strong>Pagado Online:</strong> $${pagoMitad ? Math.round(reservaData.precio_total / 2).toLocaleString() : reservaData.precio_total.toLocaleString()} ${pagoMitad ? '(50%)' : '(100%)'}</p>
+              ${pagoMitad ? `<p style="color: #856404; font-weight: bold;">💰 Pendiente en Complejo: $${Math.round(reservaData.precio_total / 2).toLocaleString()} (50% restante)</p>` : ''}
             </div>
             <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 30px;">
               Este email fue generado automáticamente por el sistema Reserva Tu Cancha
@@ -497,13 +528,17 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
       
+      const porcentajePagado = reservaData.porcentaje_pagado || 100;
+      const pagoMitad = porcentajePagado === 50;
+      
       const mailOptions = {
         from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
         to: 'admin@reservatuscanchas.cl',
-        subject: `📊 Nueva Reserva - ${reservaData.codigo_reserva}`,
+        subject: `📊 Nueva Reserva - ${reservaData.codigo_reserva}${pagoMitad ? ' (Pago 50%)' : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #28a745;">📊 Nueva Reserva - Control General</h2>
+            ${pagoMitad ? '<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; margin: 15px 0;"><strong>⚠️ Pago Parcial:</strong> El cliente pagó solo el 50% online.</div>' : ''}
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #495057; margin-top: 0;">Detalles de la Reserva</h3>
               <p><strong>Código:</strong> <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px;">${reservaData.codigo_reserva}</span></p>
@@ -518,7 +553,8 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
                 day: 'numeric'
               })}</p>
               <p><strong>Horario:</strong> ${formatearHora(reservaData.hora_inicio)} - ${formatearHora(reservaData.hora_fin)}</p>
-              <p><strong>Total:</strong> $${reservaData.precio_total.toLocaleString()}</p>
+              <p><strong>Precio Total Reserva:</strong> $${reservaData.precio_total.toLocaleString()}</p>
+              <p><strong>Pagado Online:</strong> $${pagoMitad ? Math.round(reservaData.precio_total / 2).toLocaleString() : reservaData.precio_total.toLocaleString()} ${pagoMitad ? '(50%)' : '(100%)'}</p>
             </div>
             <p style="color: #6c757d; font-size: 12px; text-align: center; margin-top: 30px;">
               Este email fue generado automáticamente por el sistema Reserva Tu Cancha
@@ -753,3 +789,4 @@ Este es un email automático, por favor no responder
 }
 
 module.exports = EmailService;
+

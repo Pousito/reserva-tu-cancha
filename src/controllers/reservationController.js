@@ -4,156 +4,177 @@ const { invalidateCacheOnReservation } = require('./availabilityController');
 /**
  * Obtener todas las ciudades
  */
-function getCiudades(req, res) {
-  db.all("SELECT * FROM ciudades ORDER BY nombre", (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
+async function getCiudades(req, res) {
+  try {
+    const rows = await db.query("SELECT * FROM ciudades ORDER BY nombre");
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Error obteniendo ciudades:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**
  * Obtener complejos por ciudad
  */
-function getComplejosByCiudad(req, res) {
-  const { ciudadId } = req.params;
-  db.all("SELECT * FROM complejos WHERE ciudad_id = ?", [ciudadId], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
+async function getComplejosByCiudad(req, res) {
+  try {
+    const { ciudadId } = req.params;
+    const rows = await db.query(
+      "SELECT * FROM complejos WHERE ciudad_id = $1",
+      [ciudadId]
+    );
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Error obteniendo complejos:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**
  * Obtener canchas por complejo y tipo
+ * Soporta búsqueda flexible: "futbol" encontrará "futbol", "baby futbol", etc.
  */
-function getCanchasByComplejoAndTipo(req, res) {
-  const { complejoId, tipo } = req.params;
-  db.all("SELECT * FROM canchas WHERE complejo_id = ? AND tipo = ?", [complejoId, tipo], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+async function getCanchasByComplejoAndTipo(req, res) {
+  console.log('🚨 FUNCIÓN getCanchasByComplejoAndTipo LLAMADA');
+  console.log('🚨 req.params:', req.params);
+  try {
+    const { complejoId, tipo } = req.params;
+    
+    console.log('🏟️ Buscando canchas para complejo:', complejoId, 'tipo:', tipo);
+    
+    // Si el tipo es "futbol", buscar cualquier tipo que contenga "futbol"
+    // Esto incluye "futbol", "baby futbol", "futbol 7", etc.
+    let query, params;
+    console.log('🔍 Tipo recibido:', tipo, '| toLowerCase:', tipo.toLowerCase());
+    console.log('🔍 Comparación:', tipo.toLowerCase() === 'futbol');
+    
+    if (tipo.toLowerCase() === 'futbol') {
+      query = "SELECT * FROM canchas WHERE complejo_id = $1 AND LOWER(tipo) LIKE $2";
+      params = [complejoId, '%futbol%'];
+      console.log('✅ Búsqueda flexible de fútbol:', params);
+    } else {
+      query = "SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2";
+      params = [complejoId, tipo];
+      console.log('⚠️ Búsqueda exacta de tipo:', params);
     }
+    console.log('📝 Query final:', query);
+    
+    const rows = await db.query(query, params);
+    console.log('✅ Canchas encontradas:', rows.length);
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Error obteniendo canchas:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**
  * Obtener disponibilidad de canchas
  */
-function getDisponibilidad(req, res) {
-  const { canchaId, fecha } = req.params;
-  db.all(`
-    SELECT hora_inicio, hora_fin 
-    FROM reservas 
-    WHERE cancha_id = ? AND fecha = ? AND estado != 'cancelada'
-  `, [canchaId, fecha], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(rows);
-  });
+async function getDisponibilidad(req, res) {
+  try {
+    const { canchaId, fecha } = req.params;
+    const rows = await db.query(`
+      SELECT hora_inicio, hora_fin 
+      FROM reservas 
+      WHERE cancha_id = $1 AND fecha = $2 AND estado != 'cancelada'
+    `, [canchaId, fecha]);
+    
+    res.json({ reservas: rows });
+  } catch (err) {
+    console.error('Error obteniendo disponibilidad:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**
  * Crear nueva reserva
  */
-function createReserva(req, res) {
-  const { cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, precio_total } = req.body;
-  
-  // Verificar si ya existe una reserva para la misma cancha, fecha y hora
-  db.get(`
-    SELECT id FROM reservas 
-    WHERE cancha_id = ? AND fecha = ? AND hora_inicio = ? AND estado != 'cancelada'
-  `, [cancha_id, fecha, hora_inicio], (err, existingReservation) => {
-    if (err) {
-      res.status(500).json({ error: 'Error verificando disponibilidad' });
-      return;
-    }
+async function createReserva(req, res) {
+  try {
+    const { cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, precio_total } = req.body;
     
-    if (existingReservation) {
-      res.status(400).json({ 
+    // Verificar si ya existe una reserva para la misma cancha, fecha y hora
+    const existingReservation = await db.query(`
+      SELECT id FROM reservas 
+      WHERE cancha_id = $1 AND fecha = $2 AND hora_inicio = $3 AND estado != 'cancelada'
+    `, [cancha_id, fecha, hora_inicio]);
+    
+    if (existingReservation.length > 0) {
+      return res.status(400).json({ 
         error: 'Ya existe una reserva para esta cancha en la fecha y hora seleccionada',
         code: 'RESERVATION_CONFLICT'
       });
-      return;
     }
 
     // Generar código de reserva único (5 caracteres)
     const codigo_reserva = Math.random().toString(36).substr(2, 5).toUpperCase();
     
-    db.run(`
+    const result = await db.query(`
       INSERT INTO reservas (cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, codigo_reserva, precio_total)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, codigo_reserva, precio_total], function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      
-      // Invalidar caché de disponibilidad
-      invalidateCacheOnReservation(cancha_id, fecha);
-      
-      // Enviar email de confirmación (implementar después)
-      // sendConfirmationEmail(email_cliente, codigo_reserva, fecha, hora_inicio);
-      
-      res.json({
-        id: this.lastID,
-        codigo_reserva,
-        message: 'Reserva creada exitosamente'
-      });
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id
+    `, [cancha_id, fecha, hora_inicio, hora_fin, nombre_cliente, rut_cliente, email_cliente, codigo_reserva, precio_total]);
+    
+    // Invalidar caché de disponibilidad
+    invalidateCacheOnReservation(cancha_id, fecha);
+    
+    res.json({
+      id: result[0].id,
+      codigo_reserva,
+      message: 'Reserva creada exitosamente'
     });
-  });
+  } catch (err) {
+    console.error('Error creando reserva:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**
  * Obtener todas las reservas (para el dashboard)
  */
-function getAllReservas(req, res) {
-  db.all(`
-    SELECT r.*, c.nombre as nombre_cancha, c.tipo, comp.nombre as nombre_complejo
-    FROM reservas r
-    JOIN canchas c ON r.cancha_id = c.id
-    JOIN complejos comp ON c.complejo_id = comp.id
-    ORDER BY r.created_at DESC
-  `, (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
+async function getAllReservas(req, res) {
+  try {
+    const rows = await db.query(`
+      SELECT r.*, c.nombre as nombre_cancha, c.tipo, comp.nombre as nombre_complejo
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos comp ON c.complejo_id = comp.id
+      ORDER BY r.created_at DESC
+    `);
     res.json(rows || []);
-  });
+  } catch (err) {
+    console.error('Error obteniendo reservas:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**
  * Obtener reserva por código o nombre
  */
-function getReservaByCodigo(req, res) {
-  const { busqueda } = req.params;
-  
-  // Buscar por código de reserva o nombre del cliente
-  db.get(`
-    SELECT r.*, c.nombre as nombre_cancha, c.tipo, comp.nombre as nombre_complejo
-    FROM reservas r
-    JOIN canchas c ON r.cancha_id = c.id
-    JOIN complejos comp ON c.complejo_id = comp.id
-    WHERE r.codigo_reserva = ? OR LOWER(r.nombre_cliente) = LOWER(?)
-  `, [busqueda, busqueda], (err, row) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+async function getReservaByCodigo(req, res) {
+  try {
+    const { busqueda } = req.params;
+    
+    // Buscar por código de reserva o nombre del cliente
+    const rows = await db.query(`
+      SELECT r.*, c.nombre as nombre_cancha, c.tipo, comp.nombre as nombre_complejo
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos comp ON c.complejo_id = comp.id
+      WHERE r.codigo_reserva = $1 OR LOWER(r.nombre_cliente) = LOWER($2)
+    `, [busqueda, busqueda]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada. Verifica el código o nombre ingresado.' });
     }
-    if (!row) {
-      res.status(404).json({ error: 'Reserva no encontrada. Verifica el código o nombre ingresado.' });
-      return;
-    }
-    res.json(row);
-  });
+    
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Error buscando reserva:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
 
 /**

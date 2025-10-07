@@ -626,6 +626,13 @@
                 const bloqueo = await response.json();
                 const datosCliente = JSON.parse(bloqueo.datos_cliente);
                 
+                // DEBUG: Ver datos recibidos
+                console.log('🔍 DEBUG - Datos del bloqueo:', bloqueo);
+                console.log('🔍 DEBUG - Datos del cliente:', datosCliente);
+                console.log('🔍 DEBUG - precio_total:', datosCliente.precio_total);
+                console.log('🔍 DEBUG - monto_pagado:', datosCliente.monto_pagado);
+                console.log('🔍 DEBUG - porcentaje_pagado:', datosCliente.porcentaje_pagado);
+                
                 // Mapear datos del bloqueo a nuestro formato
                 reservationData = {
                     code: reservationCode,
@@ -633,8 +640,12 @@
                     date: bloqueo.fecha,
                     time: formatearRangoHoras(bloqueo.hora_inicio, bloqueo.hora_fin),
                     clientName: datosCliente.nombre_cliente,
-                    amount: datosCliente.precio_total
+                    amount: datosCliente.monto_pagado || datosCliente.precio_total, // Usar monto_pagado (50% o 100%)
+                    precioTotal: datosCliente.precio_total, // Precio total de la reserva
+                    porcentajePagado: datosCliente.porcentaje_pagado || 100 // 50 o 100
                 };
+                
+                console.log('🔍 DEBUG - reservationData final:', reservationData);
 
                 displayReservationData();
                 showLoading(false);
@@ -650,12 +661,43 @@
         function displayReservationData() {
             if (!reservationData) return;
 
+            console.log('🎨 DEBUG displayReservationData - reservationData:', reservationData);
+            console.log('🎨 DEBUG displayReservationData - porcentajePagado:', reservationData.porcentajePagado);
+            console.log('🎨 DEBUG displayReservationData - amount:', reservationData.amount);
+            console.log('🎨 DEBUG displayReservationData - precioTotal:', reservationData.precioTotal);
+
             document.getElementById('reservationCode').textContent = reservationData.code;
             document.getElementById('courtName').textContent = reservationData.courtName;
             document.getElementById('reservationDate').textContent = formatDate(reservationData.date);
             document.getElementById('reservationTime').textContent = reservationData.time;
             document.getElementById('clientName').textContent = reservationData.clientName;
-            document.getElementById('totalAmount').textContent = formatCurrency(reservationData.amount);
+            
+            // Mostrar monto a pagar con indicación si es pago parcial
+            const totalAmountElement = document.getElementById('totalAmount');
+            const esPagoParcial = reservationData.porcentajePagado === 50;
+            
+            console.log('🎨 DEBUG displayReservationData - esPagoParcial:', esPagoParcial);
+            
+            if (esPagoParcial) {
+                totalAmountElement.innerHTML = `
+                    <div style="text-align: right;">
+                        <div style="font-size: 18px; font-weight: bold; color: #28a745;">
+                            ${formatCurrency(reservationData.amount)}
+                        </div>
+                        <div style="font-size: 12px; color: #856404; margin-top: 4px;">
+                            ⚠️ Pago Parcial (50%)
+                        </div>
+                        <div style="font-size: 11px; color: #6c757d; margin-top: 2px;">
+                            Total reserva: ${formatCurrency(reservationData.precioTotal)}
+                        </div>
+                        <div style="font-size: 11px; color: #dc3545; margin-top: 2px;">
+                            Pendiente en complejo: ${formatCurrency(Math.round(reservationData.precioTotal / 2))}
+                        </div>
+                    </div>
+                `;
+            } else {
+                totalAmountElement.textContent = formatCurrency(reservationData.amount);
+            }
         }
 
         // Configurar selección de método de pago

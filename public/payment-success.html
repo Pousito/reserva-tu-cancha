@@ -387,7 +387,24 @@
             document.getElementById('courtName').textContent = reservationData.cancha_nombre || 'Cancha';
             document.getElementById('reservationDate').textContent = formatDate(reservationData.fecha);
             document.getElementById('reservationTime').textContent = formatTimeRange(reservationData.hora_inicio, reservationData.hora_fin);
-            document.getElementById('totalAmount').textContent = formatCurrency(reservationData.precio_total);
+            
+            // Mostrar monto pagado considerando porcentaje
+            const esPagoParcial = reservationData.porcentaje_pagado === 50;
+            const totalAmountElement = document.getElementById('totalAmount');
+            
+            if (esPagoParcial) {
+                const montoPagado = Math.round(reservationData.precio_total / 2);
+                totalAmountElement.innerHTML = `
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold;">${formatCurrency(montoPagado)}</div>
+                        <div style="font-size: 12px; color: #856404; margin-top: 4px;">⚠️ Pago Parcial (50%)</div>
+                        <div style="font-size: 11px; color: #6c757d; margin-top: 2px;">Total reserva: ${formatCurrency(reservationData.precio_total)}</div>
+                        <div style="font-size: 11px; color: #dc3545; margin-top: 2px;">Pendiente en complejo: ${formatCurrency(montoPagado)}</div>
+                    </div>
+                `;
+            } else {
+                totalAmountElement.textContent = formatCurrency(reservationData.precio_total);
+            }
 
             // Mostrar los detalles
             document.getElementById('reservationDetails').style.display = 'block';

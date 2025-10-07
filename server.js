@@ -26,8 +26,8 @@ if (process.env.NODE_ENV === 'production') {
   // En producción, usar variables de entorno de Render
   require('dotenv').config();
 } else {
-  // En desarrollo, usar PostgreSQL (no SQLite)
-  require('dotenv').config({ path: './env.postgresql' });
+  // En desarrollo, usar archivo .env
+  require('dotenv').config();
 }
 
 // Función para generar código de reserva único y corto
@@ -202,6 +202,11 @@ async function initializeDatabase() {
     // Inicializar DatabaseManager después de cargar las variables de entorno
     db = new DatabaseManager();
     await db.connect();
+    
+    // Configurar la instancia de DB para los controladores
+    const { setDbInstance } = require('./src/config/db-instance');
+    setDbInstance(db);
+    console.log('✅ Instancia de DB configurada para controladores');
     
     // Inicializar sistema de reservas atómicas
     const atomicManager = new AtomicReservationManager(db);
@@ -502,6 +507,10 @@ const { router: discountRoutes, setDatabase: setDiscountDatabase } = require('./
 setDiscountDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/discounts', discountRoutes);
 
+// ===== RUTAS DE GASTOS E INGRESOS =====
+const gastosRoutes = require('./src/routes/gastos');
+app.use('/api/gastos', gastosRoutes);
+
 // Ruta de prueba para simular retorno de Transbank en desarrollo
 app.get('/test-payment-return', (req, res) => {
     const { token_ws, TBK_TOKEN } = req.query;
@@ -563,7 +572,8 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             email_cliente: datosCliente.email_cliente || 'sin@email.com',
             telefono_cliente: datosCliente.telefono_cliente || null,
             rut_cliente: datosCliente.rut_cliente ? datosCliente.rut_cliente.replace(/[^0-9kK-]/g, '') : 'No proporcionado',
-            precio_total: parseInt(datosCliente.precio_total) || 0
+            precio_total: parseInt(datosCliente.precio_total) || 0,
+            porcentaje_pagado: datosCliente.porcentaje_pagado || 100
         };
 
         // Crear la reserva real
@@ -583,8 +593,8 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             INSERT INTO reservas (
                 cancha_id, nombre_cliente, email_cliente, telefono_cliente,
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         `, [
             bloqueoData.cancha_id,
             datosLimpios.nombre_cliente,
@@ -598,7 +608,8 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             codigoReserva,
             'confirmada',
             'pagado',
-            new Date().toISOString()
+            new Date().toISOString(),
+            datosLimpios.porcentaje_pagado
         ]);
 
         console.log('✅ Reserva creada con ID:', reservaId);
@@ -624,6 +635,7 @@ app.post('/api/simulate-payment-success', async (req, res) => {
             hora_inicio: bloqueoData.hora_inicio,
             hora_fin: bloqueoData.hora_fin,
             precio_total: datosLimpios.precio_total,
+            porcentaje_pagado: datosLimpios.porcentaje_pagado,
             complejo: canchaInfo?.complejo_nombre || 'Complejo Deportivo',
             cancha: canchaInfo?.cancha_nombre || 'Cancha'
         };
@@ -697,7 +709,7 @@ app.get('/api/reservas/:codigo', async (req, res) => {
                    r.telefono_cliente, r.rut_cliente, 
                    TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
                    r.hora_inicio, r.hora_fin, r.estado, r.estado_pago, 
-                   r.precio_total, r.created_at, r.fecha_creacion, r.codigo_reserva,
+                   r.precio_total, r.porcentaje_pagado, r.created_at, r.fecha_creacion, r.codigo_reserva,
                    c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
             FROM reservas r
             JOIN canchas c ON r.cancha_id = c.id
@@ -1031,9 +1043,9 @@ app.get('/api/bloqueos-temporales/:codigo', async (req, res) => {
 app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
   try {
     console.log('🔒 Iniciando creación de bloqueo temporal...');
-    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id } = req.body;
+    const { cancha_id, nombre_cliente, email_cliente, telefono_cliente, rut_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id, porcentaje_pagado, monto_pagado } = req.body;
     
-    console.log('📋 Datos recibidos:', { cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, session_id });
+    console.log('📋 Datos recibidos:', { cancha_id, nombre_cliente, email_cliente, telefono_cliente, fecha, hora_inicio, hora_fin, precio_total, porcentaje_pagado, monto_pagado, session_id });
     
     // Verificar que todos los campos requeridos estén presentes
     const camposRequeridos = {
@@ -1167,16 +1179,22 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     }
     console.log('🔍 DEBUG FECHA - Fecha final para BD:', fechaParaBD);
     
-    await db.run(`
-      INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [bloqueoId, cancha_id, fechaParaBD, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), JSON.stringify({
+    const datosClienteParaGuardar = {
       nombre_cliente,
       email_cliente,
       telefono_cliente: telefono_cliente || 'No proporcionado',
       rut_cliente,
-      precio_total
-    })]);
+      precio_total,
+      porcentaje_pagado: porcentaje_pagado || 100,
+      monto_pagado: monto_pagado || precio_total
+    };
+    
+    console.log('💾 Guardando datos_cliente en bloqueo temporal:', JSON.stringify(datosClienteParaGuardar, null, 2));
+    
+    await db.run(`
+      INSERT INTO bloqueos_temporales (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [bloqueoId, cancha_id, fechaParaBD, hora_inicio, hora_fin, session_id, expiraEn.toISOString(), JSON.stringify(datosClienteParaGuardar)]);
     
     console.log(`🔒 Bloqueo temporal creado: ${bloqueoId}`);
     

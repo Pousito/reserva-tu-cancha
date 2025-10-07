@@ -221,14 +221,18 @@ router.post('/confirm', async (req, res) => {
         }
 
         const datosCliente = JSON.parse(bloqueoData.datos_cliente);
+        
+        console.log('🔍 DEBUG - Datos del bloqueo leídos:', bloqueoData);
+        console.log('🔍 DEBUG - datosCliente parseado:', datosCliente);
+        console.log('🔍 DEBUG - porcentaje_pagado del cliente:', datosCliente.porcentaje_pagado);
 
         // Crear la reserva real
         const reservaId = await db.run(`
             INSERT INTO reservas (
                 cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
@@ -242,7 +246,8 @@ router.post('/confirm', async (req, res) => {
             payment.reservation_code,
             'confirmada',
             'pagado',
-            new Date().toISOString()
+            new Date().toISOString(),
+            datosCliente.porcentaje_pagado || 100
         ]);
 
         // Eliminar el bloqueo temporal
@@ -276,6 +281,7 @@ router.post('/confirm', async (req, res) => {
                        r.telefono_cliente, r.rut_cliente,
                        TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
                        r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+                       r.porcentaje_pagado,
                        c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
                 FROM reservas r
                 JOIN canchas c ON r.cancha_id = c.id
@@ -293,7 +299,8 @@ router.post('/confirm', async (req, res) => {
                     fecha: reservaInfo.fecha,
                     hora_inicio: reservaInfo.hora_inicio,
                     hora_fin: reservaInfo.hora_fin,
-                    precio_total: reservaInfo.precio_total
+                    precio_total: reservaInfo.precio_total,
+                    porcentaje_pagado: reservaInfo.porcentaje_pagado || 100
                 };
                 
                 // Enviar emails reales usando el servicio

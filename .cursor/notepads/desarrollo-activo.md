@@ -13,6 +13,12 @@
 ## Cambios Recientes
 - ✅ Creado archivo `.cursorrules` con reglas del proyecto
 - ✅ Configurado NotePads para documentación
+- ✅ Agregado complejo **Borde Rio** en Quilleco (7 oct 2025)
+  - Ciudad: Quilleco, Bio Bio
+  - Cancha: Baby Fútbol (7 vs 7)
+  - Owner: admin@borderio.cl
+  - Manager: manager@borderio.cl
+  - Documentación completa en notepad `complejo-borderio-quilleco.md`
 - 🔄 En progreso: Configuración de agente de Cursor
 
 ## Próximas Funcionalidades

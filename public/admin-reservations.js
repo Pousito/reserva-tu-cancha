@@ -468,6 +468,12 @@ function mostrarReservas(reservasAMostrar) {
                 <span class="badge badge-tipo badge-${tipoReserva}">
                     ${tipoReserva === 'directa' ? 'Web' : 'Admin'}
                 </span>
+                ${tipoReserva === 'directa' ? `
+                    <i class="fas fa-info-circle ms-1 text-info" 
+                       style="cursor: pointer;" 
+                       onclick="mostrarInfoPago('${reserva.codigo_reserva}', ${reserva.porcentaje_pagado || 100}, ${reserva.precio_total})"
+                       title="Ver información de pago"></i>
+                ` : ''}
             </td>`;
         
         // Solo incluir columna de comisión si no es manager
@@ -2112,7 +2118,36 @@ function mostrarInfoReservas(fecha, hora, event) {
  * Abrir modal de nueva reserva
  */
 function abrirModalReserva(ocultarComplejo = false) {
-    document.getElementById('modalNuevaReserva').style.display = 'block';
+    console.log('🔧 abrirModalReserva llamada - ocultarComplejo:', ocultarComplejo);
+    
+    let modal = document.getElementById('modalNuevaReserva');
+    
+    // Debug: verificar todos los modales en el documento
+    console.log('🔍 Todos los elementos con id que contienen "modal":', 
+        Array.from(document.querySelectorAll('[id*="modal"]')).map(el => el.id));
+    
+    // Debug: verificar si el modal existe en el HTML fuente
+    console.log('🔍 Buscando modalNuevaReserva en body.innerHTML:', 
+        document.body.innerHTML.includes('modalNuevaReserva'));
+    
+    if (!modal) {
+        console.error('❌ Error: Modal modalNuevaReserva no encontrado en el DOM');
+        console.error('🔍 Total de elementos en el documento:', document.body.children.length);
+        console.error('🔍 Último hijo del body:', document.body.lastElementChild?.tagName, document.body.lastElementChild?.id);
+        mostrarNotificacion('❌ Error técnico: No se pudo abrir el formulario de reserva.<br>Por favor, recarga la página.', 'danger', 5000);
+        return;
+    }
+    
+    console.log('✅ Modal encontrado, mostrando...');
+    modal.style.display = 'flex';  // Usar flex para centrar el contenido
+    modal.style.visibility = 'visible';
+    modal.style.opacity = '1';
+    
+    console.log('🔍 Estado del modal después de abrir:', {
+        display: modal.style.display,
+        visibility: modal.style.visibility,
+        opacity: modal.style.opacity
+    });
     
     // Mostrar u ocultar selector de complejo según el contexto
     const seccionComplejo = document.getElementById('seccionComplejoModal');
@@ -2177,8 +2212,19 @@ function abrirModalReserva(ocultarComplejo = false) {
  * Cerrar modal de nueva reserva
  */
 function cerrarModalReserva() {
-    document.getElementById('modalNuevaReserva').style.display = 'none';
-    document.getElementById('formNuevaReserva').reset();
+    console.log('🔧 Cerrando modal de nueva reserva...');
+    
+    const modal = document.getElementById('modalNuevaReserva');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
+    }
+    
+    const form = document.getElementById('formNuevaReserva');
+    if (form) {
+        form.reset();
+    }
     
     // Limpiar validaciones visuales
     limpiarValidacionesModal();
@@ -3188,5 +3234,51 @@ function limpiarCacheYRecargar() {
         console.error('Error limpiando caché:', error);
         alert('Error al limpiar el caché. Recargando página de todas formas...');
         window.location.reload();
+    }
+}
+
+// Función para mostrar información de pago (50% o 100%)
+function mostrarInfoPago(codigoReserva, porcentajePagado, precioTotal) {
+    const esPagoParcial = porcentajePagado === 50;
+    const titulo = esPagoParcial ? '⚠️ Pago Parcial (50%)' : '✅ Pago Completo (100%)';
+    const montoPagado = esPagoParcial ? Math.round(precioTotal / 2) : precioTotal;
+    const montoPendiente = esPagoParcial ? Math.round(precioTotal / 2) : 0;
+    
+    const mensaje = esPagoParcial 
+        ? `<div class="alert alert-warning mb-0">
+               <h6 class="alert-heading">${titulo}</h6>
+               <p class="mb-2"><strong>Reserva:</strong> ${codigoReserva}</p>
+               <hr>
+               <p class="mb-2"><strong>Precio Total Reserva:</strong> $${precioTotal.toLocaleString()}</p>
+               <p class="mb-2"><strong>Pagado Online:</strong> <span class="text-success">$${montoPagado.toLocaleString()}</span> (50%)</p>
+               <p class="mb-0"><strong>Pendiente en Complejo:</strong> <span class="text-danger">$${montoPendiente.toLocaleString()}</span> (50%)</p>
+               <hr>
+               <small class="text-muted">El cliente debe cancelar el 50% restante directamente en el complejo.</small>
+           </div>`
+        : `<div class="alert alert-success mb-0">
+               <h6 class="alert-heading">${titulo}</h6>
+               <p class="mb-2"><strong>Reserva:</strong> ${codigoReserva}</p>
+               <hr>
+               <p class="mb-2"><strong>Precio Total Reserva:</strong> $${precioTotal.toLocaleString()}</p>
+               <p class="mb-0"><strong>Pagado Online:</strong> <span class="text-success">$${montoPagado.toLocaleString()}</span> (100%)</p>
+           </div>`;
+    
+    // Usar SweetAlert2 si está disponible, sino alert
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Información de Pago',
+            html: mensaje,
+            icon: esPagoParcial ? 'warning' : 'success',
+            confirmButtonText: 'Cerrar',
+            customClass: {
+                confirmButton: 'btn btn-primary'
+            }
+        });
+    } else {
+        // Fallback a alert simple
+        const textoSimple = esPagoParcial
+            ? `${titulo}\n\nReserva: ${codigoReserva}\nPrecio Total: $${precioTotal.toLocaleString()}\nPagado online: $${montoPagado.toLocaleString()} (50%)\nPendiente en complejo: $${montoPendiente.toLocaleString()} (50%)\n\nEl cliente debe cancelar el 50% restante directamente en el complejo.`
+            : `${titulo}\n\nReserva: ${codigoReserva}\nPrecio Total: $${precioTotal.toLocaleString()}\nPagado online: $${montoPagado.toLocaleString()} (100%)`;
+        alert(textoSimple);
     }
 }

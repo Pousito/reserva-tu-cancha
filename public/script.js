@@ -1126,9 +1126,9 @@ async function preRellenarDesdeURLMejorado() {
                                 console.log('✅ Complejo preseleccionado:', complejo, 'ID:', complejoEncontrado.id);
                                 // logVisible(`✅ Complejo preseleccionado: ${complejo} (ID: ${complejoEncontrado.id})`);
                                 
-                                // 4. Si es MagnaSports, seleccionar fútbol automáticamente
-                                if (complejoEncontrado.nombre === 'MagnaSports') {
-                                    console.log('⚽ MagnaSports detectado, seleccionando fútbol automáticamente');
+                                // 4. Si es MagnaSports, Fundación Gunnen o Borde Rio, seleccionar fútbol automáticamente
+                                if (complejoEncontrado.nombre === 'MagnaSports' || complejoEncontrado.nombre === 'Fundación Gunnen' || complejoEncontrado.nombre === 'Borde Rio') {
+                                    console.log(`⚽ ${complejoEncontrado.nombre} detectado, seleccionando fútbol automáticamente`);
                                     const futbolRadio = document.getElementById('futbol');
                                     if (futbolRadio) {
                                         futbolRadio.checked = true;
@@ -2040,8 +2040,8 @@ function configurarEventListeners() {
             await cargarHorariosComplejo(complejoSeleccionado);
             console.log('🔄 Horarios cargados para:', complejoSeleccionado.nombre);
             
-            // Si es MagnaSports o Fundación Gunnen, automáticamente seleccionar fútbol y ocultar opciones de padel
-            if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen') {
+            // Si es MagnaSports, Fundación Gunnen o Borde Rio, automáticamente seleccionar fútbol y ocultar opciones de padel
+            if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Borde Rio') {
                 console.log(`⚽ ${complejoSeleccionado.nombre} detectado - Configurando automáticamente...`);
                 
                 // Seleccionar automáticamente fútbol
@@ -2268,6 +2268,14 @@ function configurarEventListeners() {
 
     // Confirmar reserva
     document.getElementById('confirmarReserva').addEventListener('click', confirmarReserva);
+    
+    // Event listener para checkbox de pagar 50%
+    const pagarMitadCheckbox = document.getElementById('pagarMitad');
+    if (pagarMitadCheckbox) {
+        pagarMitadCheckbox.addEventListener('change', function() {
+            actualizarResumenPrecio();
+        });
+    }
     
     // Validación de RUT en tiempo real
     const rutInput = document.getElementById('rutCliente');
@@ -3427,19 +3435,26 @@ async function renderizarCanchasConDisponibilidad() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Si es MagnaSports o Fundación Gunnen, crear estructura especial horizontal
-    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen')) {
+    // Si es MagnaSports, Fundación Gunnen o Borde Rio, crear estructura especial horizontal
+    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Borde Rio')) {
         console.log(`🎨 Renderizando ${complejoSeleccionado.nombre} con`, canchas.length, 'canchas');
         
         // Determinar si es techado o al aire libre
         const esTechado = complejoSeleccionado.nombre === 'MagnaSports';
-        const nombreCalle = complejoSeleccionado.nombre === 'MagnaSports' ? 'MONTE PERDIDO' : 'DON VICTOR';
+        const nombreCalle = complejoSeleccionado.nombre === 'MagnaSports' ? 'MONTE PERDIDO' : 
+                           complejoSeleccionado.nombre === 'Fundación Gunnen' ? 'DON VICTOR' : 
+                           'RUTA Q-575';
         
-        // Crear contenedor (galpón para MagnaSports, complejo-abierto para Fundación Gunnen)
+        // Crear contenedor (galpón para MagnaSports, complejo-abierto para Fundación Gunnen y Borde Rio)
         const galponContainer = document.createElement('div');
         galponContainer.className = esTechado ? 'galpon-container' : 'complejo-abierto-container';
         
-        // Agregar calle (Monte Perdido o Don Victor)
+        // Agregar nombre del complejo como atributo data para CSS dinámico
+        if (!esTechado) {
+            galponContainer.setAttribute('data-complejo', `COMPLEJO ${complejoSeleccionado.nombre.toUpperCase()}`);
+        }
+        
+        // Agregar calle (Monte Perdido, Don Victor o Ruta Q-575)
         const calle = document.createElement('div');
         calle.className = 'calle-complejo';
         calle.setAttribute('data-calle', nombreCalle);
@@ -3449,12 +3464,16 @@ async function renderizarCanchasConDisponibilidad() {
         const canchasHorizontales = document.createElement('div');
         canchasHorizontales.className = 'canchas-horizontales';
         
-        // Ordenar canchas para MagnaSports: Cancha 1 a la izquierda, Cancha 2 a la derecha
-        const canchasOrdenadas = [...canchas].sort((a, b) => {
-            const numeroA = parseInt(a.nombre.match(/\d+/)[0]);
-            const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
-            return numeroA - numeroB;
-        });
+        // Ordenar canchas para MagnaSports y Fundación Gunnen: Cancha 1 a la izquierda, Cancha 2 a la derecha
+        // Para Borde Rio, solo hay 1 cancha, no necesita ordenamiento especial
+        let canchasOrdenadas = [...canchas];
+        if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen') {
+            canchasOrdenadas = canchasOrdenadas.sort((a, b) => {
+                const numeroA = parseInt(a.nombre.match(/\d+/)[0]);
+                const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
+                return numeroA - numeroB;
+            });
+        }
         
         // Verificar disponibilidad para cada cancha
         for (const cancha of canchasOrdenadas) {
@@ -3518,8 +3537,9 @@ async function renderizarCanchasConDisponibilidad() {
             
             canchaCard.className = cardClass;
             
-            // Determinar descripción de cancha
+            // Determinar descripción de cancha y jugadores según el complejo
             const descripcionCancha = esTechado ? 'Techada' : 'Al aire libre';
+            const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Borde Rio' ? '5 jugadores por equipo' : '7 jugadores por equipo';
             
             canchaCard.innerHTML = `
                 <div class="cancha-icon">
@@ -3528,7 +3548,7 @@ async function renderizarCanchasConDisponibilidad() {
                 <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
                 <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
                 ${esTechado ? '<p class="text-info small"><i class="fas fa-home me-1"></i>Techada</p>' : ''}
-                <p class="text-info small"><i class="fas fa-users me-1"></i>7 jugadores por equipo</p>
+                <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>
                 <div class="estado-disponibilidad">
                     ${estadoBadge}
                 </div>
@@ -3538,8 +3558,8 @@ async function renderizarCanchasConDisponibilidad() {
             canchasHorizontales.appendChild(canchaCard);
         }
         
-        // Agregar estacionamientos solo para Fundación Gunnen
-        if (!esTechado) {
+        // Agregar estacionamientos solo para Fundación Gunnen (no para Borde Rio porque desconocemos)
+        if (complejoSeleccionado.nombre === 'Fundación Gunnen') {
             const estacionamientos = document.createElement('div');
             estacionamientos.className = 'estacionamientos';
             estacionamientos.innerHTML = `
@@ -3790,6 +3810,39 @@ function mostrarModalReserva() {
     }, 100);
 }
 
+// Función para actualizar el resumen de precio según pago parcial
+function actualizarResumenPrecio() {
+    if (!canchaSeleccionada) return;
+    
+    const pagarMitad = document.getElementById('pagarMitad').checked;
+    const precioOriginal = canchaSeleccionada.precio_hora;
+    const precioAPagar = pagarMitad ? Math.round(precioOriginal / 2) : precioOriginal;
+    
+    // Actualizar el precio en el resumen
+    const precioElement = document.getElementById('precioOriginal');
+    if (precioElement) {
+        if (pagarMitad) {
+            precioElement.innerHTML = `
+                <div>
+                    <span style="text-decoration: line-through; color: #999;">$${precioOriginal.toLocaleString()}</span>
+                    <br>
+                    <strong class="text-primary">$${precioAPagar.toLocaleString()} (50%)</strong>
+                    <br>
+                    <small class="text-muted">Resto en el complejo</small>
+                </div>
+            `;
+        } else {
+            precioElement.textContent = `$${precioOriginal.toLocaleString()}`;
+        }
+    }
+    
+    // Si hay descuento aplicado, recalcular
+    const descuentoAplicado = window.descuentoActual;
+    if (descuentoAplicado) {
+        aplicarDescuentoAlPrecio(descuentoAplicado, precioAPagar);
+    }
+}
+
 function limpiarFormularioReserva() {
     // Limpiar campo Nombre
     const nombreInput = document.getElementById('nombreCliente');
@@ -3816,6 +3869,12 @@ function limpiarFormularioReserva() {
     if (aceptarPoliticasCheckbox) {
         aceptarPoliticasCheckbox.checked = false;
         aceptarPoliticasCheckbox.classList.remove('is-valid', 'is-invalid');
+    }
+    
+    // Limpiar checkbox de pagar 50%
+    const pagarMitadCheckbox = document.getElementById('pagarMitad');
+    if (pagarMitadCheckbox) {
+        pagarMitadCheckbox.checked = false;
     }
     
     // Ocultar todos los elementos de feedback (Nombre, RUT, Email, Teléfono y Políticas)
@@ -4035,6 +4094,12 @@ async function confirmarReserva() {
         return;
     }
     
+    // Calcular precio según si paga 50% o 100%
+    const pagarMitad = document.getElementById('pagarMitad').checked;
+    const porcentajePagado = pagarMitad ? 50 : 100;
+    const precioTotalCancha = canchaSeleccionada.precio_hora; // Precio TOTAL de la cancha (siempre 100%)
+    const precioAPagar = pagarMitad ? Math.round(precioTotalCancha / 2) : precioTotalCancha; // Lo que paga el cliente
+    
     const formData = {
         cancha_id: canchaSeleccionada.id,
         fecha: document.getElementById('fechaSelect').value,
@@ -4044,8 +4109,10 @@ async function confirmarReserva() {
         rut_cliente: document.getElementById('rutCliente').value,
         email_cliente: document.getElementById('emailCliente').value,
         telefono_cliente: document.getElementById('telefonoCliente').value,
-        precio_total: descuentoAplicado ? descuentoAplicado.monto_final : canchaSeleccionada.precio_hora,
-        codigo_descuento: descuentoAplicado ? descuentoAplicado.codigo : null
+        precio_total: descuentoAplicado ? descuentoAplicado.monto_final : precioTotalCancha, // SIEMPRE el precio total
+        codigo_descuento: descuentoAplicado ? descuentoAplicado.codigo : null,
+        porcentaje_pagado: porcentajePagado,
+        monto_pagado: descuentoAplicado ? Math.round(descuentoAplicado.monto_final * (porcentajePagado / 100)) : precioAPagar // Lo que realmente paga
     };
     
     // Mostrar indicador de procesamiento
