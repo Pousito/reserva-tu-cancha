@@ -137,6 +137,30 @@ function hideElementsByRole() {
         const complexFilterElements = document.querySelectorAll('[data-role="complex-filter"]');
         complexFilterElements.forEach(el => el.style.display = 'none');
     }
+
+    // Manejo genérico de roles específicos (ej: "owner,super_admin")
+    const allRoleElements = document.querySelectorAll('[data-role]');
+    allRoleElements.forEach(el => {
+        const allowedRoles = el.getAttribute('data-role');
+        
+        // Si ya fue procesado por las reglas específicas de arriba, saltar
+        if (['income', 'occupancy', 'reports', 'complex-filter'].includes(allowedRoles)) {
+            return;
+        }
+
+        // Verificar si contiene múltiples roles separados por coma
+        if (allowedRoles.includes(',')) {
+            const roles = allowedRoles.split(',').map(r => r.trim());
+            if (!roles.includes(user.rol)) {
+                el.style.display = 'none';
+            }
+        } else if (allowedRoles === 'all-complexes') {
+            // Ocultar vista de todos los complejos para no super_admin
+            if (!canViewAllComplexes()) {
+                el.style.display = 'none';
+            }
+        }
+    });
 }
 
 /**

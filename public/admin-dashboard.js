@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Aplicar permisos según el rol (con delay para asegurar que el usuario esté cargado)
     setTimeout(() => {
         aplicarPermisosPorRol();
+        // Aplicar sistema centralizado de roles de AdminUtils
+        AdminUtils.hideElementsByRole();
+        // Configurar logout
+        AdminUtils.setupLogout();
     }, 500);
     
     // Actualizar hora actual
