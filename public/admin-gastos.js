@@ -176,7 +176,8 @@ async function cargarCategorias() {
         categorias.forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.id;
-            option.textContent = `${cat.icono} ${cat.nombre}`;
+            // Solo mostrar el nombre, sin el código del ícono
+            option.textContent = cat.nombre;
             filterCategoria.appendChild(option);
         });
         
@@ -508,7 +509,8 @@ function openModal(tipo) {
         .forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.id;
-            option.textContent = `${cat.icono} ${cat.nombre}`;
+            // Solo mostrar el nombre, sin el código del ícono
+            option.textContent = cat.nombre;
             selectCategoria.appendChild(option);
         });
     
@@ -542,7 +544,8 @@ async function editarMovimiento(id) {
         .forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.id;
-            option.textContent = `${cat.icono} ${cat.nombre}`;
+            // Solo mostrar el nombre, sin el código del ícono
+            option.textContent = cat.nombre;
             if (cat.id === movimiento.categoria_id) option.selected = true;
             selectCategoria.appendChild(option);
         });
