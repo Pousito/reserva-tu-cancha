@@ -504,9 +504,9 @@ setDiscountDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/discounts', discountRoutes);
 
 // ===== RUTAS DE GASTOS E INGRESOS =====
-// TEMPORALMENTE DESHABILITADO - Sistema en desarrollo
-// const gastosRoutes = require('./src/routes/gastos');
-// app.use('/api/gastos', gastosRoutes);
+const { router: gastosRoutes, setDatabase: setGastosDatabase } = require('./src/routes/gastos');
+setGastosDatabase(db); // Pasar la instancia de la base de datos
+app.use('/api/gastos', gastosRoutes);
 
 // Ruta de prueba para simular retorno de Transbank en desarrollo
 app.get('/test-payment-return', (req, res) => {
