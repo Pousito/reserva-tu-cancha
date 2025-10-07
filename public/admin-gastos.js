@@ -2,6 +2,9 @@
 // CONTROL DE GASTOS E INGRESOS - FRONTEND
 // ============================================
 
+// API Base URL (cargado desde url-config.js)
+const API_BASE = window.API_BASE || window.URL_CONFIG?.API_URL || '/api';
+
 let userData = null;
 let categorias = [];
 let movimientos = [];
@@ -103,6 +106,48 @@ function logout() {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
     window.location.href = '/admin-login.html';
+}
+
+// Función helper para hacer peticiones autenticadas
+async function authenticatedFetch(url, options = {}) {
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+        console.error('❌ No hay token de autenticación');
+        window.location.href = '/admin-login.html';
+        throw new Error('No hay token de autenticación');
+    }
+    
+    const defaultHeaders = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+    
+    const fetchOptions = {
+        ...options,
+        headers: {
+            ...defaultHeaders,
+            ...options.headers
+        }
+    };
+    
+    try {
+        const response = await fetch(url, fetchOptions);
+        
+        // Si es 401 (no autorizado), redirigir al login
+        if (response.status === 401) {
+            console.error('❌ Token inválido o expirado');
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            window.location.href = '/admin-login.html';
+            throw new Error('Token inválido o expirado');
+        }
+        
+        return response;
+    } catch (error) {
+        console.error('❌ Error en petición autenticada:', error);
+        throw error;
+    }
 }
 
 // ============================================
