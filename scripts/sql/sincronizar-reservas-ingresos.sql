@@ -5,11 +5,8 @@
 -- 2. Un gasto por la comisión de la plataforma
 -- ============================================
 
--- Asegurarse de que existen las categorías necesarias
-INSERT INTO categorias_gastos (nombre, descripcion, icono, color, tipo, es_predefinida) VALUES
-('Reservas Web', 'Reservas hechas por la página web', 'fas fa-globe', '#27ae60', 'ingreso', true),
-('Comisión Plataforma', 'Comisión cobrada por uso de la plataforma web', 'fas fa-percent', '#e74c3c', 'gasto', true)
-ON CONFLICT (nombre) DO NOTHING;
+-- NOTA: Este script NO inserta categorías globales, ya que ahora las categorías
+-- son específicas por complejo. Las categorías se crean al añadir un nuevo complejo.
 
 -- ============================================
 -- FUNCIÓN PARA SINCRONIZAR RESERVA CONFIRMADA
@@ -23,22 +20,40 @@ DECLARE
     precio_total DECIMAL(10,2);
     comision_monto DECIMAL(10,2);
     tipo_reserva_texto TEXT;
+    complejo_id_reserva INTEGER;
 BEGIN
     -- Solo procesar cuando el estado cambia a 'confirmada'
     IF NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada') THEN
         
-        -- Obtener IDs de categorías
-        SELECT id INTO categoria_ingreso_id 
-        FROM categorias_gastos 
-        WHERE nombre = 'Reservas Web' AND tipo = 'ingreso';
+        -- Obtener complejo_id a partir de la cancha
+        SELECT complejo_id INTO complejo_id_reserva
+        FROM canchas
+        WHERE id = NEW.cancha_id;
         
-        SELECT id INTO categoria_comision_id 
-        FROM categorias_gastos 
-        WHERE nombre = 'Comisión Plataforma' AND tipo = 'gasto';
+        IF complejo_id_reserva IS NULL THEN
+            RAISE WARNING 'No se pudo obtener complejo_id para cancha_id %', NEW.cancha_id;
+            RETURN NEW;
+        END IF;
         
-        -- Si no existen las categorías, salir sin error
+        -- Buscar categoría de ingresos para este complejo
+        SELECT id INTO categoria_ingreso_id
+        FROM categorias_gastos
+        WHERE complejo_id = complejo_id_reserva
+        AND tipo = 'ingreso'
+        AND nombre = 'Reservas Web'
+        LIMIT 1;
+        
+        -- Buscar categoría de comisión para este complejo
+        SELECT id INTO categoria_comision_id
+        FROM categorias_gastos
+        WHERE complejo_id = complejo_id_reserva
+        AND tipo = 'gasto'
+        AND nombre = 'Comisión Plataforma'
+        LIMIT 1;
+        
+        -- Si no existen las categorías, no hacer nada (evitar errores)
         IF categoria_ingreso_id IS NULL OR categoria_comision_id IS NULL THEN
-            RAISE WARNING 'Categorías de ingreso/gasto no encontradas. No se sincronizará la reserva.';
+            RAISE NOTICE 'Categorías no encontradas para complejo %, saltando sincronización', complejo_id_reserva;
             RETURN NEW;
         END IF;
         
@@ -74,17 +89,13 @@ BEGIN
                     metodo_pago,
                     usuario_id
                 ) VALUES (
-                    NEW.complejo_id,
+                    complejo_id_reserva,
                     categoria_ingreso_id,
                     'ingreso',
                     precio_total,
                     NEW.fecha::DATE,
-                    'Reserva #' || NEW.codigo_reserva || ' - ' || NEW.nombre_cliente,
-                    CASE 
-                        WHEN NEW.metodo_pago = 'webpay' THEN 'transferencia'
-                        WHEN NEW.metodo_pago = 'efectivo' THEN 'efectivo'
-                        ELSE 'otro'
-                    END,
+                    'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id),
+                    'automatico',
                     NULL
                 );
                 
@@ -110,7 +121,7 @@ BEGIN
                         metodo_pago,
                         usuario_id
                     ) VALUES (
-                        NEW.complejo_id,
+                        complejo_id_reserva,
                         categoria_comision_id,
                         'gasto',
                         comision_monto,
@@ -179,14 +190,6 @@ CREATE TRIGGER trigger_eliminar_ingresos_cancelacion
 -- VERIFICACIÓN
 -- ============================================
 
--- Mostrar categorías creadas
-SELECT 
-    tipo,
-    nombre,
-    descripcion
-FROM categorias_gastos
-WHERE nombre IN ('Reservas Web', 'Comisión Plataforma');
-
 -- Mostrar triggers activos
 SELECT 
     trigger_name,
@@ -197,6 +200,5 @@ FROM information_schema.triggers
 WHERE trigger_name LIKE '%reserva%ingresos%'
 ORDER BY trigger_name;
 
-COMMENT ON FUNCTION sincronizar_reserva_ingresos() IS 'Sincroniza automáticamente las reservas confirmadas con ingresos y gastos por comisión';
+COMMENT ON FUNCTION sincronizar_reserva_ingresos() IS 'Sincroniza automáticamente las reservas confirmadas con ingresos y gastos por comisión. Obtiene complejo_id mediante JOIN con tabla canchas.';
 COMMENT ON FUNCTION eliminar_ingresos_reserva_cancelada() IS 'Elimina los ingresos y gastos cuando una reserva es cancelada';
-
