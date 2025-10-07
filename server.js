@@ -203,10 +203,6 @@ async function initializeDatabase() {
     db = new DatabaseManager();
     await db.connect();
     
-    // Configurar la instancia de DB para los controladores
-    const { setDbInstance } = require('./src/config/db-instance');
-    setDbInstance(db);
-    console.log('✅ Instancia de DB configurada para controladores');
     
     // Inicializar sistema de reservas atómicas
     const atomicManager = new AtomicReservationManager(db);
@@ -508,8 +504,9 @@ setDiscountDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/discounts', discountRoutes);
 
 // ===== RUTAS DE GASTOS E INGRESOS =====
-const gastosRoutes = require('./src/routes/gastos');
-app.use('/api/gastos', gastosRoutes);
+// TEMPORALMENTE DESHABILITADO - Sistema en desarrollo
+// const gastosRoutes = require('./src/routes/gastos');
+// app.use('/api/gastos', gastosRoutes);
 
 // Ruta de prueba para simular retorno de Transbank en desarrollo
 app.get('/test-payment-return', (req, res) => {
