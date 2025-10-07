@@ -1126,8 +1126,8 @@ async function preRellenarDesdeURLMejorado() {
                                 console.log('✅ Complejo preseleccionado:', complejo, 'ID:', complejoEncontrado.id);
                                 // logVisible(`✅ Complejo preseleccionado: ${complejo} (ID: ${complejoEncontrado.id})`);
                                 
-                                // 4. Si es MagnaSports, Fundación Gunnen o Borde Rio, seleccionar fútbol automáticamente
-                                if (complejoEncontrado.nombre === 'MagnaSports' || complejoEncontrado.nombre === 'Fundación Gunnen' || complejoEncontrado.nombre === 'Borde Rio') {
+                                // 4. Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, seleccionar fútbol automáticamente
+                                if (complejoEncontrado.nombre === 'MagnaSports' || complejoEncontrado.nombre === 'Fundación Gunnen' || complejoEncontrado.nombre === 'Espacio Deportivo Borde Río') {
                                     console.log(`⚽ ${complejoEncontrado.nombre} detectado, seleccionando fútbol automáticamente`);
                                     const futbolRadio = document.getElementById('futbol');
                                     if (futbolRadio) {
@@ -2040,8 +2040,8 @@ function configurarEventListeners() {
             await cargarHorariosComplejo(complejoSeleccionado);
             console.log('🔄 Horarios cargados para:', complejoSeleccionado.nombre);
             
-            // Si es MagnaSports, Fundación Gunnen o Borde Rio, automáticamente seleccionar fútbol y ocultar opciones de padel
-            if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Borde Rio') {
+            // Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, automáticamente seleccionar fútbol y ocultar opciones de padel
+            if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río') {
                 console.log(`⚽ ${complejoSeleccionado.nombre} detectado - Configurando automáticamente...`);
                 
                 // Seleccionar automáticamente fútbol
@@ -3435,8 +3435,8 @@ async function renderizarCanchasConDisponibilidad() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Si es MagnaSports, Fundación Gunnen o Borde Rio, crear estructura especial horizontal
-    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Borde Rio')) {
+    // Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, crear estructura especial horizontal
+    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río')) {
         console.log(`🎨 Renderizando ${complejoSeleccionado.nombre} con`, canchas.length, 'canchas');
         
         // Determinar si es techado o al aire libre
@@ -3445,7 +3445,7 @@ async function renderizarCanchasConDisponibilidad() {
                            complejoSeleccionado.nombre === 'Fundación Gunnen' ? 'DON VICTOR' : 
                            'RUTA Q-575';
         
-        // Crear contenedor (galpón para MagnaSports, complejo-abierto para Fundación Gunnen y Borde Rio)
+        // Crear contenedor (galpón para MagnaSports, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
         const galponContainer = document.createElement('div');
         galponContainer.className = esTechado ? 'galpon-container' : 'complejo-abierto-container';
         
@@ -3465,7 +3465,7 @@ async function renderizarCanchasConDisponibilidad() {
         canchasHorizontales.className = 'canchas-horizontales';
         
         // Ordenar canchas para MagnaSports y Fundación Gunnen: Cancha 1 a la izquierda, Cancha 2 a la derecha
-        // Para Borde Rio, solo hay 1 cancha, no necesita ordenamiento especial
+        // Para Espacio Deportivo Borde Río, solo hay 1 cancha, no necesita ordenamiento especial
         let canchasOrdenadas = [...canchas];
         if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen') {
             canchasOrdenadas = canchasOrdenadas.sort((a, b) => {
@@ -3539,7 +3539,7 @@ async function renderizarCanchasConDisponibilidad() {
             
             // Determinar descripción de cancha y jugadores según el complejo
             const descripcionCancha = esTechado ? 'Techada' : 'Al aire libre';
-            const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Borde Rio' ? '5 jugadores por equipo' : '7 jugadores por equipo';
+            const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' ? '5 jugadores por equipo' : '7 jugadores por equipo';
             
             canchaCard.innerHTML = `
                 <div class="cancha-icon">
@@ -3558,7 +3558,7 @@ async function renderizarCanchasConDisponibilidad() {
             canchasHorizontales.appendChild(canchaCard);
         }
         
-        // Agregar estacionamientos solo para Fundación Gunnen (no para Borde Rio porque desconocemos)
+        // Agregar estacionamientos solo para Fundación Gunnen (no para Espacio Deportivo Borde Río porque desconocemos)
         if (complejoSeleccionado.nombre === 'Fundación Gunnen') {
             const estacionamientos = document.createElement('div');
             estacionamientos.className = 'estacionamientos';
