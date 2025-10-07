@@ -9,7 +9,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { Pool } = require('pg');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 // Configuración de base de datos
 const pool = new Pool({
@@ -91,7 +91,7 @@ async function main() {
             console.log(`\n💡 Próximos pasos:`);
             console.log(`   1. Las nuevas categorías ya están disponibles`);
             console.log(`   2. Las reservas confirmadas generarán ingresos automáticamente`);
-            console.log(`   3. Se registrará la comisión del 10% como gasto`);
+            console.log(`   3. Se registrará la comisión real (3.5% o 1.75% + IVA) como gasto`);
             console.log(`   4. Si se cancela una reserva, se eliminan los registros automáticamente`);
         } else {
             console.log(`\n⚠️  Algunas migraciones tuvieron problemas. Revisa los errores arriba.`);

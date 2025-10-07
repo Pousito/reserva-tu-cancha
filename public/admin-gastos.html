@@ -604,6 +604,10 @@
                 <i class="fas fa-minus-circle"></i>
                 Registrar Gasto
             </button>
+            <button class="btn-modern btn-primary-modern" onclick="toggleGestionCategorias()">
+                <i class="fas fa-tags"></i>
+                Gestionar Categorías
+            </button>
             <button class="btn-modern btn-primary-modern" onclick="exportToExcel()">
                 <i class="fas fa-file-excel"></i>
                 Exportar a Excel
@@ -612,6 +616,88 @@
                 <i class="fas fa-file-pdf"></i>
                 Exportar a PDF
             </button>
+        </div>
+
+        <!-- Gestión de Categorías (inicialmente oculta) -->
+        <div id="gestionCategorias" class="filters-card" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0" style="color: white;">
+                    <i class="fas fa-tags me-2"></i>Gestión de Categorías
+                </h5>
+                <div>
+                    <button class="btn btn-sm btn-success" onclick="abrirModalCategoria(null, 'gasto')">
+                        <i class="fas fa-plus me-1"></i>Nueva de Gasto
+                    </button>
+                    <button class="btn btn-sm btn-success ms-2" onclick="abrirModalCategoria(null, 'ingreso')">
+                        <i class="fas fa-plus me-1"></i>Nueva de Ingreso
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="categoriaTabs" role="tablist" style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="gastos-tab" data-bs-toggle="tab" data-bs-target="#gastos-panel" type="button" style="color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.1);">
+                        <i class="fas fa-minus-circle me-2"></i>Gastos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="ingresos-tab" data-bs-toggle="tab" data-bs-target="#ingresos-panel" type="button" style="color: rgba(255,255,255,0.8);">
+                        <i class="fas fa-plus-circle me-2"></i>Ingresos
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="categoriaTabContent">
+                <!-- Panel de Gastos -->
+                <div class="tab-pane fade show active" id="gastos-panel" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr style="color: white;">
+                                    <th width="50">Ícono</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th width="100">Color</th>
+                                    <th width="150">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaCategoriasGastos">
+                                <tr>
+                                    <td colspan="5" class="text-center" style="color: white;">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel de Ingresos -->
+                <div class="tab-pane fade" id="ingresos-panel" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr style="color: white;">
+                                    <th width="50">Ícono</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th width="100">Color</th>
+                                    <th width="150">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaCategoriasIngresos">
+                                <tr>
+                                    <td colspan="5" class="text-center" style="color: white;">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -741,6 +827,79 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="guardarMovimiento()">
                         <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestión de Categoría -->
+    <div class="modal fade" id="categoriaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoriaModalTitle">
+                        <i class="fas fa-tag me-2"></i>Nueva Categoría
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="categoriaForm">
+                        <input type="hidden" id="categoriaId">
+                        <input type="hidden" id="categoriaTipo">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="categoriaNombre" required placeholder="Ej: Reparación Baños">
+                            <small class="text-muted">Nombre descriptivo para la categoría</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="categoriaDescripcion" rows="2" placeholder="Descripción opcional"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ícono</label>
+                                <select class="form-select" id="categoriaIcono">
+                                    <option value="fas fa-circle">⚪ Círculo</option>
+                                    <option value="fas fa-tools">🔧 Herramientas</option>
+                                    <option value="fas fa-bolt">⚡ Rayo</option>
+                                    <option value="fas fa-tint">💧 Gota</option>
+                                    <option value="fas fa-wifi">📶 WiFi</option>
+                                    <option value="fas fa-broom">🧹 Escoba</option>
+                                    <option value="fas fa-futbol">⚽ Fútbol</option>
+                                    <option value="fas fa-building">🏢 Edificio</option>
+                                    <option value="fas fa-ad">📢 Publicidad</option>
+                                    <option value="fas fa-users">👥 Usuarios</option>
+                                    <option value="fas fa-shopping-cart">🛒 Carrito</option>
+                                    <option value="fas fa-trophy">🏆 Trofeo</option>
+                                    <option value="fas fa-plus-circle">➕ Más</option>
+                                    <option value="fas fa-minus-circle">➖ Menos</option>
+                                    <option value="fas fa-home">🏠 Casa</option>
+                                    <option value="fas fa-wrench">🔧 Llave</option>
+                                    <option value="fas fa-paint-roller">🖌️ Pintura</option>
+                                    <option value="fas fa-fire">🔥 Fuego</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Color</label>
+                                <input type="color" class="form-control form-control-color" id="categoriaColor" value="#3498db">
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Nota:</strong> Las categorías predefinidas del sistema no se pueden editar ni eliminar.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="guardarCategoria()">
+                        <i class="fas fa-save me-2"></i>Guardar Categoría
                     </button>
                 </div>
             </div>

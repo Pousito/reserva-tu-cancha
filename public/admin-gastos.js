@@ -806,3 +806,295 @@ function showLoading(show) {
     document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
 }
 
+// ============================================
+// GESTIÓN DE CATEGORÍAS
+// ============================================
+
+let categoriaModal = null;
+
+// Inicializar modal de categoría
+document.addEventListener('DOMContentLoaded', () => {
+    const categoriaModalElement = document.getElementById('categoriaModal');
+    if (categoriaModalElement) {
+        categoriaModal = new bootstrap.Modal(categoriaModalElement);
+    }
+});
+
+// Toggle visibilidad de gestión de categorías
+function toggleGestionCategorias() {
+    const section = document.getElementById('gestionCategorias');
+    const isVisible = section.style.display !== 'none';
+    
+    if (isVisible) {
+        section.style.display = 'none';
+    } else {
+        section.style.display = 'block';
+        cargarListaCategorias();
+    }
+}
+
+// Cargar lista de categorías en las tablas
+async function cargarListaCategorias() {
+    try {
+        console.log('📋 Cargando lista de categorías...');
+        
+        const response = await authenticatedFetch(`${API_BASE}/gastos/categorias`);
+        
+        if (!response.ok) throw new Error('Error al cargar categorías');
+        
+        const data = await response.json();
+        console.log('✅ Categorías cargadas:', data);
+        
+        // Separar por tipo
+        const gastosItems = data.filter(cat => cat.tipo === 'gasto');
+        const ingresosItems = data.filter(cat => cat.tipo === 'ingreso');
+        
+        // Renderizar tablas
+        renderizarTablaCategorias('listaCategoriasGastos', gastosItems);
+        renderizarTablaCategorias('listaCategoriasIngresos', ingresosItems);
+        
+    } catch (error) {
+        console.error('❌ Error al cargar lista de categorías:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo cargar la lista de categorías'
+        });
+    }
+}
+
+// Renderizar tabla de categorías
+function renderizarTablaCategorias(tbodyId, categorias) {
+    const tbody = document.getElementById(tbodyId);
+    
+    if (categorias.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center" style="color: white;">
+                    <i class="fas fa-inbox"></i> No hay categorías de este tipo
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = categorias.map(cat => {
+        const esPredefinida = cat.es_predefinida;
+        const botonesAccion = esPredefinida 
+            ? `<span class="badge bg-secondary">Sistema</span>`
+            : `
+                <button class="btn btn-sm btn-primary" onclick="abrirModalCategoria(${cat.id}, '${cat.tipo}')" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger ms-1" onclick="eliminarCategoria(${cat.id})" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+        
+        return `
+            <tr style="color: white;">
+                <td><i class="${cat.icono}" style="color: ${cat.color}; font-size: 1.2rem;"></i></td>
+                <td><strong>${cat.nombre}</strong></td>
+                <td>${cat.descripcion || '-'}</td>
+                <td>
+                    <span class="badge" style="background-color: ${cat.color};">${cat.color}</span>
+                </td>
+                <td>${botonesAccion}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Abrir modal para crear/editar categoría
+async function abrirModalCategoria(categoriaId, tipo) {
+    try {
+        // Limpiar formulario
+        document.getElementById('categoriaForm').reset();
+        document.getElementById('categoriaId').value = '';
+        document.getElementById('categoriaTipo').value = tipo;
+        
+        if (categoriaId) {
+            // Modo edición
+            console.log('✏️ Editando categoría:', categoriaId);
+            
+            const response = await authenticatedFetch(`${API_BASE}/gastos/categorias`);
+            if (!response.ok) throw new Error('Error al cargar categorías');
+            
+            const categorias = await response.json();
+            const categoria = categorias.find(c => c.id === categoriaId);
+            
+            if (!categoria) {
+                throw new Error('Categoría no encontrada');
+            }
+            
+            if (categoria.es_predefinida) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Editable',
+                    text: 'Las categorías predefinidas del sistema no se pueden editar'
+                });
+                return;
+            }
+            
+            // Llenar formulario
+            document.getElementById('categoriaId').value = categoria.id;
+            document.getElementById('categoriaTipo').value = categoria.tipo;
+            document.getElementById('categoriaNombre').value = categoria.nombre;
+            document.getElementById('categoriaDescripcion').value = categoria.descripcion || '';
+            document.getElementById('categoriaIcono').value = categoria.icono;
+            document.getElementById('categoriaColor').value = categoria.color;
+            
+            document.getElementById('categoriaModalTitle').innerHTML = 
+                `<i class="fas fa-edit me-2"></i>Editar Categoría de ${tipo === 'gasto' ? 'Gasto' : 'Ingreso'}`;
+        } else {
+            // Modo creación
+            console.log('➕ Nueva categoría de tipo:', tipo);
+            document.getElementById('categoriaColor').value = tipo === 'gasto' ? '#e74c3c' : '#27ae60';
+            document.getElementById('categoriaModalTitle').innerHTML = 
+                `<i class="fas fa-plus me-2"></i>Nueva Categoría de ${tipo === 'gasto' ? 'Gasto' : 'Ingreso'}`;
+        }
+        
+        categoriaModal.show();
+        
+    } catch (error) {
+        console.error('❌ Error al abrir modal de categoría:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo abrir el formulario de categoría'
+        });
+    }
+}
+
+// Guardar categoría (crear o actualizar)
+async function guardarCategoria() {
+    try {
+        const categoriaId = document.getElementById('categoriaId').value;
+        const tipo = document.getElementById('categoriaTipo').value;
+        const nombre = document.getElementById('categoriaNombre').value.trim();
+        const descripcion = document.getElementById('categoriaDescripcion').value.trim();
+        const icono = document.getElementById('categoriaIcono').value;
+        const color = document.getElementById('categoriaColor').value;
+        
+        // Validaciones
+        if (!nombre) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campos Incompletos',
+                text: 'El nombre de la categoría es obligatorio'
+            });
+            return;
+        }
+        
+        const data = {
+            nombre,
+            descripcion,
+            icono,
+            color,
+            tipo
+        };
+        
+        let response;
+        
+        if (categoriaId) {
+            // Actualizar
+            console.log('🔄 Actualizando categoría:', categoriaId, data);
+            response = await authenticatedFetch(`${API_BASE}/gastos/categorias/${categoriaId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Crear
+            console.log('➕ Creando nueva categoría:', data);
+            response = await authenticatedFetch(`${API_BASE}/gastos/categorias`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al guardar categoría');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Categoría guardada:', result);
+        
+        // Cerrar modal
+        categoriaModal.hide();
+        
+        // Recargar datos
+        await cargarCategorias();
+        await cargarListaCategorias();
+        
+        Swal.fire({
+            icon: 'success',
+            title: '¡Guardado!',
+            text: `Categoría ${categoriaId ? 'actualizada' : 'creada'} correctamente`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al guardar categoría:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'No se pudo guardar la categoría'
+        });
+    }
+}
+
+// Eliminar categoría
+async function eliminarCategoria(categoriaId) {
+    try {
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: '¿Estás seguro?',
+            text: 'Esta acción no se puede deshacer. La categoría será eliminada permanentemente.',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+        
+        if (!result.isConfirmed) return;
+        
+        console.log('🗑️ Eliminando categoría:', categoriaId);
+        
+        const response = await authenticatedFetch(`${API_BASE}/gastos/categorias/${categoriaId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al eliminar categoría');
+        }
+        
+        console.log('✅ Categoría eliminada');
+        
+        // Recargar datos
+        await cargarCategorias();
+        await cargarListaCategorias();
+        
+        Swal.fire({
+            icon: 'success',
+            title: '¡Eliminada!',
+            text: 'La categoría ha sido eliminada correctamente',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al eliminar categoría:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'No se puede eliminar',
+            text: error.message || 'Esta categoría no se puede eliminar porque tiene movimientos asociados o es una categoría del sistema'
+        });
+    }
+}
+
