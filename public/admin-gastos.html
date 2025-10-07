@@ -44,8 +44,24 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f0f4f8 0%, #e8edf3 50%, #f8f9fa 100%);
+            background-attachment: fixed;
             min-height: 100vh;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
         }
 
         /* Sidebar */
@@ -55,8 +71,8 @@
             left: 0;
             width: var(--sidebar-width);
             height: 100vh;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.08);
             z-index: 1000;
             overflow-y: auto;
         }
@@ -92,9 +108,9 @@
         }
 
         .sidebar-menu a:hover, .sidebar-menu a.active {
-            background: #f3f4f6;
-            color: #2563eb;
-            border-left: 3px solid #2563eb;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%);
+            color: #667eea;
+            border-left: 3px solid #667eea;
         }
 
         .sidebar-menu a i {
@@ -112,11 +128,13 @@
 
         /* Header */
         .page-header {
-            background: white;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .page-header h1 {
@@ -140,16 +158,18 @@
         }
 
         .stat-card {
-            background: white;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             transition: transform 0.3s, box-shadow 0.3s;
         }
 
         .stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
         }
 
         .stat-card-header {
@@ -169,9 +189,21 @@
             font-size: 1.5rem;
         }
 
-        .stat-card-icon.success { background: #d1fae5; color: #10b981; }
-        .stat-card-icon.danger { background: #fee2e2; color: #ef4444; }
-        .stat-card-icon.info { background: #dbeafe; color: #3b82f6; }
+        .stat-card-icon.success { 
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #059669;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+        }
+        .stat-card-icon.danger { 
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+        }
+        .stat-card-icon.info { 
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #2563eb;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
 
         .stat-card-value {
             font-size: 2rem;
@@ -239,11 +271,13 @@
 
         /* Filters */
         .filters-card {
-            background: white;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 1.5rem;
             margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         .filters-grid {
@@ -254,10 +288,12 @@
 
         /* Table */
         .table-card {
-            background: white;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             margin-bottom: 2rem;
         }
 
@@ -268,7 +304,7 @@
         }
 
         .table-modern thead th {
-            background: #f9fafb;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
             padding: 1rem;
             text-align: left;
             font-weight: 600;
@@ -279,13 +315,14 @@
         }
 
         .table-modern tbody tr {
-            background: white;
+            background: rgba(255, 255, 255, 0.7);
             transition: all 0.3s;
         }
 
         .table-modern tbody tr:hover {
-            background: #f9fafb;
-            transform: scale(1.01);
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
+            transform: translateX(2px);
+            box-shadow: -4px 0 0 rgba(102, 126, 234, 0.3);
         }
 
         .table-modern tbody td {
@@ -313,13 +350,15 @@
         }
 
         .badge-gasto {
-            background: #fee2e2;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
             color: #dc2626;
+            border: 1px solid rgba(220, 38, 38, 0.1);
         }
 
         .badge-ingreso {
-            background: #d1fae5;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
             color: #059669;
+            border: 1px solid rgba(5, 150, 105, 0.1);
         }
 
         .category-badge {
@@ -341,10 +380,18 @@
         }
 
         .chart-card {
-            background: white;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+            backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
         }
 
         .chart-card h3 {
