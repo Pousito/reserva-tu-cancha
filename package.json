@@ -70,7 +70,8 @@
     "create-commission-expenses": "node scripts/create-commission-expenses.js",
         "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses",
         "fix-production-db": "node scripts/fix-production-database.js",
-        "fix-production-schema": "node scripts/fix-production-schema.js"
+        "fix-production-schema": "node scripts/fix-production-schema.js",
+        "update-borderio-price": "node scripts/update-borderio-price.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
