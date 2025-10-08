@@ -271,24 +271,29 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         // Generar horarios disponibles según el día de la semana
         const horarios = [];
         
-        // Función para generar horarios según el día
+        // Función para generar horarios según el día y complejo
         const generarHorariosPorDia = (diaSemana) => {
             const horariosDia = [];
+            let horaInicio, horaFin;
             
-            if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
-                for (let hora = 16; hora <= 23; hora++) {
-                    horariosDia.push({
-                        hora: hora,
-                        label: `${hora.toString().padStart(2, '0')}:00`
-                    });
-                }
+            // Determinar horarios según el complejo
+            if (user.complejo_id == 6) { // Espacio Deportivo Borde Río
+                // Borde Río: 10:00 a 23:00 todos los días
+                horaInicio = 10;
+                horaFin = 23;
+            } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
+                horaInicio = 16;
+                horaFin = 23;
             } else { // Sábado y Domingo: 12:00 a 23:00
-                for (let hora = 12; hora <= 23; hora++) {
-                    horariosDia.push({
-                        hora: hora,
-                        label: `${hora.toString().padStart(2, '0')}:00`
-                    });
-                }
+                horaInicio = 12;
+                horaFin = 23;
+            }
+            
+            for (let hora = horaInicio; hora <= horaFin; hora++) {
+                horariosDia.push({
+                    hora: hora,
+                    label: `${hora.toString().padStart(2, '0')}:00`
+                });
             }
             
             return horariosDia;
