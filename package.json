@@ -68,7 +68,9 @@
     "setup-commission-categories": "node scripts/setup-commission-categories.js",
     "update-commissions": "node scripts/update-existing-commissions.js",
     "create-commission-expenses": "node scripts/create-commission-expenses.js",
-    "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses"
+        "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses",
+        "fix-production-db": "node scripts/fix-production-database.js",
+        "fix-production-schema": "node scripts/fix-production-schema.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
