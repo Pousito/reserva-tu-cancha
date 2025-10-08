@@ -480,7 +480,9 @@ function mostrarReservas(reservasAMostrar) {
                 </span>
             </td>
             <td>
-                ${reserva.precio_total ? `<strong>$${reserva.precio_total.toLocaleString()}</strong>` : '<span class="text-muted">-</span>'}
+                ${reserva.precio_total !== null && reserva.precio_total !== undefined && reserva.precio_total !== '' 
+                    ? `<strong>$${reserva.precio_total.toLocaleString()}</strong>` 
+                    : '<span class="text-muted">-</span>'}
             </td>
             <td>
                 <span class="badge badge-tipo badge-${tipoReserva}">
