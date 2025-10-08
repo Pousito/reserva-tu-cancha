@@ -3329,30 +3329,6 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
   }
 });
 
-// Endpoint temporal para actualizar precio de Borde Río
-app.get('/api/update-borderio-price', async (req, res) => {
-    try {
-        console.log('💰 EJECUTANDO ACTUALIZACIÓN DE PRECIO BORDE RÍO');
-        
-        // Importar y ejecutar el script
-        const { updateBordeRioPrice } = require('./scripts/update-borderio-price.js');
-        await updateBordeRioPrice();
-        
-        res.json({ 
-            success: true, 
-            message: 'Precio de cancha Borde Río actualizado a $50',
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error('❌ Error actualizando precio:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
-    }
-});
-
 // Endpoint de debug
 app.get('/api/debug/table-data', async (req, res) => {
   try {
