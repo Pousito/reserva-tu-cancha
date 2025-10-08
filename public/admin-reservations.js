@@ -85,21 +85,25 @@ function aplicarPermisosPorRol() {
     // Aplicar visibilidad del sidebar según el rol
     const complejosLink = document.querySelector('a[href="admin-complexes.html"]');
     const reportesLink = document.querySelector('a[href="admin-reports.html"]');
+    const gastosLink = document.querySelector('a[href="/admin-gastos.html"]');
     
     if (userRole === 'manager') {
-        // Managers no pueden ver complejos ni reportes
+        // Managers no pueden ver complejos, reportes ni control de gastos
         if (complejosLink) complejosLink.style.display = 'none';
         if (reportesLink) reportesLink.style.display = 'none';
-        console.log('✅ Ocultados complejos y reportes para manager');
+        if (gastosLink) gastosLink.style.display = 'none';
+        console.log('✅ Ocultados complejos, reportes y control de gastos para manager');
     } else if (userRole === 'owner') {
-        // Owners pueden ver reportes pero no complejos (solo ven su propio complejo)
+        // Owners pueden ver reportes y control de gastos pero no complejos (solo ven su propio complejo)
         if (complejosLink) complejosLink.style.display = 'none';
         if (reportesLink) reportesLink.style.display = 'block';
-        console.log('✅ Ocultados complejos, mostrados reportes para owner');
+        if (gastosLink) gastosLink.style.display = 'block';
+        console.log('✅ Ocultados complejos, mostrados reportes y control de gastos para owner');
     } else if (userRole === 'super_admin') {
         // Super admin puede ver todo
         if (complejosLink) complejosLink.style.display = 'block';
         if (reportesLink) reportesLink.style.display = 'block';
+        if (gastosLink) gastosLink.style.display = 'block';
         console.log('✅ Mostrados todos los enlaces para super_admin');
     }
     
@@ -110,6 +114,11 @@ function aplicarPermisosPorRol() {
             element.style.display = 'none';
         });
         document.querySelectorAll('[data-role="all-complexes"]').forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        // Ocultar elementos que requieren permisos de owner o super_admin
+        document.querySelectorAll('[data-role*="owner"], [data-role*="super_admin"]').forEach(element => {
             element.style.display = 'none';
         });
         
@@ -471,7 +480,7 @@ function mostrarReservas(reservasAMostrar) {
                 ${tipoReserva === 'directa' ? `
                     <i class="fas fa-info-circle ms-1 text-info" 
                        style="cursor: pointer;" 
-                       onclick="mostrarInfoPago('${reserva.codigo_reserva}', ${reserva.porcentaje_pagado || 100}, ${reserva.precio_total})"
+                       onclick="mostrarInfoPago('${reserva.codigo_reserva}', ${reserva.porcentaje_pagado || 100}, ${reserva.precio_total || 0})"
                        title="Ver información de pago"></i>
                 ` : ''}
             </td>`;
@@ -2701,6 +2710,10 @@ async function crearReservaAdmin() {
         return;
     }
     
+    // Obtener el precio de la cancha seleccionada
+    const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
+    const precioCancha = canchaSeleccionada ? (canchaSeleccionada.precio_hora || canchaSeleccionada.precio || 0) : 0;
+    
     // Preparar datos para envío
     const datos = {
         cancha_id: canchaId,
@@ -2713,7 +2726,7 @@ async function crearReservaAdmin() {
         rut_cliente: formatearRUT(rut),
         tipo_reserva: 'administrativa',
         creada_por_admin: true,
-        precio_total: 28000, // Precio fijo según el modal
+        precio_total: precioCancha, // Precio dinámico de la cancha
         bloqueo_id: window.reservaSeleccionada.bloqueoId // ID del bloqueo temporal del admin actual
     };
     
@@ -2774,6 +2787,31 @@ async function crearReservaAdmin() {
         // Restaurar botón
         btnCrear.innerHTML = originalText;
         btnCrear.disabled = false;
+    }
+}
+
+/**
+ * Actualizar el precio mostrado en el modal cuando se selecciona una cancha
+ */
+function actualizarPrecioModal() {
+    const canchaSelect = document.getElementById('modalCancha');
+    const precioElement = document.getElementById('precioModal');
+    
+    if (!canchaSelect || !precioElement) return;
+    
+    const canchaId = canchaSelect.value;
+    if (!canchaId) {
+        precioElement.textContent = 'Selecciona una cancha';
+        return;
+    }
+    
+    // Buscar la cancha seleccionada
+    const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
+    if (canchaSeleccionada) {
+        const precio = canchaSeleccionada.precio_hora || canchaSeleccionada.precio || 0;
+        precioElement.textContent = `$${precio.toLocaleString()} por hora`;
+    } else {
+        precioElement.textContent = 'Precio no disponible';
     }
 }
 
@@ -2960,7 +2998,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Calcular precio cuando cambian los campos
-    // document.getElementById('modalCancha').addEventListener('change', calcularPrecioModal);
+    document.getElementById('modalCancha').addEventListener('change', actualizarPrecioModal);
     
     // Cargar horas cuando cambia la fecha
     // document.getElementById('modalFecha').addEventListener('change', cargarHorasModal);
@@ -3239,6 +3277,15 @@ function limpiarCacheYRecargar() {
 
 // Función para mostrar información de pago (50% o 100%)
 function mostrarInfoPago(codigoReserva, porcentajePagado, precioTotal) {
+    console.log('🔍 mostrarInfoPago llamada con:', { codigoReserva, porcentajePagado, precioTotal, tipo: typeof precioTotal });
+    
+    // Validar que precioTotal sea un número válido (permitir 0)
+    if (precioTotal === null || precioTotal === undefined || isNaN(precioTotal)) {
+        console.error('❌ Error: precioTotal inválido para la reserva:', codigoReserva, 'precioTotal:', precioTotal, 'tipo:', typeof precioTotal);
+        mostrarNotificacion('Error: No se pudo obtener el precio de la reserva', 'danger');
+        return;
+    }
+    
     const esPagoParcial = porcentajePagado === 50;
     const titulo = esPagoParcial ? '⚠️ Pago Parcial (50%)' : '✅ Pago Completo (100%)';
     const montoPagado = esPagoParcial ? Math.round(precioTotal / 2) : precioTotal;

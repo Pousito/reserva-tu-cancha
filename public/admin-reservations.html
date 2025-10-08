@@ -105,6 +105,15 @@
             border-radius: 3px;
         }
         
+        /* Estilos para ocultar elementos según el rol */
+        .hide-for-manager {
+            display: none !important;
+        }
+        
+        .owner-visible.hide-for-manager {
+            display: block !important;
+        }
+        
         /* Mejorar experiencia de campos de fecha */
         input[type="date"] {
             cursor: pointer;
@@ -565,7 +574,7 @@
                             <a class="nav-link" href="admin-reports.html" data-role="reports">
                                 <i class="fas fa-chart-bar me-2"></i>Reportes
                             </a>
-                            <a class="nav-link" href="/admin-gastos.html" data-role="owner,super_admin">
+                            <a class="nav-link hide-for-manager" href="/admin-gastos.html" data-role="owner,super_admin">
                                 <i class="fas fa-wallet me-2"></i>Control de Gastos
                             </a>
                             <hr class="my-3">
@@ -904,10 +913,10 @@
                         </div>
                     </div>
                     
-                    <!-- Información de precio simplificada -->
-                    <div class="alert alert-info">
+                    <!-- Información de precio dinámico -->
+                    <div class="alert alert-info" id="precioInfoModal">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Precio de la reserva:</strong> $28,000 (precio fijo por hora)
+                        <strong>Precio de la reserva:</strong> <span id="precioModal">Selecciona una cancha</span>
                     </div>
                     
                 </form>
