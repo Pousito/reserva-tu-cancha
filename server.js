@@ -3343,7 +3343,7 @@ app.get('/api/check-schema', async (req, res) => {
             ORDER BY column_name;
         `);
         
-        const columnasExistentes = columnasCheck.rows.map(row => row.column_name);
+        const columnasExistentes = columnasCheck.rows ? columnasCheck.rows.map(row => row.column_name) : [];
         console.log('📊 Columnas existentes:', columnasExistentes);
         
         // Agregar columnas faltantes
@@ -3382,16 +3382,18 @@ app.get('/api/check-schema', async (req, res) => {
         `);
         
         console.log('📊 Columnas de la tabla reservas:');
-        estructuraFinal.rows.forEach(row => {
-            console.log(`   - ${row.column_name}: ${row.data_type}`);
-        });
+        if (estructuraFinal.rows) {
+            estructuraFinal.rows.forEach(row => {
+                console.log(`   - ${row.column_name}: ${row.data_type}`);
+            });
+        }
         
         res.json({ 
             success: true, 
             message: 'Esquema verificado y corregido',
             columnasExistentes,
             columnasAgregadas,
-            totalColumnas: estructuraFinal.rows.length,
+            totalColumnas: estructuraFinal.rows ? estructuraFinal.rows.length : 0,
             timestamp: new Date().toISOString()
         });
         
