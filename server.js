@@ -1979,6 +1979,14 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
     
+    // DEBUG: Verificar precios de las primeras 3 reservas
+    if (reservas && reservas.length > 0) {
+        console.log('🔍 DEBUG SERVER - Primeras 3 reservas:');
+        reservas.slice(0, 3).forEach((r, i) => {
+            console.log(`  ${i+1}. ${r.codigo_reserva}: precio_total=${r.precio_total} (tipo: ${typeof r.precio_total})`);
+        });
+    }
+    
     // CORRECCIÓN: Procesar fechas para asegurar zona horaria correcta
     const reservasProcesadas = reservas.map(reserva => {
       // Asegurar que la fecha se maneje correctamente en zona horaria de Chile
@@ -2037,8 +2045,16 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     //     console.log('❌ Reserva 6BNY23 no encontrada en los resultados');
     // }
     
-    // Ocultar precios a los managers
-    if (req.userPermissions && !req.userPermissions.canViewFinancials) {
+    // MODIFICACIÓN: Los managers necesitan ver precios para cobros parciales
+    // Solo ocultar precios a usuarios sin permisos de administración
+    console.log('🔍 DEBUG - Permisos del usuario:', {
+      rol: req.user.rol,
+      canViewFinancials: req.userPermissions?.canViewFinancials,
+      ocultarPrecios: req.userPermissions && !req.userPermissions.canViewFinancials && req.user.rol !== 'manager'
+    });
+    
+    if (req.userPermissions && !req.userPermissions.canViewFinancials && req.user.rol !== 'manager') {
+      console.log('🚫 Ocultando precios para usuario sin permisos');
       const reservasSinPrecios = reservasProcesadas.map(reserva => ({
         ...reserva,
         precio_total: null,
@@ -2046,6 +2062,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
       }));
       res.json(reservasSinPrecios);
     } else {
+      console.log('✅ Mostrando precios completos para manager/admin');
       res.json(reservasProcesadas);
     }
   } catch (error) {

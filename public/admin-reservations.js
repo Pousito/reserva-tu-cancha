@@ -367,6 +367,14 @@ async function cargarReservas() {
         if (response.ok) {
             const data = await response.json();
             console.log('📋 Datos de reservas recibidos:', data);
+            // DEBUG: Verificar precios de las primeras 3 reservas
+            const reservasToCheck = Array.isArray(data) ? data : (data.reservas || []);
+            if (reservasToCheck && reservasToCheck.length > 0) {
+                console.log('🔍 DEBUG - Primeras 3 reservas:');
+                reservasToCheck.slice(0, 3).forEach((r, i) => {
+                    console.log(`  ${i+1}. ${r.codigo_reserva}: precio_total=${r.precio_total} (tipo: ${typeof r.precio_total})`);
+                });
+            }
             
             // Verificar si la respuesta es un array o tiene una propiedad reservas
             if (Array.isArray(data)) {
