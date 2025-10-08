@@ -1390,9 +1390,23 @@ function generarDiasSemana(fechaInicio) {
 function generarHorariosBasicos() {
     const horarios = [];
     
+    // Obtener el complejo actual del usuario
+    const user = AdminUtils.getCurrentUser();
+    const complejoId = user?.complejo_id;
+    
+    // Configuración de horarios por complejo
+    let horaInicio = 8;
+    let horaFin = 23;
+    
+    if (complejoId == 6) { // Espacio Deportivo Borde Río
+        // Borde Río: 10:00 a 23:00 todos los días
+        horaInicio = 10;
+        horaFin = 23;
+    }
+    
     for (let i = 0; i < 7; i++) {
         const horariosDia = [];
-        for (let hora = 8; hora <= 23; hora++) {
+        for (let hora = horaInicio; hora <= horaFin; hora++) {
             horariosDia.push({
                 hora: hora,
                 label: `${hora.toString().padStart(2, '0')}:00`
@@ -1580,11 +1594,18 @@ function renderizarCalendario(data = null) {
             fechaObj.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
             const diaSemana = fechaObj.getDay();
             
-            // Determinar si la hora está disponible según el día de la semana
+            // Obtener el complejo actual del usuario
+            const user = AdminUtils.getCurrentUser();
+            const complejoId = user?.complejo_id;
+            
+            // Determinar si la hora está disponible según el complejo y día de la semana
             let horaDisponible = false;
             const horaNum = parseInt(hora.split(':')[0]);
             
-            if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
+            if (complejoId == 6) { // Espacio Deportivo Borde Río
+                // Borde Río: 10:00 a 23:00 todos los días
+                horaDisponible = horaNum >= 10 && horaNum <= 23;
+            } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
                 horaDisponible = horaNum >= 16 && horaNum <= 23;
             } else { // Sábado y Domingo: 12:00 a 23:00
                 horaDisponible = horaNum >= 12 && horaNum <= 23;
@@ -1705,11 +1726,20 @@ function renderizarCalendario(data = null) {
 function generarHoras(fecha = null) {
     const horas = [];
     
+    // Obtener el complejo actual del usuario
+    const user = AdminUtils.getCurrentUser();
+    const complejoId = user?.complejo_id;
+    
     // Si no se proporciona fecha, usar horarios por defecto (Lunes a Viernes)
     let horaInicio = 16;
     let horaFin = 23;
     
-    if (fecha) {
+    // Configuración de horarios por complejo
+    if (complejoId == 6) { // Espacio Deportivo Borde Río
+        // Borde Río: 10:00 a 23:00 todos los días
+        horaInicio = 10;
+        horaFin = 23;
+    } else if (fecha) {
         const fechaObj = new Date(fecha);
         const diaSemana = fechaObj.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
         

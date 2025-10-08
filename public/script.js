@@ -3054,6 +3054,10 @@ async function cargarHorariosComplejo(complejo) {
             console.log('No hay fecha seleccionada, usando horarios de lunes a viernes por defecto');
             horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
         }
+    } else if (complejo.nombre === 'Espacio Deportivo Borde Río') {
+        // Espacio Deportivo Borde Río: 10:00-23:00 todos los días
+        console.log('Espacio Deportivo Borde Río - Horarios: 10:00-23:00 todos los días');
+        horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
