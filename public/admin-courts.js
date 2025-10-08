@@ -640,17 +640,28 @@ async function openPromocionesModal(canchaId, canchaNombre, canchaPrecio) {
     currentCanchaPrecio = canchaPrecio;
     currentPromocionEdit = null;
     
+    // Verificar que los elementos existan
+    const modalElement = document.getElementById('promocionesModal');
+    const subtitleElement = document.getElementById('promocionesModalSubtitle');
+    const listContainer = document.getElementById('promocionesListContainer');
+    const formContainer = document.getElementById('promocionFormContainer');
+    
+    if (!modalElement || !subtitleElement || !listContainer || !formContainer) {
+        console.error('❌ Elementos del modal de promociones no encontrados. Recarga la página.');
+        showNotification('Error: Elementos del modal no encontrados. Por favor, recarga la página.', 'error');
+        return;
+    }
+    
     // Actualizar título del modal
-    document.getElementById('promocionesModalSubtitle').textContent = 
-        `Cancha: ${canchaNombre} - Precio normal: $${canchaPrecio.toLocaleString()}`;
+    subtitleElement.textContent = `Cancha: ${canchaNombre} - Precio normal: $${canchaPrecio.toLocaleString()}`;
     
     // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('promocionesModal'));
+    const modal = new bootstrap.Modal(modalElement);
     modal.show();
     
     // Ocultar formulario y mostrar lista
-    document.getElementById('promocionFormContainer').style.display = 'none';
-    document.getElementById('promocionesListContainer').style.display = 'block';
+    formContainer.style.display = 'none';
+    listContainer.style.display = 'block';
     
     // Cargar promociones
     await loadPromociones();

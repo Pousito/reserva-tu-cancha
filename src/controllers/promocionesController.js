@@ -1,4 +1,4 @@
-const db = require('../utils/database');
+const db = require('../config/database');
 
 /**
  * Validar que la fecha de inicio de una promoción tenga al menos 7 días de anticipación

@@ -3,7 +3,7 @@
  * y retornar el precio correspondiente
  */
 
-const db = require('./database');
+const db = require('../config/database');
 
 /**
  * Verifica si una fecha específica coincide con una promoción
