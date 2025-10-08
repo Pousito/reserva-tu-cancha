@@ -133,15 +133,24 @@ function aplicarPermisosPorRol() {
             selectorComplejoCalendario.style.display = 'none';
         }
         
-        // Ocultar columna de comisión para managers
+        // Ocultar columna de comisión para managers (pero mantener precio visible)
         document.querySelectorAll('[data-role="commission"]').forEach(element => {
             element.style.display = 'none';
+        });
+        
+        // Asegurar que la columna de precio sea visible para managers
+        // (necesaria para saber cuánto cobrar en pagos parciales)
+        const precioHeaders = document.querySelectorAll('th');
+        precioHeaders.forEach(header => {
+            if (header.textContent.trim() === 'Precio') {
+                header.style.display = 'table-cell';
+            }
         });
         
         // Actualizar colspan de la fila de carga
         actualizarColspanCarga();
         
-        console.log('✅ Elementos ocultados para manager');
+        console.log('✅ Elementos ocultados para manager (precio visible para cobros)');
     } else if (userRole === 'owner') {
         // Owners no pueden gestionar complejos (solo ver su complejo)
         document.querySelectorAll('[data-role="all-complexes"]').forEach(element => {
