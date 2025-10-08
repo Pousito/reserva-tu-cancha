@@ -2920,8 +2920,8 @@ async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
         }
         
         // Actualizar horarios con disponibilidad si hay fecha seleccionada
-        const fecha = document.getElementById('fechaSelect').value;
-        if (fecha && complejoSeleccionado) {
+        const fechaActualizada = document.getElementById('fechaSelect').value;
+        if (fechaActualizada && complejoSeleccionado) {
             console.log('🕐 Actualizando horarios con disponibilidad optimizada...');
             await actualizarHorariosConDisponibilidad();
         }
