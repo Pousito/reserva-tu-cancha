@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const promocionesController = require('../controllers/promocionesController');
-const { authenticateToken, requireOwnerOrAdmin } = require('../middleware/auth');
+const { verifyToken, verifyOwnerOrAdmin } = require('../middleware/auth');
 
 // Todas las rutas requieren autenticación y rol owner/super_admin
-router.use(authenticateToken);
-router.use(requireOwnerOrAdmin);
+router.use(verifyToken);
+router.use(verifyOwnerOrAdmin);
 
 // Obtener todas las promociones del complejo del usuario
 router.get('/', promocionesController.getPromocionesComplejo);
