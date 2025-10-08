@@ -3329,6 +3329,30 @@ app.get('/api/emergency/insert-reservas', async (req, res) => {
   }
 });
 
+// Endpoint temporal para corregir esquema de producción
+app.get('/api/fix-schema', async (req, res) => {
+    try {
+        console.log('🔧 EJECUTANDO CORRECCIÓN DE ESQUEMA EN PRODUCCIÓN');
+        
+        // Importar y ejecutar el script
+        const { fixProductionSchema } = require('./scripts/fix-production-schema.js');
+        await fixProductionSchema();
+        
+        res.json({ 
+            success: true, 
+            message: 'Esquema de producción corregido exitosamente',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Error corrigiendo esquema:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Endpoint de debug
 app.get('/api/debug/table-data', async (req, res) => {
   try {
