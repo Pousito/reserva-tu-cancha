@@ -226,13 +226,17 @@ router.post('/confirm', async (req, res) => {
         console.log('🔍 DEBUG - datosCliente parseado:', datosCliente);
         console.log('🔍 DEBUG - porcentaje_pagado del cliente:', datosCliente.porcentaje_pagado);
 
+        // Calcular comisión para reserva web (3.5%) - Solo para registro, no se suma al precio
+        const comisionWeb = Math.round(datosCliente.precio_total * 0.035);
+        
         // Crear la reserva real
         const reservaId = await db.run(`
             INSERT INTO reservas (
                 cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
                 rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado,
+                tipo_reserva, comision_aplicada
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         `, [
             bloqueoData.cancha_id,
             datosCliente.nombre_cliente,
@@ -247,7 +251,9 @@ router.post('/confirm', async (req, res) => {
             'confirmada',
             'pagado',
             new Date().toISOString(),
-            datosCliente.porcentaje_pagado || 100
+            datosCliente.porcentaje_pagado || 100,
+            'directa',
+            comisionWeb
         ]);
 
         // Eliminar el bloqueo temporal
