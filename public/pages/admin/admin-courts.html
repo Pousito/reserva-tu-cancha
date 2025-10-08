@@ -17,6 +17,10 @@
         .hide-for-manager {
             display: none !important;
         }
+        /* Forzar visibilidad para owners - mayor especificidad */
+        .owner-visible.hide-for-manager {
+            display: block !important;
+        }
         .sidebar .nav-link {
             color: rgba(255, 255, 255, 0.8);
             padding: 12px 20px;

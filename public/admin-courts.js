@@ -59,21 +59,31 @@ function aplicarPermisosPorRol() {
     // Aplicar visibilidad del sidebar según el rol
     const complejosLink = document.querySelector('a[href="admin-complexes.html"]');
     const reportesLink = document.querySelector('a[href="admin-reports.html"]');
+    const gastosLink = document.querySelector('a[href="admin-gastos.html"]');
     
     if (userRole === 'manager') {
-        // Managers no pueden ver complejos ni reportes
+        // Managers no pueden ver complejos ni reportes ni gastos
         if (complejosLink) complejosLink.style.display = 'none';
         if (reportesLink) reportesLink.style.display = 'none';
-        console.log('✅ Ocultados complejos y reportes para manager');
+        if (gastosLink) gastosLink.style.display = 'none';
+        console.log('✅ Ocultados complejos, reportes y gastos para manager');
     } else if (userRole === 'owner') {
-        // Owners pueden ver reportes pero no complejos (solo ven su propio complejo)
+        // Owners pueden ver reportes y gastos pero no complejos (solo ven su propio complejo)
         if (complejosLink) complejosLink.style.display = 'none';
-        if (reportesLink) reportesLink.style.display = 'block';
-        console.log('✅ Ocultados complejos, mostrados reportes para owner');
+        if (reportesLink) {
+            reportesLink.style.display = 'block';
+            reportesLink.classList.add('owner-visible');
+        }
+        if (gastosLink) {
+            gastosLink.style.display = 'block';
+            gastosLink.classList.add('owner-visible');
+        }
+        console.log('✅ Ocultados complejos, mostrados reportes y gastos para owner');
     } else if (userRole === 'super_admin') {
         // Super admin puede ver todo
         if (complejosLink) complejosLink.style.display = 'block';
         if (reportesLink) reportesLink.style.display = 'block';
+        if (gastosLink) gastosLink.style.display = 'block';
         console.log('✅ Mostrados todos los enlaces para super_admin');
     }
     
@@ -621,6 +631,32 @@ function logout() {
     localStorage.removeItem('adminUser');
     window.location.href = '../../admin-login.html';
 }
+
+// Función para forzar la visibilidad de elementos críticos (se ejecuta periódicamente)
+function forzarVisibilidadElementos() {
+    const user = AdminUtils.getCurrentUser();
+    if (user && (user.rol === 'owner' || user.rol === 'super_admin')) {
+        // Forzar visibilidad de enlaces críticos
+        const elementosCriticos = [
+            'a[href="admin-reports.html"]',
+            'a[href="admin-gastos.html"]'
+        ];
+        
+        elementosCriticos.forEach(selector => {
+            const elementos = document.querySelectorAll(selector);
+            elementos.forEach(elemento => {
+                elemento.classList.add('owner-visible');
+                elemento.classList.remove('hide-for-owner');
+                elemento.style.display = 'block';
+                elemento.style.visibility = 'visible';
+                elemento.style.opacity = '1';
+            });
+        });
+    }
+}
+
+// Ejecutar la función de visibilidad cada 2 segundos para asegurar que los elementos estén visibles
+setInterval(forzarVisibilidadElementos, 2000);
 
 // ============================================
 // SISTEMA DE PROMOCIONES Y PRECIOS DINÁMICOS

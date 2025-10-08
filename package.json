@@ -64,7 +64,11 @@
     "migrate-to-neon": "node scripts/migrate-to-neon.js",
     "configure-chatbot": "node scripts/configure-chatbot.js",
     "check-prod-transbank": "node scripts/diagnostic/check-production-transbank.js",
-    "update-prices-5000": "node scripts/update-prices-5000.js"
+    "update-prices-5000": "node scripts/update-prices-5000.js",
+    "setup-commission-categories": "node scripts/setup-commission-categories.js",
+    "update-commissions": "node scripts/update-existing-commissions.js",
+    "create-commission-expenses": "node scripts/create-commission-expenses.js",
+    "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",

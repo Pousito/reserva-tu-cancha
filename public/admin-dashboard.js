@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
         aplicarPermisosPorRol();
         // Aplicar sistema centralizado de roles de AdminUtils
         AdminUtils.hideElementsByRole();
+        // Asegurar visibilidad de elementos para owners
+        asegurarVisibilidadReportes();
         // Configurar logout
         AdminUtils.setupLogout();
     }, 500);
@@ -108,17 +110,18 @@ document.addEventListener('DOMContentLoaded', function() {
     //     asegurarVisibilidadReportes();
     // }, 1000);
     
-    // Agregar event listener para cuando se hace clic en el dashboard
-    // Comentado para evitar múltiples inicializaciones
-    // document.addEventListener('click', function(event) {
-    //     if (event.target.closest('a[href="admin-dashboard.html"]')) {
-    //         setTimeout(() => {
-    //             mostrarInfoUsuario();
-    //             aplicarPermisosPorRol();
-    //             asegurarVisibilidadReportes();
-    //         }, 100);
-    //     }
-    // });
+    // Agregar event listener para asegurar visibilidad cuando se hace clic en elementos del sidebar
+    document.addEventListener('click', function(event) {
+        // Si se hace clic en el dashboard o en elementos del sidebar, asegurar visibilidad
+        if (event.target.closest('a[href="admin-dashboard.html"]') || 
+            event.target.closest('.nav-link') ||
+            event.target.closest('.sidebar')) {
+            setTimeout(() => {
+                console.log('🔄 Asegurando visibilidad después de click...');
+                asegurarVisibilidadReportes();
+            }, 100);
+        }
+    });
 });
 
 function mostrarInfoUsuario() {
@@ -156,17 +159,32 @@ function mostrarInfoUsuario() {
 function asegurarVisibilidadReportes() {
     const user = AdminUtils.getCurrentUser();
     if (user && (user.rol === 'owner' || user.rol === 'super_admin')) {
+        // Asegurar visibilidad de reportes
         const reportElements = document.querySelectorAll('a[href="admin-reports.html"]');
         console.log(`🔧 Asegurando visibilidad de ${reportElements.length} enlaces de reportes para ${user.rol}`);
         
         reportElements.forEach((element, index) => {
-            // Remover clases de ocultación
-            element.classList.remove('hide-for-manager');
+            // Agregar clase owner-visible para forzar visibilidad
+            element.classList.add('owner-visible');
             element.classList.remove('hide-for-owner');
             // Forzar visibilidad
             element.style.display = 'block';
             element.style.visibility = 'visible';
             console.log(`✅ Enlace de reportes ${index + 1} configurado como visible para ${user.rol}`);
+        });
+        
+        // Asegurar visibilidad de control de gastos
+        const gastosElements = document.querySelectorAll('a[href="admin-gastos.html"]');
+        console.log(`💰 Asegurando visibilidad de ${gastosElements.length} enlaces de control de gastos para ${user.rol}`);
+        
+        gastosElements.forEach((element, index) => {
+            // Agregar clase owner-visible para forzar visibilidad
+            element.classList.add('owner-visible');
+            element.classList.remove('hide-for-owner');
+            // Forzar visibilidad
+            element.style.display = 'block';
+            element.style.visibility = 'visible';
+            console.log(`✅ Enlace de control de gastos ${index + 1} configurado como visible para ${user.rol}`);
         });
     }
 }
@@ -556,10 +574,10 @@ function mostrarReservasRecientes(reservas) {
 }
 
 function mostrarReservasHoy(reservas) {
-    const container = document.getElementById('todayReservationsList');
+    const container = document.getElementById('todayReservations');
     
     if (!container) {
-        console.error('❌ Elemento todayReservationsList no encontrado');
+        console.error('❌ Elemento todayReservations no encontrado');
         return;
     }
     
@@ -857,3 +875,29 @@ function logout() {
     localStorage.removeItem('adminUser');
     window.location.href = '../../admin-login.html';
 }
+
+// Función para forzar la visibilidad de elementos críticos (se ejecuta periódicamente)
+function forzarVisibilidadElementos() {
+    const user = AdminUtils.getCurrentUser();
+    if (user && (user.rol === 'owner' || user.rol === 'super_admin')) {
+        // Forzar visibilidad de enlaces críticos
+        const elementosCriticos = [
+            'a[href="admin-reports.html"]',
+            'a[href="admin-gastos.html"]'
+        ];
+        
+        elementosCriticos.forEach(selector => {
+            const elementos = document.querySelectorAll(selector);
+            elementos.forEach(elemento => {
+                elemento.classList.add('owner-visible');
+                elemento.classList.remove('hide-for-owner');
+                elemento.style.display = 'block';
+                elemento.style.visibility = 'visible';
+                elemento.style.opacity = '1';
+            });
+        });
+    }
+}
+
+// Ejecutar la función de visibilidad cada 2 segundos para asegurar que los elementos estén visibles
+setInterval(forzarVisibilidadElementos, 2000);

@@ -92,6 +92,27 @@ function aplicarPermisosPorRol() {
     const userRole = user.rol;
     console.log('🔐 Aplicando permisos para rol:', userRole);
     
+    // Aplicar visibilidad del sidebar según el rol
+    const complejosLink = document.querySelector('a[href="admin-complexes.html"]');
+    const gastosLink = document.querySelector('a[href="admin-gastos.html"]');
+    
+    if (userRole === 'manager') {
+        // Managers no pueden ver complejos ni gastos
+        if (complejosLink) complejosLink.style.display = 'none';
+        if (gastosLink) gastosLink.style.display = 'none';
+    } else if (userRole === 'owner') {
+        // Owners no pueden ver complejos pero sí gastos
+        if (complejosLink) complejosLink.style.display = 'none';
+        if (gastosLink) {
+            gastosLink.style.display = 'block';
+            gastosLink.classList.add('owner-visible');
+        }
+    } else if (userRole === 'super_admin') {
+        // Super admin puede ver todo
+        if (complejosLink) complejosLink.style.display = 'block';
+        if (gastosLink) gastosLink.style.display = 'block';
+    }
+    
     // Ocultar elementos según el rol
     if (userRole === 'manager') {
         // Managers no pueden ver reportes
@@ -1438,3 +1459,28 @@ function logout() {
     localStorage.removeItem('adminUser');
     window.location.href = '../../admin-login.html';
 }
+
+// Función para forzar la visibilidad de elementos críticos (se ejecuta periódicamente)
+function forzarVisibilidadElementos() {
+    const user = AdminUtils.getCurrentUser();
+    if (user && (user.rol === 'owner' || user.rol === 'super_admin')) {
+        // Forzar visibilidad de enlaces críticos
+        const elementosCriticos = [
+            'a[href="admin-gastos.html"]'
+        ];
+        
+        elementosCriticos.forEach(selector => {
+            const elementos = document.querySelectorAll(selector);
+            elementos.forEach(elemento => {
+                elemento.classList.add('owner-visible');
+                elemento.classList.remove('hide-for-owner');
+                elemento.style.display = 'block';
+                elemento.style.visibility = 'visible';
+                elemento.style.opacity = '1';
+            });
+        });
+    }
+}
+
+// Ejecutar la función de visibilidad cada 2 segundos para asegurar que los elementos estén visibles
+setInterval(forzarVisibilidadElementos, 2000);
