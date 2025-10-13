@@ -43,10 +43,18 @@ async function handleLogin(event) {
         
         const result = await response.json();
         
+        console.log('🔍 DEBUG - Respuesta del servidor:', result);
+        console.log('🔍 DEBUG - result.user:', result.user);
+        console.log('🔍 DEBUG - result.user.complejo_id:', result.user?.complejo_id, 'tipo:', typeof result.user?.complejo_id);
+        
         if (response.ok) {
             // Guardar token en localStorage
             localStorage.setItem('adminToken', result.token);
             localStorage.setItem('adminUser', JSON.stringify(result.user));
+            
+            console.log('💾 DEBUG - Guardado en localStorage:');
+            console.log('   Token:', localStorage.getItem('adminToken')?.substring(0, 50) + '...');
+            console.log('   User:', localStorage.getItem('adminUser'));
             
             mostrarNotificacion('¡Bienvenido al panel de administración!', 'success');
             
