@@ -917,15 +917,38 @@ async function exportToPDF() {
     doc.rect(0, 0, 210, 35, 'F');
     
     // Intentar cargar el logo del complejo
-    if (userData.complejo_id && typeof getLogoPath !== 'undefined') {
+    if (userData.complejo_id) {
         try {
-            const logoPath = getLogoPath(userData.complejo_id);
-            if (logoPath && await logoExists(userData.complejo_id)) {
-                const logoBase64 = await imageToBase64(logoPath);
-                if (logoBase64) {
-                    // Agregar logo en la esquina superior derecha
-                    doc.addImage(logoBase64, 'PNG', 170, 5, 25, 25);
-                    console.log('✅ Logo del complejo agregado al PDF');
+            // Mapeo de logos (inline para no depender de script externo)
+            const logosMap = {
+                1: '/images/logos/magnasports.png',
+                2: '/images/logos/fundacion-gunnen.png',
+                6: '/images/logos/borde-rio.png'
+            };
+            
+            const logoPath = logosMap[userData.complejo_id];
+            
+            if (logoPath) {
+                // Intentar cargar el logo
+                const response = await fetch(logoPath);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    
+                    await new Promise((resolve) => {
+                        reader.onloadend = () => {
+                            try {
+                                // Agregar logo en la esquina superior derecha
+                                doc.addImage(reader.result, 'PNG', 170, 5, 25, 25);
+                                console.log('✅ Logo del complejo agregado al PDF');
+                            } catch (imgError) {
+                                console.log('⚠️ Error agregando imagen:', imgError.message);
+                            }
+                            resolve();
+                        };
+                        reader.onerror = () => resolve();
+                        reader.readAsDataURL(blob);
+                    });
                 }
             }
         } catch (error) {

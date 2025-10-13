@@ -1605,15 +1605,38 @@ async function exportToPDF(tableType) {
         }
         
         // Intentar cargar el logo del complejo
-        if (user && user.complejo_id && typeof getLogoPath !== 'undefined') {
+        if (user && user.complejo_id) {
             try {
-                const logoPath = getLogoPath(user.complejo_id);
-                if (logoPath && await logoExists(user.complejo_id)) {
-                    const logoBase64 = await imageToBase64(logoPath);
-                    if (logoBase64) {
-                        // Agregar logo en la esquina superior derecha
-                        doc.addImage(logoBase64, 'PNG', 170, 5, 30, 30);
-                        console.log('✅ Logo del complejo agregado al PDF de reportes');
+                // Mapeo de logos (inline para no depender de script externo)
+                const logosMap = {
+                    1: '/images/logos/magnasports.png',
+                    2: '/images/logos/fundacion-gunnen.png',
+                    6: '/images/logos/borde-rio.png'
+                };
+                
+                const logoPath = logosMap[user.complejo_id];
+                
+                if (logoPath) {
+                    // Intentar cargar el logo
+                    const response = await fetch(logoPath);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        
+                        await new Promise((resolve) => {
+                            reader.onloadend = () => {
+                                try {
+                                    // Agregar logo en la esquina superior derecha
+                                    doc.addImage(reader.result, 'PNG', 170, 5, 30, 30);
+                                    console.log('✅ Logo del complejo agregado al PDF de reportes');
+                                } catch (imgError) {
+                                    console.log('⚠️ Error agregando imagen:', imgError.message);
+                                }
+                                resolve();
+                            };
+                            reader.onerror = () => resolve();
+                            reader.readAsDataURL(blob);
+                        });
                     }
                 }
             } catch (error) {
