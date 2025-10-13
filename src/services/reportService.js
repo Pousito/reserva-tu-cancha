@@ -1,6 +1,8 @@
 const ExcelJS = require('exceljs');
 const { jsPDF } = require('jspdf');
 const { autoTable } = require('jspdf-autotable');
+const fs = require('fs');
+const path = require('path');
 
 class ReportService {
     constructor(database) {
@@ -172,27 +174,57 @@ class ReportService {
         const successColor = [39, 174, 96]; // Verde
         const dangerColor = [231, 76, 60]; // Rojo
 
-        // Título principal
+        // Intentar cargar logo del complejo
+        let logoAdded = false;
+        try {
+            // Mapeo de complejos a logos (usando IDs de producción y desarrollo)
+            const logoMap = {
+                6: 'borde-rio.png',  // Desarrollo
+                7: 'borde-rio.png'   // Producción
+            };
+            
+            const logoFilename = logoMap[complex.id];
+            if (logoFilename) {
+                const logoPath = path.join(__dirname, '../../public/images/logos', logoFilename);
+                if (fs.existsSync(logoPath)) {
+                    const logoData = fs.readFileSync(logoPath);
+                    const logoBase64 = logoData.toString('base64');
+                    const logoDataUri = `data:image/png;base64,${logoBase64}`;
+                    
+                    // Agregar logo en esquina superior derecha (20x20mm)
+                    doc.addImage(logoDataUri, 'PNG', 175, 7, 20, 20);
+                    logoAdded = true;
+                    console.log(`✅ Logo del complejo agregado al PDF: ${logoFilename}`);
+                }
+            }
+        } catch (logoError) {
+            console.log('⚠️  No se pudo cargar el logo:', logoError.message);
+        }
+
+        // Título principal (ajustar posición si hay logo)
+        const titleY = logoAdded ? 30 : 20;
         doc.setFontSize(20);
         doc.setTextColor(...primaryColor);
-        doc.text('REPORTE DE INGRESOS DIARIOS', 20, 30);
+        doc.text('REPORTE DE INGRESOS DIARIOS', 20, titleY);
         
-        // Información del complejo
+        // Información del complejo (ajustar posición si hay logo)
+        const infoY = logoAdded ? 45 : 40;
         doc.setFontSize(12);
         doc.setTextColor(...secondaryColor);
-        doc.text(`${complex.nombre}`, 20, 45);
-        doc.text(`${complex.direccion}`, 20, 52);
-        doc.text(`${complex.ciudad_nombre}`, 20, 59);
-        if (complex.telefono) doc.text(`Tel: ${complex.telefono}`, 20, 66);
-        if (complex.email) doc.text(`Email: ${complex.email}`, 20, 73);
+        doc.text(`${complex.nombre}`, 20, infoY);
+        doc.text(`${complex.direccion}`, 20, infoY + 7);
+        doc.text(`${complex.ciudad_nombre}`, 20, infoY + 14);
+        if (complex.telefono) doc.text(`Tel: ${complex.telefono}`, 20, infoY + 21);
+        if (complex.email) doc.text(`Email: ${complex.email}`, 20, infoY + 28);
 
         // Período del reporte
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`Período: ${this.formatDate(dateFrom)} al ${this.formatDate(dateTo)}`, 20, 85);
-        doc.text(`Generado el: ${this.formatDate(new Date().toISOString().split('T')[0])}`, 20, 92);
+        const periodoY = infoY + (complex.email ? 40 : 35);
+        doc.text(`Período: ${this.formatDate(dateFrom)} al ${this.formatDate(dateTo)}`, 20, periodoY);
+        doc.text(`Generado el: ${this.formatDate(new Date().toISOString().split('T')[0])}`, 20, periodoY + 7);
 
-        let yPosition = 110;
+        let yPosition = periodoY + 20;
 
         // Resumen general
         doc.setFontSize(14);
