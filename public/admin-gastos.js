@@ -935,20 +935,20 @@ async function exportToPDF() {
                     const blob = await response.blob();
                     const reader = new FileReader();
                     
-                    await new Promise((resolve) => {
-                        reader.onloadend = () => {
-                            try {
-                                // Agregar logo en la esquina superior derecha
-                                doc.addImage(reader.result, 'PNG', 170, 5, 25, 25);
-                                console.log('✅ Logo del complejo agregado al PDF');
-                            } catch (imgError) {
-                                console.log('⚠️ Error agregando imagen:', imgError.message);
-                            }
-                            resolve();
-                        };
-                        reader.onerror = () => resolve();
-                        reader.readAsDataURL(blob);
-                    });
+                        await new Promise((resolve) => {
+                            reader.onloadend = () => {
+                                try {
+                                    // Agregar logo en la esquina superior derecha (tamaño reducido)
+                                    doc.addImage(reader.result, 'PNG', 175, 7, 20, 20);
+                                    console.log('✅ Logo del complejo agregado al PDF');
+                                } catch (imgError) {
+                                    console.log('⚠️ Error agregando imagen:', imgError.message);
+                                }
+                                resolve();
+                            };
+                            reader.onerror = () => resolve();
+                            reader.readAsDataURL(blob);
+                        });
                 }
             }
         } catch (error) {
@@ -971,45 +971,47 @@ async function exportToPDF() {
     // Resumen con tarjetas de colores
     const yStart = 45;
     
+    // Tarjetas más compactas para dejar espacio a la tabla
+    
     // Tarjeta de Ingresos (verde)
     doc.setFillColor(16, 185, 129);
-    doc.roundedRect(14, yStart, 60, 20, 3, 3, 'F');
+    doc.roundedRect(14, yStart, 55, 18, 3, 3, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.text('Total Ingresos', 44, yStart + 7, { align: 'center' });
-    doc.setFontSize(14);
+    doc.setFontSize(9);
+    doc.text('Total Ingresos', 41.5, yStart + 6, { align: 'center' });
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`$${ingresos.toLocaleString('es-CL')}`, 44, yStart + 16, { align: 'center' });
+    doc.text(`$${ingresos.toLocaleString('es-CL')}`, 41.5, yStart + 14, { align: 'center' });
     
     // Tarjeta de Gastos (rojo)
     doc.setFillColor(239, 68, 68);
-    doc.roundedRect(80, yStart, 60, 20, 3, 3, 'F');
+    doc.roundedRect(74, yStart, 55, 18, 3, 3, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
-    doc.text('Total Gastos', 110, yStart + 7, { align: 'center' });
-    doc.setFontSize(14);
+    doc.text('Total Gastos', 101.5, yStart + 6, { align: 'center' });
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`$${gastos.toLocaleString('es-CL')}`, 110, yStart + 16, { align: 'center' });
+    doc.text(`$${gastos.toLocaleString('es-CL')}`, 101.5, yStart + 14, { align: 'center' });
     
     // Tarjeta de Balance (azul o rojo según balance)
     const balanceColor = balance >= 0 ? [59, 130, 246] : [239, 68, 68];
     doc.setFillColor(...balanceColor);
-    doc.roundedRect(146, yStart, 60, 20, 3, 3, 'F');
+    doc.roundedRect(134, yStart, 55, 18, 3, 3, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
-    doc.text('Balance', 176, yStart + 7, { align: 'center' });
-    doc.setFontSize(14);
+    doc.text('Balance', 161.5, yStart + 6, { align: 'center' });
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     const balanceText = balance >= 0 ? `+$${balance.toLocaleString('es-CL')}` : `-$${Math.abs(balance).toLocaleString('es-CL')}`;
-    doc.text(balanceText, 176, yStart + 16, { align: 'center' });
+    doc.text(balanceText, 161.5, yStart + 14, { align: 'center' });
     
-    // Título de la tabla
+    // Título de la tabla (ajustado para tarjetas más pequeñas)
     doc.setTextColor(40, 40, 40);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont(undefined, 'bold');
-    doc.text('Detalle de Movimientos', 14, yStart + 32);
+    doc.text('Detalle de Movimientos', 14, yStart + 28);
     
     // Tabla de movimientos
     const tableData = movimientos.map(m => [
@@ -1021,10 +1023,11 @@ async function exportToPDF() {
     ]);
     
     doc.autoTable({
-        startY: yStart + 38,
+        startY: yStart + 33,
         head: [['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto']],
         body: tableData,
         theme: 'grid',
+        margin: { left: 14, right: 14 },
         headStyles: {
             fillColor: [102, 126, 234],
             textColor: [255, 255, 255],
@@ -1033,17 +1036,19 @@ async function exportToPDF() {
             halign: 'center'
         },
         styles: {
-            fontSize: 9,
-            cellPadding: 5,
+            fontSize: 8,
+            cellPadding: 3,
             lineColor: [220, 220, 220],
-            lineWidth: 0.1
+            lineWidth: 0.1,
+            overflow: 'linebreak',
+            cellWidth: 'wrap'
         },
         columnStyles: {
-            0: { cellWidth: 25, halign: 'center' },
-            1: { cellWidth: 22, halign: 'center' },
-            2: { cellWidth: 40 },
-            3: { cellWidth: 65 },
-            4: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }
+            0: { cellWidth: 22, halign: 'center', fontSize: 8 },
+            1: { cellWidth: 18, halign: 'center', fontSize: 8 },
+            2: { cellWidth: 35, fontSize: 8 },
+            3: { cellWidth: 55, fontSize: 7, overflow: 'linebreak' },
+            4: { cellWidth: 23, halign: 'right', fontStyle: 'bold', fontSize: 8 }
         },
         alternateRowStyles: {
             fillColor: [248, 248, 248]
