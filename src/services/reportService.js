@@ -183,22 +183,35 @@ class ReportService {
                 7: 'borde-rio.png'   // Producción
             };
             
+            console.log(`🔍 Buscando logo para complejo ID: ${complex.id}`);
             const logoFilename = logoMap[complex.id];
+            console.log(`🔍 Nombre de archivo del logo: ${logoFilename}`);
+            
             if (logoFilename) {
                 const logoPath = path.join(__dirname, '../../public/images/logos', logoFilename);
+                console.log(`🔍 Ruta completa del logo: ${logoPath}`);
+                console.log(`🔍 ¿Existe el archivo?: ${fs.existsSync(logoPath)}`);
+                
                 if (fs.existsSync(logoPath)) {
                     const logoData = fs.readFileSync(logoPath);
+                    console.log(`🔍 Tamaño del logo: ${logoData.length} bytes`);
                     const logoBase64 = logoData.toString('base64');
                     const logoDataUri = `data:image/png;base64,${logoBase64}`;
                     
                     // Agregar logo en esquina superior derecha (20x20mm)
-                    doc.addImage(logoDataUri, 'PNG', 175, 7, 20, 20);
+                    // Posición ajustada para asegurar que esté dentro de los márgenes
+                    doc.addImage(logoDataUri, 'PNG', 170, 10, 20, 20);
                     logoAdded = true;
-                    console.log(`✅ Logo del complejo agregado al PDF: ${logoFilename}`);
+                    console.log(`✅ Logo del complejo agregado al PDF: ${logoFilename} en posición (170, 10)`);
+                } else {
+                    console.log(`⚠️  Archivo de logo no encontrado en: ${logoPath}`);
                 }
+            } else {
+                console.log(`⚠️  No hay logo configurado para complejo ID: ${complex.id}`);
             }
         } catch (logoError) {
-            console.log('⚠️  No se pudo cargar el logo:', logoError.message);
+            console.log('⚠️  Error cargando el logo:', logoError.message);
+            console.log('⚠️  Stack:', logoError.stack);
         }
 
         // Título principal (ajustar posición si hay logo)
@@ -252,12 +265,20 @@ class ReportService {
             head: [['Concepto', 'Valor']],
             body: summaryData,
             theme: 'grid',
-            headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] },
+            headStyles: { 
+                fillColor: primaryColor, 
+                textColor: [255, 255, 255],
+                fontSize: 9
+            },
+            bodyStyles: {
+                fontSize: 8
+            },
             alternateRowStyles: { fillColor: [245, 245, 245] },
-            margin: { left: 20, right: 20 },
+            margin: { left: 14, right: 14 },
+            tableWidth: 'auto',
             columnStyles: {
-                0: { cellWidth: 100 }, // Concepto - más ancho para "Comisión Plataforma (5%)"
-                1: { cellWidth: 50 }   // Valor
+                0: { cellWidth: 'auto', minCellWidth: 70 },
+                1: { cellWidth: 'auto', minCellWidth: 30, halign: 'right' }
             }
         });
 
@@ -281,19 +302,27 @@ class ReportService {
 
             autoTable(doc, {
                 startY: yPosition,
-                head: [['Fecha', 'Total Reservas', 'Confirmadas', 'Ingresos Brutos', 'Comisión', 'Ingresos Netos']],
+                head: [['Fecha', 'Total', 'Conf.', 'Ing. Brutos', 'Com.', 'Ing. Netos']],
                 body: dailyData,
                 theme: 'grid',
-                headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] },
+                headStyles: { 
+                    fillColor: primaryColor, 
+                    textColor: [255, 255, 255],
+                    fontSize: 8
+                },
+                bodyStyles: {
+                    fontSize: 7
+                },
                 alternateRowStyles: { fillColor: [245, 245, 245] },
-                margin: { left: 20, right: 20 },
+                margin: { left: 14, right: 14 },
+                tableWidth: 'auto',
                 columnStyles: {
-                    0: { cellWidth: 20 },
-                    1: { cellWidth: 20 },
-                    2: { cellWidth: 20 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 20 },
-                    5: { cellWidth: 25 }
+                    0: { cellWidth: 'auto', minCellWidth: 22 },
+                    1: { cellWidth: 'auto', minCellWidth: 18, halign: 'center' },
+                    2: { cellWidth: 'auto', minCellWidth: 18, halign: 'center' },
+                    3: { cellWidth: 'auto', minCellWidth: 28, halign: 'right' },
+                    4: { cellWidth: 'auto', minCellWidth: 22, halign: 'right' },
+                    5: { cellWidth: 'auto', minCellWidth: 28, halign: 'right' }
                 }
             });
 
@@ -324,17 +353,25 @@ class ReportService {
                 head: [['Código', 'Fecha', 'Hora', 'Cancha', 'Cliente', 'Monto', 'Estado']],
                 body: detailsData,
                 theme: 'grid',
-                headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] },
+                headStyles: { 
+                    fillColor: primaryColor, 
+                    textColor: [255, 255, 255],
+                    fontSize: 8
+                },
+                bodyStyles: {
+                    fontSize: 7
+                },
                 alternateRowStyles: { fillColor: [245, 245, 245] },
-                margin: { left: 20, right: 20 },
+                margin: { left: 14, right: 14 },
+                tableWidth: 'auto',
                 columnStyles: {
-                    0: { cellWidth: 20 },
-                    1: { cellWidth: 20 },
-                    2: { cellWidth: 15 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 30 },
-                    5: { cellWidth: 20 },
-                    6: { cellWidth: 20 }
+                    0: { cellWidth: 'auto', minCellWidth: 18 },
+                    1: { cellWidth: 'auto', minCellWidth: 22 },
+                    2: { cellWidth: 'auto', minCellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 'auto', minCellWidth: 22 },
+                    4: { cellWidth: 'auto', minCellWidth: 30 },
+                    5: { cellWidth: 'auto', minCellWidth: 20, halign: 'right' },
+                    6: { cellWidth: 'auto', minCellWidth: 20, halign: 'center' }
                 }
             });
 
