@@ -5618,6 +5618,49 @@ app.post('/api/debug/fix-canchas-production', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA VERIFICAR BASE DE DATOS =====
+app.get('/api/debug/verify-db', async (req, res) => {
+  try {
+    console.log('🔍 Verificando base de datos de producción...');
+    
+    // Obtener todos los complejos
+    const complejos = await db.query(`
+      SELECT id, nombre, ciudad_id
+      FROM complejos
+      ORDER BY id
+    `);
+    
+    // Obtener usuario admin@borderio.cl
+    const borderioUser = await db.query(`
+      SELECT id, email, nombre, rol, complejo_id, activo
+      FROM usuarios
+      WHERE email = 'admin@borderio.cl'
+    `);
+    
+    // Obtener todos los usuarios
+    const allUsers = await db.query(`
+      SELECT u.id, u.email, u.nombre, u.rol, u.complejo_id, c.nombre as complejo_nombre
+      FROM usuarios u
+      LEFT JOIN complejos c ON u.complejo_id = c.id
+      ORDER BY u.complejo_id, u.email
+    `);
+    
+    res.json({
+      success: true,
+      complejos: complejos,
+      borderioUser: borderioUser.length > 0 ? borderioUser[0] : null,
+      allUsers: allUsers
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando BD:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====
 app.post('/api/debug/fix-complejo-ids', async (req, res) => {
   try {
