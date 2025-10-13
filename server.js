@@ -5678,10 +5678,12 @@ app.post('/api/debug/fix-complejo-ids', async (req, res) => {
       { email: 'naxiin320@gmail.com', complejo_id: 1 }
     ];
     
-    // Actualizar usuarios de Borde Río (complejo_id = 6)
+    // Actualizar usuarios de Borde Río (complejo_id = 7 en producción, 6 en desarrollo)
+    // Detectar automáticamente cuál ID usar según el entorno
+    const bordeRioComplejoId = process.env.NODE_ENV === 'production' ? 7 : 6;
     const usuariosBorderio = [
-      { email: 'admin@borderio.cl', complejo_id: 6 },
-      { email: 'manager@borderio.cl', complejo_id: 6 }
+      { email: 'admin@borderio.cl', complejo_id: bordeRioComplejoId },
+      { email: 'manager@borderio.cl', complejo_id: bordeRioComplejoId }
     ];
     
     const allUsers = [...usuariosGunnen, ...usuariosMagna, ...usuariosBorderio];

@@ -281,11 +281,12 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             console.log(`🔍 Generando horarios - user.complejo_id: ${user.complejo_id} (tipo: ${typeof user.complejo_id}), diaSemana: ${diaSemana}`);
             
             // Determinar horarios según el complejo (usar comparación estricta con conversión explícita)
-            if (parseInt(user.complejo_id) === 6) { // Espacio Deportivo Borde Río
+            // Borde Río puede ser ID 6 (dev) o ID 7 (prod)
+            if (parseInt(user.complejo_id) === 6 || parseInt(user.complejo_id) === 7) { // Espacio Deportivo Borde Río
                 // Borde Río: 10:00 a 23:00 todos los días
                 horaInicio = 10;
                 horaFin = 23;
-                console.log(`✅ Borde Río detectado - Horarios: ${horaInicio}:00 - ${horaFin}:00`);
+                console.log(`✅ Borde Río detectado (ID: ${user.complejo_id}) - Horarios: ${horaInicio}:00 - ${horaFin}:00`);
             } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
                 horaInicio = 16;
                 horaFin = 23;
