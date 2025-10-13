@@ -3546,18 +3546,31 @@ app.post('/api/admin/login', async (req, res) => {
     );
     
     console.log('✅ Login exitoso para:', email, 'Rol:', user.rol);
+    console.log('🔍 DEBUG - complejo_id que se enviará:', user.complejo_id, 'tipo:', typeof user.complejo_id);
+    console.log('🔍 DEBUG - Objeto user completo:', {
+      id: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      rol: user.rol,
+      complejo_id: user.complejo_id,
+      complejo_nombre: user.complejo_nombre
+    });
+    
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      rol: user.rol || 'manager',
+      complejo_id: user.complejo_id,
+      complejo_nombre: user.complejo_nombre
+    };
+    
+    console.log('📤 Respuesta que se enviará al frontend:', userResponse);
     
     res.json({
       success: true,
       token: token,
-      user: {
-        id: user.id,
-        email: user.email,
-        nombre: user.nombre,
-        rol: user.rol || 'manager',
-        complejo_id: user.complejo_id,
-        complejo_nombre: user.complejo_nombre
-      }
+      user: userResponse
     });
     
   } catch (error) {
