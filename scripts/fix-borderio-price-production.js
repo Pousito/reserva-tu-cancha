@@ -2,19 +2,12 @@
 
 const { Pool } = require('pg');
 
-async function updateBordeRioPrice() {
-    console.log('💰 ACTUALIZANDO PRECIO DE CANCHA BORDE RÍO');
-    console.log('==========================================');
+async function fixBordeRioPriceProduction() {
+    console.log('💰 CORRIGIENDO PRECIO DE BORDE RÍO EN NEON (PRODUCCIÓN)');
+    console.log('======================================================');
     
-    // Usar la URL de la base de datos de producción desde las variables de entorno
-    const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/reserva_tu_cancha';
-    
-    if (!DATABASE_URL.includes('render.com')) {
-        console.log('⚠️  No se detectó URL de producción de Render');
-        console.log('🔍 DATABASE_URL actual:', DATABASE_URL);
-        console.log('💡 Este script debe ejecutarse en el entorno de producción');
-        return;
-    }
+    // URL de la base de datos de producción en Neon
+    const DATABASE_URL = 'postgresql://neondb_owner:npg_f82FRVWLvjiE@ep-quiet-dust-adp93fdf-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
     
     const pool = new Pool({
         connectionString: DATABASE_URL,
@@ -24,18 +17,18 @@ async function updateBordeRioPrice() {
     });
     
     try {
-        console.log('🔍 Verificando cancha actual...');
+        console.log('🔍 Conectando a la base de datos de Neon (producción)...');
         
         // Verificar cancha actual
         const canchaCheck = await pool.query(`
             SELECT c.id, c.nombre, c.precio_hora, co.nombre as complejo_nombre
             FROM canchas c
             JOIN complejos co ON c.complejo_id = co.id
-            WHERE c.id = 10 AND co.nombre LIKE '%Borde Río%'
+            WHERE co.nombre LIKE '%Borde Río%' OR co.nombre LIKE '%Borde Rio%'
         `);
         
         if (canchaCheck.rows.length === 0) {
-            console.log('❌ No se encontró la cancha principal de Borde Río');
+            console.log('❌ No se encontró la cancha de Borde Río');
             return;
         }
         
@@ -51,8 +44,8 @@ async function updateBordeRioPrice() {
         const updateResult = await pool.query(`
             UPDATE canchas 
             SET precio_hora = 50 
-            WHERE id = 10
-        `);
+            WHERE id = $1
+        `, [cancha.id]);
         
         console.log(`✅ Precio actualizado exitosamente`);
         console.log(`   💰 Nuevo precio: $50`);
@@ -64,8 +57,8 @@ async function updateBordeRioPrice() {
             SELECT c.id, c.nombre, c.precio_hora, co.nombre as complejo_nombre
             FROM canchas c
             JOIN complejos co ON c.complejo_id = co.id
-            WHERE c.id = 10
-        `);
+            WHERE c.id = $1
+        `, [cancha.id]);
         
         const canchaActualizada = verifyResult.rows[0];
         console.log('📊 Verificación exitosa:');
@@ -84,9 +77,7 @@ async function updateBordeRioPrice() {
 
 // Ejecutar si se llama directamente
 if (require.main === module) {
-    updateBordeRioPrice().catch(console.error);
+    fixBordeRioPriceProduction().catch(console.error);
 }
 
-module.exports = { updateBordeRioPrice };
-
-
+module.exports = { fixBordeRioPriceProduction };

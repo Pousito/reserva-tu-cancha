@@ -72,18 +72,34 @@ function aplicarPermisosPorRol() {
         if (complejosLink) complejosLink.style.display = 'none';
         if (reportesLink) {
             reportesLink.style.display = 'block';
+            reportesLink.style.visibility = 'visible';
             reportesLink.classList.add('owner-visible');
+            reportesLink.classList.remove('hide-for-manager');
         }
         if (gastosLink) {
             gastosLink.style.display = 'block';
+            gastosLink.style.visibility = 'visible';
             gastosLink.classList.add('owner-visible');
+            gastosLink.classList.remove('hide-for-manager');
+            console.log('✅ Control de Gastos configurado como visible para owner');
         }
         console.log('✅ Ocultados complejos, mostrados reportes y gastos para owner');
     } else if (userRole === 'super_admin') {
         // Super admin puede ver todo
-        if (complejosLink) complejosLink.style.display = 'block';
-        if (reportesLink) reportesLink.style.display = 'block';
-        if (gastosLink) gastosLink.style.display = 'block';
+        if (complejosLink) {
+            complejosLink.style.display = 'block';
+            complejosLink.style.visibility = 'visible';
+        }
+        if (reportesLink) {
+            reportesLink.style.display = 'block';
+            reportesLink.style.visibility = 'visible';
+            reportesLink.classList.remove('hide-for-manager');
+        }
+        if (gastosLink) {
+            gastosLink.style.display = 'block';
+            gastosLink.style.visibility = 'visible';
+            gastosLink.classList.remove('hide-for-manager');
+        }
         console.log('✅ Mostrados todos los enlaces para super_admin');
     }
     

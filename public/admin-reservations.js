@@ -85,7 +85,14 @@ function aplicarPermisosPorRol() {
     // Aplicar visibilidad del sidebar según el rol
     const complejosLink = document.querySelector('a[href="admin-complexes.html"]');
     const reportesLink = document.querySelector('a[href="admin-reports.html"]');
-    const gastosLink = document.querySelector('a[href="/admin-gastos.html"]');
+    // Buscar el enlace de gastos con o sin barra inicial
+    const gastosLink = document.querySelector('a[href="/admin-gastos.html"]') || document.querySelector('a[href="admin-gastos.html"]');
+    
+    console.log('🔍 Enlaces encontrados:', {
+        complejos: !!complejosLink,
+        reportes: !!reportesLink,
+        gastos: !!gastosLink
+    });
     
     if (userRole === 'manager') {
         // Managers no pueden ver complejos, reportes ni control de gastos
@@ -96,14 +103,34 @@ function aplicarPermisosPorRol() {
     } else if (userRole === 'owner') {
         // Owners pueden ver reportes y control de gastos pero no complejos (solo ven su propio complejo)
         if (complejosLink) complejosLink.style.display = 'none';
-        if (reportesLink) reportesLink.style.display = 'block';
-        if (gastosLink) gastosLink.style.display = 'block';
+        if (reportesLink) {
+            reportesLink.style.display = 'block';
+            reportesLink.style.visibility = 'visible';
+            reportesLink.classList.remove('hide-for-manager');
+        }
+        if (gastosLink) {
+            gastosLink.style.display = 'block';
+            gastosLink.style.visibility = 'visible';
+            gastosLink.classList.remove('hide-for-manager');
+            console.log('✅ Control de Gastos configurado como visible para owner');
+        }
         console.log('✅ Ocultados complejos, mostrados reportes y control de gastos para owner');
     } else if (userRole === 'super_admin') {
         // Super admin puede ver todo
-        if (complejosLink) complejosLink.style.display = 'block';
-        if (reportesLink) reportesLink.style.display = 'block';
-        if (gastosLink) gastosLink.style.display = 'block';
+        if (complejosLink) {
+            complejosLink.style.display = 'block';
+            complejosLink.style.visibility = 'visible';
+        }
+        if (reportesLink) {
+            reportesLink.style.display = 'block';
+            reportesLink.style.visibility = 'visible';
+            reportesLink.classList.remove('hide-for-manager');
+        }
+        if (gastosLink) {
+            gastosLink.style.display = 'block';
+            gastosLink.style.visibility = 'visible';
+            gastosLink.classList.remove('hide-for-manager');
+        }
         console.log('✅ Mostrados todos los enlaces para super_admin');
     }
     

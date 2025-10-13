@@ -62,53 +62,71 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ Usuario autenticado correctamente');
     
-    // Mostrar información del usuario (con delay para asegurar que el usuario esté cargado)
-    setTimeout(() => {
-        mostrarInfoUsuario();
-    }, 100);
+    // Inicializar gráfico inmediatamente
+    inicializarGraficoReservas();
     
-    // Aplicar permisos según el rol (con delay para asegurar que el usuario esté cargado)
-    setTimeout(() => {
-        aplicarPermisosPorRol();
-        // Aplicar sistema centralizado de roles de AdminUtils
-        AdminUtils.hideElementsByRole();
-        // Asegurar visibilidad de elementos para owners
-        asegurarVisibilidadReportes();
-        // Configurar logout
-        AdminUtils.setupLogout();
-    }, 500);
+    // Mostrar información del usuario
+    mostrarInfoUsuario();
+    
+    // Aplicar permisos según el rol
+    aplicarPermisosPorRol();
+    
+    // Aplicar sistema centralizado de roles de AdminUtils
+    AdminUtils.hideElementsByRole();
+    
+    // Asegurar visibilidad de elementos para owners
+    asegurarVisibilidadReportes();
+    
+    // Configurar logout
+    AdminUtils.setupLogout();
     
     // Actualizar hora actual
     actualizarHoraActual();
     setInterval(actualizarHoraActual, 1000);
     
-    // Cargar datos del dashboard (con delay para asegurar que el token esté disponible)
-    setTimeout(() => {
-        console.log('📊 Cargando datos del dashboard...');
-        
-        // Verificar que los elementos del DOM estén disponibles
-        const recentContainer = document.getElementById('recentReservations');
-        const todayContainer = document.getElementById('todayReservations');
-        
-        console.log('🔍 Verificando elementos del DOM:');
-        console.log('  - recentReservations:', !!recentContainer);
-        console.log('  - todayReservations:', !!todayContainer);
-        
-        cargarEstadisticas();
-        cargarReservasRecientes();
-        cargarReservasHoy();
-    }, 500); // Reducir el delay para mejor rendimiento
+    // Cargar datos del dashboard
+    console.log('📊 Cargando datos del dashboard...');
     
-    // Inicializar gráficos
-    inicializarGraficos();
+    // Verificar que los elementos del DOM estén disponibles
+    const recentContainer = document.getElementById('recentReservationsList');
+    const todayContainer = document.getElementById('todayReservations');
     
-    // Aplicar permisos y actualizar info del usuario después de cargar datos (por si acaso)
-    // Comentado para evitar múltiples inicializaciones
-    // setTimeout(() => {
-    //     mostrarInfoUsuario();
-    //     aplicarPermisosPorRol();
-    //     asegurarVisibilidadReportes();
-    // }, 1000);
+    console.log('🔍 Verificando elementos del DOM:');
+    console.log('  - recentReservationsList:', !!recentContainer);
+    console.log('  - todayReservations:', !!todayContainer);
+    
+    if (!recentContainer) {
+        console.error('❌ Elemento recentReservationsList no encontrado en el DOM');
+    }
+    
+    if (!todayContainer) {
+        console.error('❌ Elemento todayReservations no encontrado en el DOM');
+    }
+    
+    // Cargar datos
+    cargarEstadisticas();
+    cargarReservasRecientes();
+    cargarReservasHoy();
+    
+    // Agregar event listener para recargar cuando la página se vuelve visible
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            console.log('🔄 Página visible de nuevo, recargando estadísticas...');
+            cargarEstadisticas();
+            cargarReservasRecientes();
+            cargarReservasHoy();
+        }
+    });
+    
+    // Agregar event listener para pageshow (cuando navegas hacia atrás)
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            console.log('🔄 Página restaurada desde cache, recargando estadísticas...');
+            cargarEstadisticas();
+            cargarReservasRecientes();
+            cargarReservasHoy();
+        }
+    });
     
     // Agregar event listener para asegurar visibilidad cuando se hace clic en elementos del sidebar
     document.addEventListener('click', function(event) {
@@ -119,6 +137,8 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 console.log('🔄 Asegurando visibilidad después de click...');
                 asegurarVisibilidadReportes();
+                // Recargar estadísticas también
+                cargarEstadisticas();
             }, 100);
         }
     });
@@ -370,23 +390,45 @@ async function cargarEstadisticas() {
         if (response && response.ok) {
             const data = await response.json();
             
-            // Actualizar tarjetas de estadísticas
-            const totalReservationsElement = document.getElementById('totalReservations');
-            const totalCourtsElement = document.getElementById('totalCourts');
-            const totalComplexesElement = document.getElementById('totalComplexes');
-            const totalRevenueElement = document.getElementById('totalRevenue');
+            // Actualizar tarjetas de estadísticas (usando IDs correctos del HTML)
+            const totalReservationsElement = document.getElementById('totalReservas');
+            const totalCourtsElement = document.getElementById('totalCanchas');
+            const totalComplexesElement = document.getElementById('totalComplejos');
+            const totalRevenueElement = document.getElementById('ingresosTotales');
+            
+            console.log('🔍 Elementos de estadísticas encontrados:', {
+                totalReservas: !!totalReservationsElement,
+                totalCanchas: !!totalCourtsElement,
+                totalComplejos: !!totalComplexesElement,
+                ingresosTotales: !!totalRevenueElement
+            });
             
             if (totalReservationsElement) {
                 totalReservationsElement.textContent = data.totalReservas || '0';
+                console.log('✅ Total Reservas actualizado:', data.totalReservas);
+            } else {
+                console.error('❌ Elemento totalReservas no encontrado');
             }
+            
             if (totalCourtsElement) {
                 totalCourtsElement.textContent = data.totalCanchas || '0';
+                console.log('✅ Total Canchas actualizado:', data.totalCanchas);
+            } else {
+                console.error('❌ Elemento totalCanchas no encontrado');
             }
+            
             if (totalComplexesElement) {
                 totalComplexesElement.textContent = data.totalComplejos || '0';
+                console.log('✅ Total Complejos actualizado:', data.totalComplejos);
+            } else {
+                console.error('❌ Elemento totalComplejos no encontrado');
             }
+            
             if (totalRevenueElement) {
                 totalRevenueElement.textContent = `$${data.ingresosTotales?.toLocaleString() || '0'}`;
+                console.log('✅ Ingresos Totales actualizado:', data.ingresosTotales);
+            } else {
+                console.error('❌ Elemento ingresosTotales no encontrado');
             }
             
             // Actualizar gráfico de reservas por día

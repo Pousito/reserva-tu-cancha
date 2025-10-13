@@ -5846,16 +5846,17 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
       params.push(complexId);
     }
     
-    // Contar todos los clientes únicos (sin LIMIT)
+    // Contar todos los clientes únicos por EMAIL (identificador real único)
     const totalClientesUnicos = await db.query(`
-      SELECT COUNT(DISTINCT r.rut_cliente) as clientes_unicos
+      SELECT COUNT(DISTINCT r.email_cliente) as clientes_unicos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
     `, params);
 
-    // Análisis de clientes agrupando por RUT para evitar duplicados y conservar nombre más completo
+    // Análisis de clientes agrupando por EMAIL para evitar duplicados
+    // Se normaliza el RUT y se toma el más completo (con puntos), el nombre más largo y completo
     const clientesFrecuentes = await db.query(`
       SELECT 
         CASE 
@@ -5864,7 +5865,11 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
           ELSE MIN(r.nombre_cliente)
         END as nombre_cliente,
         r.email_cliente,
-        r.rut_cliente,
+        -- Tomar el RUT con puntos si existe, sino el primero
+        COALESCE(
+          MAX(CASE WHEN r.rut_cliente LIKE '%.%' THEN r.rut_cliente END),
+          MAX(r.rut_cliente)
+        ) as rut_cliente,
         MAX(r.telefono_cliente) as telefono_cliente,
         COUNT(*) as total_reservas,
         SUM(r.precio_total) as total_gastado,
@@ -5875,7 +5880,7 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       ${whereClause} AND r.estado IN ('confirmada', 'pendiente')
-      GROUP BY r.rut_cliente, r.email_cliente
+      GROUP BY r.email_cliente
       ORDER BY total_reservas DESC, total_gastado DESC
       LIMIT 10
     `, params);

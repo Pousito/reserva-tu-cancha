@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Cargar complejos primero, luego aplicar permisos
     await loadComplexes();
     
-    // Aplicar permisos después de cargar complejos
-    aplicarPermisosPorRol();
+    // Aplicar permisos después de cargar complejos (ahora es async)
+    await aplicarPermisosPorRol();
     
     // Aplicar sistema centralizado de roles de AdminUtils
     AdminUtils.hideElementsByRole();
@@ -79,8 +79,32 @@ function setupEventListeners() {
     }
 }
 
+// Verificar cuántas canchas tiene el complejo del owner
+async function verificarCanchasComplejo(complexId) {
+    try {
+        console.log('🔍 Verificando cantidad de canchas para complejo:', complexId);
+        
+        const response = await AdminUtils.authenticatedFetch(`/admin/canchas?complejo_id=${complexId}`);
+        
+        if (!response || !response.ok) {
+            console.error('❌ Error obteniendo canchas del complejo');
+            return null;
+        }
+        
+        const canchas = await response.json();
+        const cantidadCanchas = canchas.length;
+        
+        console.log(`📊 Complejo ${complexId} tiene ${cantidadCanchas} cancha(s)`);
+        return cantidadCanchas;
+        
+    } catch (error) {
+        console.error('❌ Error verificando canchas:', error);
+        return null;
+    }
+}
+
 // Aplicar permisos según el rol del usuario
-function aplicarPermisosPorRol() {
+async function aplicarPermisosPorRol() {
     console.log('🔐 Aplicando permisos en reportes...');
     
     const user = AdminUtils.getCurrentUser();
@@ -148,6 +172,29 @@ function aplicarPermisosPorRol() {
             console.log('⚠️ Elemento downloadButtons no encontrado');
         }
         
+        // Verificar cantidad de canchas del complejo del owner
+        if (user.complejo_id) {
+            const cantidadCanchas = await verificarCanchasComplejo(user.complejo_id);
+            
+            const topCourtsColumn = document.getElementById('topCourtsColumn');
+            
+            if (cantidadCanchas !== null && cantidadCanchas <= 1) {
+                // Si solo tiene 1 cancha o ninguna, ocultar "Top Canchas"
+                if (topCourtsColumn) {
+                    topCourtsColumn.style.display = 'none';
+                    console.log('✅ Sección "Top Canchas" ocultada para owner (solo tiene 1 cancha)');
+                }
+            } else {
+                // Si tiene múltiples canchas, ajustar el ancho a completo
+                if (topCourtsColumn) {
+                    topCourtsColumn.classList.remove('col-lg-6');
+                    topCourtsColumn.classList.add('col-lg-12');
+                    topCourtsColumn.style.display = '';
+                    console.log('✅ Columna Top Canchas ajustada a ancho completo para owner');
+                }
+            }
+        }
+        
         console.log('✅ Elementos ocultados para owner');
     } else if (userRole === 'super_admin') {
         // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
@@ -166,6 +213,14 @@ function aplicarPermisosPorRol() {
             element.style.visibility = '';
             console.log(`✅ Elemento ${index + 1} configurado como visible para super admin`);
         });
+        
+        // Asegurar que la columna "Top Canchas" tenga el tamaño correcto para super_admin
+        const topCourtsColumn = document.getElementById('topCourtsColumn');
+        if (topCourtsColumn) {
+            topCourtsColumn.classList.remove('col-lg-12');
+            topCourtsColumn.classList.add('col-lg-6');
+            console.log('✅ Columna Top Canchas configurada a col-lg-6 para super_admin');
+        }
     }
 }
 
@@ -1451,6 +1506,327 @@ function showNotification(message, type) {
             notification.parentNode.removeChild(notification);
         }
     }, 5000);
+}
+
+// Exportar tabla a PDF
+async function exportToPDF(tableType) {
+    try {
+        console.log(`📄 Exportando ${tableType} a PDF...`);
+        showNotification(`Generando PDF de ${tableType}...`, 'info');
+        
+        let tableData = [];
+        let headers = [];
+        let title = '';
+        let filePrefix = '';
+        
+        switch(tableType) {
+            case 'topComplexes':
+                title = 'Top Complejos';
+                filePrefix = 'Top_Complejos';
+                headers = ['Complejo', 'Reservas', 'Ingresos', 'Ocupación'];
+                const complexesRows = document.querySelectorAll('#topComplexesTable tr');
+                complexesRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                        const rowData = [
+                            cells[0].textContent.trim(),
+                            cells[1].textContent.trim(),
+                            cells[2].textContent.trim(),
+                            cells[3].textContent.trim()
+                        ];
+                        tableData.push(rowData);
+                    }
+                });
+                break;
+                
+            case 'topCourts':
+                title = 'Top Canchas';
+                filePrefix = 'Top_Canchas';
+                headers = ['Cancha', 'Complejo', 'Reservas', 'Ingresos'];
+                const courtsRows = document.querySelectorAll('#topCourtsTable tr');
+                courtsRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                        const rowData = [
+                            cells[0].textContent.trim(),
+                            cells[1].textContent.trim(),
+                            cells[2].textContent.trim(),
+                            cells[3].textContent.trim()
+                        ];
+                        tableData.push(rowData);
+                    }
+                });
+                break;
+                
+            case 'customers':
+                title = 'Análisis de Clientes';
+                filePrefix = 'Analisis_de_Clientes';
+                headers = ['Cliente', 'Email', 'RUT', 'Teléfono', 'Reservas', 'Promedio', 'Última Reserva'];
+                const customersRows = document.querySelectorAll('#customersTable tr');
+                customersRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                        const nombre = cells[0].querySelector('.fw-bold')?.textContent.trim() || '';
+                        const email = cells[0].querySelector('.text-muted')?.textContent.trim() || '';
+                        const rut = cells[0].querySelector('.text-info')?.textContent.replace(/.*fa-id-card.*?/, '').trim() || '';
+                        const telefono = cells[0].querySelector('.text-success')?.textContent.replace(/.*fa-phone.*?/, '').trim() || '';
+                        const reservas = cells[1].textContent.trim();
+                        const promedio = cells[2].textContent.trim();
+                        const ultimaReserva = cells[3].textContent.trim();
+                        
+                        tableData.push([nombre, email, rut, telefono, reservas, promedio, ultimaReserva]);
+                    }
+                });
+                break;
+        }
+        
+        if (tableData.length === 0) {
+            showNotification('No hay datos para exportar', 'error');
+            return;
+        }
+        
+        // Importar jsPDF dinámicamente si no está disponible
+        if (typeof jspdf === 'undefined') {
+            showNotification('Cargando librería PDF...', 'info');
+            await loadJsPDF();
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Obtener nombre del complejo del usuario
+        const user = AdminUtils.getCurrentUser();
+        let complexName = '';
+        if (user && user.complejo_id && complexes && complexes.length > 0) {
+            const userComplex = complexes.find(c => c.id === user.complejo_id);
+            if (userComplex) {
+                complexName = userComplex.nombre.replace(/\s+/g, '_');
+            }
+        }
+        
+        // Intentar cargar el logo del complejo
+        if (user && user.complejo_id && typeof getLogoPath !== 'undefined') {
+            try {
+                const logoPath = getLogoPath(user.complejo_id);
+                if (logoPath && await logoExists(user.complejo_id)) {
+                    const logoBase64 = await imageToBase64(logoPath);
+                    if (logoBase64) {
+                        // Agregar logo en la esquina superior derecha
+                        doc.addImage(logoBase64, 'PNG', 170, 5, 30, 30);
+                        console.log('✅ Logo del complejo agregado al PDF de reportes');
+                    }
+                }
+            } catch (error) {
+                console.log('⚠️ No se pudo cargar el logo, continuando sin logo:', error.message);
+            }
+        }
+        
+        // Título
+        doc.setFontSize(18);
+        doc.text(title, 14, 20);
+        
+        // Subtítulo con nombre del complejo si existe
+        if (complexName) {
+            doc.setFontSize(12);
+            doc.text(complexName.replace(/_/g, ' '), 14, 28);
+        }
+        
+        // Fecha del reporte
+        doc.setFontSize(10);
+        const dateFrom = document.getElementById('dateFrom')?.value || '';
+        const dateTo = document.getElementById('dateTo')?.value || '';
+        const yPosition = complexName ? 35 : 28;
+        doc.text(`Período: ${dateFrom} - ${dateTo}`, 14, yPosition);
+        
+        // Tabla
+        doc.autoTable({
+            head: [headers],
+            body: tableData,
+            startY: yPosition + 7,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [102, 126, 234],
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3
+            }
+        });
+        
+        // Construir nombre de archivo descriptivo
+        let fileName = filePrefix;
+        if (complexName) {
+            fileName += `_${complexName}`;
+        }
+        fileName += `_${dateFrom}_${dateTo}.pdf`;
+        
+        // Guardar PDF
+        doc.save(fileName);
+        
+        showNotification(`PDF descargado: ${fileName}`, 'success');
+        console.log(`✅ PDF exportado exitosamente: ${fileName}`);
+        
+    } catch (error) {
+        console.error('❌ Error exportando PDF:', error);
+        showNotification(`Error exportando PDF: ${error.message}`, 'error');
+    }
+}
+
+// Exportar tabla a Excel
+async function exportToExcel(tableType) {
+    try {
+        console.log(`📊 Exportando ${tableType} a Excel...`);
+        showNotification(`Generando Excel de ${tableType}...`, 'info');
+        
+        let tableData = [];
+        let headers = [];
+        let title = '';
+        let filePrefix = '';
+        
+        switch(tableType) {
+            case 'topComplexes':
+                title = 'Top Complejos';
+                filePrefix = 'Top_Complejos';
+                headers = ['Complejo', 'Reservas', 'Ingresos', 'Ocupación'];
+                const complexesRows = document.querySelectorAll('#topComplexesTable tr');
+                complexesRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                        const rowData = [
+                            cells[0].textContent.trim(),
+                            cells[1].textContent.trim(),
+                            cells[2].textContent.trim().replace('$', ''),
+                            cells[3].textContent.trim()
+                        ];
+                        tableData.push(rowData);
+                    }
+                });
+                break;
+                
+            case 'topCourts':
+                title = 'Top Canchas';
+                filePrefix = 'Top_Canchas';
+                headers = ['Cancha', 'Complejo', 'Reservas', 'Ingresos'];
+                const courtsRows = document.querySelectorAll('#topCourtsTable tr');
+                courtsRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                        const rowData = [
+                            cells[0].textContent.trim(),
+                            cells[1].textContent.trim(),
+                            cells[2].textContent.trim(),
+                            cells[3].textContent.trim().replace('$', '')
+                        ];
+                        tableData.push(rowData);
+                    }
+                });
+                break;
+                
+            case 'customers':
+                title = 'Análisis de Clientes';
+                filePrefix = 'Analisis_de_Clientes';
+                headers = ['Cliente', 'Email', 'RUT', 'Teléfono', 'Reservas', 'Promedio', 'Última Reserva'];
+                const customersRows = document.querySelectorAll('#customersTable tr');
+                customersRows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length > 0 && !cells[0].getAttribute('colspan')) {
+                        const nombre = cells[0].querySelector('.fw-bold')?.textContent.trim() || '';
+                        const email = cells[0].querySelector('.text-muted')?.textContent.trim() || '';
+                        const rut = cells[0].querySelector('.text-info')?.textContent.replace(/.*fa-id-card.*?/, '').trim() || '';
+                        const telefono = cells[0].querySelector('.text-success')?.textContent.replace(/.*fa-phone.*?/, '').trim() || '';
+                        const reservas = cells[1].textContent.trim();
+                        const promedio = cells[2].textContent.trim().replace('$', '');
+                        const ultimaReserva = cells[3].textContent.trim();
+                        
+                        tableData.push([nombre, email, rut, telefono, reservas, promedio, ultimaReserva]);
+                    }
+                });
+                break;
+        }
+        
+        if (tableData.length === 0) {
+            showNotification('No hay datos para exportar', 'error');
+            return;
+        }
+        
+        // Obtener nombre del complejo del usuario
+        const user = AdminUtils.getCurrentUser();
+        let complexName = '';
+        if (user && user.complejo_id && complexes && complexes.length > 0) {
+            const userComplex = complexes.find(c => c.id === user.complejo_id);
+            if (userComplex) {
+                complexName = userComplex.nombre.replace(/\s+/g, '_');
+            }
+        }
+        
+        // Crear CSV (Excel compatible)
+        let csv = '\uFEFF'; // BOM para UTF-8
+        
+        // Agregar título y complejo como primera línea si existe
+        if (complexName) {
+            csv += `"${title} - ${complexName.replace(/_/g, ' ')}"\n\n`;
+        } else {
+            csv += `"${title}"\n\n`;
+        }
+        
+        // Agregar período
+        const dateFrom = document.getElementById('dateFrom')?.value || '';
+        const dateTo = document.getElementById('dateTo')?.value || '';
+        csv += `"Período: ${dateFrom} - ${dateTo}"\n\n`;
+        
+        // Agregar headers
+        csv += headers.join(',') + '\n';
+        
+        // Agregar datos
+        tableData.forEach(row => {
+            csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+        });
+        
+        // Construir nombre de archivo descriptivo
+        let fileName = filePrefix;
+        if (complexName) {
+            fileName += `_${complexName}`;
+        }
+        fileName += `_${dateFrom}_${dateTo}.csv`;
+        
+        // Descargar archivo
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        
+        showNotification(`Excel descargado: ${fileName}`, 'success');
+        console.log(`✅ Excel exportado exitosamente: ${fileName}`);
+        
+    } catch (error) {
+        console.error('❌ Error exportando Excel:', error);
+        showNotification(`Error exportando Excel: ${error.message}`, 'error');
+    }
+}
+
+// Cargar jsPDF dinámicamente
+async function loadJsPDF() {
+    return new Promise((resolve, reject) => {
+        if (typeof window.jspdf !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = () => {
+            const autoTableScript = document.createElement('script');
+            autoTableScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+            autoTableScript.onload = resolve;
+            autoTableScript.onerror = reject;
+            document.head.appendChild(autoTableScript);
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
 }
 
 // Cerrar sesión

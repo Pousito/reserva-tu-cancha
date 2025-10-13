@@ -364,6 +364,43 @@ async function deleteComplejo(req, res) {
   }
 }
 
+/**
+ * Obtener canchas (con filtro opcional por complejo)
+ */
+async function getCanchas(req, res) {
+  try {
+    const userRole = req.admin?.rol || req.user?.rol;
+    const complexFilter = req.admin?.complejo_id || req.user?.complejo_id;
+    const { complejo_id } = req.query;
+    
+    let query = `
+      SELECT ca.*, co.nombre as complejo_nombre
+      FROM canchas ca
+      JOIN complejos co ON ca.complejo_id = co.id
+    `;
+    let params = [];
+    
+    // Si es dueño de complejo, solo mostrar sus canchas
+    if (userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') {
+      query += ' WHERE ca.complejo_id = $1';
+      params.push(complexFilter);
+    } else if (complejo_id) {
+      // Si se especifica complejo_id en query params
+      query += ' WHERE ca.complejo_id = $1';
+      params.push(complejo_id);
+    }
+    
+    query += ' ORDER BY co.nombre, ca.nombre';
+    
+    const rows = await db.query(query, params);
+    res.json(rows);
+    
+  } catch (error) {
+    console.error('Error obteniendo canchas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
 module.exports = {
   setDatabase,
   getEstadisticas,
@@ -373,5 +410,6 @@ module.exports = {
   getComplejos,
   createComplejo,
   updateComplejo,
-  deleteComplejo
+  deleteComplejo,
+  getCanchas
 };

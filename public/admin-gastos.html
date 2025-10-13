@@ -353,6 +353,54 @@
             border-radius: 0 8px 8px 0;
         }
 
+        /* Estilos para la tabla de gestión de categorías */
+        #gestionCategorias .table {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            overflow: hidden;
+            color: white;
+        }
+
+        #gestionCategorias .table thead {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        #gestionCategorias .table thead th {
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+            border: none;
+        }
+
+        #gestionCategorias .table tbody {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #gestionCategorias .table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        #gestionCategorias .table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        #gestionCategorias .table tbody td {
+            color: white;
+            padding: 1rem;
+            border: none;
+        }
+
+        #gestionCategorias .table-responsive {
+            background: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
         .badge-modern {
             padding: 0.375rem 0.75rem;
             border-radius: 6px;
@@ -623,6 +671,35 @@
 
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Filters (moved to top) -->
+        <div class="filters-card">
+            <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros</h5>
+            <div class="filters-grid">
+                <div>
+                    <label class="form-label">Tipo</label>
+                    <select class="form-select" id="filterTipo" onchange="updateCategoriasFilter()">
+                        <option value="">Todos</option>
+                        <option value="ingreso">Ingresos</option>
+                        <option value="gasto">Gastos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Categoría</label>
+                    <select class="form-select" id="filterCategoria" onchange="applyFilters()">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Fecha Desde</label>
+                    <input type="date" class="form-control" id="filterFechaDesde" onchange="applyFilters()">
+                </div>
+                <div>
+                    <label class="form-label">Fecha Hasta</label>
+                    <input type="date" class="form-control" id="filterFechaHasta" onchange="applyFilters()">
+                </div>
+            </div>
+        </div>
+
         <!-- Page Header -->
         <div class="page-header">
             <h1><i class="fas fa-wallet me-2"></i>Control de Gastos e Ingresos</h1>
@@ -779,35 +856,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="filters-card">
-            <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros</h5>
-            <div class="filters-grid">
-                <div>
-                    <label class="form-label">Tipo</label>
-                    <select class="form-select" id="filterTipo" onchange="updateCategoriasFilter()">
-                        <option value="">Todos</option>
-                        <option value="ingreso">Ingresos</option>
-                        <option value="gasto">Gastos</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label">Categoría</label>
-                    <select class="form-select" id="filterCategoria" onchange="applyFilters()">
-                        <option value="">Todas</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="form-label">Fecha Desde</label>
-                    <input type="date" class="form-control" id="filterFechaDesde" onchange="applyFilters()">
-                </div>
-                <div>
-                    <label class="form-label">Fecha Hasta</label>
-                    <input type="date" class="form-control" id="filterFechaHasta" onchange="applyFilters()">
                 </div>
             </div>
         </div>
@@ -994,6 +1042,9 @@
     
     <!-- URL Config -->
     <script src="/js/url-config.js"></script>
+    
+    <!-- Logos Config -->
+    <script src="/js/logos-config.js"></script>
     
     <!-- Main Script -->
     <script src="/admin-gastos.js"></script>

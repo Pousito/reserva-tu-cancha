@@ -415,6 +415,19 @@ function actualizarGraficoEvolucion() {
     
     if (evolucionChart) evolucionChart.destroy();
     
+    // Crear gradientes para el gráfico moderno
+    const ctxGradient = ctx.getContext('2d');
+    
+    const gradientIngresos = ctxGradient.createLinearGradient(0, 0, 0, 400);
+    gradientIngresos.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+    gradientIngresos.addColorStop(0.5, 'rgba(16, 185, 129, 0.2)');
+    gradientIngresos.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+    
+    const gradientGastos = ctxGradient.createLinearGradient(0, 0, 0, 400);
+    gradientGastos.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+    gradientGastos.addColorStop(0.5, 'rgba(239, 68, 68, 0.2)');
+    gradientGastos.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+    
     evolucionChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -428,39 +441,89 @@ function actualizarGraficoEvolucion() {
                     label: 'Ingresos',
                     data: ingresosData,
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    backgroundColor: gradientIngresos,
+                    borderWidth: 3,
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 10,
+                    pointHoverBackgroundColor: '#10b981',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 4
                 },
                 {
                     label: 'Gastos',
                     data: gastosData,
                     borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    backgroundColor: gradientGastos,
+                    borderWidth: 3,
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 10,
+                    pointHoverBackgroundColor: '#ef4444',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 4
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        padding: 15,
+                        padding: 20,
                         font: {
-                            size: 12
-                        }
+                            size: 13,
+                            weight: '600'
+                        },
+                        color: '#ffffff',
+                        usePointStyle: true,
+                        pointStyle: 'circle'
                     }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    borderWidth: 1,
+                    cornerRadius: 10,
+                    padding: 12,
+                    displayColors: true,
                     callbacks: {
                         label: function(context) {
                             const label = context.dataset.label || '';
                             const value = context.parsed.y || 0;
                             return `${label}: $${value.toLocaleString('es-CL')}`;
+                        },
+                        footer: function(tooltipItems) {
+                            let ingresos = 0;
+                            let gastos = 0;
+                            tooltipItems.forEach(item => {
+                                if (item.dataset.label === 'Ingresos') {
+                                    ingresos = item.parsed.y;
+                                } else if (item.dataset.label === 'Gastos') {
+                                    gastos = item.parsed.y;
+                                }
+                            });
+                            const balance = ingresos - gastos;
+                            const balanceText = balance >= 0 ? 
+                                `Balance: +$${balance.toLocaleString('es-CL')}` : 
+                                `Balance: -$${Math.abs(balance).toLocaleString('es-CL')}`;
+                            return balanceText;
                         }
                     }
                 }
@@ -733,39 +796,86 @@ function exportToExcel() {
         return;
     }
     
-    // Preparar datos
-    const data = movimientos.map(m => ({
-        'Fecha': formatDate(m.fecha),
-        'Tipo': m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
-        'Categoría': m.categoria_nombre,
-        'Descripción': m.descripcion || '',
-        'Monto': Number(m.monto),
-        'Método de Pago': m.metodo_pago || '',
-        'Documento': m.numero_documento || ''
-    }));
+    // Calcular totales
+    const ingresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
+    const gastos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
+    const balance = ingresos - gastos;
     
-    // Crear libro de Excel
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(data);
+    const fechaDesde = formatDate(document.getElementById('filterFechaDesde').value);
+    const fechaHasta = formatDate(document.getElementById('filterFechaHasta').value);
     
-    // Ajustar anchos de columna
+    // Crear array de datos con encabezados personalizados
+    const excelData = [];
+    
+    // Título y metadatos
+    excelData.push(['CONTROL DE GASTOS E INGRESOS']);
+    excelData.push([]);
+    excelData.push(['Complejo:', userData.complejo_nombre || 'Todos']);
+    excelData.push(['Período:', `${fechaDesde} - ${fechaHasta}`]);
+    excelData.push([]);
+    
+    // Resumen de totales
+    excelData.push(['RESUMEN']);
+    excelData.push(['Total Ingresos:', ingresos]);
+    excelData.push(['Total Gastos:', gastos]);
+    excelData.push(['Balance:', balance]);
+    excelData.push([]);
+    
+    // Encabezados de tabla
+    excelData.push(['DETALLE DE MOVIMIENTOS']);
+    excelData.push(['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto', 'Método de Pago', 'Documento']);
+    
+    // Datos de movimientos
+    movimientos.forEach(m => {
+        excelData.push([
+            formatDate(m.fecha),
+            m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+            m.categoria_nombre,
+            m.descripcion || '',
+            Number(m.monto),
+            m.metodo_pago || '',
+            m.numero_documento || ''
+        ]);
+    });
+    
+    // Crear worksheet
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    
+    // Aplicar estilos y anchos de columna
     ws['!cols'] = [
-        { wch: 12 }, // Fecha
-        { wch: 10 }, // Tipo
-        { wch: 25 }, // Categoría
-        { wch: 40 }, // Descripción
+        { wch: 18 }, // Fecha/Label
+        { wch: 12 }, // Tipo/Valor
+        { wch: 30 }, // Categoría
+        { wch: 45 }, // Descripción
         { wch: 15 }, // Monto
-        { wch: 15 }, // Método
+        { wch: 18 }, // Método
         { wch: 20 }  // Documento
     ];
     
+    // Estilos para el título
+    ws['A1'] = { 
+        v: 'CONTROL DE GASTOS E INGRESOS', 
+        t: 's',
+        s: {
+            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "667EEA" } },
+            alignment: { horizontal: "center" }
+        }
+    };
+    
+    // Merge cells para el título
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Título
+        { s: { r: 5, c: 0 }, e: { r: 5, c: 6 } }, // RESUMEN
+        { s: { r: 10, c: 0 }, e: { r: 10, c: 6 } }  // DETALLE
+    ];
+    
+    // Crear workbook y agregar worksheet
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
     
     // Descargar
-    const fechaDesde = document.getElementById('filterFechaDesde').value;
-    const fechaHasta = document.getElementById('filterFechaHasta').value;
-    const filename = `Gastos_${fechaDesde}_${fechaHasta}.xlsx`;
-    
+    const filename = `Control_Gastos_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.xlsx`;
     XLSX.writeFile(wb, filename);
     
     Swal.fire({
@@ -781,7 +891,7 @@ function exportToExcel() {
 // EXPORTAR A PDF
 // ============================================
 
-function exportToPDF() {
+async function exportToPDF() {
     if (movimientos.length === 0) {
         Swal.fire({
             icon: 'warning',
@@ -794,30 +904,91 @@ function exportToPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // Título
-    doc.setFontSize(18);
-    doc.setTextColor(40);
-    doc.text('Control de Gastos e Ingresos', 14, 22);
-    
-    // Información
-    doc.setFontSize(11);
-    doc.setTextColor(100);
-    const fechaDesde = formatDate(document.getElementById('filterFechaDesde').value);
-    const fechaHasta = formatDate(document.getElementById('filterFechaHasta').value);
-    doc.text(`Período: ${fechaDesde} - ${fechaHasta}`, 14, 30);
-    doc.text(`Complejo: ${userData.complejo_nombre || 'N/A'}`, 14, 36);
-    
-    // Resumen
+    // Calcular totales
     const ingresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
     const gastos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
     const balance = ingresos - gastos;
     
-    doc.setFontSize(10);
-    doc.text(`Total Ingresos: $${ingresos.toLocaleString('es-CL')}`, 14, 44);
-    doc.text(`Total Gastos: $${gastos.toLocaleString('es-CL')}`, 14, 50);
-    doc.text(`Balance: $${balance.toLocaleString('es-CL')}`, 14, 56);
+    const fechaDesde = formatDate(document.getElementById('filterFechaDesde').value);
+    const fechaHasta = formatDate(document.getElementById('filterFechaHasta').value);
     
-    // Tabla
+    // Encabezado con fondo de color
+    doc.setFillColor(102, 126, 234);
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    // Intentar cargar el logo del complejo
+    if (userData.complejo_id && typeof getLogoPath !== 'undefined') {
+        try {
+            const logoPath = getLogoPath(userData.complejo_id);
+            if (logoPath && await logoExists(userData.complejo_id)) {
+                const logoBase64 = await imageToBase64(logoPath);
+                if (logoBase64) {
+                    // Agregar logo en la esquina superior derecha
+                    doc.addImage(logoBase64, 'PNG', 170, 5, 25, 25);
+                    console.log('✅ Logo del complejo agregado al PDF');
+                }
+            }
+        } catch (error) {
+            console.log('⚠️ No se pudo cargar el logo, continuando sin logo:', error.message);
+        }
+    }
+    
+    // Título principal
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text('Control de Gastos e Ingresos', 105, 15, { align: 'center' });
+    
+    // Información del complejo y período
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${userData.complejo_nombre || 'Todos los complejos'}`, 105, 23, { align: 'center' });
+    doc.text(`Período: ${fechaDesde} - ${fechaHasta}`, 105, 30, { align: 'center' });
+    
+    // Resumen con tarjetas de colores
+    const yStart = 45;
+    
+    // Tarjeta de Ingresos (verde)
+    doc.setFillColor(16, 185, 129);
+    doc.roundedRect(14, yStart, 60, 20, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text('Total Ingresos', 44, yStart + 7, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(`$${ingresos.toLocaleString('es-CL')}`, 44, yStart + 16, { align: 'center' });
+    
+    // Tarjeta de Gastos (rojo)
+    doc.setFillColor(239, 68, 68);
+    doc.roundedRect(80, yStart, 60, 20, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Total Gastos', 110, yStart + 7, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(`$${gastos.toLocaleString('es-CL')}`, 110, yStart + 16, { align: 'center' });
+    
+    // Tarjeta de Balance (azul o rojo según balance)
+    const balanceColor = balance >= 0 ? [59, 130, 246] : [239, 68, 68];
+    doc.setFillColor(...balanceColor);
+    doc.roundedRect(146, yStart, 60, 20, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Balance', 176, yStart + 7, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    const balanceText = balance >= 0 ? `+$${balance.toLocaleString('es-CL')}` : `-$${Math.abs(balance).toLocaleString('es-CL')}`;
+    doc.text(balanceText, 176, yStart + 16, { align: 'center' });
+    
+    // Título de la tabla
+    doc.setTextColor(40, 40, 40);
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Detalle de Movimientos', 14, yStart + 32);
+    
+    // Tabla de movimientos
     const tableData = movimientos.map(m => [
         formatDate(m.fecha),
         m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
@@ -827,31 +998,60 @@ function exportToPDF() {
     ]);
     
     doc.autoTable({
-        startY: 64,
+        startY: yStart + 38,
         head: [['Fecha', 'Tipo', 'Categoría', 'Descripción', 'Monto']],
         body: tableData,
-        theme: 'striped',
+        theme: 'grid',
         headStyles: {
             fillColor: [102, 126, 234],
-            textColor: 255,
+            textColor: [255, 255, 255],
             fontSize: 10,
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            halign: 'center'
         },
         styles: {
             fontSize: 9,
-            cellPadding: 4
+            cellPadding: 5,
+            lineColor: [220, 220, 220],
+            lineWidth: 0.1
         },
         columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 22 },
+            0: { cellWidth: 25, halign: 'center' },
+            1: { cellWidth: 22, halign: 'center' },
             2: { cellWidth: 40 },
-            3: { cellWidth: 60 },
-            4: { cellWidth: 30, halign: 'right' }
+            3: { cellWidth: 65 },
+            4: { cellWidth: 25, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: {
+            fillColor: [248, 248, 248]
+        },
+        // Colorear según tipo
+        didParseCell: function(data) {
+            if (data.column.index === 1 && data.section === 'body') {
+                if (data.cell.raw === 'Ingreso') {
+                    data.cell.styles.textColor = [16, 185, 129];
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (data.cell.raw === 'Gasto') {
+                    data.cell.styles.textColor = [239, 68, 68];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            }
         }
     });
     
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Página ${i} de ${pageCount}`, 105, 285, { align: 'center' });
+        doc.text(`Generado el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')}`, 105, 290, { align: 'center' });
+    }
+    
     // Guardar
-    const filename = `Gastos_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.pdf`;
+    const filename = `Control_Gastos_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.pdf`;
     doc.save(filename);
     
     Swal.fire({

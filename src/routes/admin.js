@@ -23,4 +23,7 @@ router.post('/complejos', authController.requireSuperAdmin, adminController.crea
 router.put('/complejos/:id', authController.requireSuperAdmin, adminController.updateComplejo);
 router.delete('/complejos/:id', authController.requireSuperAdmin, adminController.deleteComplejo);
 
+// Rutas de gestión de canchas
+router.get('/canchas', adminController.getCanchas);
+
 module.exports = { router, setDatabase };
