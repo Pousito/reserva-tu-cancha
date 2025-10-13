@@ -61,6 +61,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         const user = req.user;
         
         console.log('📅 Obteniendo datos del calendario semanal:', { fechaInicio, fechaFin, complejoId, user: user.email });
+        console.log('🔍 DEBUG - user.complejo_id:', user.complejo_id, 'tipo:', typeof user.complejo_id);
         
         // Validar que el usuario tenga los datos necesarios
         if (!user || !user.rol) {
@@ -276,17 +277,23 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             const horariosDia = [];
             let horaInicio, horaFin;
             
-            // Determinar horarios según el complejo
-            if (user.complejo_id == 6) { // Espacio Deportivo Borde Río
+            // Debug: verificar complejo_id
+            console.log(`🔍 Generando horarios - user.complejo_id: ${user.complejo_id} (tipo: ${typeof user.complejo_id}), diaSemana: ${diaSemana}`);
+            
+            // Determinar horarios según el complejo (usar comparación estricta con conversión explícita)
+            if (parseInt(user.complejo_id) === 6) { // Espacio Deportivo Borde Río
                 // Borde Río: 10:00 a 23:00 todos los días
                 horaInicio = 10;
                 horaFin = 23;
+                console.log(`✅ Borde Río detectado - Horarios: ${horaInicio}:00 - ${horaFin}:00`);
             } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
                 horaInicio = 16;
                 horaFin = 23;
+                console.log(`📅 L-V - Horarios: ${horaInicio}:00 - ${horaFin}:00`);
             } else { // Sábado y Domingo: 12:00 a 23:00
                 horaInicio = 12;
                 horaFin = 23;
+                console.log(`📅 S-D - Horarios: ${horaInicio}:00 - ${horaFin}:00`);
             }
             
             for (let hora = horaInicio; hora <= horaFin; hora++) {
