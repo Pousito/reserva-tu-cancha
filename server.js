@@ -5635,7 +5635,13 @@ app.post('/api/debug/fix-complejo-ids', async (req, res) => {
       { email: 'naxiin320@gmail.com', complejo_id: 1 }
     ];
     
-    const allUsers = [...usuariosGunnen, ...usuariosMagna];
+    // Actualizar usuarios de Borde Río (complejo_id = 6)
+    const usuariosBorderio = [
+      { email: 'admin@borderio.cl', complejo_id: 6 },
+      { email: 'manager@borderio.cl', complejo_id: 6 }
+    ];
+    
+    const allUsers = [...usuariosGunnen, ...usuariosMagna, ...usuariosBorderio];
     const results = [];
     
     for (const usuario of allUsers) {
