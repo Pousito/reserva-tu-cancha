@@ -1028,27 +1028,29 @@ async function exportToPDF() {
         body: tableData,
         theme: 'grid',
         margin: { left: 14, right: 14 },
+        tableWidth: 'auto',
         headStyles: {
             fillColor: [102, 126, 234],
             textColor: [255, 255, 255],
-            fontSize: 10,
+            fontSize: 9,
             fontStyle: 'bold',
-            halign: 'center'
+            halign: 'center',
+            cellPadding: 2
         },
         styles: {
-            fontSize: 8,
-            cellPadding: 3,
+            fontSize: 7,
+            cellPadding: 2,
             lineColor: [220, 220, 220],
             lineWidth: 0.1,
             overflow: 'linebreak',
             cellWidth: 'wrap'
         },
         columnStyles: {
-            0: { cellWidth: 22, halign: 'center', fontSize: 8 },
-            1: { cellWidth: 18, halign: 'center', fontSize: 8 },
-            2: { cellWidth: 35, fontSize: 8 },
-            3: { cellWidth: 55, fontSize: 7, overflow: 'linebreak' },
-            4: { cellWidth: 23, halign: 'right', fontStyle: 'bold', fontSize: 8 }
+            0: { cellWidth: 'auto', halign: 'center', minCellWidth: 18 },
+            1: { cellWidth: 'auto', halign: 'center', minCellWidth: 15 },
+            2: { cellWidth: 'auto', minCellWidth: 25 },
+            3: { cellWidth: 'auto', overflow: 'linebreak', minCellWidth: 40 },
+            4: { cellWidth: 'auto', halign: 'right', fontStyle: 'bold', minCellWidth: 20 }
         },
         alternateRowStyles: {
             fillColor: [248, 248, 248]
