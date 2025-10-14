@@ -1086,10 +1086,12 @@ async function exportToPDF() {
     if (userData.complejo_id) {
         try {
             // Mapeo de logos (inline para no depender de script externo)
+            // ID 6: Borde Río (desarrollo), ID 7: Borde Río (producción)
             const logosMap = {
                 1: '/images/logos/magnasports.png',
                 2: '/images/logos/fundacion-gunnen.png',
-                6: '/images/logos/borde-rio.png'
+                6: '/images/logos/borde-rio.png',
+                7: '/images/logos/borde-rio.png'
             };
             
             const logoPath = logosMap[userData.complejo_id];

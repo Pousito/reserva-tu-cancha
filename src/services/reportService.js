@@ -548,6 +548,21 @@ class ReportService {
         // Ajustar ancho de columnas
         summarySheet.getColumn('A').width = 35;
         summarySheet.getColumn('B').width = 20;
+        
+        // Ajustar altura de filas para que los emojis se vean bien
+        summarySheet.getRow(3).height = 22; // Info complejo
+        summarySheet.getRow(4).height = 22;
+        summarySheet.getRow(5).height = 22;
+        summarySheet.getRow(6).height = 22;
+        summarySheet.getRow(7).height = 22;
+        summarySheet.getRow(9).height = 22; // Período
+        summarySheet.getRow(10).height = 22;
+        summarySheet.getRow(13).height = 24; // Encabezados
+        
+        // Altura para filas de datos (con emojis)
+        for (let i = 14; i <= 20; i++) {
+            summarySheet.getRow(i).height = 22;
+        }
 
         // Formatear números como enteros (sin decimales)
         summarySheet.getCell('B14').numFmt = '0';
@@ -636,6 +651,12 @@ class ReportService {
             dailySheet.getColumn('D').width = 16;
             dailySheet.getColumn('E').width = 14;
             dailySheet.getColumn('F').width = 16;
+            
+            // Ajustar altura de filas para emojis
+            dailySheet.getRow(2).height = 24; // Encabezados
+            for (let i = 3; i < rowIndex; i++) {
+                dailySheet.getRow(i).height = 21; // Datos
+            }
 
             // Formatear columnas de moneda (sin decimales)
             for (let i = 3; i < rowIndex; i++) {
@@ -766,6 +787,12 @@ class ReportService {
                 { width: 13 }, // Estado
                 { width: 13 }  // Estado Pago
             ];
+            
+            // Ajustar altura de filas para emojis
+            detailsSheet.getRow(2).height = 24; // Encabezados
+            for (let i = 3; i < rowIndex; i++) {
+                detailsSheet.getRow(i).height = 21; // Datos
+            }
         }
 
             console.log('📊 Excel generado exitosamente');
