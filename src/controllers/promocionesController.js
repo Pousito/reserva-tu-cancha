@@ -1,4 +1,9 @@
-const db = require('../config/database');
+// Importar la instancia de base de datos
+let db;
+
+function setDatabase(databaseInstance) {
+    db = databaseInstance;
+}
 
 /**
  * Validar que la fecha de inicio de una promoción tenga al menos 7 días de anticipación
@@ -52,7 +57,7 @@ async function getPromocionesCancha(req, res) {
     try {
         const { cancha_id } = req.params;
         
-        const promociones = await db.query(
+        const promociones = await db.all(
             `SELECT p.*, u.nombre as creado_por_nombre, c.nombre as cancha_nombre
              FROM promociones_canchas p
              LEFT JOIN usuarios u ON p.creado_por = u.id
@@ -93,7 +98,7 @@ async function getPromocionesComplejo(req, res) {
         
         query += ' ORDER BY p.creado_en DESC';
         
-        const promociones = await db.query(query, params);
+        const promociones = await db.all(query, params);
         
         res.json(promociones);
     } catch (error) {
@@ -375,6 +380,7 @@ async function togglePromocion(req, res) {
 }
 
 module.exports = {
+    setDatabase,
     getPromocionesCancha,
     getPromocionesComplejo,
     createPromocion,

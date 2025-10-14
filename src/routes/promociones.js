@@ -3,6 +3,11 @@ const router = express.Router();
 const promocionesController = require('../controllers/promocionesController');
 const { verifyToken, verifyOwnerOrAdmin } = require('../middleware/auth');
 
+// Función para configurar la base de datos
+function setDatabase(databaseInstance) {
+    promocionesController.setDatabase(databaseInstance);
+}
+
 // Todas las rutas requieren autenticación y rol owner/super_admin
 router.use(verifyToken);
 router.use(verifyOwnerOrAdmin);
@@ -25,5 +30,5 @@ router.delete('/:id', promocionesController.deletePromocion);
 // Activar/Desactivar una promoción
 router.patch('/:id/toggle', promocionesController.togglePromocion);
 
-module.exports = router;
+module.exports = { router, setDatabase };
 

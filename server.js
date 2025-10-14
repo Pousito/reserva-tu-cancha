@@ -509,7 +509,8 @@ setGastosDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/gastos', gastosRoutes);
 
 // ===== RUTAS DE PROMOCIONES Y PRECIOS DINÁMICOS =====
-const promocionesRoutes = require('./src/routes/promociones');
+const { router: promocionesRoutes, setDatabase: setPromocionesDatabase } = require('./src/routes/promociones');
+setPromocionesDatabase(db); // Pasar la instancia de la base de datos
 // Debug middleware para promociones
 app.use('/api/promociones', (req, res, next) => {
     console.log(`🎯 Petición a /api/promociones - Método: ${req.method}, Path: ${req.path}`);
