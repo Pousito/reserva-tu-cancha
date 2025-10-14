@@ -2981,33 +2981,71 @@ async function verificarPromocionActiva(canchaId, fecha, hora) {
     console.log(`📅 Fecha reserva: ${fecha}, Día semana: ${diaSemana}, Hora: ${horaReserva}`);
     
     for (const promo of promociones) {
+      console.log(`\n🔍 Evaluando promoción: ${promo.nombre}`);
+      console.log(`   📌 Tipo fecha: ${promo.tipo_fecha}, Tipo horario: ${promo.tipo_horario}`);
+      
       // Validar tipo de fecha
       let fechaValida = false;
       
       if (promo.tipo_fecha === 'especifico' && promo.fecha_especifica) {
-        const fechaPromo = new Date(promo.fecha_especifica + 'T00:00:00');
-        fechaValida = fechaReserva.getTime() === fechaPromo.getTime();
+        console.log(`   📅 Comparando fechas específicas:`);
+        console.log(`      - Fecha reserva (string): ${fecha}`);
+        console.log(`      - Fecha promo (raw): ${promo.fecha_especifica}`);
+        console.log(`      - Fecha promo (tipo): ${typeof promo.fecha_especifica}`);
+        
+        // Normalizar fecha de promoción (puede venir como Date o string de PostgreSQL)
+        let fechaPromoStr = promo.fecha_especifica;
+        if (promo.fecha_especifica instanceof Date) {
+          fechaPromoStr = promo.fecha_especifica.toISOString().split('T')[0];
+        } else if (typeof promo.fecha_especifica === 'string') {
+          fechaPromoStr = promo.fecha_especifica.split('T')[0];
+        }
+        
+        console.log(`      - Fecha promo (normalizada): ${fechaPromoStr}`);
+        console.log(`      - ¿Son iguales?: ${fecha === fechaPromoStr}`);
+        
+        fechaValida = fecha === fechaPromoStr;
       } else if (promo.tipo_fecha === 'rango' && promo.fecha_inicio && promo.fecha_fin) {
         const inicio = new Date(promo.fecha_inicio + 'T00:00:00');
         const fin = new Date(promo.fecha_fin + 'T00:00:00');
         fechaValida = fechaReserva >= inicio && fechaReserva <= fin;
+        console.log(`   📅 Validación de rango: ${fechaValida}`);
       } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
         const diasPromo = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
         fechaValida = diasPromo.includes(diaSemana);
+        console.log(`   📅 Validación semanal - Días: ${diasPromo}, Día actual: ${diaSemana}, Válido: ${fechaValida}`);
       }
       
+      console.log(`   ✔️ Fecha válida: ${fechaValida}`);
       if (!fechaValida) continue;
       
       // Validar tipo de horario
       let horarioValido = false;
       
       if (promo.tipo_horario === 'especifico' && promo.hora_especifica) {
-        horarioValido = horaReserva === promo.hora_especifica.substring(0, 5); // HH:MM
+        console.log(`   🕐 Comparando horas específicas:`);
+        console.log(`      - Hora reserva: ${horaReserva}`);
+        console.log(`      - Hora promo (raw): ${promo.hora_especifica}`);
+        console.log(`      - Hora promo (tipo): ${typeof promo.hora_especifica}`);
+        
+        // Normalizar hora de promoción
+        let horaPromoStr = promo.hora_especifica;
+        if (typeof promo.hora_especifica === 'string') {
+          horaPromoStr = promo.hora_especifica.substring(0, 5);
+        }
+        
+        console.log(`      - Hora promo (normalizada): ${horaPromoStr}`);
+        console.log(`      - ¿Son iguales?: ${horaReserva === horaPromoStr}`);
+        
+        horarioValido = horaReserva === horaPromoStr;
       } else if (promo.tipo_horario === 'rango' && promo.hora_inicio && promo.hora_fin) {
         const horaInicioPromo = promo.hora_inicio.substring(0, 5);
         const horaFinPromo = promo.hora_fin.substring(0, 5);
         horarioValido = horaReserva >= horaInicioPromo && horaReserva < horaFinPromo;
+        console.log(`   🕐 Validación de rango: ${horaInicioPromo} <= ${horaReserva} < ${horaFinPromo} = ${horarioValido}`);
       }
+      
+      console.log(`   ✔️ Horario válido: ${horarioValido}`);
       
       if (horarioValido) {
         console.log(`✅ Promoción APLICADA: ${promo.nombre} - Precio: $${promo.precio_promocional}`);
