@@ -735,7 +735,15 @@ async function loadPromociones() {
         const response = await AdminUtils.authenticatedFetch(`/api/promociones/cancha/${currentCanchaPromocion}`);
         
         if (!response.ok) {
-            throw new Error('Error cargando promociones');
+            // Si el endpoint no existe o retorna error, mostrar lista vacía
+            console.log('⚠️ Endpoint de promociones no disponible o sin datos');
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay promociones configuradas para esta cancha. Haz clic en "Nueva Promoción" para crear una.
+                </div>
+            `;
+            return;
         }
         
         const promociones = await response.json();
