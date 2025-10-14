@@ -117,6 +117,7 @@ async function createPromocion(req, res) {
         console.log('📦 Body:', req.body);
         
         const usuario = req.user;
+        const usuarioId = usuario.id || usuario.userId; // Manejar ambos formatos
         const {
             cancha_id,
             precio_promocional,
@@ -180,10 +181,10 @@ async function createPromocion(req, res) {
             cancha_id, precio_promocional, tipo_fecha, fecha_especifica || null,
             fecha_inicio || null, fecha_fin || null, dias_semana || null, tipo_horario,
             hora_especifica || null, hora_inicio || null, hora_fin || null,
-            nombre || null, descripcion || null, usuario.id
+            nombre || null, descripcion || null, usuarioId
         ]);
         
-        console.log('✅ Promoción creada:', result.id);
+        console.log('✅ Promoción creada:', result);
         
         res.status(201).json({
             success: true,
