@@ -898,18 +898,22 @@ async function loadPromociones() {
  */
 function formatPromocionFechas(promo) {
     if (promo.tipo_fecha === 'especifico' && promo.fecha_especifica) {
-        const fecha = new Date(promo.fecha_especifica + 'T00:00:00');
-        if (!isNaN(fecha.getTime())) {
-            return `Fecha específica: ${fecha.toLocaleDateString('es-CL')}`;
+        // Manejar tanto string YYYY-MM-DD como objeto Date de PostgreSQL
+        let fechaStr = promo.fecha_especifica;
+        if (typeof fechaStr === 'object') {
+            fechaStr = fechaStr.toISOString().split('T')[0];
+        } else if (fechaStr.includes('T')) {
+            fechaStr = fechaStr.split('T')[0];
         }
-        return `Fecha específica: ${promo.fecha_especifica}`;
+        return `Fecha específica: ${fechaStr}`;
     } else if (promo.tipo_fecha === 'rango' && promo.fecha_inicio && promo.fecha_fin) {
-        const inicio = new Date(promo.fecha_inicio + 'T00:00:00');
-        const fin = new Date(promo.fecha_fin + 'T00:00:00');
-        if (!isNaN(inicio.getTime()) && !isNaN(fin.getTime())) {
-            return `Del ${inicio.toLocaleDateString('es-CL')} al ${fin.toLocaleDateString('es-CL')}`;
-        }
-        return `Del ${promo.fecha_inicio} al ${promo.fecha_fin}`;
+        let inicioStr = promo.fecha_inicio;
+        let finStr = promo.fecha_fin;
+        if (typeof inicioStr === 'object') inicioStr = inicioStr.toISOString().split('T')[0];
+        else if (inicioStr.includes('T')) inicioStr = inicioStr.split('T')[0];
+        if (typeof finStr === 'object') finStr = finStr.toISOString().split('T')[0];
+        else if (finStr.includes('T')) finStr = finStr.split('T')[0];
+        return `Del ${inicioStr} al ${finStr}`;
     } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
         const dias = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
         return `Recurrente: ${dias.join(', ')}`;
