@@ -1953,11 +1953,15 @@ async function exportToExcel(tableType) {
         }
         fileName += `_${dateFrom}_${dateTo}.xlsx`;
         
-        // Descargar archivo
-        XLSX.writeFile(wb, fileName);
+        // Descargar archivo con opciones para guardar estilos
+        XLSX.writeFile(wb, fileName, { 
+            cellStyles: true, 
+            bookType: 'xlsx',
+            compression: true
+        });
         
         showNotification(`Excel descargado: ${fileName}`, 'success');
-        console.log(`✅ Excel exportado exitosamente: ${fileName}`);
+        console.log(`✅ Excel exportado exitosamente con estilos: ${fileName}`);
         
     } catch (error) {
         console.error('❌ Error exportando Excel:', error);

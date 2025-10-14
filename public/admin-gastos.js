@@ -1057,9 +1057,13 @@ function exportToExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
     
-    // Descargar
+    // Descargar con opciones para guardar estilos
     const filename = `Control_Gastos_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.xlsx`;
-    XLSX.writeFile(wb, filename);
+    XLSX.writeFile(wb, filename, { 
+        cellStyles: true, 
+        bookType: 'xlsx',
+        compression: true
+    });
     
     Swal.fire({
         icon: 'success',
