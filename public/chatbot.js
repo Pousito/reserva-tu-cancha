@@ -167,7 +167,7 @@ class Chatbot {
 
     handleQuickAction(action) {
         const responses = {
-            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas: $8.000/hora<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>- 1 cancha: Consultar<br><br>💳 <i>Webpay Plus y códigos de descuento disponibles.</i>',
+            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas: $8.000/hora<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>- 1 cancha: $50/hora<br><br>💳 <i>Webpay Plus y códigos de descuento disponibles.</i>',
             horarios: '🕐 <b>Horarios:</b><br><br>🏟️ <b>MagnaSports & Gunnen (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta 30 días adelante.</i>',
             reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Tenemos 3 complejos:</b><br>- MagnaSports (Los Ángeles)<br>- Fundación Gunnen (Los Ángeles)<br>- Borde Río (Quilleco)<br><br><b>Pasos:</b><br>1. Selecciona ciudad y complejo<br>2. Elige fecha y horario<br>3. Completa datos<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación por email</i>',
             contacto: '📞 <b>Contacto:</b><br><br>🏟️ <b>MagnaSports</b><br>📱 +56987654321<br>📧 reservas@magnasports.cl<br><br>🏟️ <b>Gunnen</b><br>📱 +56972815810<br>📧 naxiin_320@hotmail.com<br><br>🏟️ <b>Borde Río</b><br>📱 +56999820929<br>📧 admin@borderio.cl'
@@ -193,9 +193,9 @@ class Chatbot {
             'buenas noches': '¡Buenas noches! 🌙 Soy Carla, ¿necesitas alguna información sobre reservas?',
             
             // Precios
-            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas de fútbol: $8.000/hora<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>- 1 cancha de fútbol: consultar<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
-            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports:</b> $5.000<br>🏟️ <b>Fundación Gunnen:</b> $8.000<br>🏟️ <b>Borde Río:</b> Consultar<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha y promociones disponibles.</i>',
-            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles):</b> $5.000/hora<br>🏟️ <b>Fundación Gunnen (Los Ángeles):</b> $8.000/hora<br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b> Consultar<br><br>💳 <i>Pagos seguros con Webpay Plus.</i>',
+            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas de fútbol: $8.000/hora<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>- 1 cancha de fútbol: $50/hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports:</b> $5.000<br>🏟️ <b>Fundación Gunnen:</b> $8.000<br>🏟️ <b>Borde Río:</b> $50<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha y promociones disponibles.</i>',
+            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles):</b> $5.000/hora<br>🏟️ <b>Fundación Gunnen (Los Ángeles):</b> $8.000/hora<br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b> $50/hora<br><br>💳 <i>Pagos seguros con Webpay Plus.</i>',
             
             // Horarios
             'horario': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta con 30 días de anticipación.</i>',
@@ -232,7 +232,7 @@ class Chatbot {
             
             // Deportes
             'padel': '🏓 <b>Pádel:</b><br><br><b>Próximamente disponible</b><br><br>💡 <i>Actualmente solo ofrecemos fútbol en nuestros 3 complejos</i>',
-            'futbol': '⚽ <b>Fútbol:</b><br><br><b>5 canchas disponibles:</b><br>- MagnaSports: 2 techadas ($5.000/h)<br>- Gunnen: 2 canchas ($8.000/h)<br>- Borde Río: 1 cancha (consultar)<br><br><b>Ciudades:</b> Los Ángeles y Quilleco',
+            'futbol': '⚽ <b>Fútbol:</b><br><br><b>5 canchas disponibles:</b><br>- MagnaSports: 2 techadas ($5.000/h)<br>- Gunnen: 2 canchas ($8.000/h)<br>- Borde Río: 1 cancha ($50/h)<br><br><b>Ciudades:</b> Los Ángeles y Quilleco',
             
             // MagnaSports específico
             'magnasports': '🏟️ <b>MagnaSports (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas techadas<br><b>Precio:</b> $5.000/hora<br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><b>Dirección:</b> Monte Perdido 1685<br><b>Teléfono:</b> +56987654321<br><b>Email:</b> reservas@magnasports.cl',
@@ -242,9 +242,9 @@ class Chatbot {
             'fundacion gunnen': '🏟️ <b>Fundación Gunnen:</b><br><br><b>Ubicación:</b> Los Ángeles<br><b>Canchas:</b> 2 de fútbol ($8.000/h)<br><b>Dirección:</b> Calle Don Victor 1310<br><b>Contacto:</b> +56972815810',
             
             // Borde Río específico
-            'borde rio': '🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b><br><br><b>Canchas:</b> 1 cancha de fútbol<br><b>Precio:</b> Consultar<br><b>Horarios:</b> Todos los días 10:00-23:00<br><b>Dirección:</b> Ruta Q-575, Quilleco<br><b>Teléfono:</b> +56999820929<br><b>Email:</b> admin@borderio.cl',
-            'borderio': '🏟️ <b>Borde Río:</b><br><br><b>Ubicación:</b> Quilleco, Bio Bio<br><b>Canchas:</b> 1 de fútbol<br><b>Horarios:</b> 10:00-23:00 (todos los días)<br><b>Contacto:</b> +56999820929',
-            'quilleco': '🏙️ <b>Quilleco:</b><br><br><b>Complejo disponible:</b><br>- Espacio Deportivo Borde Río<br><br><b>Canchas:</b> 1 de fútbol<br><b>Horarios:</b> 10:00-23:00 diario<br><b>Contacto:</b> admin@borderio.cl',
+            'borde rio': '🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b><br><br><b>Canchas:</b> 1 cancha de fútbol<br><b>Precio:</b> $50/hora<br><b>Horarios:</b> Todos los días 10:00-23:00<br><b>Dirección:</b> Ruta Q-575, Quilleco<br><b>Teléfono:</b> +56999820929<br><b>Email:</b> admin@borderio.cl',
+            'borderio': '🏟️ <b>Borde Río:</b><br><br><b>Ubicación:</b> Quilleco, Bio Bio<br><b>Canchas:</b> 1 de fútbol ($50/h)<br><b>Horarios:</b> 10:00-23:00 (todos los días)<br><b>Contacto:</b> +56999820929',
+            'quilleco': '🏙️ <b>Quilleco:</b><br><br><b>Complejo disponible:</b><br>- Espacio Deportivo Borde Río<br><br><b>Canchas:</b> 1 de fútbol ($50/h)<br><b>Horarios:</b> 10:00-23:00 diario<br><b>Contacto:</b> admin@borderio.cl',
             
             'los angeles': '🏙️ <b>Los Ángeles:</b><br><br><b>2 complejos disponibles:</b><br><br>🏟️ <b>MagnaSports</b><br>- 2 canchas techadas: $5.000/h<br>- Monte Perdido 1685<br><br>🏟️ <b>Fundación Gunnen</b><br>- 2 canchas: $8.000/h<br>- Calle Don Victor 1310',
             'canchas techadas': '🏟️ <b>Canchas Techadas:</b><br><br><b>MagnaSports (Los Ángeles):</b> 2 canchas techadas<br><br><b>Ventaja:</b> perfectas para jugar sin importar el clima<br><br><b>Precio:</b> $5.000/hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Ideal para:</b> fútbol 7 vs 7',
@@ -270,7 +270,7 @@ class Chatbot {
         }
         
         if (this.detectIntent(lowerMessage, ['precio', 'precios', 'cuesta', 'cuanto cuesta', 'valor', 'costos'])) {
-            return '💰 <b>Precios:</b><br><br>🏟️ <b>MagnaSports:</b> $5.000/h<br>🏟️ <b>Gunnen:</b> $8.000/h<br>🏟️ <b>Borde Río:</b> Consultar<br><br>💡 <i>Promociones disponibles según fecha/hora</i>';
+            return '💰 <b>Precios:</b><br><br>🏟️ <b>MagnaSports:</b> $5.000/h<br>🏟️ <b>Gunnen:</b> $8.000/h<br>🏟️ <b>Borde Río:</b> $50/h<br><br>💡 <i>Promociones disponibles según fecha/hora</i>';
         }
         
         if (this.detectIntent(lowerMessage, ['horario', 'horarios', 'abierto', 'cuando abren', 'disponibilidad'])) {
