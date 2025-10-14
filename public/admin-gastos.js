@@ -1036,6 +1036,23 @@ function exportToExcel() {
         { s: { r: 10, c: 0 }, e: { r: 10, c: 6 } }  // DETALLE
     ];
     
+    // Ajustar altura de filas para que los emojis se vean bien
+    ws['!rows'] = [];
+    ws['!rows'][0] = { hpt: 28 }; // Título principal - más alto
+    ws['!rows'][2] = { hpt: 20 }; // Complejo
+    ws['!rows'][3] = { hpt: 20 }; // Período
+    ws['!rows'][5] = { hpt: 24 }; // Subtítulo RESUMEN
+    ws['!rows'][6] = { hpt: 22 }; // Total Ingresos
+    ws['!rows'][7] = { hpt: 22 }; // Total Gastos
+    ws['!rows'][8] = { hpt: 22 }; // Balance
+    ws['!rows'][10] = { hpt: 24 }; // Subtítulo DETALLE
+    ws['!rows'][11] = { hpt: 22 }; // Encabezados de tabla
+    
+    // Altura para todas las filas de datos (desde fila 13)
+    for (let i = 12; i <= range.e.r; i++) {
+        ws['!rows'][i] = { hpt: 20 }; // Filas de datos
+    }
+    
     // Crear workbook y agregar worksheet
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');

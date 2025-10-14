@@ -1921,6 +1921,17 @@ async function exportToExcel(tableType) {
             { s: { r: 2, c: 0 }, e: { r: 2, c: headers.length - 1 } }  // Período
         ];
         
+        // Ajustar altura de filas para que los emojis se vean perfectos
+        ws['!rows'] = [];
+        ws['!rows'][0] = { hpt: 28 }; // Título principal - más alto
+        ws['!rows'][2] = { hpt: 20 }; // Período
+        ws['!rows'][4] = { hpt: 24 }; // Encabezados de tabla
+        
+        // Altura para todas las filas de datos (desde fila 6)
+        for (let i = 5; i <= range.e.r; i++) {
+            ws['!rows'][i] = { hpt: 21 }; // Filas de datos - altura perfecta para emojis
+        }
+        
         // Crear libro y agregar hoja
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 31));
