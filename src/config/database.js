@@ -261,6 +261,17 @@ class DatabaseManager {
         )
       `);
 
+      // Migración: Agregar columna creado_por si no existe
+      try {
+        await client.query(`
+          ALTER TABLE promociones_canchas 
+          ADD COLUMN IF NOT EXISTS creado_por INTEGER REFERENCES usuarios(id)
+        `);
+        console.log('✅ Migración: columna creado_por verificada/agregada');
+      } catch (migrationError) {
+        console.log('⚠️ Migración creado_por:', migrationError.message);
+      }
+
       console.log('✅ Tablas PostgreSQL creadas/verificadas exitosamente');
       
     } catch (error) {
