@@ -713,6 +713,13 @@ async function openPromocionesModal(canchaId, canchaNombre, canchaPrecio) {
     // Configurar auto-cierre de calendarios
     configurarAutoCloseDatePickers();
     
+    // Inicializar estado de campos (required, visibility)
+    setTimeout(() => {
+        if (typeof updatePromocionFields === 'function') {
+            updatePromocionFields();
+        }
+    }, 100);
+    
     // Mostrar modal
     const modal = new bootstrap.Modal(modalElement);
     modal.show();
@@ -970,11 +977,26 @@ function updatePromocionFields() {
     document.getElementById('fechaRecurrenteContainer').style.display = 
         tipoFecha === 'recurrente_semanal' ? 'block' : 'none';
     
-    // Mostrar/ocultar campos de horario
-    document.getElementById('horarioEspecificoContainer').style.display = 
-        tipoHorario === 'especifico' ? 'block' : 'none';
-    document.getElementById('horarioRangoContainer').style.display = 
-        tipoHorario === 'rango' ? 'block' : 'none';
+    // Mostrar/ocultar campos de horario y manejar required
+    const horaEspecifica = document.getElementById('horaEspecifica');
+    const horaInicio = document.getElementById('horaInicio');
+    const horaFin = document.getElementById('horaFin');
+    
+    if (tipoHorario === 'especifico') {
+        document.getElementById('horarioEspecificoContainer').style.display = 'block';
+        document.getElementById('horarioRangoContainer').style.display = 'none';
+        // Manejar required
+        if (horaEspecifica) horaEspecifica.required = true;
+        if (horaInicio) horaInicio.required = false;
+        if (horaFin) horaFin.required = false;
+    } else {
+        document.getElementById('horarioEspecificoContainer').style.display = 'none';
+        document.getElementById('horarioRangoContainer').style.display = 'block';
+        // Manejar required
+        if (horaEspecifica) horaEspecifica.required = false;
+        if (horaInicio) horaInicio.required = true;
+        if (horaFin) horaFin.required = true;
+    }
 }
 
 // Event listeners para cambios en tipo de fecha/horario

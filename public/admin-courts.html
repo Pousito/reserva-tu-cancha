@@ -626,7 +626,7 @@
                                                 <span class="text-muted" id="precioNormalLabel"></span>
                                             </label>
                                             <input type="number" class="form-control" id="promocionPrecio" 
-                                                   min="10" step="50" required>
+                                                   min="10" step="10" required>
                                             <small class="text-muted">Debe ser menor que el precio normal (mínimo $10)</small>
                                         </div>
                                     </div>
@@ -769,7 +769,7 @@
                                     <!-- Campos de horario (condicionales) -->
                                     <div id="horarioEspecificoContainer" class="mb-3">
                                         <label for="horaEspecifica" class="form-label">Hora Específica</label>
-                                        <select class="form-select" id="horaEspecifica" required>
+                                        <select class="form-select" id="horaEspecifica">
                                             <option value="">Selecciona una hora...</option>
                                         </select>
                                         <small class="text-muted">Selecciona la hora exacta donde aplicará la promoción</small>
@@ -779,13 +779,13 @@
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <label for="horaInicio" class="form-label">Hora Inicio</label>
-                                                <select class="form-select" id="horaInicio" required>
+                                                <select class="form-select" id="horaInicio">
                                                     <option value="">Selecciona hora inicio...</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="horaFin" class="form-label">Hora Fin</label>
-                                                <select class="form-select" id="horaFin" required>
+                                                <select class="form-select" id="horaFin">
                                                     <option value="">Selecciona hora fin...</option>
                                                 </select>
                                             </div>
@@ -821,6 +821,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/url-config.js?v=1.0"></script>
     <script src="js/admin-utils.js?v=1.0"></script>
-    <script src="admin-courts.js?v=3.2"></script>
+    <script src="admin-courts.js?v=3.3"></script>
 </body>
 </html>
