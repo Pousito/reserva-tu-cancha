@@ -290,6 +290,13 @@ class DatabaseManager {
       // Asegurar zona horaria en cada consulta para producción
       await client.query("SET timezone = 'America/Santiago'");
       const result = await client.query(sql, params);
+      
+      // Si la query tiene RETURNING, devolver el objeto completo
+      if (sql.toUpperCase().includes('RETURNING')) {
+        return result.rows[0] || null;
+      }
+      
+      // De lo contrario, devolver formato legacy
       return { lastID: result.rows[0]?.id || 0, changes: result.rowCount };
     } finally {
       client.release();
@@ -303,6 +310,18 @@ class DatabaseManager {
       await client.query("SET timezone = 'America/Santiago'");
       const result = await client.query(sql, params);
       return result.rows[0] || null;
+    } finally {
+      client.release();
+    }
+  }
+
+  async all(sql, params = []) {
+    const client = await this.pgPool.connect();
+    try {
+      // Asegurar zona horaria en cada consulta para producción
+      await client.query("SET timezone = 'America/Santiago'");
+      const result = await client.query(sql, params);
+      return result.rows || [];
     } finally {
       client.release();
     }
