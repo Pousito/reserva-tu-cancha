@@ -1953,12 +1953,8 @@ async function exportToExcel(tableType) {
         }
         fileName += `_${dateFrom}_${dateTo}.xlsx`;
         
-        // Descargar archivo con opciones para guardar estilos
-        XLSX.writeFile(wb, fileName, { 
-            cellStyles: true, 
-            bookType: 'xlsx',
-            compression: true
-        });
+        // Descargar archivo (xlsx-js-style soporta estilos automáticamente)
+        XLSX.writeFile(wb, fileName);
         
         showNotification(`Excel descargado: ${fileName}`, 'success');
         console.log(`✅ Excel exportado exitosamente con estilos: ${fileName}`);
