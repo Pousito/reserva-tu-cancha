@@ -237,6 +237,29 @@ class DatabaseManager {
         )
       `);
 
+      // Tabla de promociones para canchas
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS promociones_canchas (
+          id SERIAL PRIMARY KEY,
+          cancha_id INTEGER REFERENCES canchas(id) ON DELETE CASCADE,
+          nombre VARCHAR(255) NOT NULL,
+          precio_promocional INTEGER NOT NULL,
+          tipo_fecha VARCHAR(50) NOT NULL CHECK (tipo_fecha IN ('especifico', 'rango', 'recurrente_semanal')),
+          fecha_especifica DATE,
+          fecha_inicio DATE,
+          fecha_fin DATE,
+          dias_semana TEXT,
+          tipo_horario VARCHAR(50) NOT NULL CHECK (tipo_horario IN ('especifico', 'rango')),
+          hora_especifica TIME,
+          hora_inicio TIME,
+          hora_fin TIME,
+          descripcion TEXT,
+          activo BOOLEAN DEFAULT TRUE,
+          creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('✅ Tablas PostgreSQL creadas/verificadas exitosamente');
       
     } catch (error) {
