@@ -95,7 +95,7 @@ class Chatbot {
     }
 
     addWelcomeMessage() {
-        this.addMessage('bot', '¡Hola! 👋 Soy Carla, tu asistente personal. ¿En qué puedo ayudarte con tu reserva hoy?');
+        this.addMessage('bot', '¡Hola! 👋 Soy Carla, tu asistente personal.<br><br>📊 <b>Actualmente tenemos:</b><br>🏙️ 2 ciudades: Los Ángeles y Quilleco<br>🏟️ 3 complejos deportivos<br>⚽ 5 canchas de fútbol<br><br>¿En qué puedo ayudarte hoy?');
     }
 
     toggleChatbot() {
@@ -167,10 +167,10 @@ class Chatbot {
 
     handleQuickAction(action) {
         const responses = {
-            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $5.000 por hora<br><br><b>Cancha Techada 2:</b> $5.000 por hora<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
-            horarios: '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>',
-            reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
-            contacto: '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00'
+            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas: $8.000/hora<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>- 1 cancha: Consultar<br><br>💳 <i>Webpay Plus y códigos de descuento disponibles.</i>',
+            horarios: '🕐 <b>Horarios:</b><br><br>🏟️ <b>MagnaSports & Gunnen (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta 30 días adelante.</i>',
+            reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Tenemos 3 complejos:</b><br>- MagnaSports (Los Ángeles)<br>- Fundación Gunnen (Los Ángeles)<br>- Borde Río (Quilleco)<br><br><b>Pasos:</b><br>1. Selecciona ciudad y complejo<br>2. Elige fecha y horario<br>3. Completa datos<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación por email</i>',
+            contacto: '📞 <b>Contacto:</b><br><br>🏟️ <b>MagnaSports</b><br>📱 +56987654321<br>📧 reservas@magnasports.cl<br><br>🏟️ <b>Gunnen</b><br>📱 +56972815810<br>📧 naxiin_320@hotmail.com<br><br>🏟️ <b>Borde Río</b><br>📱 +56999820929<br>📧 admin@borderio.cl'
         };
         
         this.addMessage('bot', responses[action]);
@@ -193,19 +193,19 @@ class Chatbot {
             'buenas noches': '¡Buenas noches! 🌙 Soy Carla, ¿necesitas alguna información sobre reservas?',
             
             // Precios
-            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $5.000 por hora<br><br><b>Cancha Techada 2:</b> $5.000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
-            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Canchas Techadas de Fútbol:</b> $5.000<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha.</i>',
-            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Precio:</b> $5.000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas de fútbol: $8.000/hora<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>- 1 cancha de fútbol: consultar<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>MagnaSports:</b> $5.000<br>🏟️ <b>Fundación Gunnen:</b> $8.000<br>🏟️ <b>Borde Río:</b> Consultar<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha y promociones disponibles.</i>',
+            'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles):</b> $5.000/hora<br>🏟️ <b>Fundación Gunnen (Los Ángeles):</b> $8.000/hora<br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b> Consultar<br><br>💳 <i>Pagos seguros con Webpay Plus.</i>',
             
             // Horarios
-            'horario': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>',
-            'cuando abren': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>💡 <i>Estamos disponibles todos los días de la semana.</i>',
-            'disponibilidad': '📅 <b>Disponibilidad:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Reservas:</b> hasta 30 días adelante<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)<br><br><b>Canchas:</b> techadas disponibles todo el año',
+            'horario': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta con 30 días de anticipación.</i>',
+            'cuando abren': '🕐 <b>Horarios:</b><br><br>🏟️ <b>MagnaSports:</b> L-V 16:00-23:00, S-D 12:00-23:00<br>🏟️ <b>Gunnen:</b> L-V 16:00-23:00, S-D 12:00-23:00<br>🏟️ <b>Borde Río:</b> Todos los días 10:00-23:00',
+            'disponibilidad': '📅 <b>Disponibilidad:</b><br><br><b>Reservas:</b> hasta 30 días adelante<br><br>🏟️ <b>3 complejos disponibles</b> en Los Ángeles y Quilleco<br><br>⚽ <b>5 canchas de fútbol</b> en total<br><br>💡 <i>Consulta horarios en tiempo real en la página.</i>',
             
             // Reservas
-            'reservar': '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
-            'como reservo': '📅 <b>Proceso de Reserva:</b><br><br><b>Paso 1:</b> Elige Los Ángeles como ciudad<br><br><b>Paso 2:</b> Selecciona MagnaSports<br><br><b>Paso 3:</b> Escoge cancha techada de fútbol<br><br><b>Paso 4:</b> Selecciona fecha y horario<br><br><b>Paso 5:</b> Completa formulario de datos<br><br><b>Paso 6:</b> Aplica código descuento (opcional)<br><br><b>Paso 7:</b> Realiza pago seguro<br><br>¿Necesitas ayuda con algún paso?',
-            'hacer reserva': '📅 <b>Reserva Rápida:</b><br><br><b>Paso 1:</b> Selecciona Los Ángeles<br><br><b>Paso 2:</b> Elige MagnaSports<br><br><b>Paso 3:</b> Escoge cancha y horario<br><br><b>Paso 4:</b> Completa datos personales<br><br><b>Paso 5:</b> Paga online con Webpay Plus<br><br>✅ <i>Confirmación inmediata por email</i>',
+            'reservar': '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles o Quilleco)<br><br><b>Paso 2:</b> Elige tu complejo favorito<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
+            'como reservo': '📅 <b>Proceso de Reserva:</b><br><br><b>Tenemos 3 complejos disponibles:</b><br>- MagnaSports (Los Ángeles)<br>- Fundación Gunnen (Los Ángeles)<br>- Espacio Deportivo Borde Río (Quilleco)<br><br><b>Pasos:</b><br>1. Elige ciudad y complejo<br>2. Selecciona fecha y hora<br>3. Completa formulario<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación inmediata</i>',
+            'hacer reserva': '📅 <b>Reserva Rápida:</b><br><br><b>Ciudades disponibles:</b><br>🏙️ Los Ángeles (2 complejos)<br>🏙️ Quilleco (1 complejo)<br><br><b>Total:</b> 3 complejos, 5 canchas<br><br><b>Pasos:</b> Elige ciudad → Complejo → Fecha/Hora → Paga<br><br>✅ <i>Confirmación por email</i>',
             
             // Descuentos
             'descuento': '🎫 <b>Códigos de Descuento Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% de descuento<br><br><b>BIENVENIDA15:</b> 15% de descuento<br><br><b>FIDELIDAD10:</b> 10% de descuento<br><br>💡 <i>Aplica el código al hacer tu reserva.</i>',
@@ -213,9 +213,9 @@ class Chatbot {
             'promocion': '🎫 <b>Promociones Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% descuento<br><br><b>BIENVENIDA15:</b> 15% descuento<br><br><b>FIDELIDAD10:</b> 10% descuento<br><br>💡 <i>Válidos hasta agotar stock</i>',
             
             // Contacto
-            'contacto': '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00',
-            'telefono': '📞 <b>Teléfonos de Contacto:</b><br><br>🏟️ <b>MagnaSports:</b> +56912345678<br><br>🏢 <b>Soporte:</b> +56912345678<br><br>🕐 <i>Horario de atención: Lunes a Viernes 9:00-18:00</i>',
-            'email': '📧 <b>Emails de Contacto:</b><br><br>🏟️ <b>MagnaSports:</b> naxiin320@gmail.com<br><br>🏢 <b>Soporte General:</b> soporte@reservatuscanchas.cl<br><br>💡 <i>Te respondemos en menos de 24 horas</i>',
+            'contacto': '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br>📱 +56987654321<br>📧 reservas@magnasports.cl<br>📍 Monte Perdido 1685<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>📱 +56972815810<br>📧 naxiin_320@hotmail.com<br>📍 Calle Don Victor 1310<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>📱 +56999820929<br>📧 admin@borderio.cl<br>📍 Ruta Q-575, Quilleco',
+            'telefono': '📞 <b>Teléfonos:</b><br><br>🏟️ <b>MagnaSports:</b> +56987654321<br>🏟️ <b>Gunnen:</b> +56972815810<br>🏟️ <b>Borde Río:</b> +56999820929<br><br>💡 <i>Llama al complejo directamente</i>',
+            'email': '📧 <b>Emails:</b><br><br>🏟️ <b>MagnaSports:</b> reservas@magnasports.cl<br>🏟️ <b>Gunnen:</b> naxiin_320@hotmail.com<br>🏟️ <b>Borde Río:</b> admin@borderio.cl<br><br>💡 <i>Respuesta en menos de 24 horas</i>',
             
             // Problemas técnicos
             'no funciona': '🔧 <b>Soporte Técnico:</b><br><br><b>Paso 1:</b> Refresca la página<br><br><b>Paso 2:</b> Verifica tu conexión<br><br><b>Paso 3:</b> Contacta: soporte@reservatuscanchas.cl<br><br>¿Qué problema específico tienes?',
@@ -227,17 +227,27 @@ class Chatbot {
             'webpay': '💳 <b>Webpay Plus:</b><br><br><b>Acepta:</b> todas las tarjetas<br><br><b>Pago:</b> seguro y confiable<br><br><b>Confirmación:</b> inmediata<br><br>✅ <i>Procesado por Transbank</i>',
             
             // Ubicación
-            'ubicacion': '📍 <b>Ubicación:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br><b>Estacionamiento:</b> disponible<br><br>🗺️ <i>Fácil acceso en transporte público</i>',
-            'direccion': '📍 <b>Dirección:</b><br><br>🏟️ <b>MagnaSports</b><br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🚗 <i>Estacionamiento disponible</i>',
+            'ubicacion': '📍 <b>Ubicaciones:</b><br><br>🏟️ <b>MagnaSports</b><br>Monte Perdido 1685, Los Ángeles<br><br>🏟️ <b>Fundación Gunnen</b><br>Calle Don Victor 1310, Los Ángeles<br><br>🏟️ <b>Borde Río</b><br>Ruta Q-575, Quilleco, Bio Bio<br><br>🗺️ <i>Fácil acceso en todos los complejos</i>',
+            'direccion': '📍 <b>Direcciones:</b><br><br>🏟️ <b>MagnaSports:</b> Monte Perdido 1685, Los Ángeles<br>🏟️ <b>Gunnen:</b> Calle Don Victor 1310, Los Ángeles<br>🏟️ <b>Borde Río:</b> Ruta Q-575, Quilleco<br><br>🚗 <i>Estacionamiento disponible</i>',
             
             // Deportes
-            'padel': '🏓 <b>Pádel:</b><br><br><b>Disponible en:</b> MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Incluye:</b> raquetas y pelotas<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
-            'futbol': '⚽ <b>Fútbol:</b><br><br><b>Canchas:</b> techadas en MagnaSports (Los Ángeles)<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Incluye:</b> balones y vestidores<br><br><b>Horarios:</b> 16:00-23:00 (L-V), 12:00-23:00 (S-D)',
+            'padel': '🏓 <b>Pádel:</b><br><br><b>Próximamente disponible</b><br><br>💡 <i>Actualmente solo ofrecemos fútbol en nuestros 3 complejos</i>',
+            'futbol': '⚽ <b>Fútbol:</b><br><br><b>5 canchas disponibles:</b><br>- MagnaSports: 2 techadas ($5.000/h)<br>- Gunnen: 2 canchas ($8.000/h)<br>- Borde Río: 1 cancha (consultar)<br><br><b>Ciudades:</b> Los Ángeles y Quilleco',
             
             // MagnaSports específico
-            'magnasports': '🏟️ <b>MagnaSports (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com',
-            'los angeles': '🏟️ <b>MagnaSports en Los Ángeles:</b><br><br><b>Canchas:</b> 2 canchas techadas de fútbol<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Dirección:</b> Monte Perdido 1685<br><br><b>Contacto:</b> naxiin320@gmail.com',
-            'canchas techadas': '🏟️ <b>Canchas Techadas:</b><br><br><b>MagnaSports (Los Ángeles):</b> 2 canchas techadas<br><br><b>Ventaja:</b> perfectas para jugar sin importar el clima<br><br><b>Precio:</b> $5.000 por hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Ideal para:</b> fútbol 7 vs 7',
+            'magnasports': '🏟️ <b>MagnaSports (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas techadas<br><b>Precio:</b> $5.000/hora<br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><b>Dirección:</b> Monte Perdido 1685<br><b>Teléfono:</b> +56987654321<br><b>Email:</b> reservas@magnasports.cl',
+            
+            // Gunnen específico
+            'gunnen': '🏟️ <b>Fundación Gunnen (Los Ángeles):</b><br><br><b>Canchas:</b> 2 canchas de fútbol<br><b>Precio:</b> $8.000/hora<br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><b>Dirección:</b> Calle Don Victor 1310<br><b>Teléfono:</b> +56972815810<br><b>Email:</b> naxiin_320@hotmail.com',
+            'fundacion gunnen': '🏟️ <b>Fundación Gunnen:</b><br><br><b>Ubicación:</b> Los Ángeles<br><b>Canchas:</b> 2 de fútbol ($8.000/h)<br><b>Dirección:</b> Calle Don Victor 1310<br><b>Contacto:</b> +56972815810',
+            
+            // Borde Río específico
+            'borde rio': '🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b><br><br><b>Canchas:</b> 1 cancha de fútbol<br><b>Precio:</b> Consultar<br><b>Horarios:</b> Todos los días 10:00-23:00<br><b>Dirección:</b> Ruta Q-575, Quilleco<br><b>Teléfono:</b> +56999820929<br><b>Email:</b> admin@borderio.cl',
+            'borderio': '🏟️ <b>Borde Río:</b><br><br><b>Ubicación:</b> Quilleco, Bio Bio<br><b>Canchas:</b> 1 de fútbol<br><b>Horarios:</b> 10:00-23:00 (todos los días)<br><b>Contacto:</b> +56999820929',
+            'quilleco': '🏙️ <b>Quilleco:</b><br><br><b>Complejo disponible:</b><br>- Espacio Deportivo Borde Río<br><br><b>Canchas:</b> 1 de fútbol<br><b>Horarios:</b> 10:00-23:00 diario<br><b>Contacto:</b> admin@borderio.cl',
+            
+            'los angeles': '🏙️ <b>Los Ángeles:</b><br><br><b>2 complejos disponibles:</b><br><br>🏟️ <b>MagnaSports</b><br>- 2 canchas techadas: $5.000/h<br>- Monte Perdido 1685<br><br>🏟️ <b>Fundación Gunnen</b><br>- 2 canchas: $8.000/h<br>- Calle Don Victor 1310',
+            'canchas techadas': '🏟️ <b>Canchas Techadas:</b><br><br><b>MagnaSports (Los Ángeles):</b> 2 canchas techadas<br><br><b>Ventaja:</b> perfectas para jugar sin importar el clima<br><br><b>Precio:</b> $5.000/hora<br><br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><br><b>Ideal para:</b> fútbol 7 vs 7',
             
             // Ciudades
             'santiago': '🏢 <b>Santiago:</b><br><br><b>Estado:</b> Próximamente disponible<br><br><b>Mantente atento:</b> a nuestras redes sociales<br><br><b>Para más información:</b> soporte@reservatuscanchas.cl',
@@ -256,19 +266,19 @@ class Chatbot {
         }
         
         if (this.detectIntent(lowerMessage, ['reservar', 'reserva', 'quiero reservar', 'me gustaría reservar', 'hacer reserva', 'hacer una reserva'])) {
-            return '📅 <b>¡Perfecto! Te ayudo a reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles)<br><br><b>Paso 2:</b> Elige MagnaSports como complejo<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>¿Necesitas ayuda con algún paso específico?</i>';
+            return '📅 <b>¡Perfecto! Te ayudo a reservar:</b><br><br><b>Tenemos 3 complejos:</b><br>- MagnaSports (Los Ángeles)<br>- Fundación Gunnen (Los Ángeles)<br>- Borde Río (Quilleco)<br><br><b>Pasos:</b><br>1. Selecciona ciudad y complejo<br>2. Elige fecha y horario<br>3. Completa formulario<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación inmediata por email</i>';
         }
         
         if (this.detectIntent(lowerMessage, ['precio', 'precios', 'cuesta', 'cuanto cuesta', 'valor', 'costos'])) {
-            return '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Cancha Techada 1:</b> $5.000 por hora<br><br><b>Cancha Techada 2:</b> $5.000 por hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>';
+            return '💰 <b>Precios:</b><br><br>🏟️ <b>MagnaSports:</b> $5.000/h<br>🏟️ <b>Gunnen:</b> $8.000/h<br>🏟️ <b>Borde Río:</b> Consultar<br><br>💡 <i>Promociones disponibles según fecha/hora</i>';
         }
         
         if (this.detectIntent(lowerMessage, ['horario', 'horarios', 'abierto', 'cuando abren', 'disponibilidad'])) {
-            return '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Lunes a Viernes:</b> 16:00 - 23:00<br><br><b>Sábados y Domingos:</b> 12:00 - 23:00<br><br>📅 <i>Las reservas se pueden hacer hasta con 30 días de anticipación.</i>';
+            return '🕐 <b>Horarios:</b><br><br>🏟️ <b>MagnaSports & Gunnen:</b><br>L-V 16:00-23:00 | S-D 12:00-23:00<br><br>🏟️ <b>Borde Río (Quilleco):</b><br>Todos los días 10:00-23:00<br><br>📅 <i>Reservas hasta 30 días adelante</i>';
         }
         
         if (this.detectIntent(lowerMessage, ['contacto', 'teléfono', 'email', 'dirección', 'ubicación'])) {
-            return '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>MagnaSports (Los Ángeles)</b><br><br><b>Teléfono:</b> +56912345678<br><br><b>Email:</b> naxiin320@gmail.com<br><br><b>Dirección:</b> Monte Perdido 1685, Los Ángeles<br><br>🏢 <b>Soporte General</b><br><br><b>Email:</b> soporte@reservatuscanchas.cl<br><br><b>Horario:</b> Lunes a Viernes 9:00-18:00';
+            return '📞 <b>Contacto:</b><br><br>🏟️ <b>MagnaSports:</b> +56987654321<br>🏟️ <b>Gunnen:</b> +56972815810<br>🏟️ <b>Borde Río:</b> +56999820929<br><br>📧 <i>O escríbenos a soporte@reservatuscanchas.cl</i>';
         }
         
         if (this.detectIntent(lowerMessage, ['descuento', 'código', 'promoción', 'oferta'])) {
@@ -283,7 +293,7 @@ class Chatbot {
         }
         
         // Respuesta por defecto
-        return '🤔 No estoy seguro de entender tu pregunta. ¿Podrías ser más específico?<br><br>💡 <b>Puedo ayudarte con:</b><br>• Precios de MagnaSports ($5.000/hora)<br>• Horarios (16:00-23:00 L-V, 12:00-23:00 S-D)<br>• Cómo hacer reservas paso a paso<br>• Códigos de descuento (RESERVATUSCANCHAS20, BIENVENIDA15, FIDELIDAD10)<br>• Información de contacto<br>• Ubicación en Los Ángeles<br>• Problemas técnicos<br><br>📞 <i>Para ayuda personalizada: soporte@reservatuscanchas.cl</i><br>🏟️ <i>Para MagnaSports: naxiin320@gmail.com</i>';
+        return '🤔 No estoy seguro de entender tu pregunta. ¿Podrías ser más específico?<br><br>💡 <b>Puedo ayudarte con:</b><br>• Precios (MagnaSports $5.000/h, Gunnen $8.000/h)<br>• Horarios de nuestros 3 complejos<br>• Cómo hacer reservas paso a paso<br>• Códigos de descuento activos<br>• Información de contacto<br>• Ubicaciones en Los Ángeles y Quilleco<br>• Promociones especiales<br><br>📞 <i>Soporte: soporte@reservatuscanchas.cl</i>';
     }
 }
 
