@@ -1116,17 +1116,32 @@ async function savePromocion(e) {
             body: JSON.stringify(data)
         });
         
-        const result = await response.json();
-        
-        if (response.ok) {
-            showNotification(result.mensaje || `Promoción ${isEdit ? 'actualizada' : 'creada'} exitosamente`, 'success');
-            
-            // Recargar lista
-            cancelPromocionForm();
-            await loadPromociones();
-        } else {
-            showNotification(result.mensaje || result.error || 'Error al guardar promoción', 'error');
+        if (!response.ok) {
+            console.log('⚠️ Error del servidor (código:', response.status, ')');
+            if (response.status === 404) {
+                showNotification('El sistema de promociones aún no está disponible. Próximamente.', 'info');
+            } else {
+                showNotification('Error al guardar promoción. Código: ' + response.status, 'error');
+            }
+            return;
         }
+        
+        // Intentar parsear respuesta
+        let result;
+        try {
+            result = await response.json();
+        } catch (jsonError) {
+            console.log('⚠️ Respuesta no es JSON válido');
+            showNotification('Error en la respuesta del servidor', 'error');
+            return;
+        }
+        
+        showNotification(result.mensaje || `Promoción ${isEdit ? 'actualizada' : 'creada'} exitosamente`, 'success');
+        
+        // Recargar lista
+        cancelPromocionForm();
+        await loadPromociones();
+        
     } catch (error) {
         console.error('Error guardando promoción:', error);
         showNotification('Error de conexión al guardar promoción', 'error');
