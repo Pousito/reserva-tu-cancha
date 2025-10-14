@@ -626,8 +626,8 @@
                                                 <span class="text-muted" id="precioNormalLabel"></span>
                                             </label>
                                             <input type="number" class="form-control" id="promocionPrecio" 
-                                                   min="1000" step="500" required>
-                                            <small class="text-muted">Debe ser menor que el precio normal</small>
+                                                   min="10" step="50" required>
+                                            <small class="text-muted">Debe ser menor que el precio normal (mínimo $10)</small>
                                         </div>
                                     </div>
 
@@ -668,7 +668,7 @@
                                     <!-- Campos de fecha (condicionales) -->
                                     <div id="fechaEspecificoContainer" class="mb-3">
                                         <label for="fechaEspecifica" class="form-label">Fecha Específica</label>
-                                        <input type="date" class="form-control" id="fechaEspecifica">
+                                        <input type="date" class="form-control date-auto-close" id="fechaEspecifica">
                                         <div class="alert alert-info mt-2 mb-0" id="alertFechaEspecifica">
                                             <small><i class="fas fa-info-circle me-1"></i>La promoción solo aplicará este día específico.</small>
                                         </div>
@@ -678,11 +678,11 @@
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <label for="fechaInicio" class="form-label">Fecha Inicio</label>
-                                                <input type="date" class="form-control" id="fechaInicio">
+                                                <input type="date" class="form-control date-auto-close" id="fechaInicio">
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="fechaFin" class="form-label">Fecha Fin</label>
-                                                <input type="date" class="form-control" id="fechaFin">
+                                                <input type="date" class="form-control date-auto-close" id="fechaFin">
                                             </div>
                                         </div>
                                         <div class="alert alert-info mt-2 mb-0" id="alertFechaRango">
@@ -769,22 +769,28 @@
                                     <!-- Campos de horario (condicionales) -->
                                     <div id="horarioEspecificoContainer" class="mb-3">
                                         <label for="horaEspecifica" class="form-label">Hora Específica</label>
-                                        <input type="time" class="form-control" id="horaEspecifica">
-                                        <small class="text-muted">Ej: 14:00 (solo aplica a esta hora exacta)</small>
+                                        <select class="form-select" id="horaEspecifica" required>
+                                            <option value="">Selecciona una hora...</option>
+                                        </select>
+                                        <small class="text-muted">Selecciona la hora exacta donde aplicará la promoción</small>
                                     </div>
 
                                     <div id="horarioRangoContainer" class="mb-3" style="display: none;">
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <label for="horaInicio" class="form-label">Hora Inicio</label>
-                                                <input type="time" class="form-control" id="horaInicio">
+                                                <select class="form-select" id="horaInicio" required>
+                                                    <option value="">Selecciona hora inicio...</option>
+                                                </select>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="horaFin" class="form-label">Hora Fin</label>
-                                                <input type="time" class="form-control" id="horaFin">
+                                                <select class="form-select" id="horaFin" required>
+                                                    <option value="">Selecciona hora fin...</option>
+                                                </select>
                                             </div>
                                         </div>
-                                        <small class="text-muted">Ej: De 12:00 a 16:00 (aplica a todas las horas en este rango)</small>
+                                        <small class="text-muted">La promoción aplicará a todas las horas dentro de este rango</small>
                                     </div>
 
                                     <!-- Descripción -->
@@ -815,6 +821,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/url-config.js?v=1.0"></script>
     <script src="js/admin-utils.js?v=1.0"></script>
-    <script src="admin-courts.js?v=3.1"></script>
+    <script src="admin-courts.js?v=3.2"></script>
 </body>
 </html>

@@ -707,6 +707,12 @@ async function openPromocionesModal(canchaId, canchaNombre, canchaPrecio) {
     // Actualizar título del modal
     subtitleElement.textContent = `Cancha: ${canchaNombre} - Precio normal: $${canchaPrecio.toLocaleString()}`;
     
+    // Poblar selectores de hora con horarios del complejo
+    poblarHorariosComplejo();
+    
+    // Configurar auto-cierre de calendarios
+    configurarAutoCloseDatePickers();
+    
     // Mostrar modal
     const modal = new bootstrap.Modal(modalElement);
     modal.show();
@@ -717,6 +723,63 @@ async function openPromocionesModal(canchaId, canchaNombre, canchaPrecio) {
     
     // Cargar promociones
     await loadPromociones();
+}
+
+/**
+ * Poblar selectores de hora con los horarios disponibles del complejo
+ */
+function poblarHorariosComplejo() {
+    // Obtener usuario para saber el complejo
+    const user = AdminUtils.getCurrentUser();
+    const complejoId = user?.complejo_id;
+    
+    // Determinar horario según complejo (Borde Río tiene horario especial)
+    let horaInicio = 12;
+    let horaFin = 23;
+    
+    if (complejoId === 6 || complejoId === 7) {
+        // Espacio Deportivo Borde Río: 10:00 - 23:00
+        horaInicio = 10;
+        horaFin = 23;
+    }
+    
+    // Generar opciones de horario
+    const horariosOptions = [];
+    for (let hora = horaInicio; hora <= horaFin; hora++) {
+        const horaFormateada = hora.toString().padStart(2, '0') + ':00';
+        horariosOptions.push(`<option value="${horaFormateada}">${horaFormateada}</option>`);
+    }
+    
+    // Poblar selectores
+    const selectores = ['horaEspecifica', 'horaInicio', 'horaFin'];
+    selectores.forEach(id => {
+        const selector = document.getElementById(id);
+        if (selector) {
+            const valorActual = selector.value;
+            selector.innerHTML = '<option value="">Selecciona una hora...</option>' + horariosOptions.join('');
+            if (valorActual) selector.value = valorActual;
+        }
+    });
+}
+
+/**
+ * Configurar auto-cierre de date pickers al seleccionar fecha
+ */
+function configurarAutoCloseDatePickers() {
+    const dateInputs = document.querySelectorAll('.date-auto-close');
+    dateInputs.forEach(input => {
+        // Remover listeners previos
+        input.removeEventListener('change', cerrarDatePicker);
+        // Agregar nuevo listener
+        input.addEventListener('change', cerrarDatePicker);
+    });
+}
+
+/**
+ * Cerrar date picker al seleccionar fecha
+ */
+function cerrarDatePicker(event) {
+    event.target.blur(); // Quitar foco del input para cerrar el calendario
 }
 
 /**
