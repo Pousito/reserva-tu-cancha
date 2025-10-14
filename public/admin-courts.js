@@ -736,7 +736,7 @@ async function loadPromociones() {
         
         if (!response.ok) {
             // Si el endpoint no existe o retorna error, mostrar lista vacía
-            console.log('⚠️ Endpoint de promociones no disponible o sin datos');
+            console.log('⚠️ Endpoint de promociones no disponible (código:', response.status, ')');
             container.innerHTML = `
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
@@ -746,7 +746,20 @@ async function loadPromociones() {
             return;
         }
         
-        const promociones = await response.json();
+        // Intentar parsear respuesta como JSON
+        let promociones;
+        try {
+            promociones = await response.json();
+        } catch (jsonError) {
+            console.log('⚠️ Respuesta no es JSON válido, asumiendo lista vacía');
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay promociones configuradas para esta cancha. Haz clic en "Nueva Promoción" para crear una.
+                </div>
+            `;
+            return;
+        }
         
         if (promociones.length === 0) {
             container.innerHTML = `
