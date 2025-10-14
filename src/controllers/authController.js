@@ -56,7 +56,7 @@ function authenticateAdmin(req, res, next) {
   if (token === 'super-admin-token-123') {
     req.admin = { 
       id: 1, 
-      email: 'admin@reservatucancha.com', 
+      email: 'admin@reservatuscanchas.cl', 
       nombre: 'Super Administrador',
       rol: 'super_admin'
     };
@@ -64,7 +64,7 @@ function authenticateAdmin(req, res, next) {
   } else if (token === 'complex-owner-token-456') {
     req.admin = { 
       id: 2, 
-      email: 'magnasports@reservatucancha.com', 
+      email: 'magnasports@reservatuscanchas.cl', 
       nombre: 'Dueño MagnaSports',
       rol: 'complex_owner',
       complejo_id: 3
@@ -73,7 +73,7 @@ function authenticateAdmin(req, res, next) {
   } else if (token === 'complex-owner-token-789') {
     req.admin = { 
       id: 3, 
-      email: 'deportivo@reservatucancha.com', 
+      email: 'deportivo@reservatuscanchas.cl', 
       nombre: 'Dueño Deportivo Central',
       rol: 'complex_owner',
       complejo_id: 1

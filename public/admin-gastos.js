@@ -852,18 +852,77 @@ function exportToExcel() {
         { wch: 20 }  // Documento
     ];
     
-    // Estilos para el título
+    // Estilo para el título (fila 1)
     ws['A1'] = { 
         v: 'CONTROL DE GASTOS E INGRESOS', 
         t: 's',
         s: {
             font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
             fill: { fgColor: { rgb: "667EEA" } },
-            alignment: { horizontal: "center" }
+            alignment: { horizontal: "center", vertical: "center" }
         }
     };
     
-    // Merge cells para el título
+    // Estilo para subtítulos (RESUMEN y DETALLE DE MOVIMIENTOS)
+    ws['A6'] = {
+        v: 'RESUMEN',
+        t: 's',
+        s: {
+            font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4A90E2" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        }
+    };
+    
+    ws['A11'] = {
+        v: 'DETALLE DE MOVIMIENTOS',
+        t: 's',
+        s: {
+            font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4A90E2" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        }
+    };
+    
+    // Estilo para encabezados de tabla (fila 12)
+    const headerStyle = {
+        font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "7F8C8D" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+            top: { style: "medium", color: { rgb: "000000" } },
+            bottom: { style: "medium", color: { rgb: "000000" } },
+            left: { style: "medium", color: { rgb: "000000" } },
+            right: { style: "medium", color: { rgb: "000000" } }
+        }
+    };
+    
+    ['A12', 'B12', 'C12', 'D12', 'E12', 'F12', 'G12'].forEach(cell => {
+        if (ws[cell]) ws[cell].s = headerStyle;
+    });
+    
+    // Bordes para todas las celdas de datos (desde fila 13)
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = 12; R <= range.e.r; ++R) {
+        for (let C = 0; C < 7; ++C) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+            if (ws[cellAddress]) {
+                if (!ws[cellAddress].s) ws[cellAddress].s = {};
+                ws[cellAddress].s.border = {
+                    top: { style: "thin", color: { rgb: "CCCCCC" } },
+                    bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                    left: { style: "thin", color: { rgb: "CCCCCC" } },
+                    right: { style: "thin", color: { rgb: "CCCCCC" } }
+                };
+                // Alineación para montos
+                if (C === 4 && !ws[cellAddress].s.alignment) {
+                    ws[cellAddress].s.alignment = { horizontal: "right" };
+                }
+            }
+        }
+    }
+    
+    // Merge cells para el título y subtítulos
     ws['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // Título
         { s: { r: 5, c: 0 }, e: { r: 5, c: 6 } }, // RESUMEN

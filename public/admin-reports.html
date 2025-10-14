@@ -19,6 +19,9 @@
             border-radius: 8px;
             margin: 5px 0;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sidebar .nav-link:hover,
         .sidebar .nav-link.active {
@@ -649,10 +652,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SheetJS para Excel mejorado -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="js/url-config.js?v=1.0"></script>
     <script src="js/admin-utils.js?v=1.0"></script>
     <script src="js/logos-config.js"></script>
-    <script src="admin-reports.js?v=1.1"></script>
+    <script src="admin-reports.js?v=1.2"></script>
 </body>
 </html>
 

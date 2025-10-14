@@ -10,7 +10,7 @@ class ReportService {
     }
 
     /**
-     * Generar reporte de ingresos diarios para un complejo
+     * Generar reporte de ingresos para un complejo
      * @param {number} complexId - ID del complejo
      * @param {string} dateFrom - Fecha inicio (YYYY-MM-DD)
      * @param {string} dateTo - Fecha fin (YYYY-MM-DD)
@@ -218,7 +218,7 @@ class ReportService {
         const titleY = logoAdded ? 30 : 20;
         doc.setFontSize(20);
         doc.setTextColor(...primaryColor);
-        doc.text('REPORTE DE INGRESOS DIARIOS', 20, titleY);
+        doc.text('REPORTE DE INGRESOS', 20, titleY);
         
         // Información del complejo (ajustar posición si hay logo)
         const infoY = logoAdded ? 45 : 40;
@@ -390,7 +390,7 @@ class ReportService {
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
             doc.text(`Página ${i} de ${pageCount}`, 20, doc.internal.pageSize.height - 10);
-            doc.text('Generado por Reserva Tu Cancha', doc.internal.pageSize.width - 80, doc.internal.pageSize.height - 10);
+            doc.text('ReservaTusCanchas.cl', doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 10);
         }
 
             console.log('📄 PDF generado exitosamente');
@@ -429,7 +429,7 @@ class ReportService {
         
         // Título
         summarySheet.mergeCells('A1:H1');
-        summarySheet.getCell('A1').value = 'REPORTE DE INGRESOS DIARIOS';
+        summarySheet.getCell('A1').value = 'REPORTE DE INGRESOS';
         summarySheet.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF2980B9' } };
         summarySheet.getCell('A1').alignment = { horizontal: 'center' };
 

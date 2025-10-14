@@ -335,13 +335,19 @@ async function generateReports() {
             updateMetrics();
             updateCharts();
             await updateTables();
+            showNotification('Reportes generados exitosamente', 'success');
         } else {
             console.error('Error generando reportes:', response.statusText);
             showErrorState('Error generando reportes: ' + response.statusText);
+            showNotification('Error generando reportes: ' + response.statusText, 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showErrorState('Error de conexión');
+        // Solo mostrar error si no es un error de red temporal
+        if (error.message && !error.message.includes('Failed to fetch')) {
+            showErrorState('Error de conexión');
+            showNotification('Error de conexión: ' + error.message, 'error');
+        }
     }
 }
 
@@ -1608,10 +1614,12 @@ async function exportToPDF(tableType) {
         if (user && user.complejo_id) {
             try {
                 // Mapeo de logos (inline para no depender de script externo)
+                // ID 6: Borde Río (desarrollo), ID 7: Borde Río (producción)
                 const logosMap = {
                     1: '/images/logos/magnasports.png',
                     2: '/images/logos/fundacion-gunnen.png',
-                    6: '/images/logos/borde-rio.png'
+                    6: '/images/logos/borde-rio.png',
+                    7: '/images/logos/borde-rio.png'
                 };
                 
                 const logoPath = logosMap[user.complejo_id];
@@ -1784,42 +1792,100 @@ async function exportToExcel(tableType) {
             }
         }
         
-        // Crear CSV (Excel compatible)
-        let csv = '\uFEFF'; // BOM para UTF-8
-        
-        // Agregar título y complejo como primera línea si existe
-        if (complexName) {
-            csv += `"${title} - ${complexName.replace(/_/g, ' ')}"\n\n`;
-        } else {
-            csv += `"${title}"\n\n`;
-        }
-        
-        // Agregar período
+        // Crear Excel con SheetJS (XLSX)
         const dateFrom = document.getElementById('dateFrom')?.value || '';
         const dateTo = document.getElementById('dateTo')?.value || '';
-        csv += `"Período: ${dateFrom} - ${dateTo}"\n\n`;
         
-        // Agregar headers
-        csv += headers.join(',') + '\n';
+        // Preparar datos para Excel
+        const excelData = [];
         
-        // Agregar datos
+        // Fila 1: Título
+        const titleText = complexName ? `${title} - ${complexName.replace(/_/g, ' ')}` : title;
+        excelData.push([titleText]);
+        excelData.push([]); // Fila vacía
+        
+        // Fila 3: Período
+        excelData.push([`Período: ${dateFrom} - ${dateTo}`]);
+        excelData.push([]); // Fila vacía
+        
+        // Fila 5: Encabezados
+        excelData.push(headers);
+        
+        // Filas 6+: Datos
         tableData.forEach(row => {
-            csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+            excelData.push(row);
         });
+        
+        // Crear hoja de cálculo
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+        
+        // Estilo para el título (fila 1)
+        ws['A1'].s = {
+            font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4A90E2" } },
+            alignment: { horizontal: "center", vertical: "center" }
+        };
+        
+        // Estilo para encabezados (fila 5)
+        const headerRow = 5;
+        headers.forEach((header, index) => {
+            const cellAddress = XLSX.utils.encode_cell({ r: headerRow - 1, c: index });
+            if (ws[cellAddress]) {
+                ws[cellAddress].s = {
+                    font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "7F8C8D" } },
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: {
+                        top: { style: "medium", color: { rgb: "000000" } },
+                        bottom: { style: "medium", color: { rgb: "000000" } },
+                        left: { style: "medium", color: { rgb: "000000" } },
+                        right: { style: "medium", color: { rgb: "000000" } }
+                    }
+                };
+            }
+        });
+        
+        // Bordes para todas las celdas de datos
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = headerRow; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                if (ws[cellAddress]) {
+                    if (!ws[cellAddress].s) ws[cellAddress].s = {};
+                    ws[cellAddress].s.border = {
+                        top: { style: "thin", color: { rgb: "CCCCCC" } },
+                        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                        left: { style: "thin", color: { rgb: "CCCCCC" } },
+                        right: { style: "thin", color: { rgb: "CCCCCC" } }
+                    };
+                }
+            }
+        }
+        
+        // Anchos de columna
+        ws['!cols'] = headers.map((header, idx) => {
+            if (tableType === 'customers') {
+                return idx === 0 || idx === 1 ? { wch: 25 } : { wch: 15 };
+            }
+            return { wch: 20 };
+        });
+        
+        // Fusionar celdas del título
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+        
+        // Crear libro y agregar hoja
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, title.substring(0, 31));
         
         // Construir nombre de archivo descriptivo
         let fileName = filePrefix;
         if (complexName) {
             fileName += `_${complexName}`;
         }
-        fileName += `_${dateFrom}_${dateTo}.csv`;
+        fileName += `_${dateFrom}_${dateTo}.xlsx`;
         
         // Descargar archivo
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        link.click();
+        XLSX.writeFile(wb, fileName);
         
         showNotification(`Excel descargado: ${fileName}`, 'success');
         console.log(`✅ Excel exportado exitosamente: ${fileName}`);

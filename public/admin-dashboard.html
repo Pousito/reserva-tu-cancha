@@ -18,6 +18,9 @@
             border-radius: 8px;
             margin: 5px 0;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sidebar .nav-link:hover,
         .sidebar .nav-link.active {
@@ -323,7 +326,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-3 hide-for-manager hide-for-owner">
                             <div class="stat-card">
                                 <div class="d-flex align-items-center">
                                     <div class="stat-icon warning me-3">

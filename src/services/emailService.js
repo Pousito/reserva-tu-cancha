@@ -364,7 +364,7 @@ class EmailService {
       const reservasTransporter = this.createReservasTransporter();
       
       const mailOptions = {
-        from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
+        from: `"ReservaTusCanchas" <reservas@reservatuscanchas.cl>`,
         to: reservaData.email_cliente,
         subject: `✅ Confirmación de Reserva - ${reservaData.codigo_reserva}`,
         html: this.generateReservationEmailHTML(reservaData),
@@ -461,7 +461,7 @@ Gracias por elegir Reserva Tu Cancha!
       const pagoMitad = porcentajePagado === 50;
       
       const mailOptions = {
-        from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
+        from: `"ReservaTusCanchas" <reservas@reservatuscanchas.cl>`,
         to: adminEmail,
         subject: `🔔 Nueva Reserva en ${reservaData.complejo} - ${reservaData.codigo_reserva}${pagoMitad ? ' (Pago Parcial 50%)' : ''}`,
         html: `
@@ -532,7 +532,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
       const pagoMitad = porcentajePagado === 50;
       
       const mailOptions = {
-        from: `"Reserva Tu Cancha" <reservas@reservatuscanchas.cl>`,
+        from: `"ReservaTusCanchas" <reservas@reservatuscanchas.cl>`,
         to: 'admin@reservatuscanchas.cl',
         subject: `📊 Nueva Reserva - ${reservaData.codigo_reserva}${pagoMitad ? ' (Pago 50%)' : ''}`,
         html: `
@@ -606,7 +606,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
       const resetUrl = `${frontendUrl}/admin-reset-password.html?token=${resetToken}`;
       
       const mailOptions = {
-        from: `"Reserva Tu Cancha - Soporte" <soporte@reservatuscanchas.cl>`,
+        from: `"ReservaTusCanchas - Soporte" <soporte@reservatuscanchas.cl>`,
         to: email,
         subject: '🔐 Restablecimiento de Contraseña - Reserva Tu Cancha',
         html: `
@@ -678,7 +678,7 @@ Este es un email automático, por favor no responder
 
     try {
       const mailOptions = {
-        from: `"Reserva Tu Cancha - Soporte" <soporte@reservatuscanchas.cl>`,
+        from: `"ReservaTusCanchas - Soporte" <soporte@reservatuscanchas.cl>`,
         to: email,
         subject: '✅ Contraseña Restablecida Exitosamente - Reserva Tu Cancha',
         html: `
