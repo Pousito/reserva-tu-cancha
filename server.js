@@ -2958,6 +2958,8 @@ app.get('/api/canchas', async (req, res) => {
 // Función helper para verificar si hay una promoción activa
 async function verificarPromocionActiva(canchaId, fecha, hora) {
   try {
+    console.log(`🎯 Verificando promoción para cancha ${canchaId}, fecha ${fecha}, hora ${hora}`);
+    
     const promociones = await db.all(`
       SELECT * FROM promociones_canchas
       WHERE cancha_id = $1 
@@ -2965,13 +2967,18 @@ async function verificarPromocionActiva(canchaId, fecha, hora) {
       ORDER BY precio_promocional ASC
     `, [canchaId]);
     
+    console.log(`📋 Promociones encontradas para cancha ${canchaId}:`, promociones.length);
+    
     if (!promociones || promociones.length === 0) {
+      console.log('❌ No hay promociones activas');
       return null;
     }
     
     const fechaReserva = new Date(fecha + 'T00:00:00');
     const diaSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaReserva.getDay()];
     const horaReserva = hora.split(':')[0] + ':' + hora.split(':')[1]; // Normalizar formato HH:MM
+    
+    console.log(`📅 Fecha reserva: ${fecha}, Día semana: ${diaSemana}, Hora: ${horaReserva}`);
     
     for (const promo of promociones) {
       // Validar tipo de fecha
@@ -3003,10 +3010,14 @@ async function verificarPromocionActiva(canchaId, fecha, hora) {
       }
       
       if (horarioValido) {
+        console.log(`✅ Promoción APLICADA: ${promo.nombre} - Precio: $${promo.precio_promocional}`);
         return promo; // Retornar la primera promoción que aplica (menor precio)
+      } else {
+        console.log(`❌ Horario no válido para promoción: ${promo.nombre}`);
       }
     }
     
+    console.log('❌ Ninguna promoción aplica para estos parámetros');
     return null;
   } catch (error) {
     console.error('Error verificando promoción activa:', error);
