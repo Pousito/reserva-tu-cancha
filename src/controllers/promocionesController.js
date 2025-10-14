@@ -107,6 +107,10 @@ async function getPromocionesComplejo(req, res) {
  */
 async function createPromocion(req, res) {
     try {
+        console.log('🎯 POST /api/promociones - Creando promoción');
+        console.log('👤 Usuario:', req.user);
+        console.log('📦 Body:', req.body);
+        
         const usuario = req.user;
         const {
             cancha_id,

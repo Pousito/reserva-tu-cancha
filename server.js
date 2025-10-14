@@ -510,6 +510,11 @@ app.use('/api/gastos', gastosRoutes);
 
 // ===== RUTAS DE PROMOCIONES Y PRECIOS DINÁMICOS =====
 const promocionesRoutes = require('./src/routes/promociones');
+// Debug middleware para promociones
+app.use('/api/promociones', (req, res, next) => {
+    console.log(`🎯 Petición a /api/promociones - Método: ${req.method}, Path: ${req.path}`);
+    next();
+});
 app.use('/api/promociones', promocionesRoutes);
 
 // Ruta de prueba para simular retorno de Transbank en desarrollo

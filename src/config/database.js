@@ -255,6 +255,7 @@ class DatabaseManager {
           hora_fin TIME,
           descripcion TEXT,
           activo BOOLEAN DEFAULT TRUE,
+          creado_por INTEGER REFERENCES usuarios(id),
           creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
