@@ -2254,7 +2254,22 @@ function configurarEventListeners() {
         
         verificarDisponibilidadTiempoReal();
         
-        // Si ya hay canchas cargadas, renderizar visualmente
+        // Recargar canchas con fecha y hora para obtener precios promocionales
+        if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
+            const fecha = document.getElementById('fechaSelect').value;
+            if (fecha) {
+                try {
+                    let url = `${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}?fecha=${fecha}&hora=${horaSeleccionada}`;
+                    const response = await fetch(url);
+                    canchas = await response.json();
+                    console.log('🎯 Canchas recargadas con precios promocionales:', canchas);
+                } catch (error) {
+                    console.error('Error recargando canchas con promociones:', error);
+                }
+            }
+        }
+        
+        // Renderizar canchas visualmente
         if (canchas.length > 0) {
             await renderizarCanchasConDisponibilidad();
         } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
