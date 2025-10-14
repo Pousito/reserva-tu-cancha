@@ -757,9 +757,19 @@ function preRellenarUltraAgresivo(ciudad, complejo) {
     console.log('🚀 PRE-RELLENADO ULTRA AGRESIVO COMPLETADO');
 }
 
+// Variable global para evitar múltiples ejecuciones
+let preRellenadoEjecutado = false;
+
 // Función para pre-rellenar campos desde URL
 async function preRellenarDesdeURL() {
     console.log('🔍 Iniciando preRellenarDesdeURL...');
+    
+    // Evitar múltiples ejecuciones
+    if (preRellenadoEjecutado) {
+        console.log('⚠️ Pre-rellenado ya ejecutado, saltando...');
+        return;
+    }
+    
     const { ciudad, complejo } = leerParametrosURL();
     
     if (!ciudad && !complejo) {
@@ -767,298 +777,67 @@ async function preRellenarDesdeURL() {
         return;
     }
     
-    // Detectar si es móvil
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    console.log('📱 Es móvil:', isMobile);
+    // Marcar como ejecutado INMEDIATAMENTE para evitar duplicaciones
+    preRellenadoEjecutado = true;
     
-    if (isMobile) {
-        console.log('🚀 OPTIMIZACIÓN MÓVIL: Sistema inteligente adaptativo');
-        
-        // Sistema inteligente que detecta el estado de los datos
-        preRellenarInteligente(ciudad, complejo);
-        
-        // Backup: Sistema agresivo como respaldo
-        setTimeout(() => {
-            console.log('🚀 Móvil - Backup: Sistema agresivo');
-            preRellenarUltraAgresivo(ciudad, complejo);
-        }, 3000);
-    } else {
-        console.log('🚀 OPTIMIZACIÓN PC: Sistema estándar');
-        
-        // Método 1: Intento rápido y simple
-        setTimeout(() => {
-            console.log('🚀 PC - Método 1: Intento rápido');
-            preRellenarSimple(ciudad, complejo);
-        }, 500);
-        
-        // Método 2: Intento con más tiempo
-        setTimeout(() => {
-            console.log('🚀 PC - Método 2: Intento con más tiempo');
-            preRellenarSimple(ciudad, complejo);
-        }, 2000);
-        
-        // Método 3: Intento final ultra agresivo
-        setTimeout(() => {
-            console.log('🚀 PC - Método 3: Intento final ultra agresivo');
-            preRellenarUltraAgresivo(ciudad, complejo);
-        }, 4000);
-    }
+    console.log('🚀 Usando función MEJORADA de pre-rellenado');
     
-    if (ciudad) {
-        console.log('🏙️ Pre-rellenando ciudad:', ciudad);
-        console.log('📊 Ciudades disponibles:', ciudades);
-        
-        // Esperar a que las ciudades se carguen - Mejorado para móviles
-        await new Promise(resolve => {
-            let attempts = 0;
-            const maxAttempts = 50; // 5 segundos máximo
-            
-            const checkCiudades = () => {
-                attempts++;
-                console.log('🔍 Verificando ciudades...', ciudades.length, 'Intento:', attempts);
-                
-                if (ciudades.length > 0) {
-                    const ciudadEncontrada = ciudades.find(c => c.nombre === ciudad);
-                    console.log('🔍 Ciudad encontrada:', ciudadEncontrada);
-                    
-                    if (ciudadEncontrada) {
-                        const ciudadSelect = document.getElementById('ciudadSelect');
-                        console.log('🔍 Elemento ciudad:', ciudadSelect);
-                        
-                        if (ciudadSelect) {
-                            console.log('🔧 Configurando ciudad en móvil...');
-                            
-                            // Método 1: Asignación directa
-                            ciudadSelect.value = ciudadEncontrada.id;
-                            console.log('📱 Valor asignado directamente:', ciudadSelect.value);
-                            
-                            // Método 2: Forzar actualización del DOM
-                            ciudadSelect.setAttribute('value', ciudadEncontrada.id);
-                            
-                            // Método 3: Disparar eventos múltiples con diferentes métodos
-                            try {
-                                // Evento change estándar
-                                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                                ciudadSelect.dispatchEvent(changeEvent);
-                                
-                                // Evento input para móviles
-                                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-                                ciudadSelect.dispatchEvent(inputEvent);
-                                
-                                // Evento personalizado para forzar actualización
-                                const customEvent = new CustomEvent('forceUpdate', { 
-                                    detail: { value: ciudadEncontrada.id },
-                                    bubbles: true 
-                                });
-                                ciudadSelect.dispatchEvent(customEvent);
-                                
-                                console.log('📱 Eventos disparados correctamente');
-                            } catch (error) {
-                                console.error('❌ Error disparando eventos:', error);
-                            }
-                            
-                            // Método 4: Forzar actualización visual y funcional
-                            setTimeout(() => {
-                                // Verificar que el valor se mantuvo
-                                if (ciudadSelect.value !== ciudadEncontrada.id) {
-                                    console.log('🔄 Re-asignando valor...');
-                                    ciudadSelect.value = ciudadEncontrada.id;
-                                }
-                                
-                                // Indicador visual
-                                ciudadSelect.style.backgroundColor = '#e8f5e8';
-                                ciudadSelect.style.border = '2px solid #28a745';
-                                
-                                setTimeout(() => {
-                                    ciudadSelect.style.backgroundColor = '';
-                                    ciudadSelect.style.border = '';
-                                }, 2000);
-                                
-                                console.log('📱 Valor final ciudad:', ciudadSelect.value);
-                            }, 200);
-                            
-                            // Método 5: Llamar manualmente a la función de cambio si existe
-                            setTimeout(() => {
-                                if (typeof cargarComplejos === 'function') {
-                                    console.log('🔄 Llamando cargarComplejos manualmente...');
-                                    cargarComplejos(ciudadEncontrada.id);
-                                    
-                                    // Esperar un poco más para que los complejos se carguen
-                                    setTimeout(() => {
-                                        console.log('📊 Complejos cargados después de seleccionar ciudad:', complejos.length);
-                                    }, 500);
-                                }
-                            }, 300);
-                            
-                            console.log('✅ Ciudad pre-rellenada:', ciudad, 'ID:', ciudadEncontrada.id);
-                        } else {
-                            console.error('❌ Elemento ciudad no encontrado');
-                        }
-                    } else {
-                        console.error('❌ Ciudad no encontrada:', ciudad);
-                    }
-                    resolve();
-                } else if (attempts >= maxAttempts) {
-                    console.error('❌ Timeout esperando ciudades');
-                    resolve();
-                } else {
-                    console.log('⏳ Esperando ciudades...');
-                    setTimeout(checkCiudades, 100);
-                }
-            };
-            checkCiudades();
-        });
-    }
+    // Usar SOLO la función mejorada que funciona correctamente
+    await preRellenarDesdeURLMejorado();
     
-    if (complejo) {
-        console.log('🏢 Pre-rellenando complejo:', complejo);
-        console.log('📊 Complejos disponibles:', complejos);
-        
-        // Esperar a que los complejos se carguen - Mejorado para móviles
-        await new Promise(resolve => {
-            let attempts = 0;
-            const maxAttempts = 100; // 10 segundos máximo para complejos
-            
-            const checkComplejos = () => {
-                attempts++;
-                console.log('🔍 Verificando complejos...', complejos.length, 'Intento:', attempts);
-                console.log('📊 Complejos disponibles:', complejos);
-                
-                if (complejos.length > 0) {
-                    const complejoEncontrado = complejos.find(c => c.nombre === complejo);
-                    console.log('🔍 Complejo encontrado:', complejoEncontrado);
-                    
-                    if (complejoEncontrado) {
-                        const complejoSelect = document.getElementById('complejoSelect');
-                        console.log('🔍 Elemento complejo:', complejoSelect);
-                        
-                        if (complejoSelect) {
-                            console.log('🔧 Configurando complejo...');
-                            
-                            // Método 1: Asignación directa
-                            complejoSelect.value = complejoEncontrado.id;
-                            console.log('📱 Valor asignado directamente:', complejoSelect.value);
-                            
-                            // Método 2: Forzar actualización del DOM
-                            complejoSelect.setAttribute('value', complejoEncontrado.id);
-                            
-                            // Método 3: Disparar eventos múltiples con diferentes métodos
-                            try {
-                                // Evento change estándar
-                                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                                complejoSelect.dispatchEvent(changeEvent);
-                                
-                                // Evento input para móviles
-                                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-                                complejoSelect.dispatchEvent(inputEvent);
-                                
-                                // Evento personalizado para forzar actualización
-                                const customEvent = new CustomEvent('forceUpdate', { 
-                                    detail: { value: complejoEncontrado.id },
-                                    bubbles: true 
-                                });
-                                complejoSelect.dispatchEvent(customEvent);
-                                
-                                console.log('📱 Eventos disparados correctamente');
-                            } catch (error) {
-                                console.error('❌ Error disparando eventos:', error);
-                            }
-                            
-                            // Método 4: Forzar actualización visual y funcional
-                            setTimeout(() => {
-                                // Verificar que el valor se mantuvo
-                                if (complejoSelect.value !== complejoEncontrado.id) {
-                                    console.log('🔄 Re-asignando valor...');
-                                    complejoSelect.value = complejoEncontrado.id;
-                                }
-                                
-                                // Indicador visual
-                                complejoSelect.style.backgroundColor = '#e8f5e8';
-                                complejoSelect.style.border = '2px solid #28a745';
-                                
-                                setTimeout(() => {
-                                    complejoSelect.style.backgroundColor = '';
-                                    complejoSelect.style.border = '';
-                                }, 2000);
-                                
-                                console.log('📱 Valor final complejo:', complejoSelect.value);
-                            }, 200);
-                            
-                            // Método 5: Llamar manualmente a la función de cambio si existe
-                            setTimeout(async () => {
-                                // Simular el cambio de complejo para cargar horarios
-                                if (typeof validarHorariosSegunFecha === 'function') {
-                                    console.log('🔄 Llamando validarHorariosSegunFecha manualmente...');
-                                    await validarHorariosSegunFecha();
-                                }
-                            }, 300);
-                            
-                            // Método 6: Forzar carga de complejos si no se cargaron automáticamente
-                            setTimeout(() => {
-                                if (complejos.length === 0) {
-                                    console.log('🔄 Forzando carga de complejos...');
-                                    const ciudadSelect = document.getElementById('ciudadSelect');
-                                    if (ciudadSelect && ciudadSelect.value) {
-                                        console.log('🔄 Cargando complejos para ciudad:', ciudadSelect.value);
-                                        cargarComplejos(ciudadSelect.value);
-                                    }
-                                }
-                            }, 500);
-                            
-                            console.log('✅ Complejo pre-rellenado:', complejo, 'ID:', complejoEncontrado.id);
-                            
-                            // NO cargar canchas automáticamente - solo se cargan cuando se selecciona una hora
-                            console.log('✅ Complejo pre-rellenado, canchas se cargarán al seleccionar hora');
-                        } else {
-                            console.error('❌ Elemento complejo no encontrado');
-                        }
-                    } else {
-                        console.error('❌ Complejo no encontrado:', complejo);
-                        console.log('📊 Complejos disponibles para comparar:', complejos.map(c => c.nombre));
-                    }
-                    resolve();
-                } else if (attempts >= maxAttempts) {
-                    console.error('❌ Timeout esperando complejos después de', maxAttempts, 'intentos');
-                    resolve();
-                } else {
-                    console.log('⏳ Esperando complejos... (intento', attempts, 'de', maxAttempts, ')');
-                    setTimeout(checkComplejos, 100);
-                }
-            };
-            checkComplejos();
-        });
-    }
+    console.log('✅ Pre-rellenado completado exitosamente');
+}
+
+// Función MEJORADA que mantiene el complejo seleccionado
+async function mantenerComplejoSeleccionado() {
+    // Verificar periódicamente que el complejo siga seleccionado
+    const complejoSelect = document.getElementById('complejoSelect');
+    if (!complejoSelect || !complejoSelect.value) return;
     
-    // Verificación final y forzar actualización en móviles
-    setTimeout(() => {
-        const ciudadSelect = document.getElementById('ciudadSelect');
-        const complejoSelect = document.getElementById('complejoSelect');
+    const valorOriginal = complejoSelect.value;
+    
+    // Monitorear cambios cada 500ms durante 10 segundos
+    let intentos = 0;
+    const maxIntentos = 20;
+    
+    const intervalo = setInterval(() => {
+        intentos++;
         
-        console.log('🔍 Verificación final móvil:');
-        console.log('📱 Ciudad select value:', ciudadSelect?.value);
-        console.log('📱 Complejo select value:', complejoSelect?.value);
-        
-        // Forzar actualización visual en móviles si es necesario
-        if (ciudadSelect && ciudadSelect.value) {
-            // Forzar re-render del select
-            ciudadSelect.style.display = 'none';
-            ciudadSelect.offsetHeight; // Trigger reflow
-            ciudadSelect.style.display = '';
-            console.log('📱 Ciudad select forzado a re-render');
+        if (intentos >= maxIntentos) {
+            clearInterval(intervalo);
+            console.log('✅ Monitoreo de complejo completado');
+            return;
         }
         
-        if (complejoSelect && complejoSelect.value) {
-            // Forzar re-render del select
-            complejoSelect.style.display = 'none';
-            complejoSelect.offsetHeight; // Trigger reflow
-            complejoSelect.style.display = '';
-            console.log('📱 Complejo select forzado a re-render');
+        // Si el valor cambió a vacío, restaurarlo
+        if (complejoSelect.value === '' && valorOriginal !== '') {
+            console.log('🔄 Restaurando complejo seleccionado:', valorOriginal);
+            complejoSelect.value = valorOriginal;
+            
+            // Resaltar visualmente
+            complejoSelect.style.backgroundColor = '#fff3cd';
+            complejoSelect.style.border = '2px solid #ffc107';
+            
+            setTimeout(() => {
+                complejoSelect.style.backgroundColor = '';
+                complejoSelect.style.border = '';
+            }, 1000);
         }
     }, 500);
+}
+
+// CÓDIGO ANTIGUO DESACTIVADO - Se mantiene para referencia pero no se ejecuta
+function preRellenarDesdeURLLegacy_DESACTIVADO() {
+    const { ciudad, complejo } = leerParametrosURL();
     
-    console.log('✅ preRellenarDesdeURL completado');
-    console.log('🔍 Estado final - Ciudad seleccionada:', document.getElementById('ciudadSelect')?.value);
-    console.log('🔍 Estado final - Complejo seleccionado:', document.getElementById('complejoSelect')?.value);
+    if (ciudad) {
+        console.log('🏙️ Pre-rellenando ciudad (LEGACY - DESACTIVADO):', ciudad);
+        console.log('📊 Ciudades disponibles:', ciudades);
+        
+        // Este código ya no se ejecuta - función desactivada
+        return;
+    }
+    // Resto del código legacy omitido
 }
 
 // NUEVA FUNCIÓN MEJORADA: Pre-rellenado con Promise y eventos
@@ -1125,6 +904,9 @@ async function preRellenarDesdeURLMejorado() {
                                 
                                 console.log('✅ Complejo preseleccionado:', complejo, 'ID:', complejoEncontrado.id);
                                 // logVisible(`✅ Complejo preseleccionado: ${complejo} (ID: ${complejoEncontrado.id})`);
+                                
+                                // IMPORTANTE: Mantener el complejo seleccionado visualmente
+                                mantenerComplejoSeleccionado();
                                 
                                 // 4. Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, seleccionar fútbol automáticamente
                                 if (complejoEncontrado.nombre === 'MagnaSports' || complejoEncontrado.nombre === 'Fundación Gunnen' || complejoEncontrado.nombre === 'Espacio Deportivo Borde Río') {
