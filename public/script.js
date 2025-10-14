@@ -2661,7 +2661,13 @@ async function mostrarSeccionDisponibilidad() {
         
         try {
             // Cargar canchas sin renderizarlas visualmente
-            const response = await fetch(`${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}`);
+            const fecha = document.getElementById('fechaSelect').value;
+            const hora = document.getElementById('horaSelect').value;
+            let url = `${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}`;
+            if (fecha && hora) {
+                url += `?fecha=${fecha}&hora=${hora}`;
+            }
+            const response = await fetch(url);
             canchas = await response.json();
             console.log('🏢 Canchas cargadas para validación:', canchas.length, 'canchas:', canchas.map(c => c.nombre));
             

@@ -2955,28 +2955,131 @@ app.get('/api/canchas', async (req, res) => {
   }
 });
 
-// Obtener canchas por complejo
+// Función helper para verificar si hay una promoción activa
+async function verificarPromocionActiva(canchaId, fecha, hora) {
+  try {
+    const promociones = await db.all(`
+      SELECT * FROM promociones_canchas
+      WHERE cancha_id = $1 
+        AND activo = true
+      ORDER BY precio_promocional ASC
+    `, [canchaId]);
+    
+    if (!promociones || promociones.length === 0) {
+      return null;
+    }
+    
+    const fechaReserva = new Date(fecha + 'T00:00:00');
+    const diaSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaReserva.getDay()];
+    const horaReserva = hora.split(':')[0] + ':' + hora.split(':')[1]; // Normalizar formato HH:MM
+    
+    for (const promo of promociones) {
+      // Validar tipo de fecha
+      let fechaValida = false;
+      
+      if (promo.tipo_fecha === 'especifico' && promo.fecha_especifica) {
+        const fechaPromo = new Date(promo.fecha_especifica + 'T00:00:00');
+        fechaValida = fechaReserva.getTime() === fechaPromo.getTime();
+      } else if (promo.tipo_fecha === 'rango' && promo.fecha_inicio && promo.fecha_fin) {
+        const inicio = new Date(promo.fecha_inicio + 'T00:00:00');
+        const fin = new Date(promo.fecha_fin + 'T00:00:00');
+        fechaValida = fechaReserva >= inicio && fechaReserva <= fin;
+      } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
+        const diasPromo = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
+        fechaValida = diasPromo.includes(diaSemana);
+      }
+      
+      if (!fechaValida) continue;
+      
+      // Validar tipo de horario
+      let horarioValido = false;
+      
+      if (promo.tipo_horario === 'especifico' && promo.hora_especifica) {
+        horarioValido = horaReserva === promo.hora_especifica.substring(0, 5); // HH:MM
+      } else if (promo.tipo_horario === 'rango' && promo.hora_inicio && promo.hora_fin) {
+        const horaInicioPromo = promo.hora_inicio.substring(0, 5);
+        const horaFinPromo = promo.hora_fin.substring(0, 5);
+        horarioValido = horaReserva >= horaInicioPromo && horaReserva < horaFinPromo;
+      }
+      
+      if (horarioValido) {
+        return promo; // Retornar la primera promoción que aplica (menor precio)
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error verificando promoción activa:', error);
+    return null;
+  }
+}
+
+// Obtener canchas por complejo (con promociones activas)
 app.get('/api/canchas/:complejoId', async (req, res) => {
   try {
     const { complejoId } = req.params;
-    const canchas = await db.query(
+    const { fecha, hora } = req.query; // Opcional: para calcular precio específico
+    
+    const canchas = await db.all(
       'SELECT * FROM canchas WHERE complejo_id = $1 ORDER BY nombre',
       [complejoId]
     );
+    
+    // Si se proporciona fecha y hora, verificar promociones activas
+    if (fecha && hora) {
+      for (const cancha of canchas) {
+        const promocionActiva = await verificarPromocionActiva(cancha.id, fecha, hora);
+        if (promocionActiva) {
+          cancha.tiene_promocion = true;
+          cancha.precio_original = cancha.precio_hora;
+          cancha.precio_actual = promocionActiva.precio_promocional;
+          cancha.promocion_info = {
+            nombre: promocionActiva.nombre,
+            porcentaje_descuento: Math.round(((cancha.precio_hora - promocionActiva.precio_promocional) / cancha.precio_hora) * 100)
+          };
+        } else {
+          cancha.tiene_promocion = false;
+          cancha.precio_actual = cancha.precio_hora;
+        }
+      }
+    }
+    
     res.json(canchas);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Obtener canchas por complejo y tipo
+// Obtener canchas por complejo y tipo (con promociones activas)
 app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
   try {
     const { complejoId, tipo } = req.params;
-    const canchas = await db.query(
+    const { fecha, hora } = req.query; // Opcional: para calcular precio específico
+    
+    const canchas = await db.all(
       'SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2 ORDER BY nombre',
       [complejoId, tipo]
     );
+    
+    // Si se proporciona fecha y hora, verificar promociones activas
+    if (fecha && hora) {
+      for (const cancha of canchas) {
+        const promocionActiva = await verificarPromocionActiva(cancha.id, fecha, hora);
+        if (promocionActiva) {
+          cancha.tiene_promocion = true;
+          cancha.precio_original = cancha.precio_hora;
+          cancha.precio_actual = promocionActiva.precio_promocional;
+          cancha.promocion_info = {
+            nombre: promocionActiva.nombre,
+            porcentaje_descuento: Math.round(((cancha.precio_hora - promocionActiva.precio_promocional) / cancha.precio_hora) * 100)
+          };
+        } else {
+          cancha.tiene_promocion = false;
+          cancha.precio_actual = cancha.precio_hora;
+        }
+      }
+    }
+    
     res.json(canchas);
   } catch (error) {
     res.status(500).json({ error: error.message });

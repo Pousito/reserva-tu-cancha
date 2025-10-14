@@ -897,12 +897,22 @@ async function loadPromociones() {
  * Formatear información de fechas para mostrar
  */
 function formatPromocionFechas(promo) {
-    if (promo.tipo_fecha === 'especifico') {
-        return `Fecha específica: ${new Date(promo.fecha_especifica + 'T00:00:00').toLocaleDateString('es-CL')}`;
-    } else if (promo.tipo_fecha === 'rango') {
-        return `Del ${new Date(promo.fecha_inicio + 'T00:00:00').toLocaleDateString('es-CL')} al ${new Date(promo.fecha_fin + 'T00:00:00').toLocaleDateString('es-CL')}`;
-    } else if (promo.tipo_fecha === 'recurrente_semanal') {
-        return `Recurrente: ${promo.dias_semana.join(', ')}`;
+    if (promo.tipo_fecha === 'especifico' && promo.fecha_especifica) {
+        const fecha = new Date(promo.fecha_especifica + 'T00:00:00');
+        if (!isNaN(fecha.getTime())) {
+            return `Fecha específica: ${fecha.toLocaleDateString('es-CL')}`;
+        }
+        return `Fecha específica: ${promo.fecha_especifica}`;
+    } else if (promo.tipo_fecha === 'rango' && promo.fecha_inicio && promo.fecha_fin) {
+        const inicio = new Date(promo.fecha_inicio + 'T00:00:00');
+        const fin = new Date(promo.fecha_fin + 'T00:00:00');
+        if (!isNaN(inicio.getTime()) && !isNaN(fin.getTime())) {
+            return `Del ${inicio.toLocaleDateString('es-CL')} al ${fin.toLocaleDateString('es-CL')}`;
+        }
+        return `Del ${promo.fecha_inicio} al ${promo.fecha_fin}`;
+    } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
+        const dias = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
+        return `Recurrente: ${dias.join(', ')}`;
     }
     return 'Fechas no especificadas';
 }
