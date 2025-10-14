@@ -1819,12 +1819,18 @@ async function exportToExcel(tableType) {
         // Crear hoja de cálculo
         const ws = XLSX.utils.aoa_to_sheet(excelData);
         
+        console.log('📊 Aplicando estilos al Excel de', tableType);
+        console.log('📊 Rango de celdas:', ws['!ref']);
+        
         // Estilo para el título (fila 1) - Más vibrante y moderno
+        if (!ws['A1']) ws['A1'] = {};
         ws['A1'].s = {
             font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
             fill: { fgColor: { rgb: "E67E22" } }, // Naranja moderno
             alignment: { horizontal: "center", vertical: "center" }
         };
+        
+        console.log('✅ Estilo título aplicado');
         
         // Estilo para el período (fila 3)
         const periodCell = XLSX.utils.encode_cell({ r: 2, c: 0 });
@@ -1931,6 +1937,10 @@ async function exportToExcel(tableType) {
         for (let i = 5; i <= range.e.r; i++) {
             ws['!rows'][i] = { hpt: 21 }; // Filas de datos - altura perfecta para emojis
         }
+        
+        console.log('✅ Estilos aplicados completamente');
+        console.log('📊 Total de filas con estilo:', range.e.r + 1);
+        console.log('📊 Alturas de filas configuradas:', ws['!rows'].length);
         
         // Crear libro y agregar hoja
         const wb = XLSX.utils.book_new();
