@@ -802,7 +802,7 @@ async function loadPromociones() {
     `;
     
     try {
-        const response = await AdminUtils.authenticatedFetch(`/api/promociones/cancha/${currentCanchaPromocion}`);
+        const response = await AdminUtils.authenticatedFetch(`/promociones/cancha/${currentCanchaPromocion}`);
         
         if (!response.ok) {
             // Si el endpoint no existe o retorna error, mostrar lista vacía
@@ -1106,7 +1106,7 @@ async function savePromocion(e) {
     // Determinar si es creación o edición
     const promocionId = document.getElementById('promocionId').value;
     const isEdit = promocionId !== '';
-    const url = isEdit ? `/api/promociones/${promocionId}` : '/api/promociones';
+    const url = isEdit ? `/promociones/${promocionId}` : '/promociones';
     const method = isEdit ? 'PUT' : 'POST';
     
     try {
@@ -1154,7 +1154,7 @@ async function savePromocion(e) {
 async function editPromocion(promocionId) {
     try {
         // Cargar datos de la promoción
-        const response = await AdminUtils.authenticatedFetch(`/api/promociones/cancha/${currentCanchaPromocion}`);
+        const response = await AdminUtils.authenticatedFetch(`/promociones/cancha/${currentCanchaPromocion}`);
         const promociones = await response.json();
         const promo = promociones.find(p => p.id === promocionId);
         
@@ -1229,7 +1229,7 @@ async function deletePromocion(promocionId, nombrePromocion) {
     if (!confirmar) return;
     
     try {
-        const response = await AdminUtils.authenticatedFetch(`/api/promociones/${promocionId}`, {
+        const response = await AdminUtils.authenticatedFetch(`/promociones/${promocionId}`, {
             method: 'DELETE'
         });
         
@@ -1252,7 +1252,7 @@ async function deletePromocion(promocionId, nombrePromocion) {
  */
 async function togglePromocionActiva(promocionId, nuevoEstado) {
     try {
-        const response = await AdminUtils.authenticatedFetch(`/api/promociones/${promocionId}/toggle`, {
+        const response = await AdminUtils.authenticatedFetch(`/promociones/${promocionId}/toggle`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ activo: nuevoEstado })
