@@ -852,48 +852,119 @@ function exportToExcel() {
         { wch: 20 }  // Documento
     ];
     
-    // Estilo para el título (fila 1)
+    // Estilo para el título (fila 1) - Gradiente moderno
     ws['A1'] = { 
-        v: 'CONTROL DE GASTOS E INGRESOS', 
+        v: '💰 CONTROL DE GASTOS E INGRESOS', 
         t: 's',
         s: {
-            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "667EEA" } },
+            font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "8E44AD" } }, // Morado moderno
             alignment: { horizontal: "center", vertical: "center" }
         }
     };
     
-    // Estilo para subtítulos (RESUMEN y DETALLE DE MOVIMIENTOS)
+    // Estilos para información del complejo (filas 3-4)
+    if (ws['A3']) {
+        ws['A3'].s = {
+            font: { bold: true, color: { rgb: "8E44AD" } },
+            fill: { fgColor: { rgb: "F4ECF7" } },
+            alignment: { horizontal: "left", vertical: "center" }
+        };
+    }
+    if (ws['B3']) {
+        ws['B3'].s = {
+            font: { sz: 11 },
+            fill: { fgColor: { rgb: "F4ECF7" } },
+            alignment: { horizontal: "left", vertical: "center" }
+        };
+    }
+    if (ws['A4']) {
+        ws['A4'].s = {
+            font: { bold: true, color: { rgb: "8E44AD" } },
+            fill: { fgColor: { rgb: "F4ECF7" } },
+            alignment: { horizontal: "left", vertical: "center" }
+        };
+    }
+    if (ws['B4']) {
+        ws['B4'].s = {
+            font: { sz: 11 },
+            fill: { fgColor: { rgb: "F4ECF7" } },
+            alignment: { horizontal: "left", vertical: "center" }
+        };
+    }
+    
+    // Estilo para subtítulo RESUMEN (fila 6)
     ws['A6'] = {
-        v: 'RESUMEN',
+        v: '📊 RESUMEN FINANCIERO',
         t: 's',
         s: {
-            font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4A90E2" } },
+            font: { bold: true, sz: 13, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "27AE60" } }, // Verde para resumen
             alignment: { horizontal: "center", vertical: "center" }
         }
     };
     
+    // Estilos para las filas del resumen (7-9) - Tarjetas con color
+    const resumenColors = {
+        7: { label: "16A085", value: "D5F4E6", textValue: "117A65" }, // Ingresos: verde
+        8: { label: "C0392B", value: "FADBD8", textValue: "922B21" }, // Gastos: rojo
+        9: { label: "F39C12", value: "FCF3CF", textValue: "B9770E" }  // Balance: naranja
+    };
+    
+    [7, 8, 9].forEach(row => {
+        const colors = resumenColors[row];
+        const labelCell = XLSX.utils.encode_cell({ r: row - 1, c: 0 });
+        const valueCell = XLSX.utils.encode_cell({ r: row - 1, c: 1 });
+        
+        if (ws[labelCell]) {
+            ws[labelCell].s = {
+                font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+                fill: { fgColor: { rgb: colors.label } },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: {
+                    top: { style: "medium", color: { rgb: colors.label } },
+                    bottom: { style: "medium", color: { rgb: colors.label } },
+                    left: { style: "medium", color: { rgb: colors.label } },
+                    right: { style: "thin", color: { rgb: colors.label } }
+                }
+            };
+        }
+        if (ws[valueCell]) {
+            ws[valueCell].s = {
+                font: { bold: true, sz: 12, color: { rgb: colors.textValue } },
+                fill: { fgColor: { rgb: colors.value } },
+                alignment: { horizontal: "right", vertical: "center" },
+                border: {
+                    top: { style: "medium", color: { rgb: colors.label } },
+                    bottom: { style: "medium", color: { rgb: colors.label } },
+                    left: { style: "thin", color: { rgb: colors.label } },
+                    right: { style: "medium", color: { rgb: colors.label } }
+                }
+            };
+        }
+    });
+    
+    // Estilo para subtítulo DETALLE (fila 11)
     ws['A11'] = {
-        v: 'DETALLE DE MOVIMIENTOS',
+        v: '📋 DETALLE DE MOVIMIENTOS',
         t: 's',
         s: {
-            font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4A90E2" } },
+            font: { bold: true, sz: 13, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "3498DB" } }, // Azul para detalle
             alignment: { horizontal: "center", vertical: "center" }
         }
     };
     
-    // Estilo para encabezados de tabla (fila 12)
+    // Estilo para encabezados de tabla (fila 12) - Gradiente azul
     const headerStyle = {
         font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "7F8C8D" } },
-        alignment: { horizontal: "center", vertical: "center" },
+        fill: { fgColor: { rgb: "2980B9" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
         border: {
-            top: { style: "medium", color: { rgb: "000000" } },
-            bottom: { style: "medium", color: { rgb: "000000" } },
-            left: { style: "medium", color: { rgb: "000000" } },
-            right: { style: "medium", color: { rgb: "000000" } }
+            top: { style: "medium", color: { rgb: "1A5276" } },
+            bottom: { style: "medium", color: { rgb: "1A5276" } },
+            left: { style: "thin", color: { rgb: "1A5276" } },
+            right: { style: "thin", color: { rgb: "1A5276" } }
         }
     };
     
@@ -901,22 +972,58 @@ function exportToExcel() {
         if (ws[cell]) ws[cell].s = headerStyle;
     });
     
-    // Bordes para todas las celdas de datos (desde fila 13)
+    // Bordes, alternancia y colores para celdas de datos (desde fila 13)
     const range = XLSX.utils.decode_range(ws['!ref']);
     for (let R = 12; R <= range.e.r; ++R) {
+        const isEvenRow = (R - 12) % 2 === 0;
+        const rowData = excelData[R]; // Obtener datos de la fila actual
+        const tipoMovimiento = rowData && rowData[1] ? rowData[1].toLowerCase() : '';
+        
+        // Color base según tipo de movimiento
+        let baseColor = isEvenRow ? "FFFFFF" : "F8F9FA"; // Blanco/Gris claro por defecto
+        if (tipoMovimiento === 'ingreso') {
+            baseColor = isEvenRow ? "E8F8F5" : "D1F2EB"; // Verde claro
+        } else if (tipoMovimiento === 'gasto') {
+            baseColor = isEvenRow ? "FADBD8" : "F5B7B1"; // Rojo claro
+        }
+        
         for (let C = 0; C < 7; ++C) {
             const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
             if (ws[cellAddress]) {
                 if (!ws[cellAddress].s) ws[cellAddress].s = {};
-                ws[cellAddress].s.border = {
-                    top: { style: "thin", color: { rgb: "CCCCCC" } },
-                    bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-                    left: { style: "thin", color: { rgb: "CCCCCC" } },
-                    right: { style: "thin", color: { rgb: "CCCCCC" } }
+                
+                // Aplicar color de fondo
+                ws[cellAddress].s.fill = {
+                    fgColor: { rgb: baseColor }
                 };
-                // Alineación para montos
-                if (C === 4 && !ws[cellAddress].s.alignment) {
-                    ws[cellAddress].s.alignment = { horizontal: "right" };
+                
+                // Bordes sutiles
+                ws[cellAddress].s.border = {
+                    top: { style: "thin", color: { rgb: "D5DBDB" } },
+                    bottom: { style: "thin", color: { rgb: "D5DBDB" } },
+                    left: { style: "thin", color: { rgb: "D5DBDB" } },
+                    right: { style: "thin", color: { rgb: "D5DBDB" } }
+                };
+                
+                // Alineación según columna
+                if (C === 4) { // Monto
+                    ws[cellAddress].s.alignment = { horizontal: "right", vertical: "center" };
+                    // Negrita para montos
+                    if (ws[cellAddress].v) {
+                        ws[cellAddress].s.font = { bold: true };
+                    }
+                } else if (C === 0) { // Fecha
+                    ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+                } else if (C === 1) { // Tipo
+                    ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+                    // Color del texto según tipo
+                    if (tipoMovimiento === 'ingreso') {
+                        ws[cellAddress].s.font = { bold: true, color: { rgb: "117A65" } };
+                    } else if (tipoMovimiento === 'gasto') {
+                        ws[cellAddress].s.font = { bold: true, color: { rgb: "922B21" } };
+                    }
+                } else {
+                    ws[cellAddress].s.alignment = { horizontal: "left", vertical: "center" };
                 }
             }
         }

@@ -427,90 +427,173 @@ class ReportService {
         // Hoja 1: Resumen General
         const summarySheet = workbook.addWorksheet('Resumen General');
         
-        // Título
+        // Título con fondo degradado
         summarySheet.mergeCells('A1:H1');
-        summarySheet.getCell('A1').value = 'REPORTE DE INGRESOS';
-        summarySheet.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF2980B9' } };
-        summarySheet.getCell('A1').alignment = { horizontal: 'center' };
+        summarySheet.getCell('A1').value = '📊 REPORTE DE INGRESOS';
+        summarySheet.getCell('A1').font = { size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
+        summarySheet.getCell('A1').fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF4A90E2' }
+        };
+        summarySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+        summarySheet.getRow(1).height = 30;
 
-        // Información del complejo
-        summarySheet.getCell('A3').value = 'Complejo:';
+        // Información del complejo con estilo
+        summarySheet.getCell('A3').value = '🏢 Complejo:';
+        summarySheet.getCell('A3').font = { bold: true, color: { argb: 'FF4A90E2' } };
         summarySheet.getCell('B3').value = complex.nombre;
-        summarySheet.getCell('A4').value = 'Dirección:';
+        summarySheet.getCell('B3').font = { size: 12, bold: true };
+        
+        summarySheet.getCell('A4').value = '📍 Dirección:';
+        summarySheet.getCell('A4').font = { bold: true, color: { argb: 'FF7F8C8D' } };
         summarySheet.getCell('B4').value = complex.direccion;
-        summarySheet.getCell('A5').value = 'Ciudad:';
+        
+        summarySheet.getCell('A5').value = '🌆 Ciudad:';
+        summarySheet.getCell('A5').font = { bold: true, color: { argb: 'FF7F8C8D' } };
         summarySheet.getCell('B5').value = complex.ciudad_nombre;
+        
         if (complex.telefono) {
-            summarySheet.getCell('A6').value = 'Teléfono:';
+            summarySheet.getCell('A6').value = '📞 Teléfono:';
+            summarySheet.getCell('A6').font = { bold: true, color: { argb: 'FF7F8C8D' } };
             summarySheet.getCell('B6').value = complex.telefono;
         }
         if (complex.email) {
-            summarySheet.getCell('A7').value = 'Email:';
+            summarySheet.getCell('A7').value = '📧 Email:';
+            summarySheet.getCell('A7').font = { bold: true, color: { argb: 'FF7F8C8D' } };
             summarySheet.getCell('B7').value = complex.email;
         }
 
-        // Período
-        summarySheet.getCell('A9').value = 'Período:';
+        // Período con fondo
+        summarySheet.getCell('A9').value = '📅 Período:';
+        summarySheet.getCell('A9').font = { bold: true, color: { argb: 'FF4A90E2' } };
         summarySheet.getCell('B9').value = `${this.formatDate(dateFrom)} al ${this.formatDate(dateTo)}`;
-        summarySheet.getCell('A10').value = 'Generado:';
+        summarySheet.getCell('B9').font = { bold: true };
+        
+        summarySheet.getCell('A10').value = '🕐 Generado:';
+        summarySheet.getCell('A10').font = { bold: true, color: { argb: 'FF7F8C8D' } };
         summarySheet.getCell('B10').value = this.formatDate(new Date().toISOString().split('T')[0]);
 
-        // Resumen general
-        summarySheet.getCell('A12').value = 'RESUMEN GENERAL';
-        summarySheet.getCell('A12').font = { size: 14, bold: true, color: { argb: 'FF2980B9' } };
+        // Resumen general con encabezado destacado
+        summarySheet.mergeCells('A12:B12');
+        summarySheet.getCell('A12').value = '💰 RESUMEN GENERAL';
+        summarySheet.getCell('A12').font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+        summarySheet.getCell('A12').fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF27AE60' }
+        };
+        summarySheet.getCell('A12').alignment = { horizontal: 'center', vertical: 'middle' };
+        summarySheet.getRow(12).height = 25;
 
         // Calcular porcentaje de comisión real
         const porcentajeComision = incomeData.ingresos_brutos > 0 ? 
             ((incomeData.comision_plataforma / incomeData.ingresos_brutos) * 100).toFixed(2) : '0.00';
 
+        // Encabezados de tabla
+        const headerRow = summarySheet.getRow(13);
+        headerRow.values = ['Concepto', 'Valor'];
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF5DADE2' }
+        };
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+        headerRow.height = 20;
+
         const summaryData = [
-            ['Concepto', 'Valor'],
-            ['Total de Reservas', Math.round(incomeData.total_reservas)],
-            ['Reservas Confirmadas', Math.round(incomeData.reservas_confirmadas)],
-            ['Reservas Canceladas', Math.round(incomeData.reservas_canceladas)],
-            ['Ingresos Brutos', Math.round(incomeData.ingresos_brutos)],
-            [`Comisión Plataforma (${porcentajeComision}%)`, Math.round(incomeData.comision_plataforma)],
-            ['Ingresos Netos', Math.round(incomeData.ingresos_netos)],
-            ['Ticket Promedio', Math.round(incomeData.ticket_promedio)]
+            ['📊 Total de Reservas', Math.round(incomeData.total_reservas)],
+            ['✅ Reservas Confirmadas', Math.round(incomeData.reservas_confirmadas)],
+            ['❌ Reservas Canceladas', Math.round(incomeData.reservas_canceladas)],
+            ['💵 Ingresos Brutos', Math.round(incomeData.ingresos_brutos)],
+            [`🏦 Comisión Plataforma (${porcentajeComision}%)`, Math.round(incomeData.comision_plataforma)],
+            ['💰 Ingresos Netos', Math.round(incomeData.ingresos_netos)],
+            ['🎯 Ticket Promedio', Math.round(incomeData.ticket_promedio)]
         ];
 
         summarySheet.addRows(summaryData);
 
+        // Aplicar alternancia de colores y bordes
+        for (let i = 14; i <= 20; i++) {
+            const row = summarySheet.getRow(i);
+            const cellA = summarySheet.getCell(`A${i}`);
+            const cellB = summarySheet.getCell(`B${i}`);
+            
+            // Alternancia de filas
+            if (i % 2 === 0) {
+                cellA.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F4F8' } };
+                cellB.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F4F8' } };
+            }
+            
+            // Bordes
+            const borderStyle = { style: 'thin', color: { argb: 'FFB0BEC5' } };
+            cellA.border = {
+                top: borderStyle,
+                left: borderStyle,
+                bottom: borderStyle,
+                right: borderStyle
+            };
+            cellB.border = {
+                top: borderStyle,
+                left: borderStyle,
+                bottom: borderStyle,
+                right: borderStyle
+            };
+            
+            // Alineación
+            cellB.alignment = { horizontal: 'right', vertical: 'middle' };
+        }
+
         // Ajustar ancho de columnas
-        summarySheet.getColumn('A').width = 25; // Concepto - más ancho para "Comisión Plataforma (5%)"
-        summarySheet.getColumn('B').width = 15; // Valor
+        summarySheet.getColumn('A').width = 35;
+        summarySheet.getColumn('B').width = 20;
 
         // Formatear números como enteros (sin decimales)
-        summarySheet.getCell('B14').numFmt = '0'; // Total de Reservas
-        summarySheet.getCell('B15').numFmt = '0'; // Reservas Confirmadas
-        summarySheet.getCell('B16').numFmt = '0'; // Reservas Canceladas
-        summarySheet.getCell('B17').numFmt = '"$"#,##0'; // Ingresos Brutos
-        summarySheet.getCell('B18').numFmt = '"$"#,##0'; // Comisión Plataforma
-        summarySheet.getCell('B19').numFmt = '"$"#,##0'; // Ingresos Netos
-        summarySheet.getCell('B20').numFmt = '"$"#,##0'; // Ticket Promedio
+        summarySheet.getCell('B14').numFmt = '0';
+        summarySheet.getCell('B15').numFmt = '0';
+        summarySheet.getCell('B16').numFmt = '0';
+        summarySheet.getCell('B17').numFmt = '"$"#,##0';
+        summarySheet.getCell('B18').numFmt = '"$"#,##0';
+        summarySheet.getCell('B19').numFmt = '"$"#,##0';
+        summarySheet.getCell('B20').numFmt = '"$"#,##0';
+        
+        // Resaltar ingresos netos
+        summarySheet.getCell('A19').font = { bold: true, size: 11 };
+        summarySheet.getCell('B19').font = { bold: true, size: 11, color: { argb: 'FF27AE60' } };
 
         // Hoja 2: Resumen por Día
         if (dailySummary.length > 0) {
-            const dailySheet = workbook.addWorksheet('Resumen por Día');
+            const dailySheet = workbook.addWorksheet('📅 Resumen por Día');
             
-            dailySheet.getCell('A1').value = 'RESUMEN POR DÍA';
-            dailySheet.getCell('A1').font = { size: 14, bold: true, color: { argb: 'FF2980B9' } };
+            // Título
+            dailySheet.mergeCells('A1:F1');
+            dailySheet.getCell('A1').value = '📅 RESUMEN DIARIO DE INGRESOS';
+            dailySheet.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            dailySheet.getCell('A1').fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF9B59B6' }
+            };
+            dailySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+            dailySheet.getRow(1).height = 28;
 
-            const dailyHeaders = ['Fecha', 'Total Reservas', 'Confirmadas', 'Ingresos Brutos', 'Comisión', 'Ingresos Netos'];
-            dailySheet.addRow(dailyHeaders);
+            const dailyHeaders = ['📆 Fecha', '📊 Total', '✅ Confirmadas', '💵 Ing. Brutos', '🏦 Comisión', '💰 Ing. Netos'];
+            const headerRow = dailySheet.addRow(dailyHeaders);
 
             // Formatear encabezados
-            const headerRow = dailySheet.getRow(2);
-            headerRow.font = { bold: true };
+            headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
             headerRow.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FF2980B9' }
+                fgColor: { argb: 'FF8E44AD' }
             };
-            headerRow.font = { color: { argb: 'FFFFFFFF' } };
+            headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+            headerRow.height = 22;
 
-            dailySummary.forEach(day => {
-                dailySheet.addRow([
+            let rowIndex = 3;
+            dailySummary.forEach((day, index) => {
+                const dataRow = dailySheet.addRow([
                     day.fecha,
                     Math.round(day.total_reservas),
                     Math.round(day.reservas_confirmadas),
@@ -518,47 +601,85 @@ class ReportService {
                     Math.round(day.comision_plataforma),
                     Math.round(day.ingresos_netos)
                 ]);
+                
+                // Alternancia de colores
+                if (index % 2 === 0) {
+                    for (let col = 1; col <= 6; col++) {
+                        const cell = dailySheet.getCell(rowIndex, col);
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4ECF7' } };
+                    }
+                }
+                
+                // Bordes y alineación
+                for (let col = 1; col <= 6; col++) {
+                    const cell = dailySheet.getCell(rowIndex, col);
+                    const borderStyle = { style: 'thin', color: { argb: 'FFB0BEC5' } };
+                    cell.border = {
+                        top: borderStyle,
+                        left: borderStyle,
+                        bottom: borderStyle,
+                        right: borderStyle
+                    };
+                    if (col > 1) {
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                    } else {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                }
+                rowIndex++;
             });
 
             // Ajustar ancho de columnas
-            dailySheet.getColumn('A').width = 12; // Fecha
-            dailySheet.getColumn('B').width = 15; // Total Reservas
-            dailySheet.getColumn('C').width = 12; // Confirmadas
-            dailySheet.getColumn('D').width = 15; // Ingresos Brutos
-            dailySheet.getColumn('E').width = 12; // Comisión
-            dailySheet.getColumn('F').width = 15; // Ingresos Netos
+            dailySheet.getColumn('A').width = 14;
+            dailySheet.getColumn('B').width = 12;
+            dailySheet.getColumn('C').width = 14;
+            dailySheet.getColumn('D').width = 16;
+            dailySheet.getColumn('E').width = 14;
+            dailySheet.getColumn('F').width = 16;
 
             // Formatear columnas de moneda (sin decimales)
-            dailySheet.getColumn('B').numFmt = '0'; // Total Reservas
-            dailySheet.getColumn('C').numFmt = '0'; // Confirmadas
-            dailySheet.getColumn('D').numFmt = '"$"#,##0'; // Ingresos Brutos
-            dailySheet.getColumn('E').numFmt = '"$"#,##0'; // Comisión
-            dailySheet.getColumn('F').numFmt = '"$"#,##0'; // Ingresos Netos
+            for (let i = 3; i < rowIndex; i++) {
+                dailySheet.getCell(`B${i}`).numFmt = '0';
+                dailySheet.getCell(`C${i}`).numFmt = '0';
+                dailySheet.getCell(`D${i}`).numFmt = '"$"#,##0';
+                dailySheet.getCell(`E${i}`).numFmt = '"$"#,##0';
+                dailySheet.getCell(`F${i}`).numFmt = '"$"#,##0';
+            }
 
         }
 
         // Hoja 3: Detalles de Reservas
         if (reservationDetails.length > 0) {
-            const detailsSheet = workbook.addWorksheet('Detalles de Reservas');
+            const detailsSheet = workbook.addWorksheet('📝 Detalles Reservas');
             
-            detailsSheet.getCell('A1').value = 'DETALLES DE RESERVAS';
-            detailsSheet.getCell('A1').font = { size: 14, bold: true, color: { argb: 'FF2980B9' } };
-
-            const detailHeaders = ['Código', 'Fecha', 'Hora Inicio', 'Hora Fin', 'Cancha', 'Cliente', 'Email', 'Teléfono', 'Monto', 'Comisión', 'Ingreso Neto', 'Estado', 'Estado Pago'];
-            detailsSheet.addRow(detailHeaders);
-
-            // Formatear encabezados
-            const detailHeaderRow = detailsSheet.getRow(2);
-            detailHeaderRow.font = { bold: true };
-            detailHeaderRow.fill = {
+            // Título
+            detailsSheet.mergeCells('A1:M1');
+            detailsSheet.getCell('A1').value = '📝 DETALLE COMPLETO DE RESERVAS';
+            detailsSheet.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            detailsSheet.getCell('A1').fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FF2980B9' }
+                fgColor: { argb: 'FFE67E22' }
             };
-            detailHeaderRow.font = { color: { argb: 'FFFFFFFF' } };
+            detailsSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+            detailsSheet.getRow(1).height = 28;
 
-            reservationDetails.forEach(res => {
-                detailsSheet.addRow([
+            const detailHeaders = ['🔖 Código', '📆 Fecha', '⏰ Hora Inicio', '⏱️ Hora Fin', '⚽ Cancha', '👤 Cliente', '📧 Email', '📞 Teléfono', '💵 Monto', '🏦 Comisión', '💰 Ing. Neto', '📊 Estado', '💳 Pago'];
+            const headerRow = detailsSheet.addRow(detailHeaders);
+
+            // Formatear encabezados
+            headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+            headerRow.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFD35400' }
+            };
+            headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+            headerRow.height = 22;
+
+            let rowIndex = 3;
+            reservationDetails.forEach((res, index) => {
+                const dataRow = detailsSheet.addRow([
                     res.codigo_reserva,
                     res.fecha,
                     res.hora_inicio,
@@ -573,16 +694,65 @@ class ReportService {
                     res.estado,
                     res.estado_pago
                 ]);
+                
+                // Alternancia de colores
+                if (index % 2 === 0) {
+                    for (let col = 1; col <= 13; col++) {
+                        const cell = detailsSheet.getCell(rowIndex, col);
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF5E7' } };
+                    }
+                }
+                
+                // Bordes y alineación
+                for (let col = 1; col <= 13; col++) {
+                    const cell = detailsSheet.getCell(rowIndex, col);
+                    const borderStyle = { style: 'thin', color: { argb: 'FFB0BEC5' } };
+                    cell.border = {
+                        top: borderStyle,
+                        left: borderStyle,
+                        bottom: borderStyle,
+                        right: borderStyle
+                    };
+                    
+                    // Alineación según tipo de dato
+                    if (col >= 9 && col <= 11) { // Montos
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                    } else if (col >= 2 && col <= 4) { // Fechas y horas
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    } else {
+                        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                    }
+                }
+                
+                // Color estado
+                const estadoCell = detailsSheet.getCell(rowIndex, 12);
+                if (res.estado === 'confirmada') {
+                    estadoCell.font = { color: { argb: 'FF27AE60' }, bold: true };
+                } else if (res.estado === 'cancelada') {
+                    estadoCell.font = { color: { argb: 'FFE74C3C' }, bold: true };
+                }
+                
+                // Color estado pago
+                const pagoCell = detailsSheet.getCell(rowIndex, 13);
+                if (res.estado_pago === 'completado') {
+                    pagoCell.font = { color: { argb: 'FF27AE60' }, bold: true };
+                } else if (res.estado_pago === 'pendiente') {
+                    pagoCell.font = { color: { argb: 'FFF39C12' }, bold: true };
+                }
+                
+                rowIndex++;
             });
 
             // Formatear columnas de moneda
-            detailsSheet.getColumn('I').numFmt = '"$"#,##0.00';
-            detailsSheet.getColumn('J').numFmt = '"$"#,##0.00';
-            detailsSheet.getColumn('K').numFmt = '"$"#,##0.00';
+            for (let i = 3; i < rowIndex; i++) {
+                detailsSheet.getCell(`I${i}`).numFmt = '"$"#,##0';
+                detailsSheet.getCell(`J${i}`).numFmt = '"$"#,##0';
+                detailsSheet.getCell(`K${i}`).numFmt = '"$"#,##0';
+            }
 
             // Ajustar ancho de columnas
             detailsSheet.columns = [
-                { width: 15 }, // Código
+                { width: 14 }, // Código
                 { width: 12 }, // Fecha
                 { width: 12 }, // Hora Inicio
                 { width: 12 }, // Hora Fin
@@ -590,11 +760,11 @@ class ReportService {
                 { width: 25 }, // Cliente
                 { width: 30 }, // Email
                 { width: 15 }, // Teléfono
-                { width: 15 }, // Monto
-                { width: 15 }, // Comisión
-                { width: 15 }, // Ingreso Neto
-                { width: 12 }, // Estado
-                { width: 12 }  // Estado Pago
+                { width: 14 }, // Monto
+                { width: 14 }, // Comisión
+                { width: 14 }, // Ingreso Neto
+                { width: 13 }, // Estado
+                { width: 13 }  // Estado Pago
             ];
         }
 

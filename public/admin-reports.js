@@ -1819,59 +1819,107 @@ async function exportToExcel(tableType) {
         // Crear hoja de cálculo
         const ws = XLSX.utils.aoa_to_sheet(excelData);
         
-        // Estilo para el título (fila 1)
+        // Estilo para el título (fila 1) - Más vibrante y moderno
         ws['A1'].s = {
-            font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4A90E2" } },
+            font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "E67E22" } }, // Naranja moderno
             alignment: { horizontal: "center", vertical: "center" }
         };
         
-        // Estilo para encabezados (fila 5)
+        // Estilo para el período (fila 3)
+        const periodCell = XLSX.utils.encode_cell({ r: 2, c: 0 });
+        if (ws[periodCell]) {
+            ws[periodCell].s = {
+                font: { bold: true, sz: 11, color: { rgb: "34495E" } },
+                fill: { fgColor: { rgb: "ECF0F1" } },
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+        }
+        
+        // Estilo para encabezados (fila 5) - Degradado de azul a morado
         const headerRow = 5;
+        const headerColors = {
+            'topComplexes': "3498DB",    // Azul
+            'topCourts': "9B59B6",       // Púrpura
+            'customers': "1ABC9C"         // Verde azulado
+        };
+        const headerColor = headerColors[tableType] || "5DADE2";
+        
         headers.forEach((header, index) => {
             const cellAddress = XLSX.utils.encode_cell({ r: headerRow - 1, c: index });
             if (ws[cellAddress]) {
                 ws[cellAddress].s = {
                     font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
-                    fill: { fgColor: { rgb: "7F8C8D" } },
+                    fill: { fgColor: { rgb: headerColor } },
                     alignment: { horizontal: "center", vertical: "center" },
                     border: {
-                        top: { style: "medium", color: { rgb: "000000" } },
-                        bottom: { style: "medium", color: { rgb: "000000" } },
-                        left: { style: "medium", color: { rgb: "000000" } },
-                        right: { style: "medium", color: { rgb: "000000" } }
+                        top: { style: "medium", color: { rgb: "2C3E50" } },
+                        bottom: { style: "medium", color: { rgb: "2C3E50" } },
+                        left: { style: "thin", color: { rgb: "2C3E50" } },
+                        right: { style: "thin", color: { rgb: "2C3E50" } }
                     }
                 };
             }
         });
         
-        // Bordes para todas las celdas de datos
+        // Bordes y alternancia de colores para todas las celdas de datos
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let R = headerRow; R <= range.e.r; ++R) {
+            const isEvenRow = (R - headerRow) % 2 === 0;
             for (let C = range.s.c; C <= range.e.c; ++C) {
                 const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
                 if (ws[cellAddress]) {
                     if (!ws[cellAddress].s) ws[cellAddress].s = {};
-                    ws[cellAddress].s.border = {
-                        top: { style: "thin", color: { rgb: "CCCCCC" } },
-                        bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-                        left: { style: "thin", color: { rgb: "CCCCCC" } },
-                        right: { style: "thin", color: { rgb: "CCCCCC" } }
+                    
+                    // Alternancia de colores (filas pares más claras)
+                    ws[cellAddress].s.fill = {
+                        fgColor: { rgb: isEvenRow ? "F7F9FB" : "FFFFFF" }
                     };
+                    
+                    // Bordes más sutiles
+                    ws[cellAddress].s.border = {
+                        top: { style: "thin", color: { rgb: "D5DBDB" } },
+                        bottom: { style: "thin", color: { rgb: "D5DBDB" } },
+                        left: { style: "thin", color: { rgb: "D5DBDB" } },
+                        right: { style: "thin", color: { rgb: "D5DBDB" } }
+                    };
+                    
+                    // Alineación según el tipo de columna
+                    if (tableType === 'customers') {
+                        if (C === 4 || C === 5) { // Reservas y Promedio
+                            ws[cellAddress].s.alignment = { horizontal: "right", vertical: "center" };
+                        } else if (C === 6) { // Última Reserva
+                            ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+                        } else {
+                            ws[cellAddress].s.alignment = { horizontal: "left", vertical: "center" };
+                        }
+                    } else {
+                        ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+                    }
                 }
             }
         }
         
-        // Anchos de columna
-        ws['!cols'] = headers.map((header, idx) => {
-            if (tableType === 'customers') {
-                return idx === 0 || idx === 1 ? { wch: 25 } : { wch: 15 };
-            }
-            return { wch: 20 };
-        });
+        // Anchos de columna optimizados
+        if (tableType === 'customers') {
+            ws['!cols'] = [
+                { wch: 28 }, // Cliente (más ancho)
+                { wch: 32 }, // Email (más ancho)
+                { wch: 16 }, // RUT
+                { wch: 14 }, // Teléfono
+                { wch: 12 }, // Reservas
+                { wch: 14 }, // Promedio
+                { wch: 16 }  // Última Reserva
+            ];
+        } else {
+            ws['!cols'] = headers.map(() => ({ wch: 20 }));
+        }
         
-        // Fusionar celdas del título
-        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+        // Fusionar celdas del título y período
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }, // Título
+            { s: { r: 2, c: 0 }, e: { r: 2, c: headers.length - 1 } }  // Período
+        ];
         
         // Crear libro y agregar hoja
         const wb = XLSX.utils.book_new();
