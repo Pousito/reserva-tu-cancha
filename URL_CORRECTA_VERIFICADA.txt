@@ -1,0 +1,60 @@
+================================================================================
+URL CORRECTA VERIFICADA - BORDE RIO
+================================================================================
+
+Nombre exacto del complejo en la base de datos:
+"Espacio Deportivo Borde Río"
+
+================================================================================
+URL COMPLETA (COPIAR Y PROBAR):
+================================================================================
+
+https://www.reservatuscanchas.cl/?ciudad=Quilleco&complejo=Espacio%20Deportivo%20Borde%20R%C3%ADo
+
+
+================================================================================
+URL ALTERNATIVA (Solo complejo):
+================================================================================
+
+https://www.reservatuscanchas.cl/?complejo=Espacio%20Deportivo%20Borde%20R%C3%ADo
+
+
+================================================================================
+INSTRUCCIONES PARA PROBAR:
+================================================================================
+
+1. COPIAR la URL completa de arriba
+2. ABRIR una ventana de incógnito (Cmd+Shift+N)
+3. PEGAR la URL en la barra de direcciones
+4. PRESIONAR Enter
+5. VERIFICAR que:
+   ✓ Ciudad: Quilleco (pre-seleccionada)
+   ✓ Complejo: Espacio Deportivo Borde Río (pre-seleccionado)
+   ✓ Botón "Buscar Disponibilidad" visible
+
+6. PRESIONAR "Buscar Disponibilidad"
+7. CONFIRMAR que muestra las canchas
+
+================================================================================
+QUE DEBE PASAR:
+================================================================================
+
+✓ La página carga normalmente
+✓ El campo "Ciudad" ya muestra "Quilleco"
+✓ El campo "Complejo" ya muestra "Espacio Deportivo Borde Río"
+✓ El Paso 3 (Tipo de Cancha) está visible
+✓ Solo falta seleccionar tipo de cancha y buscar
+
+================================================================================
+SI NO FUNCIONA:
+================================================================================
+
+Avísame y verificaremos:
+- El nombre exacto en producción vs desarrollo
+- La configuración del pre-llenado de URL
+- Posibles problemas con la codificación
+
+================================================================================
+VERIFICADO EN BASE DE DATOS: 14 de Octubre, 2025
+================================================================================
+

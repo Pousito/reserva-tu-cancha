@@ -908,15 +908,15 @@ async function preRellenarDesdeURLMejorado() {
                                 // IMPORTANTE: Mantener el complejo seleccionado visualmente
                                 mantenerComplejoSeleccionado();
                                 
-                                // 4. Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, seleccionar fútbol automáticamente
-                                if (complejoEncontrado.nombre === 'MagnaSports' || complejoEncontrado.nombre === 'Fundación Gunnen' || complejoEncontrado.nombre === 'Espacio Deportivo Borde Río') {
+                                // 4. Si es Complejo En Desarrollo, Fundación Gunnen o Espacio Deportivo Borde Río, seleccionar fútbol automáticamente
+                                if (complejoEncontrado.nombre === 'Complejo En Desarrollo' || complejoEncontrado.nombre === 'Fundación Gunnen' || complejoEncontrado.nombre === 'Espacio Deportivo Borde Río') {
                                     console.log(`⚽ ${complejoEncontrado.nombre} detectado, seleccionando fútbol automáticamente`);
                                     const futbolRadio = document.getElementById('futbol');
                                     if (futbolRadio) {
                                         futbolRadio.checked = true;
                                         tipoCanchaSeleccionado = 'futbol';
                                         
-                                        // Ocultar opción de padel para MagnaSports
+                                        // Ocultar opción de padel para Complejo En Desarrollo
                                         const padelRadio = document.getElementById('padel');
                                         if (padelRadio) {
                                             padelRadio.parentElement.style.display = 'none';
@@ -948,7 +948,7 @@ async function preRellenarDesdeURLMejorado() {
                                         
                                         // Disparar evento change para activar la lógica del paso 4
                                         futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
-                                        console.log('✅ MagnaSports configurado - solo fútbol con estilos centrados');
+                                        console.log('✅ Complejo En Desarrollo configurado - solo fútbol con estilos centrados');
                                     }
                                 } else {
                                     // Para otros complejos, mostrar paso 3 sin preseleccionar
@@ -1822,8 +1822,8 @@ function configurarEventListeners() {
             await cargarHorariosComplejo(complejoSeleccionado);
             console.log('🔄 Horarios cargados para:', complejoSeleccionado.nombre);
             
-            // Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, automáticamente seleccionar fútbol y ocultar opciones de padel
-            if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río') {
+            // Si es Complejo En Desarrollo, Fundación Gunnen o Espacio Deportivo Borde Río, automáticamente seleccionar fútbol y ocultar opciones de padel
+            if (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río') {
                 console.log(`⚽ ${complejoSeleccionado.nombre} detectado - Configurando automáticamente...`);
                 
                 // Seleccionar automáticamente fútbol
@@ -1939,10 +1939,10 @@ function configurarEventListeners() {
             console.log('🎯 RADIO BUTTON CAMBIADO:', this.value);
             console.log('🎯 Complejo seleccionado:', complejoSeleccionado);
             
-            // Solo permitir selección si no es MagnaSports o si es MagnaSports y se selecciona fútbol
-            if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports' && this.value !== 'futbol') {
-                console.log('🚫 Padel no permitido para MagnaSports');
-                return; // No permitir selección de padel para MagnaSports
+            // Solo permitir selección si no es Complejo En Desarrollo o si es Complejo En Desarrollo y se selecciona fútbol
+            if (complejoSeleccionado && complejoSeleccionado.nombre === 'Complejo En Desarrollo' && this.value !== 'futbol') {
+                console.log('🚫 Padel no permitido para Complejo En Desarrollo');
+                return; // No permitir selección de padel para Complejo En Desarrollo
             }
             
             tipoCanchaSeleccionado = this.value;
@@ -2807,8 +2807,8 @@ async function cargarHorariosComplejo(complejo) {
     let horarios = [];
     
     // Definir horarios según el complejo
-    if (complejo.nombre === 'MagnaSports') {
-        // MagnaSports: 16:00-23:00 entre semana, 12:00-23:00 fines de semana
+    if (complejo.nombre === 'Complejo En Desarrollo') {
+        // Complejo En Desarrollo: 16:00-23:00 entre semana, 12:00-23:00 fines de semana
         // Verificar la fecha actual para cargar los horarios correctos
         const fecha = document.getElementById('fechaSelect').value;
         if (fecha) {
@@ -2817,7 +2817,7 @@ async function cargarHorariosComplejo(complejo) {
             const fechaObj = new Date(año, mes - 1, dia);
             const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
             
-            console.log('MagnaSports - Fecha:', fecha, 'Día de semana:', diaSemana, 'Día nombre:', ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][diaSemana]);
+            console.log('Complejo En Desarrollo - Fecha:', fecha, 'Día de semana:', diaSemana, 'Día nombre:', ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][diaSemana]);
             
             if (diaSemana === 0 || diaSemana === 6) {
                 // Fines de semana: 12:00-23:00
@@ -2985,7 +2985,7 @@ async function cargarHorariosBasicos() {
     let horarios = [];
     const fecha = document.getElementById('fechaSelect').value;
     
-    if (complejoSeleccionado.nombre === 'MagnaSports') {
+    if (complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
         if (fecha) {
             // CORREGIDO: Usar fecha local para evitar problemas de zona horaria
             const [año, mes, dia] = fecha.split('-').map(Number);
@@ -3100,7 +3100,7 @@ async function cargarHorariosConDisponibilidadInmediata() {
     const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
     let horarios = [];
     
-    if (complejoSeleccionado.nombre === 'MagnaSports') {
+    if (complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
         if (diaSemana === 0 || diaSemana === 6) {
             // Fines de semana: 12:00-23:00
             horarios = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3223,7 +3223,7 @@ async function validarHorariosSegunFecha() {
     if (horaSeleccionada) {
         let horariosValidos = [];
         
-        if (complejoSeleccionado.nombre === 'MagnaSports') {
+        if (complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
             if (diaSemana === 0 || diaSemana === 6) {
                 // Fines de semana: 12:00-23:00
                 horariosValidos = ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3243,8 +3243,8 @@ async function validarHorariosSegunFecha() {
     }
     
     // Actualizar opciones disponibles según el día
-    if (complejoSeleccionado.nombre === 'MagnaSports') {
-        console.log('🚀 validarHorariosSegunFecha - MagnaSports detectado, cargando horarios básicos...');
+    if (complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
+        console.log('🚀 validarHorariosSegunFecha - Complejo En Desarrollo detectado, cargando horarios básicos...');
         
         // Cargar horarios básicos primero, la disponibilidad se verificará después
         await cargarHorariosBasicos();
@@ -3266,17 +3266,17 @@ async function renderizarCanchasConDisponibilidad() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Si es MagnaSports, Fundación Gunnen o Espacio Deportivo Borde Río, crear estructura especial horizontal
-    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río')) {
+    // Si es Complejo En Desarrollo, Fundación Gunnen o Espacio Deportivo Borde Río, crear estructura especial horizontal
+    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río')) {
         console.log(`🎨 Renderizando ${complejoSeleccionado.nombre} con`, canchas.length, 'canchas');
         
         // Determinar si es techado o al aire libre
-        const esTechado = complejoSeleccionado.nombre === 'MagnaSports';
-        const nombreCalle = complejoSeleccionado.nombre === 'MagnaSports' ? 'MONTE PERDIDO' : 
+        const esTechado = complejoSeleccionado.nombre === 'Complejo En Desarrollo';
+        const nombreCalle = complejoSeleccionado.nombre === 'Complejo En Desarrollo' ? 'MONTE PERDIDO' : 
                            complejoSeleccionado.nombre === 'Fundación Gunnen' ? 'DON VICTOR' : 
                            'RUTA Q-575';
         
-        // Crear contenedor (galpón para MagnaSports, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
+        // Crear contenedor (galpón para Complejo En Desarrollo, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
         const galponContainer = document.createElement('div');
         galponContainer.className = esTechado ? 'galpon-container' : 'complejo-abierto-container';
         
@@ -3295,10 +3295,10 @@ async function renderizarCanchasConDisponibilidad() {
         const canchasHorizontales = document.createElement('div');
         canchasHorizontales.className = 'canchas-horizontales';
         
-        // Ordenar canchas para MagnaSports y Fundación Gunnen: Cancha 1 a la izquierda, Cancha 2 a la derecha
+        // Ordenar canchas para Complejo En Desarrollo y Fundación Gunnen: Cancha 1 a la izquierda, Cancha 2 a la derecha
         // Para Espacio Deportivo Borde Río, solo hay 1 cancha, no necesita ordenamiento especial
         let canchasOrdenadas = [...canchas];
-        if (complejoSeleccionado.nombre === 'MagnaSports' || complejoSeleccionado.nombre === 'Fundación Gunnen') {
+        if (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen') {
             canchasOrdenadas = canchasOrdenadas.sort((a, b) => {
                 const numeroA = parseInt(a.nombre.match(/\d+/)[0]);
                 const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
@@ -3519,8 +3519,8 @@ async function renderizarCanchasConDisponibilidad() {
      const grid = document.getElementById('canchasGrid');
      grid.innerHTML = '';
      
-     // Si es MagnaSports, crear estructura especial del galpón
-     if (complejoSeleccionado && complejoSeleccionado.nombre === 'MagnaSports') {
+     // Si es Complejo En Desarrollo, crear estructura especial del galpón
+     if (complejoSeleccionado && complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
          // Crear contenedor del galpón
          const galponContainer = document.createElement('div');
          galponContainer.className = 'galpon-container';
@@ -3534,7 +3534,7 @@ async function renderizarCanchasConDisponibilidad() {
          const canchasHorizontales = document.createElement('div');
          canchasHorizontales.className = 'canchas-horizontales';
          
-         // Ordenar canchas para MagnaSports: Cancha 1 a la izquierda, Cancha 2 a la derecha
+         // Ordenar canchas para Complejo En Desarrollo: Cancha 1 a la izquierda, Cancha 2 a la derecha
          const canchasOrdenadas = [...canchas].sort((a, b) => {
              const numeroA = parseInt(a.nombre.match(/\d+/)[0]);
              const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
@@ -3569,11 +3569,11 @@ async function renderizarCanchasConDisponibilidad() {
          galponContainer.appendChild(canchasHorizontales);
          grid.appendChild(galponContainer);
          
-         // Agregar clase para identificar que es MagnaSports
-         grid.parentElement.classList.add('complejo-magnasports');
+         // Agregar clase para identificar que es Complejo En Desarrollo
+         grid.parentElement.classList.add('complejo-desarrollo');
      } else {
          // Para otros complejos, usar estructura normal
-         grid.parentElement.classList.remove('complejo-magnasports');
+         grid.parentElement.classList.remove('complejo-desarrollo');
          
          canchas.forEach(cancha => {
              const canchaCard = document.createElement('div');

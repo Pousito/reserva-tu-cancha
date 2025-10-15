@@ -135,3 +135,4 @@ Si agregas un nuevo complejo, edita ese archivo para agregar su logo.
 
 **Última actualización:** Octubre 2025
 
+

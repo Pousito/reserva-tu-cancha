@@ -81,7 +81,7 @@ function aplicarPermisosPorRol() {
             gastosLink.style.visibility = 'visible';
             gastosLink.classList.add('owner-visible');
             gastosLink.classList.remove('hide-for-manager');
-            console.log('✅ Control de Gastos configurado como visible para owner');
+            console.log('✅ Control de Ingresos y Egresos configurado como visible para owner');
         }
         console.log('✅ Ocultados complejos, mostrados reportes y gastos para owner');
     } else if (userRole === 'super_admin') {

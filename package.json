@@ -25,7 +25,7 @@
     "clean-prod-db": "node scripts/clean-production-db.js clean",
     "check-duplicates": "node scripts/maintenance/check-duplicates.js",
     "clean-duplicates": "node scripts/maintenance/clean-duplicates.js",
-    "fix-magnasports-courts": "node scripts/maintenance/fix-magnasports-courts.js",
+    "fix-complejo-desarrollo-courts": "node scripts/maintenance/fix-magnasports-courts.js",
     "sync-databases": "node scripts/maintenance/sync-databases.js",
     "sync-production-db": "node scripts/maintenance/sync-production-db.js",
     "force-sync-production": "node scripts/maintenance/force-sync-production.js",
@@ -71,7 +71,8 @@
         "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses",
         "fix-production-db": "node scripts/fix-production-database.js",
         "fix-production-schema": "node scripts/fix-production-schema.js",
-        "update-borderio-price": "node scripts/update-borderio-price.js"
+        "update-borderio-price": "node scripts/update-borderio-price.js",
+    "generar-manual": "node scripts/generar-manual-usuario.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
