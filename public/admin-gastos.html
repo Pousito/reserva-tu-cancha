@@ -729,13 +729,13 @@
                 <div class="stat-card-header">
                     <div>
                         <div class="stat-card-label">Total Egresos</div>
-                        <div class="stat-card-value" id="totalGastos">$0</div>
+                        <div class="stat-card-value" id="totalEgresos">$0</div>
                     </div>
                     <div class="stat-card-icon danger">
                         <i class="fas fa-arrow-down"></i>
                     </div>
                 </div>
-                <div class="stat-card-change negative" id="changeGastos">
+                <div class="stat-card-change negative" id="changeEgresos">
                     <i class="fas fa-arrow-down"></i> Mes actual
                 </div>
             </div>
@@ -800,7 +800,7 @@
             <ul class="nav nav-tabs mb-3" id="categoriaTabs" role="tablist" style="border-bottom: 2px solid rgba(255,255,255,0.2);">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="gastos-tab" data-bs-toggle="tab" data-bs-target="#gastos-panel" type="button" style="color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.1);">
-                        <i class="fas fa-minus-circle me-2"></i>Gastos
+                        <i class="fas fa-minus-circle me-2"></i>Egresos
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -812,7 +812,7 @@
 
             <!-- Tab Content -->
             <div class="tab-content" id="categoriaTabContent">
-                <!-- Panel de Gastos -->
+                <!-- Panel de Egresos -->
                 <div class="tab-pane fade show active" id="gastos-panel" role="tabpanel">
                     <div class="table-responsive">
                         <table class="table">
@@ -825,7 +825,7 @@
                                     <th width="150">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="listaCategoriasGastos">
+                            <tbody id="listaCategoriasEgresos">
                                 <tr>
                                     <td colspan="5" class="text-center" style="color: white;">
                                         <i class="fas fa-spinner fa-spin"></i> Cargando...
@@ -865,7 +865,7 @@
         <!-- Charts -->
         <div class="charts-grid">
             <div class="chart-card">
-                <h3>Gastos por Categoría</h3>
+                <h3>Egresos por Categoría</h3>
                 <canvas id="gastosChart"></canvas>
             </div>
             <div class="chart-card">

@@ -267,7 +267,7 @@ function renderizarTabla() {
             <td>
                 <span class="badge-modern badge-${mov.tipo}">
                     <i class="fas fa-${mov.tipo === 'ingreso' ? 'arrow-up' : 'arrow-down'}"></i>
-                    ${mov.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
+                    ${mov.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}
                 </span>
             </td>
             <td>
@@ -306,7 +306,7 @@ function actualizarEstadisticas() {
     const balance = ingresos - egresos;
     
     document.getElementById('totalIngresos').textContent = `$${ingresos.toLocaleString('es-CL')}`;
-    document.getElementById('totalGastos').textContent = `$${egresos.toLocaleString('es-CL')}`;
+    document.getElementById('totalEgresos').textContent = `$${egresos.toLocaleString('es-CL')}`;
     document.getElementById('balance').textContent = `$${balance.toLocaleString('es-CL')}`;
     
     // Actualizar clase del balance
@@ -515,7 +515,7 @@ function actualizarGraficoEvolucion() {
                             tooltipItems.forEach(item => {
                                 if (item.dataset.label === 'Ingresos') {
                                     ingresos = item.parsed.y;
-                                } else if (item.dataset.label === 'Gastos') {
+                                } else if (item.dataset.label === 'Egresos') {
                                     egresos = item.parsed.y;
                                 }
                             });
@@ -559,7 +559,7 @@ function openModal(tipo) {
         title.innerHTML = '<i class="fas fa-plus-circle me-2"></i>Registrar Ingreso';
         title.closest('.modal-header').style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
     } else {
-        title.innerHTML = '<i class="fas fa-minus-circle me-2"></i>Registrar Gasto';
+        title.innerHTML = '<i class="fas fa-minus-circle me-2"></i>Registrar Egreso';
         title.closest('.modal-header').style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
     }
     
@@ -829,7 +829,7 @@ function exportToExcel() {
     movimientos.forEach(m => {
         excelData.push([
             formatDate(m.fecha),
-            m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+            m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso',
             m.categoria_nombre,
             m.descripcion || '',
             Number(m.monto),
@@ -1058,7 +1058,7 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
     
     // Descargar (xlsx-js-style soporta estilos automáticamente)
-    const filename = `Control_Gastos_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.xlsx`;
+    const filename = `Control_Financiero_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.xlsx`;
     XLSX.writeFile(wb, filename);
     
     Swal.fire({
@@ -1201,7 +1201,7 @@ async function exportToPDF() {
     // Tabla de movimientos
     const tableData = movimientos.map(m => [
         formatDate(m.fecha),
-        m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+        m.tipo === 'ingreso' ? 'Ingreso' : 'Egreso',
         m.categoria_nombre,
         m.descripcion || '-',
         `$${Number(m.monto).toLocaleString('es-CL')}`
@@ -1246,7 +1246,7 @@ async function exportToPDF() {
                 if (data.cell.raw === 'Ingreso') {
                     data.cell.styles.textColor = [16, 185, 129];
                     data.cell.styles.fontStyle = 'bold';
-                } else if (data.cell.raw === 'Gasto') {
+                } else if (data.cell.raw === 'Egreso') {
                     data.cell.styles.textColor = [239, 68, 68];
                     data.cell.styles.fontStyle = 'bold';
                 }
@@ -1340,7 +1340,7 @@ async function cargarListaCategorias() {
         const ingresosItems = data.filter(cat => cat.tipo === 'ingreso');
         
         // Renderizar tablas
-        renderizarTablaCategorias('listaCategoriasGastos', egresosItems);
+        renderizarTablaCategorias('listaCategoriasEgresos', egresosItems);
         renderizarTablaCategorias('listaCategoriasIngresos', ingresosItems);
         
     } catch (error) {
@@ -1424,13 +1424,13 @@ async function abrirModalCategoria(categoriaId, tipo) {
             document.getElementById('categoriaColor').value = categoria.color;
             
             document.getElementById('categoriaModalTitle').innerHTML = 
-                `<i class="fas fa-edit me-2"></i>Editar Categoría de ${tipo === 'gasto' ? 'Gasto' : 'Ingreso'}`;
+                `<i class="fas fa-edit me-2"></i>Editar Categoría de ${tipo === 'gasto' ? 'Egreso' : 'Ingreso'}`;
         } else {
             // Modo creación
             console.log('➕ Nueva categoría de tipo:', tipo);
             document.getElementById('categoriaColor').value = tipo === 'gasto' ? '#e74c3c' : '#27ae60';
             document.getElementById('categoriaModalTitle').innerHTML = 
-                `<i class="fas fa-plus me-2"></i>Nueva Categoría de ${tipo === 'gasto' ? 'Gasto' : 'Ingreso'}`;
+                `<i class="fas fa-plus me-2"></i>Nueva Categoría de ${tipo === 'gasto' ? 'Egreso' : 'Ingreso'}`;
         }
         
         categoriaModal.show();
