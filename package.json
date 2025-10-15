@@ -1,7 +1,7 @@
 {
   "name": "reserva-tu-cancha",
   "version": "1.0.0",
-  "description": "Sistema de reservas de canchas deportivas",
+  "description": "Sistema de reservas de canchas deportivas - Deploy forzado para liberar build atascado",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
