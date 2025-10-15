@@ -42,6 +42,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware - CORS configurado para desarrollo y producción
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log('🌐 CORS check - Origin:', origin, 'NODE_ENV:', process.env.NODE_ENV);
+    
     // En desarrollo, permitir cualquier origen
     if (process.env.NODE_ENV !== 'production') {
       callback(null, true);
@@ -51,12 +53,16 @@ const corsOptions = {
     // En producción, verificar orígenes permitidos
     const allowedOrigins = [
       'https://www.reservatuscanchas.cl',
-      'https://reservatuscanchas.cl'
+      'https://reservatuscanchas.cl',
+      'https://reserva-tu-cancha.onrender.com',
+      'https://reservatuscanchas.onrender.com'
     ];
     
     if (!origin || allowedOrigins.includes(origin)) {
+      console.log('✅ CORS permitido para:', origin);
       callback(null, true);
     } else {
+      console.log('❌ CORS rechazado para:', origin, 'Permitidos:', allowedOrigins);
       callback(new Error('No permitido por CORS'));
     }
   },
