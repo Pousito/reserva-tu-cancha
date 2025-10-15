@@ -262,7 +262,7 @@ async function populateSampleData() {
       const complejosData = [
         { nombre: 'Complejo Deportivo Central', ciudad: 'Santiago', direccion: 'Av. Providencia 123', telefono: '+56912345678', email: 'info@complejocentral.cl' },
         { nombre: 'Padel Club Premium', ciudad: 'Santiago', direccion: 'Las Condes 456', telefono: '+56987654321', email: 'reservas@padelclub.cl' },
-        { nombre: 'MagnaSports', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@magnasports.cl' },
+        { nombre: 'Complejo En Desarrollo', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@complejodesarrollo.cl' },
         { nombre: 'Centro Deportivo Costero', ciudad: 'Valparaíso', direccion: 'Av. Argentina 9012', telefono: '+56 32 2345 6791', email: 'info@costero.cl' },
         { nombre: 'Club Deportivo Norte', ciudad: 'Santiago', direccion: 'Av. Las Condes 5678', telefono: '+56 2 2345 6790', email: 'info@norte.cl' }
       ];
@@ -290,8 +290,8 @@ async function populateSampleData() {
         { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
         { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
         { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
-        { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
-        { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
+        { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 50, complejo: 'Complejo En Desarrollo' },
+        { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 50, complejo: 'Complejo En Desarrollo' },
         { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
         { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
       ];
@@ -316,7 +316,7 @@ async function populateSampleData() {
       // Insertar usuarios administradores
       const usuariosData = [
         { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
-        { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño MagnaSports', rol: 'owner' },
+        { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño Complejo En Desarrollo', rol: 'owner' },
         { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Manager Fundación Gunnen', rol: 'manager' },
         { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
       ];
@@ -1779,7 +1779,7 @@ app.post('/api/debug/test-email-30sep', async (req, res) => {
       codigo_reserva: 'TEST30',
       nombre_cliente: 'Ignacio Araya',
       email_cliente: 'ignacio.araya.lillo@gmail.com',
-      complejo: 'MagnaSports',
+      complejo: 'Complejo En Desarrollo',
       cancha: 'Cancha Techada 1',
       fecha: '2025-09-30',
       hora_inicio: '21:00',
@@ -2387,7 +2387,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
         
         let horasPorDia = 0;
         
-        if (complejo.complejo === 'MagnaSports') {
+        if (complejo.complejo === 'Complejo En Desarrollo') {
           if (diaSemana === 0 || diaSemana === 6) {
             // Fines de semana: 12:00-23:00 (12 horas)
             horasPorDia = 12;
@@ -2764,8 +2764,8 @@ app.get('/api/debug/insert-courts', async (req, res) => {
       { nombre: 'Cancha Futbol 2', tipo: 'futbol', precio: 25000, complejo: 'Complejo Deportivo Central' },
       { nombre: 'Padel 1', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
       { nombre: 'Padel 2', tipo: 'padel', precio: 30000, complejo: 'Padel Club Premium' },
-      { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
-      { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 50, complejo: 'MagnaSports' },
+      { nombre: 'Cancha Techada 1', tipo: 'futbol', precio: 50, complejo: 'Complejo En Desarrollo' },
+      { nombre: 'Cancha Techada 2', tipo: 'futbol', precio: 50, complejo: 'Complejo En Desarrollo' },
       { nombre: 'Cancha Norte 1', tipo: 'futbol', precio: 28000, complejo: 'Club Deportivo Norte' },
       { nombre: 'Cancha Costera 1', tipo: 'futbol', precio: 22000, complejo: 'Centro Deportivo Costero' }
     ];
@@ -2799,7 +2799,7 @@ app.get('/api/debug/insert-complexes', async (req, res) => {
     const complejosData = [
       { nombre: 'Complejo Deportivo Central', ciudad: 'Santiago', direccion: 'Av. Providencia 123', telefono: '+56912345678', email: 'info@complejocentral.cl' },
       { nombre: 'Padel Club Premium', ciudad: 'Santiago', direccion: 'Las Condes 456', telefono: '+56987654321', email: 'reservas@padelclub.cl' },
-      { nombre: 'MagnaSports', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@magnasports.cl' },
+      { nombre: 'Complejo En Desarrollo', ciudad: 'Los Ángeles', direccion: 'Monte Perdido 1685', telefono: '+56987654321', email: 'reservas@complejodesarrollo.cl' },
       { nombre: 'Centro Deportivo Costero', ciudad: 'Valparaíso', direccion: 'Av. Argentina 9012', telefono: '+56 32 2345 6791', email: 'info@costero.cl' },
       { nombre: 'Club Deportivo Norte', ciudad: 'Santiago', direccion: 'Av. Las Condes 5678', telefono: '+56 2 2345 6790', email: 'info@norte.cl' }
     ];
@@ -4075,7 +4075,7 @@ app.post('/api/debug/insert-admin-users', async (req, res) => {
     
     const usuariosData = [
       { email: 'admin@reservatuscanchas.cl', password: 'admin123', nombre: 'Super Administrador', rol: 'super_admin' },
-      { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño MagnaSports', rol: 'owner' },
+      { email: 'naxiin320@gmail.com', password: 'magnasports2024', nombre: 'Dueño Complejo En Desarrollo', rol: 'owner' },
       { email: 'naxiin_320@hotmail.com', password: 'gunnen2024', nombre: 'Administrador Fundación Gunnen', rol: 'admin' },
       { email: 'ignacio.araya.lillito@hotmail.com', password: 'gunnen2024', nombre: 'Dueño Fundación Gunnen', rol: 'owner' }
     ];
@@ -4423,7 +4423,7 @@ app.post('/api/debug/test-email-send', async (req, res) => {
       codigo_reserva: req.body.codigo_reserva || Math.random().toString(36).substr(2, 6).toUpperCase(),
       nombre_cliente: req.body.nombre_cliente || 'Cliente de Prueba',
       email_cliente: req.body.email_cliente || 'ignacio.araya.lillo@gmail.com',
-      complejo: req.body.complejo || 'MagnaSports',
+      complejo: req.body.complejo || 'Complejo En Desarrollo',
       cancha: req.body.cancha || 'Cancha Techada 1',
       fecha: req.body.fecha || '2025-09-12',
       hora_inicio: req.body.hora_inicio || '18:00',
@@ -4911,7 +4911,7 @@ app.post('/api/debug/create-admin-users', async (req, res) => {
       {
         email: 'naxiin320@gmail.com',
         password: 'magnasports2024',
-        nombre: 'Dueño MagnaSports',
+        nombre: 'Dueño Complejo En Desarrollo',
         rol: 'owner'
       },
       {
@@ -5222,14 +5222,14 @@ app.get('/api/debug/create-role-users', async (req, res) => {
   try {
     console.log('👥 Creando usuarios de ejemplo con roles...');
     
-    // Obtener ID del complejo MagnaSports
-    const magnasports = await db.get('SELECT id FROM complejos WHERE nombre = $1', ['MagnaSports']);
+    // Obtener ID del complejo En Desarrollo
+    const magnasports = await db.get('SELECT id FROM complejos WHERE nombre = $1', ['Complejo En Desarrollo']);
     if (!magnasports) {
-      throw new Error('Complejo MagnaSports no encontrado');
+      throw new Error('Complejo En Desarrollo no encontrado');
     }
     
     const complejoId = magnasports.id;
-    console.log(`🏢 ID del complejo MagnaSports: ${complejoId}`);
+    console.log(`🏢 ID del complejo En Desarrollo: ${complejoId}`);
     
     // Usuarios de ejemplo
     const usuariosEjemplo = [
@@ -5243,14 +5243,14 @@ app.get('/api/debug/create-role-users', async (req, res) => {
       {
         email: 'dueno@magnasports.cl',
         password: 'dueno123',
-        nombre: 'Dueño MagnaSports',
+        nombre: 'Dueño Complejo En Desarrollo',
         rol: 'owner',
         complejo_id: complejoId
       },
       {
         email: 'naxiin320@gmail.com',
         password: 'admin123',
-        nombre: 'Administrador MagnaSports',
+        nombre: 'Administrador Complejo En Desarrollo',
         rol: 'manager',
         complejo_id: complejoId
       }
@@ -5984,15 +5984,15 @@ app.get('/api/debug/list-users', async (req, res) => {
 // ===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====
 app.get('/api/debug/clean-database', async (req, res) => {
   try {
-    console.log('🧹 Limpiando base de datos - solo Los Ángeles y MagnaSports...');
+    console.log('🧹 Limpiando base de datos - solo Los Ángeles y Complejo En Desarrollo...');
     
-    // 1. Eliminar reservas de otros complejos (mantener solo MagnaSports)
+    // 1. Eliminar reservas de otros complejos (mantener solo Complejo En Desarrollo)
     const reservasEliminadas = await db.run(`
       DELETE FROM reservas 
       WHERE cancha_id IN (
         SELECT c.id FROM canchas c 
         JOIN complejos co ON c.complejo_id = co.id 
-        WHERE co.nombre != 'MagnaSports'
+        WHERE co.nombre != 'Complejo En Desarrollo'
       )
     `);
     console.log(`✅ Reservas eliminadas: ${reservasEliminadas.changes || 0}`);
@@ -6001,14 +6001,14 @@ app.get('/api/debug/clean-database', async (req, res) => {
     const canchasEliminadas = await db.run(`
       DELETE FROM canchas 
       WHERE complejo_id IN (
-        SELECT id FROM complejos WHERE nombre != 'MagnaSports'
+        SELECT id FROM complejos WHERE nombre != 'Complejo En Desarrollo'
       )
     `);
     console.log(`✅ Canchas eliminadas: ${canchasEliminadas.changes || 0}`);
     
-    // 3. Eliminar complejos que no sean MagnaSports
+    // 3. Eliminar complejos que no sean Complejo En Desarrollo
     const complejosEliminados = await db.run(`
-      DELETE FROM complejos WHERE nombre != 'MagnaSports'
+      DELETE FROM complejos WHERE nombre != 'Complejo En Desarrollo'
     `);
     console.log(`✅ Complejos eliminados: ${complejosEliminados.changes || 0}`);
     
