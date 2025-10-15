@@ -17,7 +17,7 @@ let evolucionChart = null;
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🎯 Inicializando Control Financiero...');
+    console.log('🎯 Inicializando Control Financiero... v2.0');
     
     // Verificar autenticación
     await checkAuth();
