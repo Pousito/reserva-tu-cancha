@@ -7718,6 +7718,38 @@ app.get('/api/diagnostic/date-analysis', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA ACTUALIZAR MAGNASPORTS EN PRODUCCIÓN =====
+app.get('/api/debug/update-magnasports', async (req, res) => {
+  try {
+    console.log('🔄 Ejecutando actualización de MagnaSports a Complejo En Desarrollo...');
+    
+    const updateMagnasports = require('./scripts/update-magnasports-endpoint');
+    const result = await updateMagnasports();
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'MagnaSports actualizado exitosamente a Complejo En Desarrollo',
+        data: result
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Error actualizando MagnaSports',
+        error: result.error || result.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error en endpoint update-magnasports:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error ejecutando actualización',
+      error: error.message
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
