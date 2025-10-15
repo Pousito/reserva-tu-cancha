@@ -299,11 +299,11 @@ function actualizarEstadisticas() {
         .filter(m => m.tipo === 'ingreso')
         .reduce((sum, m) => sum + Number(m.monto), 0);
     
-    const gastos = movimientos
+    const egresos = movimientos
         .filter(m => m.tipo === 'gasto')
         .reduce((sum, m) => sum + Number(m.monto), 0);
     
-    const balance = ingresos - gastos;
+    const balance = ingresos - egresos;
     
     document.getElementById('totalIngresos').textContent = `$${ingresos.toLocaleString('es-CL')}`;
     document.getElementById('totalGastos').textContent = `$${egresos.toLocaleString('es-CL')}`;
@@ -511,15 +511,15 @@ function actualizarGraficoEvolucion() {
                         },
                         footer: function(tooltipItems) {
                             let ingresos = 0;
-                            let gastos = 0;
+                            let egresos = 0;
                             tooltipItems.forEach(item => {
                                 if (item.dataset.label === 'Ingresos') {
                                     ingresos = item.parsed.y;
                                 } else if (item.dataset.label === 'Gastos') {
-                                    gastos = item.parsed.y;
+                                    egresos = item.parsed.y;
                                 }
                             });
-                            const balance = ingresos - gastos;
+                            const balance = ingresos - egresos;
                             const balanceText = balance >= 0 ? 
                                 `Balance: +$${balance.toLocaleString('es-CL')}` : 
                                 `Balance: -$${Math.abs(balance).toLocaleString('es-CL')}`;
@@ -798,8 +798,8 @@ function exportToExcel() {
     
     // Calcular totales
     const ingresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
-    const gastos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
-    const balance = ingresos - gastos;
+    const egresos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
+    const balance = ingresos - egresos;
     
     const fechaDesde = formatDate(document.getElementById('filterFechaDesde').value);
     const fechaHasta = formatDate(document.getElementById('filterFechaHasta').value);
@@ -1089,8 +1089,8 @@ async function exportToPDF() {
     
     // Calcular totales
     const ingresos = movimientos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
-    const gastos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
-    const balance = ingresos - gastos;
+    const egresos = movimientos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
+    const balance = ingresos - egresos;
     
     const fechaDesde = formatDate(document.getElementById('filterFechaDesde').value);
     const fechaHasta = formatDate(document.getElementById('filterFechaHasta').value);
@@ -1177,7 +1177,7 @@ async function exportToPDF() {
     doc.text('Total Egresos', 101.5, yStart + 6, { align: 'center' });
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`$${gastos.toLocaleString('es-CL')}`, 101.5, yStart + 14, { align: 'center' });
+    doc.text(`$${egresos.toLocaleString('es-CL')}`, 101.5, yStart + 14, { align: 'center' });
     
     // Tarjeta de Balance (azul o rojo según balance)
     const balanceColor = balance >= 0 ? [59, 130, 246] : [239, 68, 68];
