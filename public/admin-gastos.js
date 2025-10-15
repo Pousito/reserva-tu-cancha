@@ -1,5 +1,5 @@
 // ============================================
-// CONTROL DE GASTOS E INGRESOS - FRONTEND
+// CONTROL FINANCIERO - FRONTEND
 // ============================================
 
 // API Base URL (cargado desde url-config.js)
@@ -306,7 +306,7 @@ function actualizarEstadisticas() {
     const balance = ingresos - gastos;
     
     document.getElementById('totalIngresos').textContent = `$${ingresos.toLocaleString('es-CL')}`;
-    document.getElementById('totalGastos').textContent = `$${gastos.toLocaleString('es-CL')}`;
+    document.getElementById('totalGastos').textContent = `$${egresos.toLocaleString('es-CL')}`;
     document.getElementById('balance').textContent = `$${balance.toLocaleString('es-CL')}`;
     
     // Actualizar clase del balance
@@ -328,30 +328,30 @@ function actualizarEstadisticas() {
 // ============================================
 
 function actualizarGraficos() {
-    actualizarGraficoGastos();
+    actualizarGraficoEgresos();
     actualizarGraficoEvolucion();
 }
 
-function actualizarGraficoGastos() {
+function actualizarGraficoEgresos() {
     const ctx = document.getElementById('gastosChart');
     
-    // Agrupar gastos por categoría
-    const gastosPorCategoria = {};
+    // Agrupar egresos por categoría
+    const egresosPorCategoria = {};
     movimientos
         .filter(m => m.tipo === 'gasto')
         .forEach(m => {
-            if (!gastosPorCategoria[m.categoria_nombre]) {
-                gastosPorCategoria[m.categoria_nombre] = {
+            if (!egresosPorCategoria[m.categoria_nombre]) {
+                egresosPorCategoria[m.categoria_nombre] = {
                     monto: 0,
                     color: m.categoria_color
                 };
             }
-            gastosPorCategoria[m.categoria_nombre].monto += Number(m.monto);
+            egresosPorCategoria[m.categoria_nombre].monto += Number(m.monto);
         });
     
-    const labels = Object.keys(gastosPorCategoria);
-    const data = labels.map(label => gastosPorCategoria[label].monto);
-    const colors = labels.map(label => gastosPorCategoria[label].color);
+    const labels = Object.keys(egresosPorCategoria);
+    const data = labels.map(label => egresosPorCategoria[label].monto);
+    const colors = labels.map(label => egresosPorCategoria[label].color);
     
     if (gastosChart) gastosChart.destroy();
     
@@ -400,18 +400,18 @@ function actualizarGraficoEvolucion() {
     movimientos.forEach(m => {
         const mes = m.fecha.substring(0, 7); // YYYY-MM
         if (!porMes[mes]) {
-            porMes[mes] = { ingresos: 0, gastos: 0 };
+            porMes[mes] = { ingresos: 0, egresos: 0 };
         }
         if (m.tipo === 'ingreso') {
             porMes[mes].ingresos += Number(m.monto);
         } else {
-            porMes[mes].gastos += Number(m.monto);
+            porMes[mes].egresos += Number(m.monto);
         }
     });
     
     const meses = Object.keys(porMes).sort();
     const ingresosData = meses.map(mes => porMes[mes].ingresos);
-    const gastosData = meses.map(mes => porMes[mes].gastos);
+    const egresosData = meses.map(mes => porMes[mes].egresos);
     
     if (evolucionChart) evolucionChart.destroy();
     
@@ -423,10 +423,10 @@ function actualizarGraficoEvolucion() {
     gradientIngresos.addColorStop(0.5, 'rgba(16, 185, 129, 0.2)');
     gradientIngresos.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
     
-    const gradientGastos = ctxGradient.createLinearGradient(0, 0, 0, 400);
-    gradientGastos.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
-    gradientGastos.addColorStop(0.5, 'rgba(239, 68, 68, 0.2)');
-    gradientGastos.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+    const gradientEgresos = ctxGradient.createLinearGradient(0, 0, 0, 400);
+    gradientEgresos.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+    gradientEgresos.addColorStop(0.5, 'rgba(239, 68, 68, 0.2)');
+    gradientEgresos.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
     
     evolucionChart = new Chart(ctx, {
         type: 'line',
@@ -455,10 +455,10 @@ function actualizarGraficoEvolucion() {
                     pointHoverBorderWidth: 4
                 },
                 {
-                    label: 'Gastos',
-                    data: gastosData,
+                    label: 'Egresos',
+                    data: egresosData,
                     borderColor: '#ef4444',
-                    backgroundColor: gradientGastos,
+                    backgroundColor: gradientEgresos,
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
@@ -808,7 +808,7 @@ function exportToExcel() {
     const excelData = [];
     
     // Título y metadatos
-    excelData.push(['CONTROL DE GASTOS E INGRESOS']);
+    excelData.push(['CONTROL FINANCIERO']);
     excelData.push([]);
     excelData.push(['Complejo:', userData.complejo_nombre || 'Todos']);
     excelData.push(['Período:', `${fechaDesde} - ${fechaHasta}`]);
@@ -817,7 +817,7 @@ function exportToExcel() {
     // Resumen de totales
     excelData.push(['RESUMEN']);
     excelData.push(['Total Ingresos:', ingresos]);
-    excelData.push(['Total Gastos:', gastos]);
+    excelData.push(['Total Egresos:', egresos]);
     excelData.push(['Balance:', balance]);
     excelData.push([]);
     
@@ -854,7 +854,7 @@ function exportToExcel() {
     
     // Estilo para el título (fila 1) - Gradiente moderno
     ws['A1'] = { 
-        v: '💰 CONTROL DE GASTOS E INGRESOS', 
+        v: '💰 CONTROL FINANCIERO', 
         t: 's',
         s: {
             font: { bold: true, sz: 18, color: { rgb: "FFFFFF" } },
@@ -907,7 +907,7 @@ function exportToExcel() {
     // Estilos para las filas del resumen (7-9) - Tarjetas con color
     const resumenColors = {
         7: { label: "16A085", value: "D5F4E6", textValue: "117A65" }, // Ingresos: verde
-        8: { label: "C0392B", value: "FADBD8", textValue: "922B21" }, // Gastos: rojo
+        8: { label: "C0392B", value: "FADBD8", textValue: "922B21" }, // Egresos: rojo
         9: { label: "F39C12", value: "FCF3CF", textValue: "B9770E" }  // Balance: naranja
     };
     
@@ -1043,7 +1043,7 @@ function exportToExcel() {
     ws['!rows'][3] = { hpt: 20 }; // Período
     ws['!rows'][5] = { hpt: 24 }; // Subtítulo RESUMEN
     ws['!rows'][6] = { hpt: 22 }; // Total Ingresos
-    ws['!rows'][7] = { hpt: 22 }; // Total Gastos
+    ws['!rows'][7] = { hpt: 22 }; // Total Egresos
     ws['!rows'][8] = { hpt: 22 }; // Balance
     ws['!rows'][10] = { hpt: 24 }; // Subtítulo DETALLE
     ws['!rows'][11] = { hpt: 22 }; // Encabezados de tabla
@@ -1168,13 +1168,13 @@ async function exportToPDF() {
     doc.setFont(undefined, 'bold');
     doc.text(`$${ingresos.toLocaleString('es-CL')}`, 41.5, yStart + 14, { align: 'center' });
     
-    // Tarjeta de Gastos (rojo)
+    // Tarjeta de Egresos (rojo)
     doc.setFillColor(239, 68, 68);
     doc.roundedRect(74, yStart, 55, 18, 3, 3, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
-    doc.text('Total Gastos', 101.5, yStart + 6, { align: 'center' });
+    doc.text('Total Egresos', 101.5, yStart + 6, { align: 'center' });
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
     doc.text(`$${gastos.toLocaleString('es-CL')}`, 101.5, yStart + 14, { align: 'center' });
@@ -1266,7 +1266,7 @@ async function exportToPDF() {
     }
     
     // Guardar
-    const filename = `Control_Gastos_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.pdf`;
+    const filename = `Control_Financiero_${fechaDesde.replace(/\//g, '-')}_${fechaHasta.replace(/\//g, '-')}.pdf`;
     doc.save(filename);
     
     Swal.fire({
@@ -1336,11 +1336,11 @@ async function cargarListaCategorias() {
         console.log('✅ Categorías cargadas:', data);
         
         // Separar por tipo
-        const gastosItems = data.filter(cat => cat.tipo === 'gasto');
+        const egresosItems = data.filter(cat => cat.tipo === 'gasto');
         const ingresosItems = data.filter(cat => cat.tipo === 'ingreso');
         
         // Renderizar tablas
-        renderizarTablaCategorias('listaCategoriasGastos', gastosItems);
+        renderizarTablaCategorias('listaCategoriasGastos', egresosItems);
         renderizarTablaCategorias('listaCategoriasIngresos', ingresosItems);
         
     } catch (error) {

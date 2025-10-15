@@ -495,7 +495,7 @@ class ManualUsuarioPDF {
       'Reservas 24/7 sin necesidad de llamadas telefonicas.',
       'Pago online integrado con WebPay (Transbank).',
       'Gestion centralizada de reservas, canchas y reportes.',
-      'Control financiero con ingresos y gastos.',
+      'Control financiero con ingresos y egresos.',
       'Reportes y estadisticas en tiempo real.',
       'Sistema de permisos para diferentes roles de usuario.'
     ], '>');
@@ -748,7 +748,7 @@ class ManualUsuarioPDF {
     this.addSpace(5);
 
     // Control Financiero
-    this.addParagraph('CONTROL DE GASTOS E INGRESOS:', 0);
+    this.addParagraph('CONTROL FINANCIERO:', 0);
     this.addParagraph(
       'Sistema completo de gestión financiera para llevar un control detallado de las finanzas del complejo:'
     );
@@ -757,7 +757,7 @@ class ManualUsuarioPDF {
 
     this.addSubtitle('Registro de Movimientos:');
     this.addBulletList([
-      'Registrar gastos con categorías predefinidas (Sueldos, Luz, Agua, Internet, Mantención, etc.).',
+      'Registrar egresos con categorías predefinidas (Sueldos, Luz, Agua, Internet, Mantención, etc.).',
       'Registrar ingresos adicionales (Reservas presenciales, arriendo de equipos, venta de bebidas, torneos).',
       'Asignar fecha, monto y descripción a cada movimiento.',
       'Sistema automático de comisiones de plataforma.'
@@ -771,7 +771,7 @@ class ManualUsuarioPDF {
 
     this.addSubtitle('Categorías Disponibles:');
     
-    const categoriasGastos = [
+    const categoriasEgresos = [
       ['Sueldos', 'Pago de sueldos a trabajadores'],
       ['Luz', 'Cuenta de electricidad'],
       ['Agua', 'Cuenta de agua'],
@@ -781,13 +781,13 @@ class ManualUsuarioPDF {
       ['Balones y Redes', 'Equipamiento deportivo'],
       ['Arriendo', 'Arriendo del local'],
       ['Publicidad', 'Marketing y promociones'],
-      ['Otros Gastos', 'Gastos varios']
+      ['Otros Egresos', 'Egresos varios']
     ];
 
     this.addTable(
-      ['Categoría de Gasto', 'Descripción'],
-      categoriasGastos,
-      'Categorías de Gastos:'
+      ['Categoría de Egreso', 'Descripción'],
+      categoriasEgresos,
+      'Categorías de Egresos:'
     );
 
     this.addSpace(3);
@@ -810,10 +810,10 @@ class ManualUsuarioPDF {
     this.addSubtitle('Dashboard Financiero:');
     this.addBulletList([
       'Total de Ingresos del período seleccionado.',
-      'Total de Gastos del período.',
-      'Balance (Ingresos - Gastos) con indicador visual.',
-      'Gráfico de dona: distribución de gastos por categoría.',
-      'Gráfico de líneas: evolución mensual ingresos vs gastos.',
+      'Total de Egresos del período.',
+      'Balance (Ingresos - Egresos) con indicador visual.',
+      'Gráfico de dona: distribución de egresos por categoría.',
+      'Gráfico de líneas: evolución mensual ingresos vs egresos.',
       'Filtros por tipo, categoría y rango de fechas.',
       'Exportación a Excel y PDF con todos los detalles.'
     ], '•');
@@ -907,7 +907,7 @@ class ManualUsuarioPDF {
 
     this.addInfoBox(
       'Restricciones del Manager',
-      'Los managers NO tienen acceso a: Reportes financieros, Control de gastos, Gestión de complejos, ni información de precios e ingresos. Su rol es operativo, enfocado en la gestión diaria de reservas.',
+      'Los managers NO tienen acceso a: Reportes financieros, Control financiero, Gestión de complejos, ni información de precios e ingresos. Su rol es operativo, enfocado en la gestión diaria de reservas.',
       'warning'
     );
 
