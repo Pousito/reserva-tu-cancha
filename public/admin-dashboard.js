@@ -269,9 +269,9 @@ function aplicarPermisosPorRol() {
         });
         console.log(`🔧 Asegurando visibilidad de ${reportElements.length} enlaces de reportes para owner`);
         
-        // Asegurar que los elementos de Control de Ingresos y Egresos estén visibles para owners
+        // Asegurar que los elementos de Control Financiero estén visibles para owners
         const gastosElements = document.querySelectorAll('a[href="admin-gastos.html"]');
-        console.log(`💰 Enlaces de Control de Ingresos y Egresos encontrados: ${gastosElements.length}`);
+        console.log(`💰 Enlaces de Control Financiero encontrados: ${gastosElements.length}`);
         gastosElements.forEach((element, index) => {
             // Remover clase hide-for-manager y forzar visibilidad
             element.classList.remove('hide-for-manager');
@@ -286,7 +286,7 @@ function aplicarPermisosPorRol() {
                 computedVisibility: window.getComputedStyle(element).visibility
             });
         });
-        console.log(`🔧 Asegurando visibilidad de ${gastosElements.length} enlaces de Control de Ingresos y Egresos para owner`);
+        console.log(`🔧 Asegurando visibilidad de ${gastosElements.length} enlaces de Control Financiero para owner`);
         
         // Asegurar visibilidad de reportes después de aplicar permisos
         asegurarVisibilidadReportes();

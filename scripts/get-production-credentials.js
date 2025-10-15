@@ -157,7 +157,7 @@ async function getProductionCredentials() {
     console.log('-------------------------');
     console.log('🔗 URL de Producción: https://www.reservatuscanchas.cl');
     console.log('🔗 Panel de Administración: https://www.reservatuscanchas.cl/admin-dashboard.html');
-    console.log('🔗 Control de Ingresos y Egresos: https://www.reservatuscanchas.cl/admin-gastos.html');
+    console.log('🔗 Control Financiero: https://www.reservatuscanchas.cl/admin-gastos.html');
     console.log('🔗 Reportes: https://www.reservatuscanchas.cl/admin-reports.html');
     console.log('🔗 Gestión de Canchas: https://www.reservatuscanchas.cl/admin-courts.html');
     

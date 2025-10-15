@@ -17,7 +17,7 @@ let evolucionChart = null;
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🎯 Inicializando Control de Ingresos y Egresos...');
+    console.log('🎯 Inicializando Control Financiero...');
     
     // Verificar autenticación
     await checkAuth();
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarMovimientos();
     await actualizarEstadisticas();
     
-    console.log('✅ Control de Ingresos y Egresos inicializado');
+    console.log('✅ Control Financiero inicializado');
 });
 
 // ============================================
@@ -70,7 +70,7 @@ async function checkAuth() {
             Swal.fire({
                 icon: 'error',
                 title: 'Acceso Denegado',
-                text: 'No tienes permisos para acceder a esta sección. Solo owners y super admins pueden ver Control de Ingresos y Egresos.',
+                text: 'No tienes permisos para acceder a esta sección. Solo owners y super admins pueden ver Control Financiero.',
                 confirmButtonText: 'Volver'
             }).then(() => {
                 window.location.href = '/admin-reservations.html';
@@ -1145,7 +1145,7 @@ async function exportToPDF() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont(undefined, 'bold');
-    doc.text('Control de Ingresos y Egresos', 105, 15, { align: 'center' });
+    doc.text('Control Financiero', 105, 15, { align: 'center' });
     
     // Información del complejo y período
     doc.setFontSize(11);

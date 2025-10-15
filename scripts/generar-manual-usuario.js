@@ -747,7 +747,7 @@ class ManualUsuarioPDF {
 
     this.addSpace(5);
 
-    // Control de Ingresos y Egresos
+    // Control Financiero
     this.addParagraph('CONTROL DE GASTOS E INGRESOS:', 0);
     this.addParagraph(
       'Sistema completo de gestión financiera para llevar un control detallado de las finanzas del complejo:'
@@ -832,7 +832,7 @@ class ManualUsuarioPDF {
       ['Reservas', '> Ver, editar y gestionar (solo de su complejo)'],
       ['Canchas', '> Gestión completa de sus canchas'],
       ['Reportes', '> Reportes completos de su complejo'],
-      ['Control de Ingresos y Egresos', '> Acceso completo con información financiera'],
+      ['Control Financiero', '> Acceso completo con información financiera'],
       ['Información Financiera', '> Ve precios, ingresos y balance']
     ];
 
@@ -919,7 +919,7 @@ class ManualUsuarioPDF {
       ['Reservas', '> Ver y editar (sin ver precios)'],
       ['Canchas', '> Solo lectura (no puede editar)'],
       ['Reportes', 'X Sin acceso'],
-      ['Control de Ingresos y Egresos', 'X Sin acceso'],
+      ['Control Financiero', 'X Sin acceso'],
       ['Información Financiera', 'X No ve precios ni ingresos']
     ];
 
@@ -957,7 +957,7 @@ class ManualUsuarioPDF {
       },
       {
         pregunta: '¿Cómo exporto los reportes?',
-        respuesta: 'En las secciones de Reportes y Control de Ingresos y Egresos encontrará botones para exportar a Excel (.xlsx) o PDF. Los archivos incluyen todos los datos filtrados actualmente visibles.'
+        respuesta: 'En las secciones de Reportes y Control Financiero encontrará botones para exportar a Excel (.xlsx) o PDF. Los archivos incluyen todos los datos filtrados actualmente visibles.'
       }
     ];
 
