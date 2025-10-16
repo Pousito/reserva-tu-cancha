@@ -200,6 +200,101 @@ async function getDisponibilidadComplejo(req, res) {
 }
 
 /**
+ * Obtener disponibilidad completa de un complejo para una fecha (incluyendo bloqueos temporales)
+ */
+async function getDisponibilidadCompleta(req, res) {
+    const { complejoId, fecha } = req.params;
+    
+    console.log(`🔍 Consultando disponibilidad completa (con bloqueos) para complejo ${complejoId} fecha ${fecha}`);
+    
+    try {
+        await db.connect();
+        
+        // 1. Obtener todas las canchas del complejo
+        const canchasQuery = await db.query(`
+            SELECT id, nombre, tipo, precio_hora
+            FROM canchas 
+            WHERE complejo_id = $1
+        `, [complejoId]);
+        
+        // 2. Obtener reservas para la fecha
+        const reservasQuery = await db.query(`
+            SELECT 
+                cancha_id,
+                hora_inicio,
+                hora_fin,
+                estado
+            FROM reservas 
+            WHERE fecha = $1 
+                AND cancha_id IN (SELECT id FROM canchas WHERE complejo_id = $2)
+                AND estado != 'cancelada'
+            ORDER BY cancha_id, hora_inicio
+        `, [fecha, complejoId]);
+        
+        // 3. Obtener bloqueos temporales para la fecha
+        const bloqueosQuery = await db.query(`
+            SELECT 
+                cancha_id,
+                hora_inicio,
+                hora_fin,
+                datos_cliente
+            FROM bloqueos_temporales 
+            WHERE fecha = $1 
+                AND cancha_id IN (SELECT id FROM canchas WHERE complejo_id = $2)
+                AND (expira_en IS NULL OR expira_en > NOW())
+            ORDER BY cancha_id, hora_inicio
+        `, [fecha, complejoId]);
+        
+        // 4. Procesar resultados
+        const resultado = {};
+        
+        canchasQuery.forEach(cancha => {
+            resultado[cancha.id] = {
+                id: cancha.id,
+                nombre: cancha.nombre,
+                tipo: cancha.tipo,
+                precio_hora: cancha.precio_hora,
+                reservas: [],
+                bloqueos: []
+            };
+        });
+        
+        // Agregar reservas
+        reservasQuery.forEach(reserva => {
+            if (resultado[reserva.cancha_id]) {
+                resultado[reserva.cancha_id].reservas.push({
+                    hora_inicio: reserva.hora_inicio,
+                    hora_fin: reserva.hora_fin,
+                    estado: reserva.estado
+                });
+            }
+        });
+        
+        // Agregar bloqueos temporales
+        bloqueosQuery.forEach(bloqueo => {
+            if (resultado[bloqueo.cancha_id]) {
+                const datosCliente = JSON.parse(bloqueo.datos_cliente || '{}');
+                resultado[bloqueo.cancha_id].bloqueos.push({
+                    hora_inicio: bloqueo.hora_inicio,
+                    hora_fin: bloqueo.hora_fin,
+                    motivo: datosCliente.motivo || 'Bloqueo temporal',
+                    datos: datosCliente
+                });
+            }
+        });
+        
+        console.log(`✅ Disponibilidad completa obtenida para ${Object.keys(resultado).length} canchas`);
+        console.log(`📊 Bloqueos temporales encontrados: ${bloqueosQuery.length}`);
+        
+        res.json(resultado);
+        
+    } catch (err) {
+        console.error('❌ Error consultando disponibilidad completa:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/**
  * Invalidar caché cuando se crea una nueva reserva
  */
 function invalidateCacheOnReservation(canchaId, fecha) {
@@ -248,6 +343,7 @@ function clearCache(req, res) {
 module.exports = {
     getDisponibilidad,
     getDisponibilidadComplejo,
+    getDisponibilidadCompleta,
     invalidateCacheOnReservation,
     getCacheStats,
     clearCache,

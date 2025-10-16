@@ -54,11 +54,7 @@ function timeToMinutes(timeStr) {
     const h = parseInt(hours);
     const m = parseInt(minutes);
     
-    // Si la hora es 00:xx, significa que es medianoche del día siguiente (24:xx)
-    if (h === 0 && timeStr.includes('00:00')) {
-        return 24 * 60 + m; // 1440 + minutos
-    }
-    
+    // Convertir directamente a minutos sin lógica especial para 00:00
     return h * 60 + m;
 }
 
@@ -1253,7 +1249,11 @@ function haySuperposicionHorarios(inicio1, fin1, inicio2, fin2) {
     const inicio2Min = timeToMinutes(inicio2);
     const fin2Min = timeToMinutes(fin2);
     
-    return inicio1Min < fin2Min && fin1Min > inicio2Min;
+    // Caso especial: si fin1 es 00:00 (medianoche del día siguiente), 
+    // significa que cruza la medianoche, así que usar 24:00 (1440 minutos)
+    const fin1MinAjustado = (fin1Min === 0) ? 24 * 60 : fin1Min;
+    
+    return inicio1Min < fin2Min && fin1MinAjustado > inicio2Min;
 }
 
 // ===== FUNCIONES DE BLOQUEO TEMPORAL =====

@@ -68,16 +68,17 @@
     "setup-commission-categories": "node scripts/setup-commission-categories.js",
     "update-commissions": "node scripts/update-existing-commissions.js",
     "create-commission-expenses": "node scripts/create-commission-expenses.js",
-        "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses",
-        "fix-production-db": "node scripts/fix-production-database.js",
-        "fix-production-schema": "node scripts/fix-production-schema.js",
-        "update-borderio-price": "node scripts/update-borderio-price.js",
+    "fix-commissions": "npm run setup-commission-categories && npm run update-commissions && npm run create-commission-expenses",
+    "fix-production-db": "node scripts/fix-production-database.js",
+    "fix-production-schema": "node scripts/fix-production-schema.js",
+    "update-borderio-price": "node scripts/update-borderio-price.js",
     "generar-manual": "node scripts/generar-manual-usuario.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
+    "canvas": "^3.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "exceljs": "^4.4.0",
@@ -85,6 +86,7 @@
     "express-rate-limit": "^8.0.1",
     "helmet": "^8.1.0",
     "html2canvas": "^1.4.1",
+    "jimp": "^1.6.0",
     "jsdom": "^27.0.0",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.3",
@@ -97,7 +99,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
-    "puppeteer": "^24.20.0"
+    "puppeteer": "^24.25.0"
   },
   "keywords": [
     "reservas",

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram ReservaTusCanchas - Con Imágenes Reales</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1080px;
+            height: 1080px;
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(76, 175, 80, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(56, 142, 60, 0.9) 0%, transparent 50%),
+                linear-gradient(135deg, #4caf50 0%, #2e7d32 50%, #1b5e20 100%);
+            position: relative;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Cancha de fútbol realista */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                /* Líneas horizontales */
+                linear-gradient(90deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                linear-gradient(90deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                linear-gradient(90deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                linear-gradient(90deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                /* Líneas verticales */
+                linear-gradient(0deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                linear-gradient(0deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                linear-gradient(0deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                linear-gradient(0deg, transparent 0%, white 1%, white 2%, transparent 3%),
+                /* Círculo central */
+                radial-gradient(circle at 50% 50%, transparent 30%, white 31%, white 32%, transparent 33%);
+            background-size: 
+                1080px 2px, 1080px 2px, 1080px 2px, 1080px 2px,
+                2px 1080px, 2px 1080px, 2px 1080px, 2px 1080px,
+                200px 200px;
+            background-position: 
+                0 20%, 0 40%, 0 60%, 0 80%,
+                20% 0, 40% 0, 60% 0, 80% 0,
+                50% 50%;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 42px;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        .subtitle {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #e8f5e8;
+            font-size: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        /* iPhone Mockup - PEQUEÑO */
+        .iphone-container {
+            position: absolute;
+            top: 150px;
+            left: 80px;
+            width: 200px;
+            height: 400px;
+        }
+
+        .iphone-shadow {
+            position: absolute;
+            bottom: -20px;
+            left: 15px;
+            width: 170px;
+            height: 30px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            filter: blur(10px);
+        }
+
+        .iphone-frame {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            border-radius: 30px;
+            padding: 6px;
+            box-shadow: 
+                0 0 0 2px #505050,
+                0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        .iphone-screen {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* AQUÍ VA TU IMAGEN MÓVIL REAL */
+        .mobile-screenshot {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 24px;
+        }
+
+        /* Placeholder si no hay imagen */
+        .mobile-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6b46c1 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .mobile-placeholder .logo {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+
+        .mobile-placeholder h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .mobile-placeholder p {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+
+        /* MacBook Mockup - MUY GRANDE */
+        .macbook-container {
+            position: absolute;
+            top: 100px;
+            right: 50px;
+            width: 650px;
+            height: 450px;
+        }
+
+        .macbook-shadow {
+            position: absolute;
+            bottom: -40px;
+            left: 50px;
+            width: 550px;
+            height: 80px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            filter: blur(20px);
+        }
+
+        .macbook-base {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to bottom, #d0d0d0, #b0b0b0);
+            border-radius: 20px;
+        }
+
+        .macbook-screen {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 40px);
+            background: #191919;
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+
+        /* AQUÍ VA TU IMAGEN WEB REAL */
+        .web-screenshot {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        /* Placeholder si no hay imagen */
+        .web-placeholder {
+            width: 100%;
+            height: 100%;
+            background: #f8fafc;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .web-placeholder .logo {
+            width: 60px;
+            height: 60px;
+            background: #4c1d95;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .web-placeholder h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .web-placeholder p {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Etiquetas */
+        .device-labels {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 550px;
+            z-index: 10;
+        }
+
+        .device-label {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* Instrucciones para el usuario */
+        .instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .instructions.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">ReservaTusCanchas.cl</div>
+    <div class="subtitle">Sistema de Reservas Deportivas</div>
+
+    <!-- iPhone Mockup -->
+    <div class="iphone-container">
+        <div class="iphone-shadow"></div>
+        <div class="iphone-frame">
+            <div class="iphone-screen">
+                <!-- REEMPLAZA ESTO CON TU IMAGEN MÓVIL REAL -->
+                <img src="tu-imagen-movil.png" alt="Captura móvil" class="mobile-screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="mobile-placeholder" style="display: none;">
+                    <div class="logo"></div>
+                    <h3>Tu Captura Móvil</h3>
+                    <p>Reemplaza "tu-imagen-movil.png" con tu imagen real</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MacBook Mockup -->
+    <div class="macbook-container">
+        <div class="macbook-shadow"></div>
+        <div class="macbook-base"></div>
+        <div class="macbook-screen">
+            <!-- REEMPLAZA ESTO CON TU IMAGEN WEB REAL -->
+            <img src="tu-imagen-web.png" alt="Captura web" class="web-screenshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="web-placeholder" style="display: none;">
+                <div class="logo"></div>
+                <h3>Tu Captura Web</h3>
+                <p>Reemplaza "tu-imagen-web.png" con tu imagen real</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="device-labels">
+        <div class="device-label">VERSIÓN MÓVIL</div>
+        <div class="device-label">VERSIÓN WEB</div>
+    </div>
+
+    <div class="footer">Disponible en todas las plataformas</div>
+
+    <!-- Instrucciones -->
+    <div class="instructions" id="instructions">
+        <h3>📸 Para usar tus imágenes reales:</h3>
+        <p>1. Guarda tus capturas como archivos PNG</p>
+        <p>2. Reemplaza "tu-imagen-movil.png" y "tu-imagen-web.png"</p>
+        <p>3. Ejecuta el script de captura</p>
+        <button onclick="document.getElementById('instructions').classList.add('hidden')">Entendido</button>
+    </div>
+
+    <script>
+        // Ocultar instrucciones después de 5 segundos
+        setTimeout(() => {
+            document.getElementById('instructions').classList.add('hidden');
+        }, 5000);
+    </script>
+</body>
+</html>
