@@ -1458,7 +1458,7 @@ async function verificarTodasCanchasOcupadas(fecha, hora) {
     let todasOcupadas = true;
     
     for (const cancha of canchas) {
-        const estaDisponible = await verificarDisponibilidadCancha(cancha.id, fecha, hora);
+        const estaDisponible = verificarDisponibilidadCanchaOptimizada(cancha.id, hora, disponibilidadCompleta);
         console.log('🏟️ Cancha', cancha.id, '(', cancha.nombre, ') - Disponible:', estaDisponible);
         if (estaDisponible) {
             todasOcupadas = false;
