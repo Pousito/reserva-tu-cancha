@@ -3,6 +3,17 @@ let currentUser = null;
 let courts = [];
 let complexes = [];
 
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== ADMIN COURTS INICIALIZADO ===');
@@ -402,7 +413,7 @@ function displayCourts(courtsToShow) {
                     </p>
                     <p class="mb-0">
                         <i class="fas fa-dollar-sign me-2"></i>
-                        ${court.precio_hora ? `$${court.precio_hora.toLocaleString()} por hora` : 'Precio no disponible'}
+                        ${court.precio_hora ? `$${formatCurrencyChile(court.precio_hora)} por hora` : 'Precio no disponible'}
                     </p>
                 </div>
                 <div class="col-md-4 text-end">
@@ -705,7 +716,7 @@ async function openPromocionesModal(canchaId, canchaNombre, canchaPrecio) {
     }
     
     // Actualizar título del modal
-    subtitleElement.textContent = `Cancha: ${canchaNombre} - Precio normal: $${canchaPrecio.toLocaleString()}`;
+    subtitleElement.textContent = `Cancha: ${canchaNombre} - Precio normal: $${formatCurrencyChile(canchaPrecio)}`;
     
     // Poblar selectores de hora con horarios del complejo
     poblarHorariosComplejo();
@@ -856,7 +867,7 @@ async function loadPromociones() {
                                     ${!promo.activo ? '<span class="badge bg-secondary ms-2">Inactiva</span>' : '<span class="badge bg-success ms-2">Activa</span>'}
                                 </h6>
                                 <p class="mb-2">
-                                    <strong class="text-success">$${promo.precio_promocional.toLocaleString()}</strong>
+                                    <strong class="text-success">$${formatCurrencyChile(promo.precio_promocional)}</strong>
                                     <span class="text-muted ms-2">(${porcentaje}% desc.)</span>
                                 </p>
                                 <div class="text-muted small">
@@ -950,7 +961,7 @@ function openPromocionForm() {
     
     // Mostrar precio normal
     document.getElementById('precioNormalLabel').textContent = 
-        `(Normal: $${currentCanchaPrecio.toLocaleString()})`;
+        `(Normal: $${formatCurrencyChile(currentCanchaPrecio)})`;
     
     // Configurar fecha mínima (7 días de anticipación)
     const minDate = new Date();
@@ -1222,7 +1233,7 @@ async function editPromocion(promocionId) {
         
         // Mostrar precio normal
         document.getElementById('precioNormalLabel').textContent = 
-            `(Normal: $${currentCanchaPrecio.toLocaleString()})`;
+            `(Normal: $${formatCurrencyChile(currentCanchaPrecio)})`;
         
         // Mostrar formulario
         document.getElementById('promocionesListContainer').style.display = 'none';

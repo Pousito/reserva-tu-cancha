@@ -8,6 +8,17 @@ let canchaSeleccionada = null;
 let bloqueoTemporal = null;
 let sessionId = null;
 
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Función para verificar si una hora está disponible según la hora actual
 function esHoraDisponibleParaReserva(hora, fecha) {
     const ahora = new Date();
@@ -3377,14 +3388,14 @@ async function renderizarCanchasConDisponibilidad() {
             if (cancha.tiene_promocion && cancha.precio_actual < cancha.precio_original) {
                 precioHTML = `
                     <p class="mb-1">
-                        <span class="text-decoration-line-through text-muted small">$${cancha.precio_original.toLocaleString()}</span>
-                        <span class="text-success fw-bold ms-2">$${cancha.precio_actual.toLocaleString()}</span>
+                        <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(cancha.precio_original)}</span>
+                        <span class="text-success fw-bold ms-2">$${formatCurrencyChile(cancha.precio_actual)}</span>
                         <span class="badge bg-success ms-1">${cancha.promocion_info?.porcentaje_descuento}% OFF</span>
                     </p>
                     <p class="text-muted small mb-0">por hora</p>
                 `;
             } else {
-                precioHTML = `<p class="text-muted">$${(cancha.precio_actual || cancha.precio_hora).toLocaleString()} por hora</p>`;
+                precioHTML = `<p class="text-muted">$${formatCurrencyChile(cancha.precio_actual || cancha.precio_hora)} por hora</p>`;
             }
             
             canchaCard.innerHTML = `
@@ -3484,14 +3495,14 @@ async function renderizarCanchasConDisponibilidad() {
             if (cancha.tiene_promocion && cancha.precio_actual < cancha.precio_original) {
                 precioHTML = `
                     <p class="mb-1">
-                        <span class="text-decoration-line-through text-muted small">$${cancha.precio_original.toLocaleString()}</span>
-                        <span class="text-success fw-bold ms-2">$${cancha.precio_actual.toLocaleString()}</span>
+                        <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(cancha.precio_original)}</span>
+                        <span class="text-success fw-bold ms-2">$${formatCurrencyChile(cancha.precio_actual)}</span>
                         <span class="badge bg-success ms-1">${cancha.promocion_info?.porcentaje_descuento}% OFF</span>
                     </p>
                     <p class="text-muted small mb-0">por hora</p>
                 `;
             } else {
-                precioHTML = `<p class="text-muted">$${(cancha.precio_actual || cancha.precio_hora).toLocaleString()} por hora</p>`;
+                precioHTML = `<p class="text-muted">$${formatCurrencyChile(cancha.precio_actual || cancha.precio_hora)} por hora</p>`;
             }
             
             canchaCard.innerHTML = `
@@ -3554,7 +3565,7 @@ async function renderizarCanchasConDisponibilidad() {
                      <i class="fas ${iconClass}"></i>
                  </div>
                  <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
-                 <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
+                 <p class="text-muted">$${formatCurrencyChile(cancha.precio_hora)} por hora</p>
                  <p class="text-info small"><i class="fas fa-info-circle me-1"></i>Techada</p>
                  <p class="text-info small"><i class="fas fa-users me-1"></i>7 jugadores por equipo</p>
                  <div class="estado-disponibilidad">
@@ -3588,7 +3599,7 @@ async function renderizarCanchasConDisponibilidad() {
                      <i class="fas ${iconClass}"></i>
                  </div>
                  <h5>${cancha.nombre}</h5>
-                 <p class="text-muted">$${cancha.precio_hora.toLocaleString()} por hora</p>
+                 <p class="text-muted">$${formatCurrencyChile(cancha.precio_hora)} por hora</p>
                  <div class="estado-disponibilidad">
                      <span class="badge bg-success">Disponible</span>
                  </div>
@@ -3660,7 +3671,7 @@ function mostrarModalReserva() {
          </div>
          <div class="row">
              <div class="col-6"><strong>Precio:</strong></div>
-             <div class="col-6" id="precioOriginal">$${canchaSeleccionada.precio_hora.toLocaleString()}</div>
+             <div class="col-6" id="precioOriginal">$${formatCurrencyChile(canchaSeleccionada.precio_hora)}</div>
          </div>
      `;
     
@@ -3686,15 +3697,15 @@ function actualizarResumenPrecio() {
         if (pagarMitad) {
             precioElement.innerHTML = `
                 <div>
-                    <span style="text-decoration: line-through; color: #999;">$${precioOriginal.toLocaleString()}</span>
+                    <span style="text-decoration: line-through; color: #999;">$${formatCurrencyChile(precioOriginal)}</span>
                     <br>
-                    <strong class="text-primary">$${precioAPagar.toLocaleString()} (50%)</strong>
+                    <strong class="text-primary">$${formatCurrencyChile(precioAPagar)} (50%)</strong>
                     <br>
                     <small class="text-muted">Resto en el complejo</small>
                 </div>
             `;
         } else {
-            precioElement.textContent = `$${precioOriginal.toLocaleString()}`;
+            precioElement.textContent = `$${formatCurrencyChile(precioOriginal)}`;
         }
     }
     
@@ -4081,7 +4092,7 @@ function mostrarResultadoReserva(reserva) {
     const fecha = formatearFecha(reserva.fecha);
     const hora = formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin);
     const estado = reserva.estado || 'No especificado';
-    const precio = reserva.precio_total ? reserva.precio_total.toLocaleString() : 'No especificado';
+    const precio = reserva.precio_total ? formatCurrencyChile(reserva.precio_total) : 'No especificado';
     
     resultadoDiv.innerHTML = `
         <div class="card bg-light">
@@ -4421,8 +4432,8 @@ async function validarCodigoDescuento() {
             const precioOriginalElement = document.getElementById('precioOriginal');
             if (precioOriginalElement) {
                 precioOriginalElement.innerHTML = `
-                    <span class="text-decoration-line-through text-muted">$${data.monto_original.toLocaleString()}</span>
-                    <span class="text-primary fw-bold ms-2">$${data.monto_final.toLocaleString()}</span>
+                    <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(data.monto_original)}</span>
+                    <span class="text-primary fw-bold ms-2">$${formatCurrencyChile(data.monto_final)}</span>
                 `;
             }
             
@@ -4464,8 +4475,8 @@ function mostrarResumenDescuento(descuento) {
     
     if (!resumenDescuento || !montoDescuento || !totalFinal) return;
     
-    montoDescuento.textContent = `-$${descuento.monto_descuento.toLocaleString()}`;
-    totalFinal.textContent = `$${descuento.monto_final.toLocaleString()}`;
+    montoDescuento.textContent = `-$${formatCurrencyChile(descuento.monto_descuento)}`;
+    totalFinal.textContent = `$${formatCurrencyChile(descuento.monto_final)}`;
     
     resumenDescuento.classList.remove('d-none');
 }

@@ -1,3 +1,14 @@
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Simulador de WebPay para procesamiento de pagos
 window.webPaySimulator = {
     // Procesar pago (simulación)
@@ -41,7 +52,7 @@ RUT: ${paymentData.rut_cliente}
 Email: ${paymentData.email_cliente}
 
 === MONTO ===
-Total: $${paymentData.precio_total.toLocaleString()}
+Total: $${formatCurrencyChile(paymentData.precio_total)}
 
 === INSTRUCCIONES ===
 1. Guarda este ticket como comprobante de pago

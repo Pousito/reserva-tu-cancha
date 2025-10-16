@@ -2,6 +2,17 @@
 let reservationsChart;
 let currentPeriod = '7d'; // Período actual seleccionado
 
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Funciones de formateo de tiempo (backup en caso de que time-utils.js no cargue)
 function formatearHora(hora) {
     if (!hora) return '';
@@ -425,7 +436,7 @@ async function cargarEstadisticas() {
             }
             
             if (totalRevenueElement) {
-                totalRevenueElement.textContent = `$${data.ingresosTotales?.toLocaleString() || '0'}`;
+                totalRevenueElement.textContent = `$${formatCurrencyChile(data.ingresosTotales) || '0'}`;
                 console.log('✅ Ingresos Totales actualizado:', data.ingresosTotales);
             } else {
                 console.error('❌ Elemento ingresosTotales no encontrado');

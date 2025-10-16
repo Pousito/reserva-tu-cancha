@@ -3,6 +3,17 @@ let currentUser = null;
 let reportsData = null;
 let complexes = [];
 
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Variables para almacenar instancias de gráficos
 let revenueChart = null;
 let typeChart = null;
@@ -391,7 +402,7 @@ function updateMetrics() {
     const occupancyRate = document.getElementById('occupancyRate');
     const uniqueCustomers = document.getElementById('uniqueCustomers');
     
-    if (totalRevenue) totalRevenue.textContent = `$${metrics.ingresosTotales.toLocaleString()}`;
+    if (totalRevenue) totalRevenue.textContent = `$${formatCurrencyChile(metrics.ingresosTotales)}`;
     if (totalReservations) totalReservations.textContent = metrics.totalReservas;
     if (occupancyRate) occupancyRate.textContent = `${metrics.ocupacionPromedio || 0}%`;
     if (uniqueCustomers) uniqueCustomers.textContent = metrics.clientes_unicos || 0;
@@ -556,7 +567,7 @@ function updateIncomeChart(data) {
                     shadowColor: 'rgba(0, 0, 0, 0.2)',
                     callbacks: {
                         label: function(context) {
-                            return `Ingresos: $${context.parsed.y.toLocaleString()}`;
+                            return `Ingresos: $${formatCurrencyChile(context.parsed.y)}`;
                         }
                     }
                 }
@@ -593,7 +604,7 @@ function updateIncomeChart(data) {
                         },
                         padding: 12,
                         callback: function(value) {
-                            return '$' + value.toLocaleString();
+                            return '$' + formatCurrencyChile(value);
                         }
                     },
                     border: {
@@ -1254,7 +1265,7 @@ async function updateTopComplexesTable() {
                 <tr>
                     <td><strong>${item.complejo}</strong></td>
                     <td><span class="badge bg-primary">${item.cantidad || 0}</span></td>
-                    <td><span class="text-success">$${parseInt(item.ingresos || 0).toLocaleString()}</span></td>
+                    <td><span class="text-success">$${formatCurrencyChile(parseInt(item.ingresos || 0))}</span></td>
                     <td><span class="badge bg-info">${Math.round(parseFloat(item.ocupacion_real || 0))}%</span></td>
                 </tr>
             `).join('');
@@ -1352,7 +1363,7 @@ async function updateTopCourtsTable() {
                     <td><strong>${item.cancha}</strong></td>
                     <td>${item.complejo}</td>
                     <td><span class="badge bg-primary">${item.reservas || 0}</span></td>
-                    <td><span class="text-success">$${parseInt(item.ingresos || 0).toLocaleString()}</span></td>
+                    <td><span class="text-success">$${formatCurrencyChile(parseInt(item.ingresos || 0))}</span></td>
                 </tr>
             `).join('');
         } else {
@@ -1464,7 +1475,7 @@ async function updateCustomersTable() {
                         <span class="badge bg-primary">${customer.total_reservas}</span>
                     </td>
                     <td class="text-center">
-                        <span class="badge bg-success">$${customer.promedio_por_reserva.toLocaleString()}</span>
+                        <span class="badge bg-success">$${formatCurrencyChile(customer.promedio_por_reserva)}</span>
                     </td>
                     <td class="text-center">
                         <small class="text-muted">${new Date(customer.ultima_reserva).toLocaleDateString()}</small>

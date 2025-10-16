@@ -5,6 +5,17 @@ let complejos = [];
 let busquedaActual = '';
 let filtrosActivos = {};
 
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Usar la variable API_BASE global definida en url-config.js
 // No definir aquí para evitar conflictos
 
@@ -516,7 +527,7 @@ function mostrarReservas(reservasAMostrar) {
             </td>
             <td>
                 ${reserva.precio_total !== null && reserva.precio_total !== undefined && reserva.precio_total !== '' 
-                    ? `<strong>$${reserva.precio_total.toLocaleString()}</strong>` 
+                    ? `<strong>$${formatCurrencyChile(reserva.precio_total)}</strong>` 
                     : '<span class="text-muted">-</span>'}
             </td>
             <td>
@@ -536,7 +547,7 @@ function mostrarReservas(reservasAMostrar) {
             rowHtml += `
             <td>
                 <div class="comision-info">
-                    <strong>$${comision.toLocaleString()}</strong>
+                    <strong>$${formatCurrencyChile(comision)}</strong>
                     <br>
                     <small>${porcentajeComision}%</small>
                 </div>
@@ -593,7 +604,7 @@ function verDetalles(codigoReserva) {
                 <p><strong>Cancha:</strong> ${reserva.cancha_nombre}</p>
                 <p><strong>Fecha:</strong> ${formatearFechaParaAPI(reserva.fecha)}</p>
                 <p><strong>Hora:</strong> ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}</p>
-                <p><strong>Precio:</strong> ${reserva.precio_total ? `$${reserva.precio_total.toLocaleString()}` : 'No disponible'}</p>
+                <p><strong>Precio:</strong> ${reserva.precio_total ? `$${formatCurrencyChile(reserva.precio_total)}` : 'No disponible'}</p>
                 <p><strong>Estado:</strong> 
                     <span class="badge badge-status badge-${reserva.estado}">
                         ${reserva.estado.charAt(0).toUpperCase() + reserva.estado.slice(1)}
@@ -2163,7 +2174,7 @@ function mostrarInfoReservas(fecha, hora, event) {
                         ${telefono ? `<br><strong>Teléfono:</strong> ${telefono}` : ''}
                     </div>
                     <div class="col-md-6">
-                        <strong>Precio:</strong> $${precio.toLocaleString()}<br>
+                        <strong>Precio:</strong> $${formatCurrencyChile(precio)}<br>
                         <strong>Tipo:</strong> ${tipoMostrar}
                     </div>
                 </div>
@@ -2888,7 +2899,7 @@ function actualizarPrecioModal() {
     const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
     if (canchaSeleccionada) {
         const precio = canchaSeleccionada.precio_hora || canchaSeleccionada.precio || 0;
-        precioElement.textContent = `$${precio.toLocaleString()} por hora`;
+        precioElement.textContent = `$${formatCurrencyChile(precio)} por hora`;
     } else {
         precioElement.textContent = 'Precio no disponible';
     }
@@ -3375,9 +3386,9 @@ function mostrarInfoPago(codigoReserva, porcentajePagado, precioTotal) {
                <h6 class="alert-heading">${titulo}</h6>
                <p class="mb-2"><strong>Reserva:</strong> ${codigoReserva}</p>
                <hr>
-               <p class="mb-2"><strong>Precio Total Reserva:</strong> $${precioTotal.toLocaleString()}</p>
-               <p class="mb-2"><strong>Pagado Online:</strong> <span class="text-success">$${montoPagado.toLocaleString()}</span> (50%)</p>
-               <p class="mb-0"><strong>Pendiente en Complejo:</strong> <span class="text-danger">$${montoPendiente.toLocaleString()}</span> (50%)</p>
+               <p class="mb-2"><strong>Precio Total Reserva:</strong> $${formatCurrencyChile(precioTotal)}</p>
+               <p class="mb-2"><strong>Pagado Online:</strong> <span class="text-success">$${formatCurrencyChile(montoPagado)}</span> (50%)</p>
+               <p class="mb-0"><strong>Pendiente en Complejo:</strong> <span class="text-danger">$${formatCurrencyChile(montoPendiente)}</span> (50%)</p>
                <hr>
                <small class="text-muted">El cliente debe cancelar el 50% restante directamente en el complejo.</small>
            </div>`
@@ -3385,8 +3396,8 @@ function mostrarInfoPago(codigoReserva, porcentajePagado, precioTotal) {
                <h6 class="alert-heading">${titulo}</h6>
                <p class="mb-2"><strong>Reserva:</strong> ${codigoReserva}</p>
                <hr>
-               <p class="mb-2"><strong>Precio Total Reserva:</strong> $${precioTotal.toLocaleString()}</p>
-               <p class="mb-0"><strong>Pagado Online:</strong> <span class="text-success">$${montoPagado.toLocaleString()}</span> (100%)</p>
+               <p class="mb-2"><strong>Precio Total Reserva:</strong> $${formatCurrencyChile(precioTotal)}</p>
+               <p class="mb-0"><strong>Pagado Online:</strong> <span class="text-success">$${formatCurrencyChile(montoPagado)}</span> (100%)</p>
            </div>`;
     
     // Usar SweetAlert2 si está disponible, sino alert
@@ -3403,8 +3414,8 @@ function mostrarInfoPago(codigoReserva, porcentajePagado, precioTotal) {
     } else {
         // Fallback a alert simple
         const textoSimple = esPagoParcial
-            ? `${titulo}\n\nReserva: ${codigoReserva}\nPrecio Total: $${precioTotal.toLocaleString()}\nPagado online: $${montoPagado.toLocaleString()} (50%)\nPendiente en complejo: $${montoPendiente.toLocaleString()} (50%)\n\nEl cliente debe cancelar el 50% restante directamente en el complejo.`
-            : `${titulo}\n\nReserva: ${codigoReserva}\nPrecio Total: $${precioTotal.toLocaleString()}\nPagado online: $${montoPagado.toLocaleString()} (100%)`;
+            ? `${titulo}\n\nReserva: ${codigoReserva}\nPrecio Total: $${formatCurrencyChile(precioTotal)}\nPagado online: $${formatCurrencyChile(montoPagado)} (50%)\nPendiente en complejo: $${formatCurrencyChile(montoPendiente)} (50%)\n\nEl cliente debe cancelar el 50% restante directamente en el complejo.`
+            : `${titulo}\n\nReserva: ${codigoReserva}\nPrecio Total: $${formatCurrencyChile(precioTotal)}\nPagado online: $${formatCurrencyChile(montoPagado)} (100%)`;
         alert(textoSimple);
     }
 }

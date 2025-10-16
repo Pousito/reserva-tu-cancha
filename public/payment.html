@@ -959,10 +959,13 @@
 
         // Formatear moneda
         function formatCurrency(amount) {
-            return new Intl.NumberFormat('es-CL', {
-                style: 'currency',
-                currency: 'CLP'
-            }).format(amount);
+            if (amount === null || amount === undefined || isNaN(amount)) {
+                return '$0';
+            }
+            return '$' + amount.toLocaleString('es-CL', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
         }
 
         // Manejar retorno de Transbank

@@ -1,3 +1,14 @@
+// Función para formatear moneda chilena (punto como separador de miles)
+function formatCurrencyChile(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '0';
+    }
+    return amount.toLocaleString('es-CL', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 // Sistema de KPIs Avanzados para el Dashboard
 class AdvancedKPIs {
     constructor() {
@@ -179,7 +190,7 @@ class AdvancedKPIs {
     updateKPIDisplay() {
         // Actualizar elementos del DOM
         document.getElementById('occupancyRate').textContent = `${this.kpis.occupancyRate.toFixed(1)}%`;
-        document.getElementById('averageRevenue').textContent = `$${this.kpis.averageRevenue.toLocaleString()}`;
+        document.getElementById('averageRevenue').textContent = `$${formatCurrencyChile(this.kpis.averageRevenue)}`;
         document.getElementById('customerSatisfaction').textContent = `${this.kpis.customerSatisfaction.toFixed(1)}%`;
         document.getElementById('peakHours').textContent = this.kpis.peakHours.length;
         document.getElementById('popularCourts').textContent = this.kpis.popularCourts;
