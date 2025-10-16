@@ -1482,7 +1482,8 @@ async function verificarDisponibilidadCompleta(complejoId, fecha) {
             throw new Error('API_BASE no está definido');
         }
         
-        const url = `${API_BASE}/disponibilidad-completa/${complejoId}/${fecha}`;
+        const timestamp = Date.now();
+        const url = `${API_BASE}/disponibilidad-completa/${complejoId}/${fecha}?t=${timestamp}`;
         console.log('🚀 URL de la petición:', url);
         
         const response = await fetch(url, {
@@ -1503,6 +1504,7 @@ async function verificarDisponibilidadCompleta(complejoId, fecha) {
         
         const disponibilidad = await response.json();
         console.log('✅ Disponibilidad completa obtenida:', Object.keys(disponibilidad).length, 'canchas');
+        console.log('🔍 Datos de disponibilidad:', JSON.stringify(disponibilidad, null, 2));
         
         return disponibilidad;
     } catch (error) {
