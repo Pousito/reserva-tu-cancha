@@ -1546,8 +1546,8 @@ async function verificarDisponibilidadFallback(complejoId, fecha) {
 
 // NUEVA FUNCIÓN: Verificar si una cancha está disponible en un horario específico usando datos precargados
 function verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadData) {
-    console.log('🔍 verificarDisponibilidadCanchaOptimizada - Cancha ID:', canchaId, 'Tipo:', typeof canchaId, 'Hora:', hora);
-    console.log('🔍 Datos disponibles:', Object.keys(disponibilidadData));
+    console.log('🚨🚨🚨 FUNCIÓN EJECUTÁNDOSE - Cancha ID:', canchaId, 'Tipo:', typeof canchaId, 'Hora:', hora);
+    console.log('🚨🚨🚨 Datos disponibles:', Object.keys(disponibilidadData));
     
     if (!disponibilidadData[canchaId]) {
         console.log('⚠️ No hay datos de disponibilidad para cancha:', canchaId);
