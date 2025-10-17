@@ -13,15 +13,17 @@
     box-shadow: none !important;
 }
 
-/* Posicionamiento de contenedores */
+/* Posicionamiento de contenedores - CORREGIDO */
 .demo3-futbol-izquierda {
     grid-column: 1 !important;
     grid-row: 1 !important;
+    z-index: 1 !important;
 }
 
 .demo3-futbol-derecha {
     grid-column: 2 !important;
     grid-row: 1 !important;
+    z-index: 1 !important;
 }
 
 .demo3-futbol-grande {
@@ -30,16 +32,19 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    z-index: 1 !important;
 }
 
 .demo3-padel-superior {
     grid-column: 3 !important;
     grid-row: 1 !important;
+    z-index: 1 !important;
 }
 
 .demo3-padel-inferior {
     grid-column: 3 !important;
     grid-row: 2 !important;
+    z-index: 1 !important;
 }
 
 /* Estilos base para todas las canchas */
