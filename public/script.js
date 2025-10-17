@@ -2057,7 +2057,15 @@ function configurarEventListeners() {
             const fecha = document.getElementById('fechaSelect').value;
             if (fecha) {
                 try {
-                    let url = `${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}?fecha=${fecha}&hora=${horaSeleccionada}`;
+                    let url;
+                    if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
+                        // Para Complejo Demo 3, mantener todas las canchas
+                        url = `${API_BASE}/canchas/${complejoSeleccionado.id}?fecha=${fecha}&hora=${horaSeleccionada}`;
+                        console.log('🎨 Complejo Demo 3: Recargando TODAS las canchas con precios promocionales');
+                    } else {
+                        // Para otros complejos, usar filtro por tipo
+                        url = `${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}?fecha=${fecha}&hora=${horaSeleccionada}`;
+                    }
                     const response = await fetch(url);
                     canchas = await response.json();
                     console.log('🎯 Canchas recargadas con precios promocionales:', canchas);
