@@ -3555,6 +3555,13 @@ async function renderizarCanchasConDisponibilidad() {
                         ${estadoBadge}
                     </div>
                 `;
+                // FORZAR CLASES HORIZONTALES
+                canchaCard.style.display = 'flex';
+                canchaCard.style.flexDirection = 'row';
+                canchaCard.style.justifyContent = 'space-between';
+                canchaCard.style.alignItems = 'center';
+                canchaCard.style.width = '100%';
+                canchaCard.style.height = '100%';
             } else {
                 // HTML normal para otras canchas
                 canchaCard.innerHTML = `
