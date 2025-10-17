@@ -2,7 +2,7 @@
 
 ## 📊 **ESTADO ACTUAL DEL SISTEMA (Render PostgreSQL)**
 
-### 🏢 **COMPLEJOS DISPONIBLES (2 complejos):**
+### 🏢 **COMPLEJOS DISPONIBLES (3 complejos):**
 
 #### **1. MagnaSports**
 - **ID**: 1
@@ -18,9 +18,16 @@
 - **Email**: naxiin_320@hotmail.com
 - **Ciudad**: Los Ángeles (ID: 1)
 
+#### **3. Complejo Demo 3**
+- **ID**: 1
+- **Dirección**: Av. Los Robles 2450, Los Ángeles
+- **Teléfono**: +56912345678
+- **Email**: info@demo3.cl
+- **Ciudad**: Los Ángeles (ID: 1)
+
 ---|
 
-### ⚽ **CANCHAS DISPONIBLES (4 canchas):**
+### ⚽ **CANCHAS DISPONIBLES (9 canchas):**
 
 #### **MagnaSports (2 canchas):**
 - **Cancha Techada 1** (ID: 1)
@@ -39,6 +46,28 @@
   - Tipo: Fútbol
   - Precio: $8,000/hora
   - Número: 2
+
+#### **Complejo Demo 3 (5 canchas):**
+- **Cancha 1** (ID: 1)
+  - Tipo: Fútbol
+  - Precio: $12,000/hora
+  - Jugadores: 7 por equipo
+- **Cancha 2** (ID: 2)
+  - Tipo: Fútbol
+  - Precio: $12,000/hora
+  - Jugadores: 7 por equipo
+- **Cancha 3** (ID: 3)
+  - Tipo: Fútbol
+  - Precio: $15,000/hora
+  - Jugadores: 11 por equipo
+- **Cancha 1** (ID: 4)
+  - Tipo: Padel
+  - Precio: $10,000/hora
+  - Jugadores: 2 por equipo
+- **Cancha 2** (ID: 5)
+  - Tipo: Padel
+  - Precio: $10,000/hora
+  - Jugadores: 2 por equipo
 
 ---
 
@@ -68,6 +97,19 @@
   - Email: `naxiin320@gmail.com`
   - Nombre: "Dueño MagnaSports"
   - Rol: `owner`
+  - Complejo_id: `1` ✅
+
+#### **🏢 COMPLEJO DEMO 3:**
+- **Owner**:
+  - Email: `owner@demo3.cl`
+  - Nombre: "Dueño Complejo Demo 3"
+  - Rol: `owner`
+  - Complejo_id: `1` ✅
+
+- **Manager**:
+  - Email: `manager@demo3.cl`
+  - Nombre: "Manager Complejo Demo 3"
+  - Rol: `manager` ✅
   - Complejo_id: `1` ✅
 
 #### **🌐 SUPER ADMIN:**
@@ -170,12 +212,12 @@ curl -s https://reserva-tu-cancha.onrender.com/api/debug/passwords | jq '.usuari
 
 ## 📊 **ESTADÍSTICAS DEL SISTEMA:**
 
-- **Total Complejos**: 2
-- **Total Canchas**: 4 (2 por complejo)
-- **Total Usuarios Admin**: 5
+- **Total Complejos**: 3
+- **Total Canchas**: 9 (2 MagnaSports, 2 Fundación Gunnen, 5 Demo 3)
+- **Total Usuarios Admin**: 7
   - 1 Super Admin
-  - 3 Owners (2 Fundación Gunnen, 1 MagnaSports)
-  - 1 Manager (Fundación Gunnen)
+  - 4 Owners (2 Fundación Gunnen, 1 MagnaSports, 1 Demo 3)
+  - 2 Managers (1 Fundación Gunnen, 1 Demo 3)
 
 ---
 
@@ -189,6 +231,29 @@ curl -s https://reserva-tu-cancha.onrender.com/api/debug/passwords | jq '.usuari
 6. ✅ Probar creación de reservas
 
 ---
+
+---
+
+## 🏟️ **COMPLEJO DEMO 3 - CARACTERÍSTICAS ESPECIALES**
+
+### **🎨 RENDERIZADO ESPECIAL:**
+- **Distribución**: 2 filas con canchas organizadas según bosquejo
+- **Fila Superior**: Cancha 1 Fútbol, Cancha 2 Fútbol, Cancha 1 Padel
+- **Fila Inferior**: Cancha 3 Fútbol (más grande), Cancha 2 Padel
+- **Estilos CSS**: Archivo específico `demo3-special.css`
+
+### **⚽ CONFIGURACIÓN DE CANCHAS:**
+- **Canchas Fútbol 7**: Cancha 1 y 2 - $12,000/hora
+- **Cancha Fútbol 11**: Cancha 3 - $15,000/hora (más grande)
+- **Canchas Padel**: Cancha 1 y 2 - $10,000/hora
+
+### **🕐 HORARIOS:**
+- **Disponibilidad**: 09:00-23:00 todos los días
+- **Configuración**: Especial para Demo 3 en todas las funciones
+
+### **🔑 CREDENCIALES:**
+- **Owner**: `owner@demo3.cl` / `demo3owner2025`
+- **Manager**: `manager@demo3.cl` / `demo3manager2025`
 
 ---
 
