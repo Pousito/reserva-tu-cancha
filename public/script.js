@@ -2682,8 +2682,17 @@ async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
     }
     
     try {
-        // Construir URL con parámetros de fecha/hora si están disponibles para obtener precios promocionales
-        let url = `${API_BASE}/canchas/${complejoId}/${tipo}`;
+        // Para Complejo Demo 3, cargar TODAS las canchas (fútbol y padel)
+        let url;
+        if (complejoSeleccionado && complejoSeleccionado.nombre === 'Complejo Demo 3') {
+            // Cargar todas las canchas del complejo sin filtrar por tipo
+            url = `${API_BASE}/canchas/${complejoId}`;
+            console.log('🎨 Complejo Demo 3: Cargando TODAS las canchas (fútbol y padel)');
+        } else {
+            // Para otros complejos, usar el filtro por tipo
+            url = `${API_BASE}/canchas/${complejoId}/${tipo}`;
+        }
+        
         const fecha = document.getElementById('fechaSelect')?.value;
         const hora = document.getElementById('horaSelect')?.value;
         
