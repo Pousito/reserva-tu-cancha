@@ -1,10 +1,10 @@
-/* Estilos especiales para Complejo Demo 3 */
+/* Estilos especiales para Complejo Demo 3 - VERSIÓN MEJORADA */
 
 .demo3-container {
     display: grid;
-    grid-template-columns: 1fr 1fr 0.6fr;
-    grid-template-rows: 200px 120px;
-    gap: 15px;
+    grid-template-columns: 1fr 1fr 0.7fr;
+    grid-template-rows: 180px 150px;
+    gap: 20px;
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
@@ -44,85 +44,77 @@
 
 /* Estilos base para todas las canchas */
 .demo3-container .cancha-card {
-    min-height: 180px;
-    max-height: 200px;
+    min-height: 160px;
+    max-height: 180px;
     transition: all 0.3s ease;
     border-radius: 12px;
-    padding: 15px;
+    padding: 12px;
     text-align: center;
     position: relative;
-    overflow: visible; /* Cambiado para evitar que se corte el botón */
-    aspect-ratio: 1/1.2; /* Canchas verticales */
+    overflow: hidden;
+    aspect-ratio: 1/1.2;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     border: 2px solid transparent;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 
-/* Cancha grande (fútbol 11) */
+/* Cancha grande (fútbol 11) - HORIZONTAL */
 .demo3-futbol-grande .cancha-card {
-    min-height: 120px !important;
-    max-height: 140px !important;
-    height: 130px !important;
+    min-height: 130px !important;
+    max-height: 150px !important;
+    height: 140px !important;
     background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
     border: 3px solid #28a745;
     position: relative;
     display: flex !important;
     flex-direction: row !important;
-    align-items: center;
-    justify-content: space-around;
-    padding: 15px 30px;
-    aspect-ratio: 3/1 !important; /* Hace que sea 3 veces más ancha que alta */
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 15px 20px !important;
+    gap: 20px !important;
+    aspect-ratio: 3/1 !important;
     width: 100% !important;
     max-width: none !important;
     min-width: 100% !important;
+    overflow: hidden !important;
 }
 
-/* Eliminado el texto "FÚTBOL 11" */
-
-.demo3-futbol-grande .cancha-card .cancha-icon i {
-    font-size: 3rem !important;
-    color: #28a745 !important;
-}
-
-/* Asegurar que la Cancha 3 sea completamente horizontal */
-.demo3-futbol-grande .cancha-card * {
-    box-sizing: border-box;
-}
-
-/* Layout interno mejorado para Cancha 3 - VERTICAL */
-.demo3-futbol-grande .cancha-card {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 10px 15px !important;
-    gap: 8px !important;
-    overflow: visible !important;
-    text-align: center !important;
-}
-
+/* Icono de la cancha grande */
 .demo3-futbol-grande .cancha-card .cancha-icon {
     flex-shrink: 0;
     margin: 0;
     order: 1;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+.demo3-futbol-grande .cancha-card .cancha-icon i {
+    font-size: 2.5rem !important;
+    color: #28a745 !important;
+}
+
+/* Información de la cancha grande */
 .demo3-futbol-grande .cancha-card .cancha-info {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     flex: 1;
     order: 2;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
-    text-align: center;
+    text-align: left;
+    padding: 0 10px;
 }
 
 .demo3-futbol-grande .cancha-card .cancha-info h5 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #155724;
     white-space: nowrap;
@@ -130,7 +122,7 @@
 
 .demo3-futbol-grande .cancha-card .cancha-info .precio {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #495057;
     white-space: nowrap;
@@ -139,34 +131,34 @@
 .demo3-futbol-grande .cancha-card .cancha-info .jugadores-info {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
+    gap: 6px;
     margin: 0;
     white-space: nowrap;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
 }
 
 .demo3-futbol-grande .cancha-card .cancha-info .jugadores-info i {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #007bff;
 }
 
 .demo3-futbol-grande .cancha-card .cancha-info .jugadores-info span {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     color: #495057;
 }
 
+/* Estado de disponibilidad de la cancha grande */
 .demo3-futbol-grande .cancha-card .estado-disponibilidad {
     flex-shrink: 0;
     order: 3;
     margin: 0;
-    align-self: center;
+    align-self: flex-end;
 }
 
 .demo3-futbol-grande .cancha-card .estado-disponibilidad .badge {
-    font-size: 0.75rem;
-    padding: 4px 8px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
     white-space: nowrap;
     margin: 0;
 }
@@ -174,39 +166,59 @@
 /* Canchas de padel */
 .demo3-padel-superior .cancha-card,
 .demo3-padel-inferior .cancha-card {
-    min-height: 120px;
-    max-height: 140px;
-    aspect-ratio: 1/1.3; /* Canchas de padel más verticales */
-    padding: 8px;
+    min-height: 130px;
+    max-height: 150px;
+    aspect-ratio: 1/1.3;
+    padding: 10px;
+    overflow: hidden;
 }
 
 /* Asegurar que los botones de padel no se salgan del contenedor */
 .demo3-padel-superior .cancha-card .estado-disponibilidad,
 .demo3-padel-inferior .cancha-card .estado-disponibilidad {
     margin-top: auto;
-    padding-top: 8px;
+    padding-top: 5px;
 }
 
 .demo3-padel-superior .cancha-card .estado-disponibilidad .badge,
 .demo3-padel-inferior .cancha-card .estado-disponibilidad .badge {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+}
+
+/* Indicador de tipo de cancha - POSICIONADO CORRECTAMENTE */
+.demo3-container .cancha-card .tipo-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.8);
+    color: white;
     padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    z-index: 20;
+    pointer-events: none;
+    max-width: 50px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.demo3-container .cancha-card.no-seleccionada .tipo-indicator {
+    background: rgba(108,117,125,0.8);
 }
 
 /* Estados de canchas */
 .demo3-container .cancha-card.disponible {
     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
     border: 2px solid #28a745;
-    color: #155724;
 }
 
 .demo3-container .cancha-card.ocupada {
     background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
     border: 2px solid #dc3545;
-    color: #721c24;
 }
 
-/* Canchas no seleccionadas (gris/plomo) */
 .demo3-container .cancha-card.no-seleccionada {
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     border: 2px solid #6c757d;
@@ -216,82 +228,81 @@
     filter: grayscale(50%);
 }
 
-.demo3-container .cancha-card.no-seleccionada:hover {
-    transform: none;
-    box-shadow: none;
-}
-
-/* Iconos específicos para Demo 3 */
-.demo3-container .cancha-card .cancha-icon i.fa-futbol {
-    color: #28a745;
+/* Iconos de canchas */
+.demo3-container .cancha-card .cancha-icon {
+    margin: 10px 0;
     font-size: 2.5rem;
+    color: #28a745;
 }
 
-.demo3-container .cancha-card .cancha-icon i.fa-table-tennis {
-    color: #007bff;
-    font-size: 2.2rem;
+.demo3-container .cancha-card.no-seleccionada .cancha-icon {
+    color: #6c757d;
 }
 
-/* Iconos para canchas no seleccionadas */
-.demo3-container .cancha-card.no-seleccionada .cancha-icon i {
-    color: #6c757d !important;
-    opacity: 0.6;
-}
-
-/* Títulos específicos para Demo 3 */
+/* Títulos de canchas */
 .demo3-container .cancha-card h5 {
+    margin: 5px 0;
     font-size: 1.1rem;
     font-weight: 600;
-    margin-bottom: 8px;
+    color: #155724;
 }
 
-/* Precios específicos para Demo 3 */
-.demo3-container .cancha-card .precio {
-    font-size: 1rem;
-    font-weight: 600;
+.demo3-container .cancha-card.no-seleccionada h5 {
     color: #495057;
 }
 
-/* Badges de estado para Demo 3 */
-.demo3-container .cancha-card .estado-disponibilidad .badge {
-    font-size: 0.85rem;
-    padding: 6px 12px;
-}
-
-/* Hover effects para Demo 3 */
-.demo3-container .cancha-card:not(.no-seleccionada):hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-/* Indicador de tipo de cancha - POSICIONADO FUERA DEL ICONO */
-.demo3-container .cancha-card .tipo-indicator {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 2px 5px;
-    border-radius: 6px;
-    font-size: 0.65rem;
+/* Precios */
+.demo3-container .cancha-card .precio {
+    margin: 5px 0;
+    font-size: 0.9rem;
     font-weight: 600;
-    z-index: 20;
-    pointer-events: none;
-    max-width: 60px;
-    text-align: center;
+    color: #28a745;
 }
 
-.demo3-container .cancha-card.no-seleccionada .tipo-indicator {
-    background: rgba(108,117,125,0.8);
+.demo3-container .cancha-card.no-seleccionada .precio {
+    color: #6c757d;
+}
+
+/* Información de jugadores */
+.demo3-container .cancha-card .jugadores-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin: 5px 0;
+    font-size: 0.8rem;
+    color: #007bff;
+}
+
+.demo3-container .cancha-card.no-seleccionada .jugadores-info {
+    color: #6c757d;
+}
+
+/* Estados de disponibilidad */
+.demo3-container .cancha-card .estado-disponibilidad {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.demo3-container .cancha-card .estado-disponibilidad .badge {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+/* Hover effects */
+.demo3-container .cancha-card:not(.no-seleccionada):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
 /* Responsive para Demo 3 */
 @media (max-width: 768px) {
     .demo3-container {
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(5, 1fr);
+        grid-template-rows: repeat(5, 160px);
         gap: 15px;
-        padding: 15px;
     }
     
     .demo3-futbol-izquierda {
@@ -309,12 +320,6 @@
         grid-row: 3;
     }
     
-    .demo3-futbol-grande .cancha-card {
-        flex-direction: column;
-        padding: 15px;
-        text-align: center;
-    }
-    
     .demo3-padel-superior {
         grid-column: 1;
         grid-row: 4;
@@ -325,63 +330,15 @@
         grid-row: 5;
     }
     
-    .demo3-container .cancha-card {
-        min-height: 140px;
-        padding: 15px;
+    .demo3-futbol-grande .cancha-card {
+        flex-direction: column !important;
+        aspect-ratio: 1/1.2 !important;
+        height: 160px !important;
+        padding: 15px !important;
     }
-}
-
-/* Header especial para Demo 3 - SIMPLIFICADO */
-.demo3-header {
-    text-align: center;
-    margin-bottom: 20px;
-    padding: 10px;
-}
-
-.demo3-header h3 {
-    margin: 0;
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: #28a745;
-}
-
-/* Estilos para el contenedor principal de Demo 3 */
-.complejo-demo3-container {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 15px;
-    padding: 25px;
-    margin: 20px 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.complejo-demo3-container .complejo-header {
-    text-align: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.complejo-demo3-container .complejo-header h3 {
-    color: #495057;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.complejo-demo3-container .complejo-header p {
-    color: #6c757d;
-    margin: 0;
-    font-size: 0.95rem;
-}
-
-/* Indicador de calle para Demo 3 */
-.demo3-calle-indicator {
-    background: #343a40;
-    color: white;
-    text-align: center;
-    padding: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-    margin-bottom: 20px;
-    border-radius: 5px;
+    
+    .demo3-futbol-grande .cancha-card .cancha-info {
+        text-align: center;
+        align-items: center;
+    }
 }
