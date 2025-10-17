@@ -1,21 +1,21 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v4.1 - DESCRIPCIÓN REPLICADA */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v4.2 - ESPACIADO AJUSTADO */
 
-.demo3-container {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 0.8fr !important;
-    grid-template-rows: 200px 200px 140px !important;
-    gap: 20px !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-    padding: 20px !important;
-    background: transparent !important;
-    border-radius: 15px !important;
-    box-shadow: none !important;
-    grid-template-areas: 
-        "futbol1 futbol2 padel1"
-        "futbol1 futbol2 padel2"
-        "futbol3 futbol3 padel2" !important;
-}
+    .demo3-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 0.8fr !important;
+        grid-template-rows: 200px 30px 140px !important;
+        gap: 20px !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+        padding: 20px !important;
+        background: transparent !important;
+        border-radius: 15px !important;
+        box-shadow: none !important;
+        grid-template-areas: 
+            "futbol1 futbol2 padel1"
+            "futbol1 futbol2 padel2"
+            "futbol3 futbol3 padel2" !important;
+    }
 
 /* Posicionamiento de contenedores - REESTRUCTURADO CON GRID AREAS */
 .demo3-futbol-izquierda {
