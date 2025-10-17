@@ -1,4 +1,4 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v4.0 - LETRAS UNIFICADAS */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v4.1 - DESCRIPCIÓN REPLICADA */
 
 .demo3-container {
     display: grid !important;
@@ -135,7 +135,8 @@
     text-align: left !important;
 }
 
-.demo3-futbol-grande .cancha-card .precio {
+/* PRECIO - MISMOS ESTILOS QUE CANCHAS 1 Y 2 */
+.demo3-futbol-grande .cancha-card p {
     color: #495057 !important;
     font-size: 0.9rem !important;
     margin-bottom: 8px !important;
@@ -145,29 +146,23 @@
     font-weight: normal !important;
 }
 
-.demo3-futbol-grande .cancha-card .jugadores-info {
+/* DESCRIPCIÓN DE JUGADORES - MISMOS ESTILOS QUE CANCHAS 1 Y 2 */
+.demo3-futbol-grande .cancha-card .text-info.small {
     color: #007bff !important;
     font-size: 0.8rem !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 5px !important;
     font-family: inherit !important;
     line-height: 1.2 !important;
     text-align: left !important;
     font-weight: normal !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
 }
 
-.demo3-futbol-grande .cancha-card .jugadores-info i {
-    color: #007bff !important;
-    font-size: 0.9rem !important;
-}
-
-.demo3-futbol-grande .cancha-card .jugadores-info span {
+.demo3-futbol-grande .cancha-card .text-info.small i {
     color: #007bff !important;
     font-size: 0.8rem !important;
-    font-family: inherit !important;
-    line-height: 1.2 !important;
-    font-weight: normal !important;
 }
 
 .demo3-futbol-grande .cancha-card .cancha-icon i {

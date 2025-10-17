@@ -3545,11 +3545,8 @@ async function renderizarCanchasConDisponibilidad() {
                     </div>
                     <div class="cancha-info">
                         <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
-                        <div class="precio">$${formatCurrencyChile(cancha.precio_actual || cancha.precio_hora)} por hora</div>
-                        <div class="jugadores-info">
-                            <i class="fas fa-users"></i>
-                            <span>${jugadoresPorEquipo}</span>
-                        </div>
+                        ${precioHTML}
+                        <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>
                     </div>
                     <div class="estado-disponibilidad">
                         ${estadoBadge}
