@@ -1,4 +1,4 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v3.8 - CSS GLOBAL SOBRESCRITO */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v3.9 - COLORES UNIFICADOS */
 
 .demo3-container {
     display: grid !important;
@@ -84,10 +84,10 @@
     min-width: none !important;
 }
 
-/* Cancha 3 - HORIZONTAL FORZADO - SOBRESCRIBIR TODO */
+/* Cancha 3 - HORIZONTAL FORZADO - MISMOS COLORES QUE CANCHAS 1 Y 2 */
 .demo3-futbol-grande .cancha-card {
-    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%) !important;
-    border: 4px solid #28a745 !important;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+    border: 3px solid #28a745 !important;
     padding: 15px 25px !important;
     display: flex !important;
     flex-direction: row !important;
@@ -104,6 +104,8 @@
     flex-basis: auto !important;
     flex-grow: 0 !important;
     flex-shrink: 0 !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
 }
 
 /* SOBRESCRIBIR TODAS LAS REGLAS GLOBALES DE .cancha-card */
@@ -120,6 +122,45 @@
     justify-content: space-between !important;
     align-items: center !important;
     aspect-ratio: 3/1 !important;
+}
+
+/* TEXTO DE CANCHA 3 - MISMOS COLORES Y TAMAÑOS QUE CANCHAS 1 Y 2 */
+.demo3-futbol-grande .cancha-card h5 {
+    color: #155724 !important;
+    font-weight: bold !important;
+    margin-bottom: 10px !important;
+    font-size: 1.1rem !important;
+}
+
+.demo3-futbol-grande .cancha-card .precio {
+    color: #495057 !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 8px !important;
+}
+
+.demo3-futbol-grande .cancha-card .jugadores-info {
+    color: #007bff !important;
+    font-size: 0.8rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.demo3-futbol-grande .cancha-card .jugadores-info i {
+    color: #007bff !important;
+    font-size: 0.9rem !important;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-icon i {
+    color: #28a745 !important;
+    font-size: 2.5rem !important;
+}
+
+.demo3-futbol-grande .cancha-card .estado-disponibilidad .badge {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-size: 0.75rem !important;
+    padding: 5px 10px !important;
 }
 
 /* Iconos de canchas */
