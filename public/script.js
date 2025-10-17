@@ -3363,49 +3363,65 @@ async function renderizarCanchasConDisponibilidad() {
         if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
             console.log('🎨 Renderizando Complejo Demo 3 con distribución especial...');
             
-            // Crear estructura de 2 filas
-            const filaSuperior = document.createElement('div');
-            filaSuperior.className = 'demo3-fila-superior';
-            filaSuperior.style.display = 'flex';
-            filaSuperior.style.gap = '20px';
-            filaSuperior.style.marginBottom = '20px';
-            filaSuperior.style.justifyContent = 'space-between';
+            // Crear contenedor principal con grid
+            const demo3Container = document.createElement('div');
+            demo3Container.className = 'demo3-container';
             
-            const filaInferior = document.createElement('div');
-            filaInferior.className = 'demo3-fila-inferior';
-            filaInferior.style.display = 'flex';
-            filaInferior.style.gap = '20px';
-            filaInferior.style.justifyContent = 'space-between';
-            
-            // Separar canchas por tipo
+            // Separar canchas por tipo y orden
             const canchasFutbol = canchasOrdenadas.filter(c => c.tipo === 'futbol');
             const canchasPadel = canchasOrdenadas.filter(c => c.tipo === 'padel');
             
-            // Fila superior: Cancha 1 Fútbol, Cancha 2 Fútbol, Cancha 1 Padel
-            for (let i = 0; i < 2; i++) {
-                if (canchasFutbol[i]) {
-                    const canchaCard = await crearCanchaCard(canchasFutbol[i], fecha, hora);
-                    filaSuperior.appendChild(canchaCard);
+            // Crear contenedores específicos para cada posición
+            const futbolIzquierda = document.createElement('div');
+            futbolIzquierda.className = 'demo3-futbol-izquierda';
+            
+            const futbolDerecha = document.createElement('div');
+            futbolDerecha.className = 'demo3-futbol-derecha';
+            
+            const futbolGrande = document.createElement('div');
+            futbolGrande.className = 'demo3-futbol-grande';
+            
+            const padelSuperior = document.createElement('div');
+            padelSuperior.className = 'demo3-padel-superior';
+            
+            const padelInferior = document.createElement('div');
+            padelInferior.className = 'demo3-padel-inferior';
+            
+            // Crear canchas y asignar a contenedores específicos
+            for (const cancha of canchasOrdenadas) {
+                const canchaCard = await crearCanchaCard(cancha, fecha, hora);
+                
+                // Determinar si la cancha debe estar en gris (no seleccionada)
+                const esTipoSeleccionado = (tipoCanchaSeleccionado === 'futbol' && cancha.tipo === 'futbol') || 
+                                         (tipoCanchaSeleccionado === 'padel' && cancha.tipo === 'padel');
+                
+                if (!esTipoSeleccionado) {
+                    canchaCard.classList.add('no-seleccionada');
+                    canchaCard.style.pointerEvents = 'none';
+                }
+                
+                // Asignar a contenedor específico según ID
+                if (cancha.id === 1) { // Cancha 1 Fútbol
+                    futbolIzquierda.appendChild(canchaCard);
+                } else if (cancha.id === 2) { // Cancha 2 Fútbol
+                    futbolDerecha.appendChild(canchaCard);
+                } else if (cancha.id === 3) { // Cancha 3 Fútbol (grande)
+                    futbolGrande.appendChild(canchaCard);
+                } else if (cancha.id === 4) { // Cancha 1 Padel
+                    padelSuperior.appendChild(canchaCard);
+                } else if (cancha.id === 5) { // Cancha 2 Padel
+                    padelInferior.appendChild(canchaCard);
                 }
             }
-            if (canchasPadel[0]) {
-                const canchaCard = await crearCanchaCard(canchasPadel[0], fecha, hora);
-                filaSuperior.appendChild(canchaCard);
-            }
             
-            // Fila inferior: Cancha 3 Fútbol (más grande), Cancha 2 Padel
-            if (canchasFutbol[2]) {
-                const canchaCard = await crearCanchaCard(canchasFutbol[2], fecha, hora);
-                canchaCard.style.flex = '2'; // Hacer más grande
-                filaInferior.appendChild(canchaCard);
-            }
-            if (canchasPadel[1]) {
-                const canchaCard = await crearCanchaCard(canchasPadel[1], fecha, hora);
-                filaInferior.appendChild(canchaCard);
-            }
+            // Agregar contenedores al grid principal
+            demo3Container.appendChild(futbolIzquierda);
+            demo3Container.appendChild(futbolDerecha);
+            demo3Container.appendChild(futbolGrande);
+            demo3Container.appendChild(padelSuperior);
+            demo3Container.appendChild(padelInferior);
             
-            canchasHorizontales.appendChild(filaSuperior);
-            canchasHorizontales.appendChild(filaInferior);
+            canchasHorizontales.appendChild(demo3Container);
         } else {
             // Renderizado normal para otros complejos
             for (const cancha of canchasOrdenadas) {
@@ -3499,7 +3515,12 @@ async function renderizarCanchasConDisponibilidad() {
                 precioHTML = `<p class="text-muted">$${formatCurrencyChile(cancha.precio_actual || cancha.precio_hora)} por hora</p>`;
             }
             
+            // Determinar el indicador de tipo
+            const tipoIndicator = complejoSeleccionado.nombre === 'Complejo Demo 3' ? 
+                `<div class="tipo-indicator">${cancha.tipo === 'futbol' ? 'FÚTBOL' : 'PADEL'}</div>` : '';
+            
             canchaCard.innerHTML = `
+                ${tipoIndicator}
                 <div class="cancha-icon">
                     <i class="fas ${iconClass}"></i>
                 </div>
@@ -3512,7 +3533,12 @@ async function renderizarCanchasConDisponibilidad() {
                 </div>
             `;
             
-            canchaCard.addEventListener('click', () => seleccionarCancha(cancha));
+            canchaCard.addEventListener('click', () => {
+                // Solo permitir selección si no está en gris
+                if (!canchaCard.classList.contains('no-seleccionada')) {
+                    seleccionarCancha(cancha);
+                }
+            });
             
             return canchaCard;
         }
