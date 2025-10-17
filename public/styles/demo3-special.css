@@ -1,4 +1,4 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v3.6 - PROBLEMA DE RAÍZ SOLUCIONADO */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v3.7 - CSS CONFLICTO SOLUCIONADO */
 
 .demo3-container {
     display: grid !important;
@@ -66,6 +66,13 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
     transition: all 0.3s ease !important;
     box-sizing: border-box !important;
+}
+
+/* EXCEPCIÓN: Cancha 3 debe ser horizontal */
+.demo3-futbol-grande .cancha-card {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
 }
 
 /* Cancha 3 - HORIZONTAL FORZADO */
@@ -288,7 +295,7 @@
     }
     
     .demo3-futbol-grande .cancha-card {
-        flex-direction: column !important;
+        flex-direction: row !important;
         padding: 15px !important;
     }
     
