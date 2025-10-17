@@ -24,6 +24,7 @@
 .demo3-futbol-grande {
     grid-column: 1 / 3;
     grid-row: 2;
+    width: 100%;
 }
 
 /* Canchas de padel - lado derecho */
@@ -50,10 +51,16 @@
 
 /* Cancha grande (fútbol 11) */
 .demo3-futbol-grande .cancha-card {
-    min-height: 200px;
+    min-height: 180px;
+    max-height: 200px;
     background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
     border: 3px solid #28a745;
     position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 20px 40px;
 }
 
 .demo3-futbol-grande .cancha-card::before {
@@ -190,6 +197,12 @@
     .demo3-futbol-grande {
         grid-column: 1;
         grid-row: 3;
+    }
+    
+    .demo3-futbol-grande .cancha-card {
+        flex-direction: column;
+        padding: 15px;
+        text-align: center;
     }
     
     .demo3-padel-superior {

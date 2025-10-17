@@ -3401,15 +3401,17 @@ async function renderizarCanchasConDisponibilidad() {
                 }
                 
                 // Asignar a contenedor específico según ID
-                if (cancha.id === 6) { // Cancha 1 Fútbol
+                // IDs locales: 11, 12, 13, 14, 15
+                // IDs producción: 6, 7, 8, 9, 10
+                if (cancha.id === 6 || cancha.id === 11) { // Cancha 1 Fútbol
                     futbolIzquierda.appendChild(canchaCard);
-                } else if (cancha.id === 7) { // Cancha 2 Fútbol
+                } else if (cancha.id === 7 || cancha.id === 12) { // Cancha 2 Fútbol
                     futbolDerecha.appendChild(canchaCard);
-                } else if (cancha.id === 8) { // Cancha 3 Fútbol (grande)
+                } else if (cancha.id === 8 || cancha.id === 13) { // Cancha 3 Fútbol (grande)
                     futbolGrande.appendChild(canchaCard);
-                } else if (cancha.id === 9) { // Cancha 1 Padel
+                } else if (cancha.id === 9 || cancha.id === 14) { // Cancha 1 Padel
                     padelSuperior.appendChild(canchaCard);
-                } else if (cancha.id === 10) { // Cancha 2 Padel
+                } else if (cancha.id === 10 || cancha.id === 15) { // Cancha 2 Padel
                     padelInferior.appendChild(canchaCard);
                 }
             }
