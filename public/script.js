@@ -3541,6 +3541,7 @@ async function renderizarCanchasConDisponibilidad() {
             console.log('🔍 DEBUG: complejoSeleccionado.nombre =', complejoSeleccionado.nombre, 'cancha.nombre =', cancha.nombre);
             if (complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.nombre === 'Cancha 3') {
                 canchaCard.innerHTML = `
+                    ${tipoIndicator}
                     <div class="cancha-icon">
                         <i class="fas ${iconClass}"></i>
                     </div>
