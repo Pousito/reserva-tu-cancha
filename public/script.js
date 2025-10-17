@@ -3540,7 +3540,6 @@ async function renderizarCanchasConDisponibilidad() {
             // HTML especial para Cancha 3 (horizontal) en Complejo Demo 3
             if (complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.nombre === 'Cancha 3') {
                 canchaCard.innerHTML = `
-                    ${tipoIndicator}
                     <div class="cancha-icon">
                         <i class="fas ${iconClass}"></i>
                     </div>
