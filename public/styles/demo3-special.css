@@ -1,4 +1,4 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v3.4 - CANCHA 3 HORIZONTAL */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORRECTO v3.5 - REESTRUCTURADO CON GRID AREAS */
 
 .demo3-container {
     display: grid !important;
@@ -11,24 +11,25 @@
     background: transparent !important;
     border-radius: 15px !important;
     box-shadow: none !important;
+    grid-template-areas: 
+        "futbol1 futbol2 padel1"
+        "futbol1 futbol2 padel2"
+        "futbol3 futbol3 padel2" !important;
 }
 
-/* Posicionamiento de contenedores - CORREGIDO */
+/* Posicionamiento de contenedores - REESTRUCTURADO CON GRID AREAS */
 .demo3-futbol-izquierda {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
+    grid-area: futbol1 !important;
     z-index: 1 !important;
 }
 
 .demo3-futbol-derecha {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
+    grid-area: futbol2 !important;
     z-index: 1 !important;
 }
 
 .demo3-futbol-grande {
-    grid-column: 1 / 3 !important;
-    grid-row: 3 !important;
+    grid-area: futbol3 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -38,14 +39,12 @@
 }
 
 .demo3-padel-superior {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
+    grid-area: padel1 !important;
     z-index: 1 !important;
 }
 
 .demo3-padel-inferior {
-    grid-column: 3 !important;
-    grid-row: 2 !important;
+    grid-area: padel2 !important;
     z-index: 1 !important;
 }
 
@@ -69,15 +68,20 @@
     box-sizing: border-box !important;
 }
 
-/* Cancha 3 - HORIZONTAL como debe ser */
+/* Cancha 3 - HORIZONTAL FORZADO */
 .demo3-futbol-grande .cancha-card {
     background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%) !important;
     border: 4px solid #28a745 !important;
     padding: 15px 25px !important;
+    display: flex !important;
     flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
     height: 100% !important;
+    width: 100% !important;
+    min-height: 120px !important;
+    max-height: 140px !important;
+    aspect-ratio: 3/1 !important;
 }
 
 /* Iconos de canchas */
