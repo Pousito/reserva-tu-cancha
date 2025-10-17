@@ -3,7 +3,7 @@
 .demo3-container {
     display: grid;
     grid-template-columns: 1fr 1fr 0.6fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: 200px 140px;
     gap: 20px;
     max-width: 1200px;
     margin: 0 auto;
@@ -40,19 +40,21 @@
 
 /* Estilos base para todas las canchas */
 .demo3-container .cancha-card {
-    min-height: 200px;
+    min-height: 180px;
+    max-height: 200px;
     transition: all 0.3s ease;
     border-radius: 12px;
     padding: 20px;
     text-align: center;
     position: relative;
     overflow: hidden;
+    aspect-ratio: 1/1.2; /* Canchas verticales */
 }
 
 /* Cancha grande (fútbol 11) */
 .demo3-futbol-grande .cancha-card {
-    min-height: 180px;
-    max-height: 200px;
+    min-height: 120px;
+    max-height: 140px;
     background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
     border: 3px solid #28a745;
     position: relative;
@@ -60,7 +62,8 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
-    padding: 20px 40px;
+    padding: 15px 30px;
+    aspect-ratio: 3/1; /* Hace que sea 3 veces más ancha que alta */
 }
 
 .demo3-futbol-grande .cancha-card::before {
@@ -85,7 +88,9 @@
 /* Canchas de padel */
 .demo3-padel-superior .cancha-card,
 .demo3-padel-inferior .cancha-card {
-    min-height: 160px;
+    min-height: 140px;
+    max-height: 160px;
+    aspect-ratio: 1/1.4; /* Canchas de padel más verticales */
 }
 
 /* Estados de canchas */
