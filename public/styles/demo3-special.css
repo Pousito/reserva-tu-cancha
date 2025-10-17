@@ -25,6 +25,9 @@
     grid-column: 1 / 3;
     grid-row: 2;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Canchas de padel - lado derecho */
@@ -55,18 +58,21 @@
 
 /* Cancha grande (fútbol 11) */
 .demo3-futbol-grande .cancha-card {
-    min-height: 120px;
-    max-height: 140px;
+    min-height: 120px !important;
+    max-height: 140px !important;
+    height: 130px !important;
     background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
     border: 3px solid #28a745;
     position: relative;
-    display: flex;
-    flex-direction: row;
+    display: flex !important;
+    flex-direction: row !important;
     align-items: center;
     justify-content: space-around;
     padding: 15px 30px;
     aspect-ratio: 3/1 !important; /* Hace que sea 3 veces más ancha que alta */
     width: 100% !important;
+    max-width: none !important;
+    min-width: 100% !important;
 }
 
 .demo3-futbol-grande .cancha-card::before {
@@ -86,6 +92,36 @@
 .demo3-futbol-grande .cancha-card .cancha-icon i {
     font-size: 3rem !important;
     color: #28a745 !important;
+}
+
+/* Asegurar que la Cancha 3 sea completamente horizontal */
+.demo3-futbol-grande .cancha-card * {
+    box-sizing: border-box;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 20px;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-icon {
+    flex-shrink: 0;
+    margin: 0 20px;
+}
+
+.demo3-futbol-grande .cancha-card .estado-disponibilidad {
+    flex-shrink: 0;
 }
 
 /* Canchas de padel */
