@@ -8,6 +8,9 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 /* Canchas de fútbol - lado izquierdo */
@@ -49,6 +52,8 @@
     position: relative;
     overflow: hidden;
     aspect-ratio: 1/1.2; /* Canchas verticales */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 2px solid transparent;
 }
 
 /* Cancha grande (fútbol 11) */
@@ -111,8 +116,9 @@
     background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     border: 2px solid #6c757d;
     color: #495057;
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
+    filter: grayscale(50%);
 }
 
 .demo3-container .cancha-card.no-seleccionada:hover {
@@ -224,6 +230,30 @@
         min-height: 140px;
         padding: 15px;
     }
+}
+
+/* Header especial para Demo 3 */
+.demo3-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    text-align: center;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.demo3-header h3 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.demo3-header p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
 }
 
 /* Estilos para el contenedor principal de Demo 3 */

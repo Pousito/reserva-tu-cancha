@@ -3363,6 +3363,15 @@ async function renderizarCanchasConDisponibilidad() {
         if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
             console.log('🎨 Renderizando Complejo Demo 3 con distribución especial...');
             
+            // Crear header especial
+            const demo3Header = document.createElement('div');
+            demo3Header.className = 'demo3-header';
+            demo3Header.innerHTML = `
+                <h3>🏟️ COMPLEJO DEMO 3</h3>
+                <p>Av. Los Robles 2450, Los Ángeles</p>
+            `;
+            canchasHorizontales.appendChild(demo3Header);
+            
             // Crear contenedor principal con grid
             const demo3Container = document.createElement('div');
             demo3Container.className = 'demo3-container';
