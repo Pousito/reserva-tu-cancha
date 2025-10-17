@@ -1,0 +1,143 @@
+/* Estilos especiales para Complejo Demo 3 */
+
+.demo3-fila-superior,
+.demo3-fila-inferior {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    justify-content: space-between;
+    align-items: stretch;
+}
+
+.demo3-fila-superior {
+    margin-bottom: 20px;
+}
+
+.demo3-fila-inferior {
+    margin-bottom: 0;
+}
+
+/* Canchas de fútbol en Demo 3 */
+.demo3-fila-superior .cancha-card,
+.demo3-fila-inferior .cancha-card {
+    flex: 1;
+    min-height: 200px;
+    transition: all 0.3s ease;
+}
+
+/* Cancha 3 de fútbol (más grande) */
+.demo3-fila-inferior .cancha-card[data-cancha-id="3"] {
+    flex: 2;
+    min-height: 220px;
+}
+
+/* Canchas de padel en Demo 3 */
+.demo3-fila-superior .cancha-card[data-cancha-id="4"],
+.demo3-fila-inferior .cancha-card[data-cancha-id="5"] {
+    flex: 0.8;
+    min-height: 180px;
+}
+
+/* Iconos específicos para Demo 3 */
+.demo3-fila-superior .cancha-card .cancha-icon i.fa-futbol,
+.demo3-fila-inferior .cancha-card .cancha-icon i.fa-futbol {
+    color: #28a745;
+    font-size: 2.5rem;
+}
+
+.demo3-fila-superior .cancha-card .cancha-icon i.fa-table-tennis,
+.demo3-fila-inferior .cancha-card .cancha-icon i.fa-table-tennis {
+    color: #007bff;
+    font-size: 2.2rem;
+}
+
+/* Títulos específicos para Demo 3 */
+.demo3-fila-superior .cancha-card h5,
+.demo3-fila-inferior .cancha-card h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Precios específicos para Demo 3 */
+.demo3-fila-superior .cancha-card .precio,
+.demo3-fila-inferior .cancha-card .precio {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Badges de estado para Demo 3 */
+.demo3-fila-superior .cancha-card .estado-disponibilidad .badge,
+.demo3-fila-inferior .cancha-card .estado-disponibilidad .badge {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+}
+
+/* Hover effects para Demo 3 */
+.demo3-fila-superior .cancha-card:hover,
+.demo3-fila-inferior .cancha-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Responsive para Demo 3 */
+@media (max-width: 768px) {
+    .demo3-fila-superior,
+    .demo3-fila-inferior {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .demo3-fila-superior .cancha-card,
+    .demo3-fila-inferior .cancha-card {
+        flex: none;
+        min-height: 160px;
+    }
+    
+    .demo3-fila-inferior .cancha-card[data-cancha-id="3"] {
+        flex: none;
+        min-height: 180px;
+    }
+}
+
+/* Estilos para el contenedor principal de Demo 3 */
+.complejo-demo3-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.complejo-demo3-container .complejo-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.complejo-demo3-container .complejo-header h3 {
+    color: #495057;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.complejo-demo3-container .complejo-header p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Indicador de calle para Demo 3 */
+.demo3-calle-indicator {
+    background: #343a40;
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}

@@ -2881,6 +2881,10 @@ async function cargarHorariosComplejo(complejo) {
         // Complejo Demo 1: 10:00-22:00 todos los días
         console.log('Complejo Demo 1 - Horarios: 10:00-22:00 todos los días');
         horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+    } else if (complejo.nombre === 'Complejo Demo 3') {
+        // Complejo Demo 3: 09:00-23:00 todos los días
+        console.log('Complejo Demo 3 - Horarios: 09:00-23:00 todos los días');
+        horarios = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3043,6 +3047,9 @@ async function cargarHorariosBasicos() {
     } else if (complejoSeleccionado.nombre === 'Complejo Demo 1') {
         // Complejo Demo 1: 10:00-22:00 todos los días
         horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+    } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
+        // Complejo Demo 3: 09:00-23:00 todos los días
+        horarios = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3142,6 +3149,9 @@ async function cargarHorariosConDisponibilidadInmediata() {
     } else if (complejoSeleccionado.nombre === 'Complejo Demo 1') {
         // Complejo Demo 1: 10:00-22:00 todos los días
         horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+    } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
+        // Complejo Demo 3: 09:00-23:00 todos los días
+        horarios = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3260,6 +3270,9 @@ async function validarHorariosSegunFecha() {
         } else if (complejoSeleccionado.nombre === 'Complejo Demo 1') {
             // Complejo Demo 1: 10:00-22:00 todos los días
             horariosValidos = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
+        } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
+            // Complejo Demo 3: 09:00-23:00 todos los días
+            horariosValidos = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         } else {
             // Otros complejos: horario estándar
             horariosValidos = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3295,8 +3308,8 @@ async function renderizarCanchasConDisponibilidad() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Si es Complejo En Desarrollo, Fundación Gunnen, Espacio Deportivo Borde Río o Complejo Demo 1, crear estructura especial horizontal
-    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' || complejoSeleccionado.nombre === 'Complejo Demo 1')) {
+    // Si es Complejo En Desarrollo, Fundación Gunnen, Espacio Deportivo Borde Río, Complejo Demo 1 o Complejo Demo 3, crear estructura especial horizontal
+    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' || complejoSeleccionado.nombre === 'Complejo Demo 1' || complejoSeleccionado.nombre === 'Complejo Demo 3')) {
         console.log(`🎨 Renderizando ${complejoSeleccionado.nombre} con`, canchas.length, 'canchas');
         
         // Determinar si es techado o al aire libre
@@ -3304,6 +3317,7 @@ async function renderizarCanchasConDisponibilidad() {
         const nombreCalle = complejoSeleccionado.nombre === 'Complejo En Desarrollo' ? 'MONTE PERDIDO' : 
                            complejoSeleccionado.nombre === 'Fundación Gunnen' ? 'DON VICTOR' : 
                            complejoSeleccionado.nombre === 'Complejo Demo 1' ? 'CALLE DEMO' :
+                           complejoSeleccionado.nombre === 'Complejo Demo 3' ? 'AV. LOS ROBLES' :
                            'RUTA Q-575';
         
         // Crear contenedor (galpón para Complejo En Desarrollo, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
@@ -3325,8 +3339,7 @@ async function renderizarCanchasConDisponibilidad() {
         const canchasHorizontales = document.createElement('div');
         canchasHorizontales.className = 'canchas-horizontales';
         
-        // Ordenar canchas para Complejo En Desarrollo, Fundación Gunnen y Complejo Demo 1: Cancha 1 a la izquierda, Cancha 2 a la derecha
-        // Para Espacio Deportivo Borde Río, solo hay 1 cancha, no necesita ordenamiento especial
+        // Ordenar canchas según el complejo
         let canchasOrdenadas = [...canchas];
         if (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Complejo Demo 1') {
             canchasOrdenadas = canchasOrdenadas.sort((a, b) => {
@@ -3334,10 +3347,75 @@ async function renderizarCanchasConDisponibilidad() {
                 const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
                 return numeroA - numeroB;
             });
+        } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
+            // Orden especial para Demo 3: Fútbol primero, luego Padel
+            canchasOrdenadas = canchasOrdenadas.sort((a, b) => {
+                if (a.tipo !== b.tipo) {
+                    return a.tipo === 'futbol' ? -1 : 1;
+                }
+                const numeroA = parseInt(a.nombre.match(/\d+/)[0]);
+                const numeroB = parseInt(b.nombre.match(/\d+/)[0]);
+                return numeroA - numeroB;
+            });
         }
         
-        // Verificar disponibilidad para cada cancha
-        for (const cancha of canchasOrdenadas) {
+        // Renderizado especial para Complejo Demo 3
+        if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
+            console.log('🎨 Renderizando Complejo Demo 3 con distribución especial...');
+            
+            // Crear estructura de 2 filas
+            const filaSuperior = document.createElement('div');
+            filaSuperior.className = 'demo3-fila-superior';
+            filaSuperior.style.display = 'flex';
+            filaSuperior.style.gap = '20px';
+            filaSuperior.style.marginBottom = '20px';
+            filaSuperior.style.justifyContent = 'space-between';
+            
+            const filaInferior = document.createElement('div');
+            filaInferior.className = 'demo3-fila-inferior';
+            filaInferior.style.display = 'flex';
+            filaInferior.style.gap = '20px';
+            filaInferior.style.justifyContent = 'space-between';
+            
+            // Separar canchas por tipo
+            const canchasFutbol = canchasOrdenadas.filter(c => c.tipo === 'futbol');
+            const canchasPadel = canchasOrdenadas.filter(c => c.tipo === 'padel');
+            
+            // Fila superior: Cancha 1 Fútbol, Cancha 2 Fútbol, Cancha 1 Padel
+            for (let i = 0; i < 2; i++) {
+                if (canchasFutbol[i]) {
+                    const canchaCard = await crearCanchaCard(canchasFutbol[i], fecha, hora);
+                    filaSuperior.appendChild(canchaCard);
+                }
+            }
+            if (canchasPadel[0]) {
+                const canchaCard = await crearCanchaCard(canchasPadel[0], fecha, hora);
+                filaSuperior.appendChild(canchaCard);
+            }
+            
+            // Fila inferior: Cancha 3 Fútbol (más grande), Cancha 2 Padel
+            if (canchasFutbol[2]) {
+                const canchaCard = await crearCanchaCard(canchasFutbol[2], fecha, hora);
+                canchaCard.style.flex = '2'; // Hacer más grande
+                filaInferior.appendChild(canchaCard);
+            }
+            if (canchasPadel[1]) {
+                const canchaCard = await crearCanchaCard(canchasPadel[1], fecha, hora);
+                filaInferior.appendChild(canchaCard);
+            }
+            
+            canchasHorizontales.appendChild(filaSuperior);
+            canchasHorizontales.appendChild(filaInferior);
+        } else {
+            // Renderizado normal para otros complejos
+            for (const cancha of canchasOrdenadas) {
+                const canchaCard = await crearCanchaCard(cancha, fecha, hora);
+                canchasHorizontales.appendChild(canchaCard);
+            }
+        }
+        
+        // Función auxiliar para crear tarjetas de cancha
+        async function crearCanchaCard(cancha, fecha, hora) {
             const canchaCard = document.createElement('div');
             canchaCard.dataset.canchaId = cancha.id;
             canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
@@ -3400,7 +3478,11 @@ async function renderizarCanchasConDisponibilidad() {
             
             // Determinar descripción de cancha y jugadores según el complejo
             const descripcionCancha = esTechado ? 'Techada' : 'Al aire libre';
-            const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' ? '5 jugadores por equipo' : '7 jugadores por equipo';
+            const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' ? '5 jugadores por equipo' : 
+                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' && cancha.nombre === 'Cancha 3' ? '11 jugadores por equipo' :
+                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' ? '7 jugadores por equipo' :
+                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'padel' ? '2 jugadores por equipo' :
+                                     '7 jugadores por equipo';
             
             // Construir HTML del precio (con promoción si aplica)
             let precioHTML = '';
@@ -3431,7 +3513,8 @@ async function renderizarCanchasConDisponibilidad() {
             `;
             
             canchaCard.addEventListener('click', () => seleccionarCancha(cancha));
-            canchasHorizontales.appendChild(canchaCard);
+            
+            return canchaCard;
         }
         
         // Agregar estacionamientos solo para Fundación Gunnen (no para Espacio Deportivo Borde Río porque desconocemos)
