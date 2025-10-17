@@ -3454,7 +3454,7 @@ async function renderizarCanchasConDisponibilidad() {
             canchaCard.dataset.canchaId = cancha.id;
             canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
             
-            const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+            const iconClass = cancha.tipo === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
             
             // Verificar disponibilidad si hay fecha y hora
             let estaDisponible = true;
@@ -3606,7 +3606,7 @@ async function renderizarCanchasConDisponibilidad() {
             canchaCard.dataset.canchaId = cancha.id;
             canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
             
-            const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+            const iconClass = cancha.tipo === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
             
             // Verificar disponibilidad si hay fecha y hora
             let estaDisponible = true;
@@ -3725,7 +3725,7 @@ async function renderizarCanchasConDisponibilidad() {
              canchaCard.dataset.canchaId = cancha.id;
              canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
              
-             const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+             const iconClass = cancha.tipo === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
              
              canchaCard.innerHTML = `
                  <div class="cancha-icon">
@@ -3759,7 +3759,7 @@ async function renderizarCanchasConDisponibilidad() {
              canchaCard.dataset.canchaId = cancha.id;
              canchaCard.dataset.precio = cancha.precio_actual || cancha.precio_hora;
              
-             const iconClass = tipoCanchaSeleccionado === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
+             const iconClass = cancha.tipo === 'futbol' ? 'fa-futbol' : 'fa-table-tennis';
              
              canchaCard.innerHTML = `
                  <div class="cancha-icon">
