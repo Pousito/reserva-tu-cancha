@@ -50,7 +50,29 @@
 
 /* Cancha grande (fútbol 11) */
 .demo3-futbol-grande .cancha-card {
-    min-height: 180px;
+    min-height: 200px;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+    border: 3px solid #28a745;
+    position: relative;
+}
+
+.demo3-futbol-grande .cancha-card::before {
+    content: "FÚTBOL 11";
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #28a745;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 10;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-icon i {
+    font-size: 3rem !important;
+    color: #28a745 !important;
 }
 
 /* Canchas de padel */

@@ -19,7 +19,7 @@
 - **Ciudad**: Los Ángeles (ID: 1)
 
 #### **3. Complejo Demo 3**
-- **ID**: 1
+- **ID**: 8
 - **Dirección**: Av. Los Robles 2450, Los Ángeles
 - **Teléfono**: +56912345678
 - **Email**: info@demo3.cl
@@ -48,23 +48,23 @@
   - Número: 2
 
 #### **Complejo Demo 3 (5 canchas):**
-- **Cancha 1** (ID: 1)
+- **Cancha 1** (ID: 6)
   - Tipo: Fútbol
   - Precio: $12,000/hora
   - Jugadores: 7 por equipo
-- **Cancha 2** (ID: 2)
+- **Cancha 2** (ID: 7)
   - Tipo: Fútbol
   - Precio: $12,000/hora
   - Jugadores: 7 por equipo
-- **Cancha 3** (ID: 3)
+- **Cancha 3** (ID: 8)
   - Tipo: Fútbol
   - Precio: $15,000/hora
   - Jugadores: 11 por equipo
-- **Cancha 1** (ID: 4)
+- **Cancha 1** (ID: 9)
   - Tipo: Padel
   - Precio: $10,000/hora
   - Jugadores: 2 por equipo
-- **Cancha 2** (ID: 5)
+- **Cancha 2** (ID: 10)
   - Tipo: Padel
   - Precio: $10,000/hora
   - Jugadores: 2 por equipo
@@ -104,13 +104,13 @@
   - Email: `owner@demo3.cl`
   - Nombre: "Dueño Complejo Demo 3"
   - Rol: `owner`
-  - Complejo_id: `1` ✅
+  - Complejo_id: `8` ✅
 
 - **Manager**:
   - Email: `manager@demo3.cl`
   - Nombre: "Manager Complejo Demo 3"
   - Rol: `manager` ✅
-  - Complejo_id: `1` ✅
+  - Complejo_id: `8` ✅
 
 #### **🌐 SUPER ADMIN:**
 - **Super Administrador**:
