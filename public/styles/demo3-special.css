@@ -65,7 +65,8 @@
     align-items: center;
     justify-content: space-around;
     padding: 15px 30px;
-    aspect-ratio: 3/1; /* Hace que sea 3 veces más ancha que alta */
+    aspect-ratio: 3/1 !important; /* Hace que sea 3 veces más ancha que alta */
+    width: 100% !important;
 }
 
 .demo3-futbol-grande .cancha-card::before {

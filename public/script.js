@@ -3367,9 +3367,8 @@ async function renderizarCanchasConDisponibilidad() {
             const demo3Container = document.createElement('div');
             demo3Container.className = 'demo3-container';
             
-            // Separar canchas por tipo y orden
-            const canchasFutbol = canchasOrdenadas.filter(c => c.tipo === 'futbol');
-            const canchasPadel = canchasOrdenadas.filter(c => c.tipo === 'padel');
+            // Mostrar TODAS las canchas (fútbol y padel)
+            console.log('📊 Canchas a renderizar:', canchasOrdenadas.map(c => `${c.nombre} (${c.tipo})`));
             
             // Crear contenedores específicos para cada posición
             const futbolIzquierda = document.createElement('div');
