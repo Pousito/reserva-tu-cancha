@@ -3537,19 +3537,41 @@ async function renderizarCanchasConDisponibilidad() {
             const tipoIndicator = complejoSeleccionado.nombre === 'Complejo Demo 3' ? 
                 `<div class="tipo-indicator">${cancha.tipo === 'futbol' ? 'FÚTBOL' : 'PADEL'}</div>` : '';
             
-            canchaCard.innerHTML = `
-                ${tipoIndicator}
-                <div class="cancha-icon">
-                    <i class="fas ${iconClass}"></i>
-                </div>
-                <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
-                ${precioHTML}
-                ${esTechado ? '<p class="text-info small"><i class="fas fa-home me-1"></i>Techada</p>' : ''}
-                <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>
-                <div class="estado-disponibilidad">
-                    ${estadoBadge}
-                </div>
-            `;
+            // HTML especial para Cancha 3 (horizontal) en Complejo Demo 3
+            if (complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.nombre === 'Cancha 3') {
+                canchaCard.innerHTML = `
+                    ${tipoIndicator}
+                    <div class="cancha-icon">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="cancha-info">
+                        <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
+                        <div class="precio">$${formatCurrencyChile(cancha.precio_actual || cancha.precio_hora)} por hora</div>
+                        <div class="jugadores-info">
+                            <i class="fas fa-users"></i>
+                            <span>${jugadoresPorEquipo}</span>
+                        </div>
+                    </div>
+                    <div class="estado-disponibilidad">
+                        ${estadoBadge}
+                    </div>
+                `;
+            } else {
+                // HTML normal para otras canchas
+                canchaCard.innerHTML = `
+                    ${tipoIndicator}
+                    <div class="cancha-icon">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
+                    ${precioHTML}
+                    ${esTechado ? '<p class="text-info small"><i class="fas fa-home me-1"></i>Techada</p>' : ''}
+                    <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>
+                    <div class="estado-disponibilidad">
+                        ${estadoBadge}
+                    </div>
+                `;
+            }
             
             canchaCard.addEventListener('click', () => {
                 // Solo permitir selección si no está en gris

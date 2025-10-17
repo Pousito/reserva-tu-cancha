@@ -99,29 +99,77 @@
     box-sizing: border-box;
 }
 
-.demo3-futbol-grande .cancha-card .cancha-info {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 20px;
-}
-
-.demo3-futbol-grande .cancha-card .cancha-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    flex: 1;
+/* Layout interno mejorado para Cancha 3 */
+.demo3-futbol-grande .cancha-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 20px 30px !important;
+    gap: 30px !important;
 }
 
 .demo3-futbol-grande .cancha-card .cancha-icon {
     flex-shrink: 0;
-    margin: 0 20px;
+    margin: 0;
+    order: 1;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+    order: 2;
+    gap: 8px;
+    min-width: 0;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info h5 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #155724;
+    white-space: nowrap;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info .precio {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info .jugadores-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info .jugadores-info i {
+    font-size: 1rem;
+    color: #007bff;
+}
+
+.demo3-futbol-grande .cancha-card .cancha-info .jugadores-info span {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #495057;
 }
 
 .demo3-futbol-grande .cancha-card .estado-disponibilidad {
     flex-shrink: 0;
+    order: 3;
+    margin: 0;
+}
+
+.demo3-futbol-grande .cancha-card .estado-disponibilidad .badge {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    white-space: nowrap;
 }
 
 /* Canchas de padel */
