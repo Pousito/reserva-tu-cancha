@@ -61,7 +61,6 @@
     "test-complete-date-fix": "node scripts/test-complete-date-fix.js",
     "keep-alive": "node scripts/keep-alive.js",
     "export-render-data": "node scripts/export-render-data.js",
-    "migrate-to-neon": "node scripts/migrate-to-neon.js",
     "configure-chatbot": "node scripts/configure-chatbot.js",
     "check-prod-transbank": "node scripts/diagnostic/check-production-transbank.js",
     "update-prices-5000": "node scripts/update-prices-5000.js",
