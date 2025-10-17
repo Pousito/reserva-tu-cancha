@@ -3538,6 +3538,7 @@ async function renderizarCanchasConDisponibilidad() {
                 `<div class="tipo-indicator">${cancha.tipo === 'futbol' ? 'FÚTBOL' : 'PADEL'}</div>` : '';
             
             // HTML especial para Cancha 3 (horizontal) en Complejo Demo 3
+            console.log('🔍 DEBUG: complejoSeleccionado.nombre =', complejoSeleccionado.nombre, 'cancha.nombre =', cancha.nombre);
             if (complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.nombre === 'Cancha 3') {
                 canchaCard.innerHTML = `
                     <div class="cancha-icon">
