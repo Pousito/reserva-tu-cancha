@@ -3559,6 +3559,9 @@ async function renderizarCanchasConDisponibilidad() {
                 canchaCard.style.alignItems = 'center';
                 canchaCard.style.width = '100%';
                 canchaCard.style.height = '100%';
+                
+                // FORZAR ACTUALIZACIÓN - CAMBIO v4.1
+                console.log('🎯 Cancha 3 HTML actualizado con descripción idéntica:', canchaCard.innerHTML);
             } else {
                 // HTML normal para otras canchas
                 canchaCard.innerHTML = `
