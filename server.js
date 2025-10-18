@@ -8086,6 +8086,55 @@ app.get('/api/admin/create-demo3-users', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA ACTUALIZAR CONTRASEÑAS DE USUARIOS DEMO 3 =====
+app.get('/api/admin/update-demo3-passwords', async (req, res) => {
+  try {
+    console.log('🔐 Actualizando contraseñas de usuarios Demo 3...');
+    
+    // Hashear las contraseñas
+    const ownerPassword = await bcrypt.hash('Owner1234!', 12);
+    const managerPassword = await bcrypt.hash('Manager1234!', 12);
+    
+    // Actualizar contraseña del owner
+    await db.run(
+      'UPDATE usuarios SET password = $1 WHERE email = $2',
+      [ownerPassword, 'owner@complejodemo3.cl']
+    );
+    console.log('✅ Contraseña del owner actualizada');
+    
+    // Actualizar contraseña del manager
+    await db.run(
+      'UPDATE usuarios SET password = $1 WHERE email = $2',
+      [managerPassword, 'manager@complejodemo3.cl']
+    );
+    console.log('✅ Contraseña del manager actualizada');
+    
+    // Verificar usuarios actualizados
+    const users = await db.query(
+      'SELECT email, rol, nombre, activo FROM usuarios WHERE email IN ($1, $2) ORDER BY rol, email',
+      ['owner@complejodemo3.cl', 'manager@complejodemo3.cl']
+    );
+    
+    res.json({
+      success: true,
+      message: 'Contraseñas de usuarios Demo 3 actualizadas exitosamente',
+      users: users,
+      credentials: {
+        owner: 'owner@complejodemo3.cl / Owner1234!',
+        manager: 'manager@complejodemo3.cl / Manager1234!'
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error actualizando contraseñas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error actualizando contraseñas de usuarios Demo 3',
+      error: error.message
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
