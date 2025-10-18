@@ -8001,15 +8001,14 @@ app.post('/api/admin/create-demo3-users', async (req, res) => {
     } else {
       console.log('👤 Creando usuario Owner...');
       await db.run(`
-        INSERT INTO usuarios (email, password, rol, complejo_id, nombre, telefono, activo, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+        INSERT INTO usuarios (email, password, rol, complejo_id, nombre, activo, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
       `, [
         ownerEmail,
         ownerPassword, // En producción esto debería estar hasheado
         'owner',
         complejoId,
         'Owner Complejo Demo 3',
-        '+56912345678',
         true
       ]);
       console.log(`✅ Usuario Owner creado: ${ownerEmail}`);
@@ -8027,15 +8026,14 @@ app.post('/api/admin/create-demo3-users', async (req, res) => {
     } else {
       console.log('👤 Creando usuario Manager...');
       await db.run(`
-        INSERT INTO usuarios (email, password, rol, complejo_id, nombre, telefono, activo, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+        INSERT INTO usuarios (email, password, rol, complejo_id, nombre, activo, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
       `, [
         managerEmail,
         managerPassword, // En producción esto debería estar hasheado
         'manager',
         complejoId,
         'Manager Complejo Demo 3',
-        '+56987654321',
         true
       ]);
       console.log(`✅ Usuario Manager creado: ${managerEmail}`);
