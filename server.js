@@ -8216,6 +8216,32 @@ app.get('/api/admin/limpiar-bloqueos-demo3', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT DE PRUEBA PARA VERIFICAR AUTENTICACIÓN =====
+app.get('/api/admin/test-auth', authenticateToken, (req, res) => {
+  try {
+    console.log('🔐 Prueba de autenticación...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol, 'Complejo:', req.user.complejo_id);
+    
+    res.json({
+      success: true,
+      message: 'Autenticación exitosa',
+      user: {
+        email: req.user.email,
+        rol: req.user.rol,
+        complejo_id: req.user.complejo_id
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error en prueba de autenticación:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en prueba de autenticación',
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA LIMPIAR BLOQUEOS PROBLEMÁTICOS EN PRODUCCIÓN =====
 app.get('/api/admin/limpiar-bloqueos-produccion', async (req, res) => {
   try {
