@@ -8225,6 +8225,98 @@ app.get('/api/admin/limpiar-bloqueos-demo3', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA CORREGIR IDs DUPLICADOS DE CANCHAS =====
+app.get('/api/admin/corregir-ids-duplicados', async (req, res) => {
+  try {
+    console.log('🔧 Corrigiendo IDs duplicados de canchas...');
+    
+    // 1. Verificar IDs duplicados
+    const idsDuplicados = await db.query(`
+      SELECT id, COUNT(*) as count 
+      FROM canchas 
+      GROUP BY id 
+      HAVING COUNT(*) > 1
+    `);
+
+    console.log(`🔍 IDs duplicados encontrados: ${idsDuplicados.length}`);
+    
+    if (idsDuplicados.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No hay IDs duplicados en canchas',
+        idsDuplicados: 0
+      });
+    }
+
+    // 2. Mostrar detalles de los IDs duplicados
+    const detallesDuplicados = [];
+    for (const dup of idsDuplicados) {
+      const canchas = await db.query(`
+        SELECT c.id, c.nombre, c.tipo, c.complejo_id, co.nombre as complejo_nombre 
+        FROM canchas c 
+        JOIN complejos co ON c.complejo_id = co.id 
+        WHERE c.id = $1 
+        ORDER BY c.complejo_id
+      `, [dup.id]);
+      
+      detallesDuplicados.push({
+        id: dup.id,
+        count: dup.count,
+        canchas: canchas
+      });
+    }
+
+    // 3. Corregir IDs duplicados del Complejo Demo 3
+    let canchasCorregidas = 0;
+    const correcciones = [];
+    
+    for (const dup of detallesDuplicados) {
+      if (dup.id === 6) { // ID duplicado específico
+        // Buscar la cancha del Complejo Demo 3 (ID 8)
+        const canchaDemo3 = dup.canchas.find(c => c.complejo_id === 8);
+        if (canchaDemo3) {
+          // Asignar nuevo ID único (11)
+          await db.run('UPDATE canchas SET id = $1 WHERE id = $2 AND complejo_id = $3', [11, 6, 8]);
+          canchasCorregidas++;
+          correcciones.push({
+            cancha: canchaDemo3.nombre,
+            complejo: canchaDemo3.complejo_nombre,
+            id_anterior: 6,
+            id_nuevo: 11
+          });
+          console.log(`✅ Cancha "${canchaDemo3.nombre}" del ${canchaDemo3.complejo_nombre} actualizada: ID ${6} → ${11}`);
+        }
+      }
+    }
+
+    // 4. Verificar IDs duplicados restantes
+    const idsDuplicadosRestantes = await db.query(`
+      SELECT id, COUNT(*) as count 
+      FROM canchas 
+      GROUP BY id 
+      HAVING COUNT(*) > 1
+    `);
+
+    res.json({
+      success: true,
+      message: 'Corrección de IDs duplicados completada',
+      idsDuplicadosIniciales: idsDuplicados.length,
+      canchasCorregidas: canchasCorregidas,
+      correcciones: correcciones,
+      idsDuplicadosRestantes: idsDuplicadosRestantes.length,
+      detallesDuplicadosRestantes: idsDuplicadosRestantes
+    });
+
+  } catch (error) {
+    console.error('❌ Error corrigiendo IDs duplicados:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error corrigiendo IDs duplicados',
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT PARA LIMPIAR BLOQUEOS PROBLEMÁTICOS EN PRODUCCIÓN =====
 app.get('/api/admin/limpiar-bloqueos-produccion', async (req, res) => {
   try {
