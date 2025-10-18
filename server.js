@@ -8303,6 +8303,74 @@ app.get('/api/admin/test-auth', authenticateToken, (req, res) => {
   }
 });
 
+// ===== ENDPOINT DE DEBUG PARA VERIFICAR PERMISOS DE CANCHAS =====
+app.get('/api/admin/debug-court-permissions/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🔍 Debug de permisos para cancha ID:', id);
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol, 'Complejo ID:', req.user.complejo_id);
+    
+    // Verificar que la cancha existe
+    const canchaExistente = await db.query('SELECT * FROM canchas WHERE id = $1', [id]);
+    if (canchaExistente.length === 0) {
+      return res.status(404).json({ error: 'Cancha no encontrada' });
+    }
+    
+    const cancha = canchaExistente[0];
+    console.log('🏟️ Cancha encontrada:', cancha.nombre, 'Complejo ID:', cancha.complejo_id);
+    
+    // Verificar tipos de datos
+    const userComplejoId = req.user.complejo_id;
+    const canchaComplejoId = cancha.complejo_id;
+    const userComplejoIdType = typeof userComplejoId;
+    const canchaComplejoIdType = typeof canchaComplejoId;
+    
+    console.log('🔍 Tipos de datos:');
+    console.log('   Usuario complejo_id:', userComplejoId, '(' + userComplejoIdType + ')');
+    console.log('   Cancha complejo_id:', canchaComplejoId, '(' + canchaComplejoIdType + ')');
+    
+    // Verificar comparaciones
+    const strictEqual = userComplejoId === canchaComplejoId;
+    const looseEqual = userComplejoId == canchaComplejoId;
+    const parseIntEqual = parseInt(userComplejoId) === parseInt(canchaComplejoId);
+    
+    console.log('🔍 Comparaciones:');
+    console.log('   === (strict):', strictEqual);
+    console.log('   == (loose):', looseEqual);
+    console.log('   parseInt ===:', parseIntEqual);
+    
+    res.json({
+      success: true,
+      message: 'Debug de permisos completado',
+      user: {
+        email: req.user.email,
+        rol: req.user.rol,
+        complejo_id: userComplejoId,
+        complejo_id_type: userComplejoIdType
+      },
+      cancha: {
+        id: cancha.id,
+        nombre: cancha.nombre,
+        complejo_id: canchaComplejoId,
+        complejo_id_type: canchaComplejoIdType
+      },
+      comparisons: {
+        strict_equal: strictEqual,
+        loose_equal: looseEqual,
+        parseInt_equal: parseIntEqual
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Error en debug de permisos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error en debug de permisos',
+      error: error.message
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
