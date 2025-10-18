@@ -1,4 +1,4 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORREGIDO v7.5 - ESPACIADO SUPERIOR MÍNIMO Y SIN SUPERPOSICIÓN */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORREGIDO v7.6 - ESPACIADO SUPERIOR CERO Y ANCHO CANCHA 3 CORREGIDO */
 
     .demo3-container {
         display: grid !important;
@@ -7,15 +7,15 @@
         gap: 15px !important;
         max-width: 1100px !important;
         margin: 0 auto !important;
-        padding: 5px 20px 20px 20px !important;
+        padding: 0px 20px 20px 20px !important;
         background: transparent !important;
         border-radius: 15px !important;
         box-shadow: none !important;
         grid-template-areas: 
             "futbol1 futbol2 padel1"
             "futbol1 futbol2 padel1"
-            "futbol3 futbol3 futbol3"
-            "futbol3 futbol3 futbol3" !important;
+            "futbol3 futbol3 ."
+            "futbol3 futbol3 ." !important;
         position: relative !important;
         z-index: 1 !important;
         width: 100% !important;
@@ -391,7 +391,7 @@
         grid-template-columns: 1fr !important;
         grid-template-rows: 100px 100px 140px 140px !important;
         gap: 15px !important;
-        padding: 5px 20px 20px 20px !important;
+        padding: 0px 20px 20px 20px !important;
         max-width: 95vw !important;
         margin: 0 auto !important;
         min-height: 500px !important;

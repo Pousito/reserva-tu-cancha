@@ -3533,7 +3533,7 @@ async function renderizarCanchasConDisponibilidad() {
             // Determinar descripción de cancha y jugadores según el complejo
             const descripcionCancha = esTechado ? 'Techada' : 'Al aire libre';
             const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' ? '5 jugadores por equipo' : 
-                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' && cancha.nombre === 'Cancha 3' ? '11 jugadores por equipo' :
+                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' && cancha.nombre === 'Cancha 3' ? '7 jugadores por equipo' :
                                      complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' ? '7 jugadores por equipo' :
                                      complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'padel' ? '2 jugadores por equipo' :
                                      '7 jugadores por equipo';
