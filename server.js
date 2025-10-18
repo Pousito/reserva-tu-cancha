@@ -7963,6 +7963,119 @@ app.get('/api/debug/update-magnasports', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA CREAR USUARIOS COMPLEJO DEMO 3 =====
+app.post('/api/admin/create-demo3-users', async (req, res) => {
+  try {
+    console.log('🏟️ Creando usuarios para Complejo Demo 3...');
+    
+    // Verificar que el complejo Demo 3 existe
+    const complejoResult = await db.query('SELECT id, nombre FROM complejos WHERE nombre = $1', ['Complejo Demo 3']);
+    
+    if (complejoResult.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Complejo Demo 3 no encontrado en la base de datos'
+      });
+    }
+
+    const complejoId = complejoResult[0].id;
+    console.log(`✅ Complejo Demo 3 encontrado: ID ${complejoId}`);
+
+    // Verificar si los usuarios ya existen
+    const existingUsers = await db.query(
+      'SELECT email, rol FROM usuarios WHERE email IN ($1, $2)',
+      ['owner@complejodemo3.cl', 'manager@complejodemo3.cl']
+    );
+
+    console.log(`🔍 Usuarios existentes encontrados: ${existingUsers.length}`);
+    const results = [];
+
+    // Crear usuario Owner
+    const ownerEmail = 'owner@complejodemo3.cl';
+    const ownerPassword = 'Owner1234!';
+    const ownerExists = existingUsers.find(u => u.email === ownerEmail);
+
+    if (ownerExists) {
+      console.log(`⚠️ Usuario Owner ya existe: ${ownerEmail}`);
+      results.push({ email: ownerEmail, status: 'already_exists', rol: 'owner' });
+    } else {
+      console.log('👤 Creando usuario Owner...');
+      await db.run(`
+        INSERT INTO usuarios (email, password, rol, complejo_id, nombre, telefono, activo, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      `, [
+        ownerEmail,
+        ownerPassword, // En producción esto debería estar hasheado
+        'owner',
+        complejoId,
+        'Owner Complejo Demo 3',
+        '+56912345678',
+        true
+      ]);
+      console.log(`✅ Usuario Owner creado: ${ownerEmail}`);
+      results.push({ email: ownerEmail, status: 'created', rol: 'owner' });
+    }
+
+    // Crear usuario Manager
+    const managerEmail = 'manager@complejodemo3.cl';
+    const managerPassword = 'Manager1234!';
+    const managerExists = existingUsers.find(u => u.email === managerEmail);
+
+    if (managerExists) {
+      console.log(`⚠️ Usuario Manager ya existe: ${managerEmail}`);
+      results.push({ email: managerEmail, status: 'already_exists', rol: 'manager' });
+    } else {
+      console.log('👤 Creando usuario Manager...');
+      await db.run(`
+        INSERT INTO usuarios (email, password, rol, complejo_id, nombre, telefono, activo, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      `, [
+        managerEmail,
+        managerPassword, // En producción esto debería estar hasheado
+        'manager',
+        complejoId,
+        'Manager Complejo Demo 3',
+        '+56987654321',
+        true
+      ]);
+      console.log(`✅ Usuario Manager creado: ${managerEmail}`);
+      results.push({ email: managerEmail, status: 'created', rol: 'manager' });
+    }
+
+    // Verificar usuarios finales
+    const finalUsers = await db.query(
+      'SELECT email, rol, nombre, activo FROM usuarios WHERE complejo_id = $1 ORDER BY rol, email',
+      [complejoId]
+    );
+
+    console.log(`📊 Total usuarios en Complejo Demo 3: ${finalUsers.length}`);
+
+    res.json({
+      success: true,
+      message: 'Usuarios del Complejo Demo 3 procesados exitosamente',
+      complejo: {
+        id: complejoId,
+        nombre: 'Complejo Demo 3'
+      },
+      results: results,
+      totalUsers: finalUsers.length,
+      users: finalUsers,
+      credentials: {
+        owner: 'owner@complejodemo3.cl / Owner1234!',
+        manager: 'manager@complejodemo3.cl / Manager1234!'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error creando usuarios Demo 3:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creando usuarios del Complejo Demo 3',
+      error: error.message
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
