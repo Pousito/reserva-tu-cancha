@@ -1,4 +1,4 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO COMPLETAMENTE REESTRUCTURADO v8.0 */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO REPLICADO DE IMAGEN v8.1 */
 
 /* Contenedor principal del complejo - DISEÑO LIMPIO */
 .demo3-container {
@@ -6,7 +6,7 @@
     flex-direction: column !important;
     max-width: 1100px !important;
     margin: 0 auto !important;
-    padding: 0px 20px 20px 20px !important;
+    padding: 0px 200px 20px 20px !important; /* Espacio derecho para padel */
     background: transparent !important;
     border-radius: 15px !important;
     box-shadow: none !important;
@@ -24,11 +24,12 @@
     height: 120px !important;
 }
 
-/* Fila inferior: Cancha 3 de fútbol */
+/* Fila inferior: Cancha 3 de fútbol - solo ocupa el espacio de canchas 1 y 2 */
 .demo3-fila-inferior {
     display: flex !important;
     width: 100% !important;
     height: 140px !important;
+    margin-top: 15px !important;
 }
 
 /* Contenedores individuales para cada cancha */
@@ -52,16 +53,20 @@
     max-width: calc(50% - 7.5px) !important;
 }
 
-/* Cancha de padel - más estrecha */
+/* Cancha de padel - más estrecha y alta (ocupa toda la altura) */
 .demo3-padel-superior {
-    flex: 0 0 200px !important;
-    max-width: 200px !important;
+    flex: 0 0 180px !important;
+    max-width: 180px !important;
+    height: 275px !important; /* Altura total: 120px (fila superior) + 140px (fila inferior) + 15px (gap) */
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
 }
 
 /* Cancha 3 de fútbol - ancho completo de las dos canchas de fútbol */
 .demo3-futbol-grande {
     flex: 1 !important;
-    max-width: calc(100% - 200px - 15px) !important; /* Ancho total menos padel y gap */
+    max-width: 100% !important;
 }
 
 /* Estilos base para todas las canchas */
@@ -283,11 +288,18 @@
     
     .demo3-futbol-izquierda,
     .demo3-futbol-derecha,
-    .demo3-padel-superior,
     .demo3-futbol-grande {
         flex: none !important;
         max-width: 100% !important;
         height: 100px !important;
+    }
+    
+    .demo3-padel-superior {
+        position: relative !important;
+        height: 100px !important;
+        max-width: 100% !important;
+        right: auto !important;
+        top: auto !important;
     }
     
     .demo3-futbol-grande .cancha-card {
