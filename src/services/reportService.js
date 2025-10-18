@@ -177,10 +177,12 @@ class ReportService {
         // Intentar cargar logo del complejo
         let logoAdded = false;
         try {
-            // Mapeo de complejos a logos (usando IDs de producción y desarrollo)
+            // Mapeo de complejos a logos
             const logoMap = {
-                6: 'borde-rio.png',  // Desarrollo
-                7: 'borde-rio.png'   // Producción
+                1: 'borde-rio.png',  // Complejo En Desarrollo
+                2: 'borde-rio.png',  // Complejo Demo 1
+                7: 'borde-rio.png',  // Espacio Deportivo Borde Río
+                8: 'demo3-new-life-galilea.png'  // Complejo Demo 3
             };
             
             console.log(`🔍 Buscando logo para complejo ID: ${complex.id}`);

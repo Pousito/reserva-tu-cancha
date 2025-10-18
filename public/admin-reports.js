@@ -1627,10 +1627,10 @@ async function exportToPDF(tableType) {
                 // Mapeo de logos (inline para no depender de script externo)
                 // ID 6: Borde Río (desarrollo), ID 7: Borde Río (producción)
                 const logosMap = {
-                    1: '/images/logos/magnasports.png',
-                    2: '/images/logos/fundacion-gunnen.png',
-                    6: '/images/logos/borde-rio.png',
-                    7: '/images/logos/borde-rio.png'
+                    1: '/images/logos/borde-rio.png',  // Complejo En Desarrollo
+                    2: '/images/logos/borde-rio.png',  // Complejo Demo 1
+                    7: '/images/logos/borde-rio.png',  // Espacio Deportivo Borde Río
+                    8: '/images/logos/demo3-new-life-galilea.png'  // Complejo Demo 3
                 };
                 
                 const logoPath = logosMap[user.complejo_id];

@@ -6,19 +6,24 @@
 const LOGOS_CONFIG = {
     // Mapeo de ID de complejo a nombre de archivo de logo
     1: {
-        nombre: 'MagnaSports',
-        archivo: 'magnasports.png',
-        path: '/images/logos/magnasports.png'
+        nombre: 'Complejo En Desarrollo',
+        archivo: 'borde-rio.png',
+        path: '/images/logos/borde-rio.png'
     },
     2: {
-        nombre: 'Fundación Gunnen',
-        archivo: 'fundacion-gunnen.png',
-        path: '/images/logos/fundacion-gunnen.png'
+        nombre: 'Complejo Demo 1',
+        archivo: 'borde-rio.png',
+        path: '/images/logos/borde-rio.png'
     },
-    6: {
+    7: {
         nombre: 'Espacio Deportivo Borde Río',
         archivo: 'borde-rio.png',
         path: '/images/logos/borde-rio.png'
+    },
+    8: {
+        nombre: 'Complejo Demo 3',
+        archivo: 'demo3-new-life-galilea.png',
+        path: '/images/logos/demo3-new-life-galilea.png'
     }
 };
 
