@@ -8508,14 +8508,13 @@ app.get('/api/admin/crear-categorias-demo3', authenticateToken, async (req, res)
         console.log(`➕ Creando categoría: ${categoria.nombre} (${categoria.tipo})`);
         
         await db.run(`
-          INSERT INTO categorias_gastos (complejo_id, nombre, tipo, descripcion, activa)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO categorias_gastos (complejo_id, nombre, tipo, descripcion)
+          VALUES ($1, $2, $3, $4)
         `, [
           complejoId,
           categoria.nombre,
           categoria.tipo,
-          `Categoría automática para ${categoria.nombre}`,
-          true
+          `Categoría automática para ${categoria.nombre}`
         ]);
         
         categoriasCreadas.push(categoria);
