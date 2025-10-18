@@ -203,22 +203,25 @@ function aplicarDiseñoLimpioDemo3() {
         return;
     }
     
-    // Aplicar estilos al contenedor principal
-    demo3Container.style.cssText = `
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 20px !important;
-        width: 100% !important;
-        min-width: 100% !important;        /* ← FORZAR ancho mínimo */
-        max-width: none !important;        /* ← Sin límite máximo */
-        margin: 0 !important;              /* ← Sin márgenes */
-        padding: 0 !important;             /* ← Sin padding */
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        box-sizing: border-box !important; /* ← Cálculo correcto */
-    `;
+    // Aplicar estilos al contenedor principal (demo3-container-inner)
+    const demo3ContainerInner = demo3Container.querySelector('.demo3-container-inner');
+    if (demo3ContainerInner) {
+        demo3ContainerInner.style.cssText = `
+            display: grid !important;
+            grid-template-areas: "futbol-sup padel" "cancha3 cancha3" !important;
+            grid-template-columns: 2fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 20px !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 auto !important;
+            padding: 20px !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+        `;
+    }
     
     // Aplicar estilos al contenedor padre
     canchasHorizontales.style.cssText = `
@@ -234,18 +237,30 @@ function aplicarDiseñoLimpioDemo3() {
         overflow: visible !important;
     `;
     
-    // Aplicar estilos a las canchas individuales
+    // Aplicar estilos a los contenedores de canchas
+    const futbolSuperiores = demo3Container.querySelector('.demo3-futbol-superiores');
     const futbolIzquierda = demo3Container.querySelector('.demo3-futbol-izquierda');
     const futbolDerecha = demo3Container.querySelector('.demo3-futbol-derecha');
     const padelCancha = demo3Container.querySelector('.demo3-padel-superior');
-    
-    // Estilos para canchas de fútbol
+
+    // Estilos para contenedor de canchas de fútbol superiores
+    if (futbolSuperiores) {
+        futbolSuperiores.style.cssText = `
+            grid-area: futbol-sup !important;
+            display: flex !important;
+            gap: 20px !important;
+            justify-content: space-between !important;
+            align-items: stretch !important;
+        `;
+    }
+
+    // Estilos para canchas de fútbol individuales
     [futbolIzquierda, futbolDerecha].forEach((cancha, index) => {
         if (cancha) {
             cancha.style.cssText = `
-                width: 250px !important;
+                flex: 1 !important;
+                min-width: 0 !important;
                 height: 400px !important;
-                flex-shrink: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
                 justify-content: space-between !important;
@@ -325,16 +340,14 @@ function aplicarDiseñoLimpioDemo3() {
         }
     });
     
-    // Estilos para cancha de padel
+    // Estilos para cancha de pádel (altura similar a canchas de fútbol)
     if (padelCancha) {
         padelCancha.style.cssText = `
-            width: 210px !important;
-            min-width: 210px !important;
-            max-width: 210px !important;
+            grid-area: padel !important;
+            width: 100% !important;
             height: 400px !important;
-            flex: 0 0 210px !important;
-            flex-shrink: 0 !important;
-            flex-grow: 0 !important;
+            min-height: 400px !important;
+            max-height: 400px !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
@@ -351,14 +364,6 @@ function aplicarDiseñoLimpioDemo3() {
             box-sizing: border-box !important;
             position: relative !important;
         `;
-        
-        // Forzar el ancho también en el elemento padre si existe
-        const padelParent = padelCancha.parentElement;
-        if (padelParent) {
-            padelParent.style.width = '210px';
-            padelParent.style.minWidth = '210px';
-            padelParent.style.maxWidth = '210px';
-        }
         
         // Agregar hover effect
         padelCancha.addEventListener('mouseenter', () => {
@@ -438,42 +443,41 @@ function aplicarDiseñoLimpioDemo3() {
         `;
     });
     
-    // Estilos para contenedor de Cancha 3 - Ancho exacto desde borde izquierdo cancha 1 hasta borde derecho cancha 2
+    // Estilos para contenedor de Cancha 3 - Ocupa toda el área del grid
     const contenedorCancha3 = demo3Container.querySelector('.demo3-contenedor-cancha3');
     if (contenedorCancha3) {
         contenedorCancha3.style.cssText = `
-            width: 520px !important; /* ← Ancho exacto: 250px (cancha 1) + 20px (gap) + 250px (cancha 2) */
-            min-width: 520px !important;
-            max-width: 520px !important;
+            grid-area: cancha3 !important;
+            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             display: flex !important;
-            justify-content: center !important;
+            justify-content: stretch !important;
+            align-items: stretch !important;
             box-sizing: border-box !important;
         `;
     }
 
-    // Estilos para Cancha 3 horizontal - Solución definitiva
+    // Estilos para Cancha 3 horizontal - Ocupará todo el ancho disponible
     const canchaHorizontal = demo3Container.querySelector('.demo3-cancha-horizontal');
     if (canchaHorizontal) {
         canchaHorizontal.style.cssText = `
-            width: 100% !important;               /* ← Ancho completo del contenedor */
-            min-width: 100% !important;          /* ← Forzar ancho mínimo */
-            max-width: 100% !important;          /* ← Limitar ancho máximo */
-            min-height: 250px !important;
-            max-height: 300px !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            height: 250px !important;
             display: flex !important;
             flex-direction: row !important;
             justify-content: space-around !important;
             align-items: center !important;
-            padding: 20px 15px !important;        /* ← REDUCIDO: De 30px a 15px */
+            padding: 20px !important;
             gap: 30px !important;
             background: white !important;
             border: 3px solid #2E7D32 !important;
             border-radius: 16px !important;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-            box-sizing: border-box !important;   /* ← Cálculo correcto */
-            margin: 0 !important;                /* ← Sin márgenes */
+            box-sizing: border-box !important;
+            margin: 0 !important;
         `;
         
         // Estilizar sección izquierda
@@ -717,3 +721,84 @@ setTimeout(() => {
     // Re-aplicar colores por deporte después del delay
     aplicarColoresPorDeporte();
 }, 2000);
+
+// Función para forzar layout VERTICAL en móvil
+function forzarLayoutVerticalMovil() {
+    const demo3ContainerInner = document.querySelector('.demo3-container-inner');
+    if (demo3ContainerInner && window.innerWidth <= 768) {
+        console.log('📱 Forzando layout VERTICAL en móvil');
+
+        // FORZAR layout FLEX VERTICAL
+        demo3ContainerInner.style.setProperty('display', 'flex', 'important');
+        demo3ContainerInner.style.setProperty('flex-direction', 'column', 'important');
+        demo3ContainerInner.style.setProperty('gap', '12px', 'important');
+        demo3ContainerInner.style.setProperty('width', '100%', 'important');
+
+        // Forzar canchas superiores en horizontal
+        const futbolSuperiores = document.querySelector('.demo3-canchas-futbol-superiores');
+        if (futbolSuperiores) {
+            futbolSuperiores.style.setProperty('flex-direction', 'row', 'important');
+            futbolSuperiores.style.setProperty('display', 'flex', 'important');
+            futbolSuperiores.style.setProperty('width', '100%', 'important');
+            futbolSuperiores.style.setProperty('order', '1', 'important');
+            console.log('📱 Canchas superiores en fila horizontal');
+        }
+
+        // Canchas de fútbol - 50-50 MÁS COMPACTAS
+        const futbolIzquierda = document.querySelector('.demo3-futbol-izquierda');
+        const futbolDerecha = document.querySelector('.demo3-futbol-derecha');
+        if (futbolIzquierda) {
+            futbolIzquierda.style.setProperty('flex', '1', 'important');
+            futbolIzquierda.style.setProperty('min-width', '0', 'important');
+            futbolIzquierda.style.setProperty('height', window.innerWidth <= 480 ? '150px' : '170px', 'important');
+        }
+        if (futbolDerecha) {
+            futbolDerecha.style.setProperty('flex', '1', 'important');
+            futbolDerecha.style.setProperty('min-width', '0', 'important');
+            futbolDerecha.style.setProperty('height', window.innerWidth <= 480 ? '150px' : '170px', 'important');
+        }
+
+        // Pádel - fila completa MÁS COMPACTA
+        const padelCancha = document.querySelector('.demo3-padel-superior');
+        if (padelCancha) {
+            padelCancha.style.setProperty('width', '100%', 'important');
+            padelCancha.style.setProperty('min-width', '0', 'important');
+            padelCancha.style.setProperty('height', window.innerWidth <= 480 ? '150px' : '170px', 'important');
+            padelCancha.style.setProperty('order', '2', 'important');
+            console.log('📱 Cancha de pádel en fila completa');
+        }
+
+        // Cancha 3 MÁS COMPACTA
+        const contenedorCancha3 = document.querySelector('.demo3-contenedor-cancha3');
+        if (contenedorCancha3) {
+            contenedorCancha3.style.setProperty('width', '100%', 'important');
+            contenedorCancha3.style.setProperty('order', '3', 'important');
+        }
+
+        const cancha3 = document.querySelector('.demo3-cancha-horizontal');
+        if (cancha3) {
+            cancha3.style.setProperty('height', window.innerWidth <= 480 ? '120px' : '140px', 'important');
+            cancha3.style.setProperty('width', '100%', 'important');
+            cancha3.style.setProperty('min-width', '0', 'important');
+        }
+
+        // Contenedor - ancho completo sin scroll
+        const demo3Container = document.querySelector('.demo3-container');
+        if (demo3Container) {
+            demo3Container.style.setProperty('width', '100%', 'important');
+            demo3Container.style.setProperty('max-width', '100%', 'important');
+            demo3Container.style.setProperty('overflow', 'visible', 'important');
+            demo3Container.style.setProperty('box-sizing', 'border-box', 'important');
+            console.log('📱 Contenedor sin scroll - todo visible');
+        }
+
+        console.log('✅ Layout VERTICAL móvil aplicado correctamente');
+    }
+}
+
+// Ejecutar forzado de layout vertical en móvil
+setTimeout(forzarLayoutVerticalMovil, 1000);
+setTimeout(forzarLayoutVerticalMovil, 3000);
+
+// Ejecutar al cambiar tamaño de ventana
+window.addEventListener('resize', forzarLayoutVerticalMovil);
