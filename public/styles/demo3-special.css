@@ -29,7 +29,7 @@
     display: grid;
     grid-template:
         "futbol-sup padel"
-        "cancha3 cancha3" / 2fr 1fr;
+        "cancha3 padel-placeholder" / 2fr 1fr;
     gap: 20px;
     width: 100%;
     max-width: 100%;
@@ -45,11 +45,11 @@
     align-items: stretch;
 }
 
-/* Contenedor específico para Cancha 3 */
+/* Contenedor específico para Cancha 3 - alineado a la izquierda */
 .demo3-contenedor-cancha3 {
     grid-area: cancha3;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
 }
 
@@ -202,6 +202,12 @@
     background: #c82333;
     transform: none;
     box-shadow: none;
+}
+
+/* Estilos para Cancha 3 (horizontal) en desktop */
+.demo3-cancha-horizontal {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 /* Responsive - Diseño VERTICAL */
