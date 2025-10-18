@@ -1729,13 +1729,93 @@ function formatearRUT(rut) {
 // Configurar fecha mínima (hoy) - CORREGIDO PARA ZONA HORARIA DE CHILE
 function configurarFechaMinima() {
     const fechaInput = document.getElementById('fechaSelect');
+    if (!fechaInput) {
+        console.error('❌ No se encontró el elemento fechaSelect');
+        return;
+    }
+    
     // Usar zona horaria de Chile para obtener la fecha correcta
     const hoy = new Date().toLocaleDateString('en-CA', {
         timeZone: 'America/Santiago'
     });
+    
+    // Configurar fecha mínima
     fechaInput.min = hoy;
+    fechaInput.setAttribute('min', hoy);
+    
+    // Establecer fecha por defecto si no hay valor
+    if (!fechaInput.value) {
+        fechaInput.value = hoy;
+    }
+    
+    // Agregar validación adicional para fechas pasadas
+    fechaInput.addEventListener('change', function() {
+        const fechaSeleccionada = this.value;
+        if (fechaSeleccionada && fechaSeleccionada < hoy) {
+            console.warn('⚠️ Fecha pasada seleccionada:', fechaSeleccionada, 'Corrigiendo a:', hoy);
+            this.value = hoy;
+            
+            // Mostrar mensaje de error más amigable
+            const mensaje = document.createElement('div');
+            mensaje.className = 'alert alert-warning alert-dismissible fade show';
+            mensaje.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Fecha no válida:</strong> No puedes seleccionar fechas pasadas. Se ha establecido la fecha de hoy.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Insertar el mensaje después del selector de fecha
+            const container = this.closest('.date-time-selector');
+            if (container) {
+                container.appendChild(mensaje);
+                
+                // Remover el mensaje después de 5 segundos
+                setTimeout(() => {
+                    if (mensaje.parentNode) {
+                        mensaje.remove();
+                    }
+                }, 5000);
+            }
+        }
+    });
+    
+    // Validación adicional en tiempo real
+    fechaInput.addEventListener('input', function() {
+        if (this.value && this.value < hoy) {
+            this.classList.add('fecha-invalida');
+        } else {
+            this.classList.remove('fecha-invalida');
+        }
+    });
+    
     console.log('📅 Fecha mínima configurada:', hoy, 'Zona horaria: America/Santiago');
-    fechaInput.value = hoy;
+    console.log('📅 Fecha actual del input:', fechaInput.value);
+}
+
+// Función para asegurar que los valores se muestren en móvil
+function asegurarValoresVisibles() {
+    const fechaSelect = document.getElementById('fechaSelect');
+    const horaSelect = document.getElementById('horaSelect');
+    
+    if (fechaSelect && fechaSelect.value) {
+        fechaSelect.style.color = '#155724';
+        fechaSelect.style.fontWeight = '700';
+        fechaSelect.style.fontSize = '1.4rem';
+        fechaSelect.style.backgroundColor = '#e8f5e8';
+        fechaSelect.style.borderColor = '#28a745';
+        fechaSelect.style.opacity = '1';
+        fechaSelect.style.visibility = 'visible';
+    }
+    
+    if (horaSelect && horaSelect.value) {
+        horaSelect.style.color = '#155724';
+        horaSelect.style.fontWeight = '700';
+        horaSelect.style.fontSize = '1.4rem';
+        horaSelect.style.backgroundColor = '#e8f5e8';
+        horaSelect.style.borderColor = '#28a745';
+        horaSelect.style.opacity = '1';
+        horaSelect.style.visibility = 'visible';
+    }
 }
 
 // Configurar event listeners
@@ -2024,6 +2104,33 @@ function configurarEventListeners() {
 
     // Filtros de fecha y hora
     document.getElementById('fechaSelect').addEventListener('change', async function() {
+        // Asegurar que la fecha se muestre correctamente en móvil con el nuevo diseño
+        if (this.value) {
+            this.classList.add('fecha-seleccionada');
+            this.style.color = '#155724';
+            this.style.fontWeight = '700';
+            this.style.backgroundColor = '#e8f5e8';
+            this.style.borderColor = '#28a745';
+            
+            // Actualizar el icono personalizado
+            const container = this.closest('.date-time-selector');
+            if (container) {
+                container.style.setProperty('--icon-bg', '#28a745');
+            }
+        } else {
+            this.classList.remove('fecha-seleccionada');
+            this.style.color = '';
+            this.style.fontWeight = '';
+            this.style.backgroundColor = '';
+            this.style.borderColor = '';
+            
+            // Restaurar el icono por defecto
+            const container = this.closest('.date-time-selector');
+            if (container) {
+                container.style.setProperty('--icon-bg', '#667eea');
+            }
+        }
+        
         verificarDisponibilidadTiempoReal();
         await validarHorariosSegunFecha();
         
@@ -2049,6 +2156,33 @@ function configurarEventListeners() {
     document.getElementById('horaSelect').addEventListener('change', async function() {
         const horaSeleccionada = this.value;
         console.log('🕐 Hora seleccionada:', horaSeleccionada);
+        
+        // Asegurar que la hora se muestre correctamente en móvil con el nuevo diseño
+        if (this.value) {
+            this.classList.add('hora-seleccionada');
+            this.style.color = '#155724';
+            this.style.fontWeight = '700';
+            this.style.backgroundColor = '#e8f5e8';
+            this.style.borderColor = '#28a745';
+            
+            // Actualizar el icono personalizado
+            const container = this.closest('.date-time-selector');
+            if (container) {
+                container.style.setProperty('--icon-bg', '#28a745');
+            }
+        } else {
+            this.classList.remove('hora-seleccionada');
+            this.style.color = '';
+            this.style.fontWeight = '';
+            this.style.backgroundColor = '';
+            this.style.borderColor = '';
+            
+            // Restaurar el icono por defecto
+            const container = this.closest('.date-time-selector');
+            if (container) {
+                container.style.setProperty('--icon-bg', '#667eea');
+            }
+        }
         
         verificarDisponibilidadTiempoReal();
         
@@ -3345,13 +3479,13 @@ async function renderizarCanchasConDisponibilidad() {
         if (!esTechado) {
             galponContainer.setAttribute('data-complejo', `COMPLEJO ${complejoSeleccionado.nombre.toUpperCase()}`);
         }
-        
-        // Agregar calle (Monte Perdido, Don Victor o Ruta Q-575)
+
+        // Crear calle (Monte Perdido, Don Victor o Ruta Q-575) - se agregará DESPUÉS del contenedor
         const calle = document.createElement('div');
         calle.className = 'calle-complejo';
         calle.setAttribute('data-calle', nombreCalle);
-        galponContainer.appendChild(calle);
-        
+        // NO agregamos la calle al galponContainer aquí
+
         // Crear contenedor horizontal para las canchas
         const canchasHorizontales = document.createElement('div');
         canchasHorizontales.className = 'canchas-horizontales';
@@ -3386,6 +3520,10 @@ async function renderizarCanchasConDisponibilidad() {
             const demo3Container = document.createElement('div');
             demo3Container.className = 'demo3-container';
             console.log('🎨 Contenedor Demo 3 creado');
+            
+            // Crear contenedor interno para el nuevo diseño móvil
+            const demo3ContainerInner = document.createElement('div');
+            demo3ContainerInner.className = 'demo3-container-inner';
             
             // Mostrar TODAS las canchas (fútbol y padel)
             console.log('📊 Canchas detectadas:', canchasOrdenadas);
@@ -3455,57 +3593,70 @@ async function renderizarCanchasConDisponibilidad() {
                 // Eliminado: Cancha 2 Padel (IDs 10 y 15) - ya no se renderiza
             }
             
-            // Crear contenedor para las canchas superiores
-            const canchasSuperiores = document.createElement('div');
-            canchasSuperiores.className = 'demo3-canchas-superiores';
-            
-            // Agregar las 3 canchas superiores al contenedor
-            console.log('🎨 Agregando canchas superiores...');
-            canchasSuperiores.appendChild(futbolIzquierda);
+            // Crear contenedor para las canchas de fútbol superiores (solo 2)
+            const canchasFutbolSuperiores = document.createElement('div');
+            canchasFutbolSuperiores.className = 'demo3-futbol-superiores';
+
+            // Agregar las 2 canchas de fútbol superiores al contenedor
+            console.log('🎨 Agregando canchas de fútbol superiores...');
+            canchasFutbolSuperiores.appendChild(futbolIzquierda);
             console.log('🎨 futbolIzquierda agregado');
-            canchasSuperiores.appendChild(futbolDerecha);
+            canchasFutbolSuperiores.appendChild(futbolDerecha);
             console.log('🎨 futbolDerecha agregado');
-            canchasSuperiores.appendChild(padelSuperior);
-            console.log('🎨 padelSuperior agregado');
             
             // ORDEN CORRECTO DE AGREGADO:
             console.log('📦 Agregando elementos en orden correcto...');
-            
-            // 1° Canchas superiores
-            demo3Container.appendChild(canchasSuperiores);
-            console.log('✅ Step 1: Canchas superiores agregadas (F1, F2, Pádel)');
-            
+
+            // 1° Canchas de fútbol superiores (F1 y F2)
+            demo3ContainerInner.appendChild(canchasFutbolSuperiores);
+            console.log('✅ Step 1: Canchas de fútbol superiores agregadas (F1, F2)');
+
             // 2° Cancha 3 horizontal - Crear contenedor específico
+            let contenedorCancha3 = null;
             if (cancha3Horizontal) {
                 // Crear contenedor específico para Cancha 3 con ancho exacto
-                const contenedorCancha3 = document.createElement('div');
+                contenedorCancha3 = document.createElement('div');
                 contenedorCancha3.className = 'demo3-contenedor-cancha3';
-                
+
                 // Agregar Cancha 3 al contenedor específico
                 contenedorCancha3.appendChild(cancha3Horizontal);
-                
+
                 // Agregar el contenedor específico al contenedor principal
-                demo3Container.appendChild(contenedorCancha3);
+                demo3ContainerInner.appendChild(contenedorCancha3);
                 console.log('✅ Step 2: Cancha 3 horizontal agregada con contenedor específico');
             } else {
                 console.warn('⚠️ Cancha 3 no fue encontrada');
             }
+
+            // 3° Cancha de pádel al costado (ocupa 2 filas)
+            demo3ContainerInner.appendChild(padelSuperior);
+            console.log('✅ Step 3: Cancha de pádel agregada al costado');
             
-            console.log('🎯 Demo3Container creado:', demo3Container);
-            console.log('✅ CanchasSuperiores tiene hijos:', canchasSuperiores.children.length);
-            console.log('📊 Demo3Container tiene hijos:', demo3Container.children.length);
-            
-            console.log('🎨 Configurando layout con Cancha 3...');
-            
-            // Configurar flex layout (column para 3 arriba + 1 abajo)
-            demo3Container.style.display = 'flex';
-            demo3Container.style.flexDirection = 'column';
-            demo3Container.style.gap = '20px';
-            demo3Container.style.justifyContent = 'center';
-            demo3Container.style.alignItems = 'center';
-            demo3Container.style.width = '100%';
-            demo3Container.style.maxWidth = '600px';
-            console.log('🎨 Layout con Cancha 3 configurado');
+            console.log('🎯 Demo3ContainerInner creado:', demo3ContainerInner);
+            console.log('✅ CanchasFutbolSuperiores tiene hijos:', canchasFutbolSuperiores.children.length);
+            console.log('📊 Demo3ContainerInner tiene hijos:', demo3ContainerInner.children.length);
+
+            console.log('🎨 Configurando layout con Cancha 3 y Pádel al costado...');
+
+            // Configurar CSS Grid layout (2 filas x 2 columnas, con pádel ocupando 2 filas)
+            demo3ContainerInner.style.display = 'grid';
+            demo3ContainerInner.style.gridTemplateAreas = '"futbol-sup padel" "cancha3 padel"';
+            demo3ContainerInner.style.gridTemplateColumns = '2fr 1fr'; // Lado izq más ancho que pádel
+            demo3ContainerInner.style.gridTemplateRows = 'auto auto';
+            demo3ContainerInner.style.gap = '20px';
+            demo3ContainerInner.style.width = '100%';
+            demo3ContainerInner.style.maxWidth = '100%';
+            demo3ContainerInner.style.minHeight = '500px';
+            demo3ContainerInner.style.padding = '20px';
+
+            // Asignar grid areas a los contenedores
+            canchasFutbolSuperiores.style.gridArea = 'futbol-sup';
+            if (contenedorCancha3) {
+                contenedorCancha3.style.gridArea = 'cancha3';
+            }
+            padelSuperior.style.gridArea = 'padel';
+
+            console.log('🎨 CSS Grid layout configurado (2x2 con pádel al costado)');
             
             // Forzar estilos en el contenedor padre para centrar
             canchasHorizontales.style.display = 'flex';
@@ -3513,16 +3664,33 @@ async function renderizarCanchasConDisponibilidad() {
             canchasHorizontales.style.alignItems = 'center';
             canchasHorizontales.style.width = '100%';
             
+            // Agregar el contenedor interno al contenedor principal
+            demo3Container.appendChild(demo3ContainerInner);
+            
+            // Agregar el contenedor principal al DOM
             canchasHorizontales.appendChild(demo3Container);
             console.log('🎨 demo3Container agregado exitosamente');
             
-            // ASEGURAR GAP DESPUÉS DE CARGAR ESTILOS
+            // ===== IMPLEMENTAR ZOOM Y PAN PARA MÓVIL =====
+            if (window.innerWidth <= 768) {
+                console.log('📱 Inicializando zoom y pan para móvil...');
+                inicializarZoomPanDemo3(demo3Container);
+                mostrarIndicadorZoom();
+            }
+            
+            // ASEGURAR GRID DESPUÉS DE CARGAR ESTILOS
             setTimeout(() => {
-                demo3Container.style.gap = '4px';
-                demo3Container.style.columnGap = '4px';
-                demo3Container.style.maxWidth = 'fit-content';
-                demo3Container.style.width = 'fit-content';
-                demo3Container.style.margin = '0 auto';
+                // Aplicar grid al demo3ContainerInner (no al demo3Container)
+                demo3ContainerInner.style.display = 'grid';
+                demo3ContainerInner.style.gridTemplateAreas = '"futbol-sup padel" "cancha3 padel"';
+                demo3ContainerInner.style.gridTemplateColumns = '2fr 1fr';
+                demo3ContainerInner.style.gridTemplateRows = 'auto auto';
+                demo3ContainerInner.style.gap = '20px';
+                demo3ContainerInner.style.maxWidth = '100%';
+                demo3ContainerInner.style.width = '100%';
+                demo3ContainerInner.style.margin = '0 auto';
+                demo3ContainerInner.style.padding = '20px';
+                demo3ContainerInner.style.boxSizing = 'border-box';
                 
                 // Re-aplicar estilos del contenedor padre
                 canchasHorizontales.style.display = 'flex';
@@ -3541,187 +3709,8 @@ async function renderizarCanchasConDisponibilidad() {
                     console.log('🎨 Estilos aplicados a canchas-grid-expanded');
                 }
                 
-                // Forzar estilos específicos en cancha de padel
-                const padelCancha = demo3Container.querySelector('.demo3-padel-superior');
-                if (padelCancha) {
-                    padelCancha.style.width = '80px';
-                    padelCancha.style.maxWidth = '80px';
-                    padelCancha.style.flex = '0 0 80px';
-                    console.log('🎨 Estilos forzados en cancha de padel: 80px');
-                }
-                
-                // DEBUGGING: Ajustar superposición manualmente
-                // Cambia estos valores para mover las canchas:
-                // - Valores positivos: mueven hacia la derecha
-                // - Valores negativos: mueven hacia la izquierda
-                const futbolIzquierda = demo3Container.querySelector('.demo3-futbol-izquierda');
-                const futbolDerecha = demo3Container.querySelector('.demo3-futbol-derecha');
-                
-                if (futbolIzquierda) {
-                    futbolIzquierda.style.transform = 'translateX(0px)'; // Ajustar aquí
-                }
-                if (futbolDerecha) {
-                    futbolDerecha.style.transform = 'translateX(-10px)'; // Ajustar aquí
-                }
-                if (padelCancha) {
-                    padelCancha.style.transform = 'translateX(-20px)'; // Ajustar aquí
-                }
-                
-                console.log('🔧 DEBUGGING: Usa translateX() para ajustar posiciones manualmente');
-                
                 console.log('🎨 Gap re-aplicado después de timeout');
-                
-                // DEBUGGING TARDÍO - DESPUÉS DE APLICAR ESTILOS
-                console.log('🔍 === DEBUGGING TARDÍO ===');
-                const lateStyles = window.getComputedStyle(demo3Container);
-                console.log('🔍 demo3Container computed styles (tardío):');
-                console.log('  - gap:', lateStyles.gap);
-                console.log('  - column-gap:', lateStyles.columnGap);
-                console.log('  - display:', lateStyles.display);
-                console.log('  - flex-direction:', lateStyles.flexDirection);
-                console.log('  - justify-content:', lateStyles.justifyContent);
-                console.log('  - width:', lateStyles.width);
-                console.log('  - margin:', lateStyles.margin);
-                
-        // Debugging de hijos tardío
-        Array.from(demo3Container.children).forEach((child, index) => {
-            console.log(`🔍 Hijo ${index} tardío (${child.className}):`);
-            const childStyles = window.getComputedStyle(child);
-            console.log(`  - width: ${childStyles.width}`);
-            console.log(`  - margin: ${childStyles.margin}`);
-            console.log(`  - padding: ${childStyles.padding}`);
-
-            const rect = child.getBoundingClientRect();
-            console.log(`  - getBoundingClientRect: left=${rect.left}, right=${rect.right}, width=${rect.width}`);
-        });
-        
-        // Calcular ancho total del grupo
-        const totalWidth = Array.from(demo3Container.children).reduce((sum, child) => {
-            const rect = child.getBoundingClientRect();
-            return sum + rect.width;
-        }, 0);
-        const gaps = (demo3Container.children.length - 1) * 4; // 4px por gap
-        const totalGroupWidth = totalWidth + gaps;
-        console.log(`🔍 Ancho total del grupo: ${totalGroupWidth}px (canchas: ${totalWidth}px + gaps: ${gaps}px)`);
-        
-        // Debugging del contenedor padre
-        const canchasHorizontalesRect = canchasHorizontales.getBoundingClientRect();
-        const canchasHorizontalesStyles = window.getComputedStyle(canchasHorizontales);
-        console.log(`🔍 === DEBUGGING CONTENEDOR PADRE ===`);
-        console.log(`🔍 canchasHorizontales width: ${canchasHorizontalesStyles.width}`);
-        console.log(`🔍 canchasHorizontales max-width: ${canchasHorizontalesStyles.maxWidth}`);
-        console.log(`🔍 canchasHorizontales overflow: ${canchasHorizontalesStyles.overflow}`);
-        console.log(`🔍 canchasHorizontales getBoundingClientRect: left=${canchasHorizontalesRect.left}, right=${canchasHorizontalesRect.right}, width=${canchasHorizontalesRect.width}`);
-        
-        // Debugging del contenedor abuelo (si existe)
-        const contenedorAbuelo = canchasHorizontales.parentElement;
-        if (contenedorAbuelo) {
-            const abueloRect = contenedorAbuelo.getBoundingClientRect();
-            const abueloStyles = window.getComputedStyle(contenedorAbuelo);
-            console.log(`🔍 === DEBUGGING CONTENEDOR ABUELO ===`);
-            console.log(`🔍 Abuelo className: ${contenedorAbuelo.className}`);
-            console.log(`🔍 Abuelo width: ${abueloStyles.width}`);
-            console.log(`🔍 Abuelo max-width: ${abueloStyles.maxWidth}`);
-            console.log(`🔍 Abuelo overflow: ${abueloStyles.overflow}`);
-            console.log(`🔍 Abuelo getBoundingClientRect: left=${abueloRect.left}, right=${abueloRect.right}, width=${abueloRect.width}`);
-            console.log(`🔍 === FIN DEBUGGING CONTENEDOR ABUELO ===`);
-        }
-        
-        // Debugging del viewport
-        console.log(`🔍 === DEBUGGING VIEWPORT ===`);
-        console.log(`🔍 window.innerWidth: ${window.innerWidth}`);
-        console.log(`🔍 document.documentElement.clientWidth: ${document.documentElement.clientWidth}`);
-        console.log(`🔍 === FIN DEBUGGING VIEWPORT ===`);
-        
-        console.log(`🔍 === FIN DEBUGGING CONTENEDOR PADRE ===`);
-        
-        // Debugging específico para cancha de padel
-        const padelCanchaDebug = demo3Container.querySelector('.demo3-padel-superior');
-        if (padelCanchaDebug) {
-            const padelStyles = window.getComputedStyle(padelCanchaDebug);
-            const padelRect = padelCanchaDebug.getBoundingClientRect();
-            console.log(`🔍 === DEBUGGING CANCHA PADEL ===`);
-            console.log(`🔍 Padel computed width: ${padelStyles.width}`);
-            console.log(`🔍 Padel computed max-width: ${padelStyles.maxWidth}`);
-            console.log(`🔍 Padel computed flex: ${padelStyles.flex}`);
-            console.log(`🔍 Padel getBoundingClientRect: left=${padelRect.left}, right=${padelRect.right}, width=${padelRect.width}`);
-            console.log(`🔍 Padel container width: ${demo3Container.getBoundingClientRect().width}`);
-            console.log(`🔍 === FIN DEBUGGING PADEL ===`);
-        }
-                
-                // Calcular distancia entre canchas
-                if (demo3Container.children.length >= 2) {
-                    const cancha1 = demo3Container.children[0];
-                    const cancha2 = demo3Container.children[1];
-                    const rect1 = cancha1.getBoundingClientRect();
-                    const rect2 = cancha2.getBoundingClientRect();
-                    const distancia = rect2.left - rect1.right;
-                    console.log(`🔍 Distancia entre Cancha 1 y Cancha 2: ${distancia}px`);
-                }
-                
-                // Verificar si el CSS se está cargando
-                const cssRules = Array.from(document.styleSheets).find(sheet => 
-                    sheet.href && sheet.href.includes('demo3-special.css')
-                );
-                if (cssRules) {
-                    console.log('🔍 CSS demo3-special.css encontrado y cargado');
-                } else {
-                    console.log('⚠️ CSS demo3-special.css NO encontrado');
-                }
-                
-                console.log('🔍 === FIN DEBUGGING TARDÍO ===');
-            }, 500);
-            
-            // DEBUGGING PROFUNDO DEL ESPACIADO
-            console.log('🔍 === DEBUGGING ESPACIADO ===');
-            console.log('🔍 demo3Container children count:', demo3Container.children.length);
-            console.log('🔍 demo3Container computed styles:');
-            const demo3Styles = window.getComputedStyle(demo3Container);
-            console.log('  - display:', demo3Styles.display);
-            console.log('  - flex-direction:', demo3Styles.flexDirection);
-            console.log('  - gap:', demo3Styles.gap);
-            console.log('  - justify-content:', demo3Styles.justifyContent);
-            console.log('  - align-items:', demo3Styles.alignItems);
-            console.log('  - width:', demo3Styles.width);
-            console.log('  - max-width:', demo3Styles.maxWidth);
-            console.log('  - margin:', demo3Styles.margin);
-            console.log('  - padding:', demo3Styles.padding);
-            
-            // Debugging de cada contenedor hijo
-            Array.from(demo3Container.children).forEach((child, index) => {
-                console.log(`🔍 Hijo ${index} (${child.className}):`);
-                const childStyles = window.getComputedStyle(child);
-                console.log(`  - width: ${childStyles.width}`);
-                console.log(`  - height: ${childStyles.height}`);
-                console.log(`  - margin: ${childStyles.margin}`);
-                console.log(`  - margin-left: ${childStyles.marginLeft}`);
-                console.log(`  - margin-right: ${childStyles.marginRight}`);
-                console.log(`  - padding: ${childStyles.padding}`);
-                console.log(`  - padding-left: ${childStyles.paddingLeft}`);
-                console.log(`  - padding-right: ${childStyles.paddingRight}`);
-                console.log(`  - border: ${childStyles.border}`);
-                console.log(`  - border-left: ${childStyles.borderLeft}`);
-                console.log(`  - border-right: ${childStyles.borderRight}`);
-                console.log(`  - flex: ${childStyles.flex}`);
-                console.log(`  - gap: ${childStyles.gap}`);
-                console.log(`  - position: ${childStyles.position}`);
-                console.log(`  - left: ${childStyles.left}`);
-                console.log(`  - right: ${childStyles.right}`);
-                
-                // Calcular posición real
-                const rect = child.getBoundingClientRect();
-                console.log(`  - getBoundingClientRect: left=${rect.left}, right=${rect.right}, width=${rect.width}`);
-            });
-            
-            // Debugging del contenedor padre
-            const parentStyles = window.getComputedStyle(canchasHorizontales);
-            console.log('🔍 canchasHorizontales computed styles:');
-            console.log('  - gap:', parentStyles.gap);
-            console.log('  - margin:', parentStyles.margin);
-            console.log('  - padding:', parentStyles.padding);
-            console.log('  - display:', parentStyles.display);
-            console.log('  - justify-content:', parentStyles.justifyContent);
-            console.log('🔍 === FIN DEBUGGING ===');
+            }, 100);
         } else {
             // Renderizado normal para otros complejos
             for (const cancha of canchasOrdenadas) {
@@ -3893,6 +3882,9 @@ async function renderizarCanchasConDisponibilidad() {
         
         galponContainer.appendChild(canchasHorizontales);
         grid.appendChild(galponContainer);
+
+        // Agregar la calle DESPUÉS del contenedor (fuera y abajo)
+        grid.appendChild(calle);
     } else {
         // Para otros complejos, usar layout estándar
         for (const cancha of canchas) {
@@ -4961,3 +4953,553 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Ejecutar función para asegurar valores visibles después de cargar la página
+setTimeout(() => {
+    asegurarValoresVisibles();
+}, 2000);
+
+// ===== FUNCIONES PARA ZOOM Y PAN EN COMPLEJO DEMO 3 =====
+
+/**
+ * Inicializa el sistema de zoom y pan para el Complejo Demo 3 en dispositivos móviles
+ * @param {HTMLElement} container - El contenedor del complejo Demo 3
+ */
+function inicializarZoomPanDemo3(container) {
+    if (!container) {
+        console.error('❌ No se encontró el contenedor para inicializar zoom y pan');
+        return;
+    }
+    
+    console.log('📱 Inicializando zoom y pan para Complejo Demo 3...');
+    
+    // Variables para el control de zoom y pan
+    let scale = 0.8; // Escala inicial
+    let translateX = 0;
+    let translateY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialTranslateX = 0;
+    let initialTranslateY = 0;
+    
+    // Configurar el contenedor para zoom y pan
+    container.style.transformOrigin = 'center center';
+    container.style.transition = 'transform 0.1s ease-out';
+    container.style.cursor = 'grab';
+    container.style.userSelect = 'none';
+    container.style.webkitUserSelect = 'none';
+    container.style.mozUserSelect = 'none';
+    container.style.msUserSelect = 'none';
+    
+    // Función para aplicar transformaciones
+    function aplicarTransformacion() {
+        container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+    
+    // Función para limitar el pan dentro de límites razonables
+    function limitarPan() {
+        const maxTranslateX = 100;
+        const maxTranslateY = 100;
+        
+        translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX));
+        translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY));
+    }
+    
+    // Eventos de mouse para desktop
+    container.addEventListener('mousedown', function(e) {
+        if (e.button === 0) { // Solo botón izquierdo
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialTranslateX = translateX;
+            initialTranslateY = translateY;
+            container.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            translateX = initialTranslateX + deltaX;
+            translateY = initialTranslateY + deltaY;
+            
+            limitarPan();
+            aplicarTransformacion();
+        }
+    });
+    
+    document.addEventListener('mouseup', function() {
+        if (isDragging) {
+            isDragging = false;
+            container.style.cursor = 'grab';
+        }
+    });
+    
+    // Eventos táctiles para móvil
+    container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) {
+            // Un dedo - pan
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            initialTranslateX = translateX;
+            initialTranslateY = translateY;
+            e.preventDefault();
+        } else if (e.touches.length === 2) {
+            // Dos dedos - zoom
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    container.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 1 && isDragging) {
+            // Un dedo - pan
+            const deltaX = e.touches[0].clientX - startX;
+            const deltaY = e.touches[0].clientY - startY;
+            
+            translateX = initialTranslateX + deltaX;
+            translateY = initialTranslateY + deltaY;
+            
+            limitarPan();
+            aplicarTransformacion();
+            e.preventDefault();
+        } else if (e.touches.length === 2) {
+            // Dos dedos - zoom
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    container.addEventListener('touchend', function(e) {
+        if (e.touches.length === 0) {
+            isDragging = false;
+        }
+    });
+    
+    // Zoom con rueda del mouse
+    container.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        scale = Math.max(0.5, Math.min(1.5, scale + delta));
+        
+        aplicarTransformacion();
+    }, { passive: false });
+    
+    // Botones de control de zoom (opcional)
+    crearControlesZoom(container, scale, aplicarTransformacion);
+    
+    // Aplicar transformación inicial
+    aplicarTransformacion();
+    
+    console.log('✅ Zoom y pan inicializado correctamente');
+}
+
+/**
+ * Crea controles de zoom para el complejo Demo 3
+ * @param {HTMLElement} container - El contenedor del complejo
+ * @param {number} currentScale - La escala actual
+ * @param {Function} aplicarTransformacion - Función para aplicar transformaciones
+ */
+function crearControlesZoom(container, currentScale, aplicarTransformacion) {
+    // Solo crear controles en móvil
+    if (window.innerWidth > 768) return;
+    
+    // Crear contenedor de controles
+    const controlesContainer = document.createElement('div');
+    controlesContainer.className = 'demo3-zoom-controls';
+    controlesContainer.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    `;
+    
+    // Botón zoom in
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.innerHTML = '+';
+    zoomInBtn.style.cssText = `
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: none;
+        background: #667eea;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: all 0.2s ease;
+    `;
+    
+    // Botón zoom out
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.innerHTML = '−';
+    zoomOutBtn.style.cssText = zoomInBtn.style.cssText;
+    
+    // Botón reset
+    const resetBtn = document.createElement('button');
+    resetBtn.innerHTML = '⌂';
+    resetBtn.style.cssText = zoomInBtn.style.cssText;
+    resetBtn.style.fontSize = '20px';
+    
+    // Eventos de los botones
+    zoomInBtn.addEventListener('click', function() {
+        currentScale = Math.min(1.5, currentScale + 0.1);
+        aplicarTransformacion();
+    });
+    
+    zoomOutBtn.addEventListener('click', function() {
+        currentScale = Math.max(0.5, currentScale - 0.1);
+        aplicarTransformacion();
+    });
+    
+    resetBtn.addEventListener('click', function() {
+        currentScale = 0.8;
+        translateX = 0;
+        translateY = 0;
+        aplicarTransformacion();
+    });
+    
+    // Agregar botones al contenedor
+    controlesContainer.appendChild(zoomInBtn);
+    controlesContainer.appendChild(zoomOutBtn);
+    controlesContainer.appendChild(resetBtn);
+    
+    // Agregar al body
+    document.body.appendChild(controlesContainer);
+    
+    // Remover controles cuando se cambie de complejo
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                const demo3Container = document.querySelector('.demo3-container');
+                if (!demo3Container) {
+                    controlesContainer.remove();
+                    observer.disconnect();
+                }
+            }
+        });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+/**
+ * Inicializa zoom y pan para el complejo Demo 3 en móvil
+ */
+function inicializarZoomPanDemo3(container) {
+    // Solo en móvil
+    if (window.innerWidth > 768) return;
+    
+    console.log('📱 Inicializando zoom y pan para Demo 3...');
+    
+    let scale = 0.8;
+    let translateX = 0;
+    let translateY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialTranslateX = 0;
+    let initialTranslateY = 0;
+    
+    // Configurar estilos iniciales
+    container.style.transformOrigin = 'center center';
+    container.style.transition = 'transform 0.1s ease-out';
+    container.style.cursor = 'grab';
+    container.style.userSelect = 'none';
+    
+    function aplicarTransformacion() {
+        container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+    
+    function limitarPan() {
+        const rect = container.getBoundingClientRect();
+        const containerWidth = rect.width * scale;
+        const containerHeight = rect.height * scale;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        const maxTranslateX = Math.max(0, (containerWidth - viewportWidth) / 2);
+        const maxTranslateY = Math.max(0, (containerHeight - viewportHeight) / 2);
+        
+        translateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, translateX));
+        translateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, translateY));
+    }
+    
+    // Eventos de mouse (desktop)
+    container.addEventListener('mousedown', (e) => {
+        if (window.innerWidth <= 768) return;
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        container.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging || window.innerWidth <= 768) return;
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        limitarPan();
+        aplicarTransformacion();
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (window.innerWidth <= 768) return;
+        isDragging = false;
+        container.style.cursor = 'grab';
+    });
+    
+    // Eventos táctiles (móvil)
+    container.addEventListener('touchstart', (e) => {
+        if (window.innerWidth > 768) return;
+        e.preventDefault();
+        
+        if (e.touches.length === 1) {
+            // Pan con un dedo
+            isDragging = true;
+            startX = e.touches[0].clientX - translateX;
+            startY = e.touches[0].clientY - translateY;
+            initialTranslateX = translateX;
+            initialTranslateY = translateY;
+        } else if (e.touches.length === 2) {
+            // Zoom con dos dedos
+            isDragging = false;
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            container.initialDistance = distance;
+            container.initialScale = scale;
+        }
+    });
+    
+    container.addEventListener('touchmove', (e) => {
+        if (window.innerWidth > 768) return;
+        e.preventDefault();
+        
+        if (e.touches.length === 1 && isDragging) {
+            // Pan
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            limitarPan();
+            aplicarTransformacion();
+        } else if (e.touches.length === 2) {
+            // Zoom
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            
+            if (container.initialDistance) {
+                const scaleChange = distance / container.initialDistance;
+                scale = Math.max(0.5, Math.min(2, container.initialScale * scaleChange));
+                limitarPan();
+                aplicarTransformacion();
+            }
+        }
+    });
+    
+    container.addEventListener('touchend', (e) => {
+        if (window.innerWidth > 768) return;
+        isDragging = false;
+        container.initialDistance = null;
+    });
+    
+    // Zoom con rueda del mouse (desktop)
+    container.addEventListener('wheel', (e) => {
+        if (window.innerWidth <= 768) return;
+        e.preventDefault();
+        
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        scale = Math.max(0.5, Math.min(2, scale * delta));
+        limitarPan();
+        aplicarTransformacion();
+    });
+    
+    // Crear controles de zoom
+    crearControlesZoom(container, scale, aplicarTransformacion);
+    
+    // Aplicar transformación inicial
+    aplicarTransformacion();
+}
+
+/**
+ * Crea controles de zoom para el complejo Demo 3
+ */
+function crearControlesZoom(container, currentScale, aplicarTransformacion) {
+    // Solo en móvil
+    if (window.innerWidth > 768) return;
+    
+    // Crear botón de zoom in
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.innerHTML = '<i class="fas fa-plus"></i>';
+    zoomInBtn.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    `;
+    
+    // Crear botón de zoom out
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.innerHTML = '<i class="fas fa-minus"></i>';
+    zoomOutBtn.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    `;
+    
+    // Crear botón de reset
+    const resetBtn = document.createElement('button');
+    resetBtn.innerHTML = '<i class="fas fa-home"></i>';
+    resetBtn.style.cssText = `
+        position: fixed;
+        top: 140px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(156, 39, 176, 0.9);
+        color: white;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    `;
+    
+    // Event listeners
+    zoomInBtn.addEventListener('click', () => {
+        currentScale = Math.min(2, currentScale * 1.2);
+        aplicarTransformacion();
+    });
+    
+    zoomOutBtn.addEventListener('click', () => {
+        currentScale = Math.max(0.5, currentScale * 0.8);
+        aplicarTransformacion();
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        currentScale = 0.8;
+        translateX = 0;
+        translateY = 0;
+        aplicarTransformacion();
+    });
+    
+    // Agregar al DOM
+    document.body.appendChild(zoomInBtn);
+    document.body.appendChild(zoomOutBtn);
+    document.body.appendChild(resetBtn);
+    
+    // Remover controles si se cambia de complejo
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                const demo3Container = document.querySelector('.demo3-container');
+                if (!demo3Container) {
+                    zoomInBtn.remove();
+                    zoomOutBtn.remove();
+                    resetBtn.remove();
+                    observer.disconnect();
+                }
+            }
+        });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+/**
+ * Muestra un indicador visual de que se puede hacer zoom en el complejo Demo 3
+ */
+function mostrarIndicadorZoom() {
+    // Solo mostrar en móvil
+    if (window.innerWidth > 768) return;
+    
+    // Crear indicador
+    const indicador = document.createElement('div');
+    indicador.className = 'demo3-zoom-indicator';
+    indicador.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInDown 0.5s ease-out;
+        ">
+            <i class="fas fa-search-plus" style="margin-right: 8px;"></i>
+            Toca y arrastra para navegar • Pellizca para hacer zoom
+        </div>
+    `;
+    
+    // Agregar al body
+    document.body.appendChild(indicador);
+    
+    // Remover después de 4 segundos
+    setTimeout(() => {
+        if (indicador && indicador.parentNode) {
+            indicador.style.animation = 'slideOutUp 0.5s ease-out';
+            setTimeout(() => {
+                if (indicador && indicador.parentNode) {
+                    indicador.remove();
+                }
+            }, 500);
+        }
+    }, 4000);
+    
+    // Remover si se cambia de complejo
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                const demo3Container = document.querySelector('.demo3-container');
+                if (!demo3Container && indicador && indicador.parentNode) {
+                    indicador.remove();
+                    observer.disconnect();
+                }
+            }
+        });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+}
