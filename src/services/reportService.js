@@ -177,16 +177,24 @@ class ReportService {
         // Intentar cargar logo del complejo
         let logoAdded = false;
         try {
-            // Mapeo de complejos a logos
-            const logoMap = {
-                1: 'borde-rio.png',  // Complejo En Desarrollo
-                2: 'borde-rio.png',  // Complejo Demo 1
-                7: 'borde-rio.png',  // Espacio Deportivo Borde Río
-                8: 'demo3-new-life-galilea.png'  // Complejo Demo 3
-            };
+            // Mapeo de complejos a logos (por nombre para evitar problemas de ID entre desarrollo/producción)
+            let logoFilename = null;
             
-            console.log(`🔍 Buscando logo para complejo ID: ${complex.id}`);
-            const logoFilename = logoMap[complex.id];
+            if (complex.nombre && complex.nombre.toLowerCase().includes('demo 3')) {
+                logoFilename = 'demo3-new-life-galilea.png';
+                console.log(`🔍 Complejo Demo 3 detectado por nombre: ${complex.nombre}`);
+            } else {
+                // Mapeo por ID para otros complejos
+                const logoMap = {
+                    1: 'borde-rio.png',  // Complejo En Desarrollo
+                    2: 'borde-rio.png',  // Complejo Demo 1
+                    7: 'borde-rio.png',  // Espacio Deportivo Borde Río (producción)
+                    8: 'demo3-new-life-galilea.png'  // Complejo Demo 3 (producción)
+                };
+                logoFilename = logoMap[complex.id];
+                console.log(`🔍 Buscando logo para complejo ID: ${complex.id}, nombre: ${complex.nombre}`);
+            }
+            
             console.log(`🔍 Nombre de archivo del logo: ${logoFilename}`);
             
             if (logoFilename) {
