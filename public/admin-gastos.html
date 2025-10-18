@@ -1048,6 +1048,87 @@
     <!-- Logos Config -->
     <script src="/js/logos-config.js"></script>
     
+    <!-- Test Script (temporal) -->
+    <script>
+        // Script de prueba para debugging
+        async function testApiFromBrowser() {
+            try {
+                console.log('🧪 TESTING API DESDE EL NAVEGADOR');
+                
+                // Verificar configuración
+                if (typeof window.URL_CONFIG === 'undefined') {
+                    console.error('❌ URL_CONFIG no está definido');
+                    return;
+                }
+                
+                console.log('✅ URL_CONFIG:', window.URL_CONFIG);
+                console.log('✅ API_BASE:', window.API_BASE);
+                
+                // Verificar token
+                const token = localStorage.getItem('adminToken');
+                if (!token) {
+                    console.error('❌ No hay token de autenticación');
+                    return;
+                }
+                
+                console.log('✅ Token encontrado');
+                
+                // Probar categorías
+                console.log('🔍 Probando /api/gastos/categorias...');
+                const categoriasResponse = await fetch(`${window.API_BASE}/gastos/categorias`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📊 Respuesta categorías:', {
+                    status: categoriasResponse.status,
+                    ok: categoriasResponse.ok
+                });
+                
+                if (categoriasResponse.ok) {
+                    const categorias = await categoriasResponse.json();
+                    console.log('✅ Categorías:', categorias.length);
+                } else {
+                    const errorText = await categoriasResponse.text();
+                    console.error('❌ Error categorías:', errorText);
+                }
+                
+                // Probar movimientos
+                console.log('🔍 Probando /api/gastos/movimientos...');
+                const movimientosResponse = await fetch(`${window.API_BASE}/gastos/movimientos`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📊 Respuesta movimientos:', {
+                    status: movimientosResponse.status,
+                    ok: movimientosResponse.ok
+                });
+                
+                if (movimientosResponse.ok) {
+                    const movimientos = await movimientosResponse.json();
+                    console.log('✅ Movimientos:', movimientos.length);
+                } else {
+                    const errorText = await movimientosResponse.text();
+                    console.error('❌ Error movimientos:', errorText);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en test:', error);
+            }
+        }
+        
+        // Ejecutar test automáticamente después de 2 segundos
+        setTimeout(testApiFromBrowser, 2000);
+        
+        // También hacer disponible globalmente
+        window.testApiFromBrowser = testApiFromBrowser;
+    </script>
+    
     <!-- Main Script -->
     <script src="/admin-gastos.js?v=4.0"></script>
 </body>
