@@ -7963,8 +7963,8 @@ app.get('/api/debug/update-magnasports', async (req, res) => {
   }
 });
 
-// ===== ENDPOINT PARA CREAR USUARIOS COMPLEJO DEMO 3 =====
-app.post('/api/admin/create-demo3-users', async (req, res) => {
+// ===== ENDPOINT TEMPORAL PARA CREAR USUARIOS COMPLEJO DEMO 3 =====
+app.get('/api/admin/create-demo3-users', async (req, res) => {
   try {
     console.log('🏟️ Creando usuarios para Complejo Demo 3...');
     
