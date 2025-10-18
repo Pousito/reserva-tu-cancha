@@ -2219,7 +2219,16 @@ app.put('/api/admin/canchas/:id', authenticateToken, requireComplexAccess, requi
     }
     
     const userRole = req.user.rol;
-    if (userRole !== 'super_admin' && req.user.complejo_id != canchaExistente[0].complejo_id) {
+    // Usar parseInt para asegurar comparación numérica correcta
+    const userComplejoId = parseInt(req.user.complejo_id);
+    const canchaComplejoId = parseInt(canchaExistente[0].complejo_id);
+    
+    console.log('🔍 Verificando permisos:');
+    console.log('   Usuario complejo_id:', userComplejoId, 'Tipo:', typeof userComplejoId);
+    console.log('   Cancha complejo_id:', canchaComplejoId, 'Tipo:', typeof canchaComplejoId);
+    console.log('   Comparación:', userComplejoId === canchaComplejoId);
+    
+    if (userRole !== 'super_admin' && userComplejoId !== canchaComplejoId) {
       return res.status(403).json({ error: 'No tienes permisos para modificar esta cancha' });
     }
     
