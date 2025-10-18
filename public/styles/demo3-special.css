@@ -1,26 +1,26 @@
-/* Estilos especiales para Complejo Demo 3 - DISEÑO CORREGIDO v7.0 - LAYOUT OPTIMIZADO SIN SUPERPOSICIÓN */
+/* Estilos especiales para Complejo Demo 3 - DISEÑO CORREGIDO v7.4 - ANCHO CANCHA 3 Y ESPACIADO OPTIMIZADO */
 
     .demo3-container {
         display: grid !important;
         grid-template-columns: 1fr 1fr 1fr !important;
-        grid-template-rows: 120px 120px 140px 140px !important;
+        grid-template-rows: 100px 100px 140px 140px !important;
         gap: 15px !important;
         max-width: 1100px !important;
         margin: 0 auto !important;
-        padding: 20px !important;
+        padding: 10px 20px 20px 20px !important;
         background: transparent !important;
         border-radius: 15px !important;
         box-shadow: none !important;
         grid-template-areas: 
             "futbol1 futbol2 padel1"
             "futbol1 futbol2 padel1"
-            "futbol3 futbol3 futbol3"
-            "futbol3 futbol3 futbol3" !important;
+            "futbol3 futbol3 ."
+            "futbol3 futbol3 ." !important;
         position: relative !important;
         z-index: 1 !important;
         width: 100% !important;
         height: auto !important;
-        min-height: 520px !important;
+        min-height: 500px !important;
     }
 
 /* Posicionamiento de contenedores - SIN SUPERPOSICIÓN */
@@ -389,12 +389,12 @@
 @media (max-width: 768px) {
     .demo3-container {
         grid-template-columns: 1fr !important;
-        grid-template-rows: 120px 120px 140px 140px !important;
+        grid-template-rows: 100px 100px 140px 140px !important;
         gap: 15px !important;
-        padding: 20px !important;
+        padding: 10px 20px 20px 20px !important;
         max-width: 95vw !important;
         margin: 0 auto !important;
-        min-height: 520px !important;
+        min-height: 500px !important;
     }
     
     .demo3-futbol-izquierda {
