@@ -3379,13 +3379,16 @@ async function renderizarCanchasConDisponibilidad() {
         // Renderizado especial para Complejo Demo 3
         if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
             console.log('🎨 Renderizando Complejo Demo 3 con distribución especial...');
+            console.log('🎨 Total de canchas:', canchasOrdenadas.length);
+            console.log('🎨 Canchas disponibles:', canchasOrdenadas);
             
             // Crear contenedor principal con grid
             const demo3Container = document.createElement('div');
             demo3Container.className = 'demo3-container';
+            console.log('🎨 Contenedor Demo 3 creado');
             
             // Mostrar TODAS las canchas (fútbol y padel)
-            console.log('📊 Canchas a renderizar:', canchasOrdenadas.map(c => `${c.nombre} (${c.tipo})`));
+            console.log('📊 Canchas a renderizar:', canchasOrdenadas.map(c => `${c.nombre} (${c.tipo}) - ID: ${c.id}`));
             
             // Crear contenedores específicos para cada posición
             const futbolIzquierda = document.createElement('div');
@@ -3400,12 +3403,14 @@ async function renderizarCanchasConDisponibilidad() {
             const padelSuperior = document.createElement('div');
             padelSuperior.className = 'demo3-padel-superior';
             
-            const padelInferior = document.createElement('div');
-            padelInferior.className = 'demo3-padel-inferior';
+            // Eliminado: padelInferior ya no se usa
             
             // Crear canchas y asignar a contenedores específicos
             for (const cancha of canchasOrdenadas) {
+                console.log(`🎨 Procesando cancha: ${cancha.nombre} (ID: ${cancha.id}, Tipo: ${cancha.tipo})`);
+                
                 const canchaCard = await crearCanchaCard(cancha, fecha, hora);
+                console.log(`🎨 Tarjeta de cancha creada para: ${cancha.nombre}`);
                 
                 // Determinar si la cancha debe estar en gris (no seleccionada)
                 const esTipoSeleccionado = (tipoCanchaSeleccionado === 'futbol' && cancha.tipo === 'futbol') || 
@@ -3414,6 +3419,7 @@ async function renderizarCanchasConDisponibilidad() {
                 if (!esTipoSeleccionado) {
                     canchaCard.classList.add('no-seleccionada');
                     canchaCard.style.pointerEvents = 'none';
+                    console.log(`🎨 Cancha ${cancha.nombre} marcada como no seleccionada`);
                 }
                 
                 // Asignar a contenedor específico según ID
@@ -3421,25 +3427,39 @@ async function renderizarCanchasConDisponibilidad() {
                 // IDs producción: 6, 7, 8, 9, 10
                 if (cancha.id === 6 || cancha.id === 11) { // Cancha 1 Fútbol
                     futbolIzquierda.appendChild(canchaCard);
+                    console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolIzquierda`);
                 } else if (cancha.id === 7 || cancha.id === 12) { // Cancha 2 Fútbol
                     futbolDerecha.appendChild(canchaCard);
-                } else if (cancha.id === 8 || cancha.id === 13) { // Cancha 3 Fútbol (grande)
+                    console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolDerecha`);
+                } else if (cancha.id === 8 || cancha.id === 13) { // Cancha 3 Fútbol (horizontal)
                     futbolGrande.appendChild(canchaCard);
-                } else if (cancha.id === 9 || cancha.id === 14) { // Cancha 1 Padel
+                    console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolGrande`);
+                } else if (cancha.id === 9 || cancha.id === 14) { // Cancha 1 Padel (única cancha de padel)
                     padelSuperior.appendChild(canchaCard);
-                } else if (cancha.id === 10 || cancha.id === 15) { // Cancha 2 Padel
-                    padelInferior.appendChild(canchaCard);
+                    console.log(`🎨 Cancha ${cancha.nombre} asignada a padelSuperior`);
+                } else if (cancha.id === 10 || cancha.id === 15) { // Cancha 2 Padel - IGNORAR
+                    console.log(`🎨 Cancha ${cancha.nombre} (ID: ${cancha.id}) ignorada - solo renderizamos 1 cancha de padel`);
+                } else {
+                    console.warn(`⚠️ Cancha ${cancha.nombre} (ID: ${cancha.id}) no fue asignada a ningún contenedor`);
                 }
+                // Eliminado: Cancha 2 Padel (IDs 10 y 15) - ya no se renderiza
             }
             
             // Agregar contenedores al grid principal
+            console.log('🎨 Agregando contenedores al grid principal...');
             demo3Container.appendChild(futbolIzquierda);
+            console.log('🎨 futbolIzquierda agregado');
             demo3Container.appendChild(futbolDerecha);
+            console.log('🎨 futbolDerecha agregado');
             demo3Container.appendChild(futbolGrande);
+            console.log('🎨 futbolGrande agregado');
             demo3Container.appendChild(padelSuperior);
-            demo3Container.appendChild(padelInferior);
+            console.log('🎨 padelSuperior agregado');
+            // Eliminado: padelInferior - ya no se usa
             
+            console.log('🎨 Agregando demo3Container a canchasHorizontales...');
             canchasHorizontales.appendChild(demo3Container);
+            console.log('🎨 demo3Container agregado exitosamente');
         } else {
             // Renderizado normal para otros complejos
             for (const cancha of canchasOrdenadas) {
