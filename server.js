@@ -107,7 +107,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-app.use(express.static('public'));
+// NOTA: express.static se mueve después de las rutas de API para evitar conflictos
 
 // ===== MIDDLEWARE DE AUTENTICACIÓN =====
 // Fix: Asegurar que las consultas usen created_at en lugar de fecha_creacion - VERSIÓN 3
@@ -8471,6 +8471,11 @@ app.get('/api/admin/debug-court-permissions/:id', authenticateToken, async (req,
     });
   }
 });
+
+// ===== MIDDLEWARE DE ARCHIVOS ESTÁTICOS =====
+// IMPORTANTE: Este middleware debe ir DESPUÉS de todas las rutas de API
+// para evitar que intercepte las peticiones a /api/*
+app.use(express.static('public'));
 
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
