@@ -8216,6 +8216,67 @@ app.get('/api/admin/limpiar-bloqueos-demo3', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA LIMPIAR BLOQUEOS PROBLEMÁTICOS EN PRODUCCIÓN =====
+app.get('/api/admin/limpiar-bloqueos-produccion', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando bloqueos problemáticos en producción...');
+    
+    // 1. Verificar bloqueos que cubren todo el día (00:00:00 a 23:59:59)
+    const bloqueosProblematicos = await db.query(`
+      SELECT id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en 
+      FROM bloqueos_temporales 
+      WHERE hora_inicio = '00:00:00' AND hora_fin = '23:59:59'
+      ORDER BY cancha_id, fecha
+    `);
+
+    console.log(`🚨 Bloqueos problemáticos encontrados: ${bloqueosProblematicos.length}`);
+    
+    // 2. Mostrar detalles de los bloqueos problemáticos
+    bloqueosProblematicos.forEach(bloqueo => {
+      console.log(`   ${bloqueo.id}: Cancha ${bloqueo.cancha_id} - ${bloqueo.fecha} (${bloqueo.hora_inicio} - ${bloqueo.hora_fin})`);
+    });
+
+    // 3. Eliminar todos los bloqueos problemáticos
+    let eliminados = 0;
+    for (const bloqueo of bloqueosProblematicos) {
+      await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueo.id]);
+      eliminados++;
+      console.log(`   ✅ Eliminado: ${bloqueo.id}`);
+    }
+
+    // 4. Verificar IDs duplicados en canchas
+    const idsDuplicados = await db.query(`
+      SELECT id, COUNT(*) as count 
+      FROM canchas 
+      GROUP BY id 
+      HAVING COUNT(*) > 1
+    `);
+
+    console.log(`🔍 IDs duplicados en canchas: ${idsDuplicados.length}`);
+    idsDuplicados.forEach(dup => {
+      console.log(`   ID ${dup.id}: ${dup.count} canchas`);
+    });
+
+    res.json({
+      success: true,
+      message: 'Limpieza de bloqueos problemáticos completada',
+      bloqueosProblematicosEncontrados: bloqueosProblematicos.length,
+      bloqueosEliminados: eliminados,
+      idsDuplicados: idsDuplicados.length,
+      detallesIdsDuplicados: idsDuplicados,
+      detallesBloqueosEliminados: bloqueosProblematicos
+    });
+
+  } catch (error) {
+    console.error('❌ Error limpiando bloqueos problemáticos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error limpiando bloqueos problemáticos',
+      error: error.message
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
