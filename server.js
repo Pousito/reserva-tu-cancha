@@ -8472,6 +8472,80 @@ app.get('/api/admin/debug-court-permissions/:id', authenticateToken, async (req,
   }
 });
 
+// ===== ENDPOINT TEMPORAL PARA DEBUG DE MOVIMIENTOS FINANCIEROS =====
+app.get('/api/admin/debug-movimientos-financieros/:codigoReserva', authenticateToken, async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    console.log('🔍 Debug de movimientos financieros para reserva:', codigoReserva);
+    
+    // 1. Buscar la reserva
+    const reserva = await db.query(`
+      SELECT r.*, c.complejo_id, co.nombre as complejo_nombre 
+      FROM reservas r 
+      JOIN canchas c ON r.cancha_id = c.id 
+      JOIN complejos co ON c.complejo_id = co.id 
+      WHERE r.codigo_reserva = $1
+    `, [codigoReserva]);
+    
+    if (reserva.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+    
+    const reservaInfo = reserva[0];
+    console.log('📋 Reserva encontrada:', {
+      codigo: reservaInfo.codigo_reserva,
+      estado: reservaInfo.estado,
+      precio_total: reservaInfo.precio_total,
+      comision_aplicada: reservaInfo.comision_aplicada,
+      complejo_id: reservaInfo.complejo_id
+    });
+    
+    // 2. Buscar movimientos financieros asociados
+    const movimientos = await db.query(`
+      SELECT gi.*, cg.nombre as categoria_nombre, cg.tipo as categoria_tipo
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cg ON gi.categoria_id = cg.id
+      WHERE gi.complejo_id = $1 
+      AND gi.descripcion LIKE $2
+      ORDER BY gi.fecha DESC
+    `, [reservaInfo.complejo_id, `%${codigoReserva}%`]);
+    
+    console.log('💰 Movimientos encontrados:', movimientos.length);
+    
+    // 3. Buscar categorías financieras del complejo
+    const categorias = await db.query(`
+      SELECT * FROM categorias_gastos 
+      WHERE complejo_id = $1 
+      ORDER BY tipo, nombre
+    `, [reservaInfo.complejo_id]);
+    
+    console.log('📊 Categorías del complejo:', categorias.length);
+    
+    res.json({
+      success: true,
+      reserva: {
+        codigo: reservaInfo.codigo_reserva,
+        estado: reservaInfo.estado,
+        precio_total: reservaInfo.precio_total,
+        comision_aplicada: reservaInfo.comision_aplicada,
+        complejo_id: reservaInfo.complejo_id,
+        complejo_nombre: reservaInfo.complejo_nombre
+      },
+      movimientos: movimientos,
+      categorias: categorias,
+      total_movimientos: movimientos.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en debug de movimientos financieros:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error verificando movimientos financieros',
+      error: error.message
+    });
+  }
+});
+
 // ===== MIDDLEWARE DE ARCHIVOS ESTÁTICOS =====
 // IMPORTANTE: Este middleware debe ir DESPUÉS de todas las rutas de API
 // para evitar que intercepte las peticiones a /api/*
