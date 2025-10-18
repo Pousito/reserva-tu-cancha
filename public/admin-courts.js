@@ -257,9 +257,12 @@ async function loadFilterTypes() {
     try {
         const response = await AdminUtils.authenticatedFetch('/admin/canchas');
         if (response && response.ok) {
-            const allCourts = await response.json();
-            
-            // Filtrar canchas según el rol del usuario
+            const responseText = await response.text();
+            console.log('📄 Respuesta raw para tipos:', responseText);
+            try {
+                const allCourts = JSON.parse(responseText);
+                
+                // Filtrar canchas según el rol del usuario
             let filteredCourts = allCourts;
             if (currentUser && currentUser.rol !== 'super_admin') {
                 filteredCourts = allCourts.filter(court => court.complejo_id == currentUser.complejo_id);
@@ -279,7 +282,11 @@ async function loadFilterTypes() {
                 filterTypeSelect.appendChild(option);
             });
             
-            console.log('✅ Tipos de filtro cargados:', availableTypes);
+                console.log('✅ Tipos de filtro cargados:', availableTypes);
+            } catch (parseError) {
+                console.error('❌ Error parseando JSON para tipos:', parseError);
+                console.error('📄 Texto recibido:', responseText);
+            }
         }
     } catch (error) {
         console.error('Error cargando tipos para filtro:', error);
@@ -358,9 +365,16 @@ async function loadCourts() {
         }
         
         if (response.ok) {
-            courts = await response.json();
-            console.log('✅ Canchas cargadas:', courts);
-            displayCourts(courts);
+            const responseText = await response.text();
+            console.log('📄 Respuesta raw:', responseText);
+            try {
+                courts = JSON.parse(responseText);
+                console.log('✅ Canchas cargadas:', courts);
+                displayCourts(courts);
+            } catch (parseError) {
+                console.error('❌ Error parseando JSON:', parseError);
+                console.error('📄 Texto recibido:', responseText);
+            }
         } else {
             console.error('❌ Error cargando canchas:', response.statusText);
             document.getElementById('courtsList').innerHTML = `
@@ -498,6 +512,9 @@ function openCourtModal(courtId = null) {
         modalTitle.textContent = 'Agregar Nueva Cancha';
         form.reset();
         
+        // Limpiar el dataset del modal para nueva cancha
+        modal.dataset.courtId = '';
+        
         // Si es un manager, preseleccionar su complejo y cargar tipos
         if (currentUser && currentUser.rol === 'manager') {
             const complexSelect = document.getElementById('courtComplex');
@@ -515,6 +532,9 @@ async function loadCourtData(courtId) {
     try {
         const court = courts.find(c => c.id === courtId);
         if (court) {
+            // Configurar el dataset del modal con el ID de la cancha
+            document.getElementById('courtModal').dataset.courtId = courtId;
+            
             document.getElementById('courtName').value = court.nombre;
             document.getElementById('courtComplex').value = court.complejo_id;
             document.getElementById('courtPrice').value = court.precio_hora;
@@ -548,6 +568,8 @@ async function saveCourt() {
     
     const courtId = document.getElementById('courtModal').dataset.courtId;
     const isEdit = !!courtId;
+    
+    console.log('🔍 Guardando cancha:', { courtId, isEdit, courtData });
     
     try {
         // Verificar token
@@ -751,13 +773,17 @@ function poblarHorariosComplejo() {
     const user = AdminUtils.getCurrentUser();
     const complejoId = user?.complejo_id;
     
-    // Determinar horario según complejo (Borde Río tiene horario especial)
+    // Determinar horario según complejo
     let horaInicio = 12;
     let horaFin = 23;
     
-    if (complejoId === 6 || complejoId === 7) {
+    if (complejoId === 6) {
         // Espacio Deportivo Borde Río: 10:00 - 23:00
         horaInicio = 10;
+        horaFin = 23;
+    } else if (complejoId === 7) {
+        // Complejo Demo 3: 16:00 - 23:00
+        horaInicio = 16;
         horaFin = 23;
     }
     

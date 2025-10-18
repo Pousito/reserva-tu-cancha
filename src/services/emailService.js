@@ -409,17 +409,24 @@ Gracias por elegir Reserva Tu Cancha!
     }
   }
 
-  // Obtener email del administrador del complejo
-  getComplexAdminEmail(complejoNombre) {
+  // Obtener emails del administrador del complejo
+  getComplexAdminEmails(complejoNombre) {
     const adminEmails = {
-      'MagnaSports': 'naxiin320@gmail.com',
-      'Complejo Deportivo Central': 'naxiin_320@hotmail.com',
-      'Padel Club Premium': 'naxiin_320@hotmail.com',
-      'Centro Deportivo Costero': 'naxiin_320@hotmail.com',
-      'Club Deportivo Norte': 'naxiin_320@hotmail.com'
+      'MagnaSports': ['naxiin320@gmail.com'],
+      'Complejo Deportivo Central': ['naxiin_320@hotmail.com'],
+      'Padel Club Premium': ['naxiin_320@hotmail.com'],
+      'Centro Deportivo Costero': ['naxiin_320@hotmail.com'],
+      'Club Deportivo Norte': ['naxiin_320@hotmail.com'],
+      'Complejo Demo 3': ['owner@complejodemo3.cl', 'manager@complejodemo3.cl']
     };
     
-    return adminEmails[complejoNombre] || 'admin@reservatuscanchas.cl';
+    return adminEmails[complejoNombre] || ['admin@reservatuscanchas.cl'];
+  }
+
+  // Obtener email del administrador del complejo (método legacy para compatibilidad)
+  getComplexAdminEmail(complejoNombre) {
+    const emails = this.getComplexAdminEmails(complejoNombre);
+    return emails[0]; // Retorna el primer email (owner)
   }
 
   // Enviar notificaciones a administradores
@@ -432,11 +439,13 @@ Gracias por elegir Reserva Tu Cancha!
     const results = [];
 
     try {
-      // 1. Notificación al administrador del complejo específico
-      const complexAdminEmail = this.getComplexAdminEmail(reservaData.complejo);
+      // 1. Notificaciones a todos los administradores del complejo específico
+      const complexAdminEmails = this.getComplexAdminEmails(reservaData.complejo);
       
-      const complexAdminResult = await this.sendComplexAdminNotification(reservaData, complexAdminEmail);
-      results.push({ type: 'complex_admin', email: complexAdminEmail, result: complexAdminResult });
+      for (const adminEmail of complexAdminEmails) {
+        const complexAdminResult = await this.sendComplexAdminNotification(reservaData, adminEmail);
+        results.push({ type: 'complex_admin', email: adminEmail, result: complexAdminResult });
+      }
 
       // 2. Notificación al super admin (dueño de la plataforma)
       const superAdminResult = await this.sendSuperAdminNotification(reservaData);

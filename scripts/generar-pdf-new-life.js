@@ -1,0 +1,912 @@
+const fs = require('fs');
+const path = require('path');
+
+// Configuración específica para New Life Galilea
+const config = {
+  nombreComplejo: "New Life Galilea",
+  ciudad: "Los Ángeles",
+  direccion: "Av. Ricardo Vicuña 1541",
+  emailOwner: "owner@complejodemo3.cl",
+  emailManager: "manager@complejodemo3.cl",
+  telefono: "+56934864010",
+  administrador: "Matías",
+  urlDirecta: "https://www.reservatuscanchas.cl/?ciudad=Los%20%C3%81ngeles&complejo=New%20Life%20Galilea"
+};
+
+// Función para generar el PDF del manual
+function generarPDFNewLife() {
+  const contenido = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - New Life Galilea</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            text-align: justify;
+            font-size: 11pt;
+        }
+        
+        .portada {
+            text-align: center;
+            page-break-after: always;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: -20mm -20mm 0 -20mm;
+            padding: 15mm 20mm;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        
+        .portada h1 {
+            font-size: 2.2em;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .portada .circulo {
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 220px;
+            height: 220px;
+            margin: 18px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid rgba(255,255,255,0.5);
+        }
+        
+        .portada .circulo h2 {
+            font-size: 1.4em;
+            text-align: center;
+            margin: 0;
+            padding: 12px;
+        }
+        
+        .portada .info-complejo {
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+        
+        .portada .info-complejo h3 {
+            font-size: 1.3em;
+            margin-bottom: 6px;
+        }
+        
+        .portada .info-complejo p {
+            margin: 4px 0;
+            font-size: 1em;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+            page-break-after: avoid;
+            font-size: 24pt;
+            font-weight: 600;
+        }
+        
+        h2 {
+            color: #34495e;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            page-break-after: avoid;
+            font-size: 16pt;
+            font-weight: 600;
+        }
+        
+        h3 {
+            color: #2c3e50;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            page-break-after: avoid;
+            font-size: 14pt;
+            font-weight: 600;
+        }
+        
+        h4 {
+            color: #34495e;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            page-break-after: avoid;
+            font-size: 12pt;
+            font-weight: 600;
+        }
+        
+        .cuadro-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 6px solid #667eea;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .cuadro-importante {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 6px solid #f39c12;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .cuadro-advertencia {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-left: 6px solid #e74c3c;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            page-break-inside: avoid;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            text-align: left;
+            font-size: 10pt;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .paso {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 6px solid #2196f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .paso h4 {
+            margin-top: 0;
+            color: #1976d2;
+            font-weight: 600;
+        }
+        
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 35px;
+        }
+        
+        li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        ol {
+            counter-reset: item;
+        }
+        
+        ol > li {
+            display: block;
+            margin: 15px 0;
+            padding-left: 10px;
+        }
+        
+        ol > li:before {
+            content: counter(item) ". ";
+            counter-increment: item;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .url-destacada {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border: 3px solid #4caf50;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            font-size: 9pt;
+            line-height: 1.3;
+        }
+        
+        .contacto-info {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e1f5fe 100%);
+            border: 3px solid #667eea;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .comisiones-info {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border: 3px solid #ff9800;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .comisiones-info h3 {
+            color: #f57c00;
+            margin-top: 0;
+            font-weight: 600;
+        }
+        
+        .seccion-cancha {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border: 3px solid #4caf50;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        
+        .seccion-cancha h3 {
+            color: #2e7d32;
+            margin-top: 0;
+            font-weight: 600;
+            font-size: 16pt;
+        }
+        
+        .seccion-cancha h4 {
+            color: #388e3c;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 14pt;
+        }
+        
+        .seccion-cancha ul {
+            background: rgba(255,255,255,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .seccion-cancha li {
+            background: rgba(255,255,255,0.5);
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+        
+        .footer {
+            display: none;
+        }
+        
+        @media print {
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PORTADA -->
+    <div class="portada">
+        <h1>MANUAL DE USUARIO</h1>
+        <div class="circulo">
+            <h2>RESERVATUSCANCHAS</h2>
+        </div>
+        <div class="info-complejo">
+            <h3>${config.nombreComplejo}</h3>
+            <p><strong>Ubicación:</strong> ${config.ciudad}, Chile</p>
+            <p><strong>Dirección:</strong> ${config.direccion}</p>
+            <p><strong>Administrador:</strong> ${config.administrador}</p>
+            <p><strong>Teléfono:</strong> ${config.telefono}</p>
+            <p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-CL')}</p>
+        </div>
+    </div>
+
+    <!-- ÍNDICE -->
+    <div class="page-break">
+        <h1>ÍNDICE</h1>
+        
+        <div class="cuadro-info">
+            <h3>📋 Contenido del Manual</h3>
+            <p>Este manual está diseñado para guiar a los administradores del complejo New Life Galilea en el uso completo del sistema ReservaTusCanchas, desde la gestión de reservas hasta el control financiero.</p>
+        </div>
+        
+        <div style="margin: 30px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">1. Introducción al Sistema</span>
+                <span style="color: #667eea; font-weight: 600;">Página 3</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">2. Página Principal - Hacer Reservas</span>
+                <span style="color: #667eea; font-weight: 600;">Página 4</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">3. Consultar Reservas Existentes</span>
+                <span style="color: #667eea; font-weight: 600;">Página 6</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">4. Panel de Administración - Owner</span>
+                <span style="color: #667eea; font-weight: 600;">Página 7</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">5. Panel de Administración - Manager</span>
+                <span style="color: #667eea; font-weight: 600;">Página 11</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">6. Comisiones y Pagos</span>
+                <span style="color: #667eea; font-weight: 600;">Página 14</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e0e0e0;">
+                <span style="font-weight: 600; color: #2c3e50;">7. Preguntas Frecuentes</span>
+                <span style="color: #667eea; font-weight: 600;">Página 15</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0;">
+                <span style="font-weight: 600; color: #2c3e50;">8. Soporte y Contacto</span>
+                <span style="color: #667eea; font-weight: 600;">Página 17</span>
+            </div>
+        </div>
+        
+        <div class="cuadro-importante">
+            <h3>💡 Información Importante</h3>
+            <p><strong>Credenciales de Acceso:</strong> Las credenciales de acceso al sistema se proporcionan por separado por motivos de seguridad.</p>
+            <p><strong>URL Directa:</strong> La URL recomendada para compartir con clientes está en la sección 2.</p>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 1: INTRODUCCIÓN -->
+    <div>
+        <h1>1. Introducción al Sistema</h1>
+        
+        <h2>¿Qué es ReservaTusCanchas?</h2>
+        <p>ReservaTusCanchas es una plataforma web que permite a los complejos deportivos gestionar sus reservas de canchas de manera digital, ofreciendo a sus clientes la posibilidad de reservar y pagar online las 24 horas del día, los 7 días de la semana.</p>
+        
+        <h2>Beneficios del Sistema</h2>
+        <ul>
+            <li>Reservas online 24/7 con pago electrónico seguro.</li>
+            <li>Opción de pago total (100%) o parcial (50% - resto al llegar).</li>
+            <li>Dashboard en tiempo real con estadísticas de ocupación e ingresos.</li>
+            <li>Control financiero completo (registro de gastos e ingresos, balance automático).</li>
+            <li>Reportes profesionales exportables a Excel y PDF.</li>
+            <li>Sistema de permisos para delegar gestión operacional.</li>
+            <li>Acceso desde cualquier dispositivo (PC, tablet, celular).</li>
+        </ul>
+        
+        <div class="cuadro-info">
+            <h3>Vista General</h3>
+            <p>El sistema está diseñado para facilitar tanto la experiencia del cliente como la gestión administrativa del complejo, automatizando procesos y proporcionando herramientas de control financiero avanzadas.</p>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 2: PÁGINA PRINCIPAL -->
+    <div class="page-break">
+        <h1>2. Página Principal - Hacer Reservas</h1>
+        
+        <h2>URLs de Acceso</h2>
+        
+        <div class="url-destacada">
+            <strong>URL Principal:</strong><br>
+            https://www.reservatuscanchas.cl
+        </div>
+        
+        <div class="url-destacada">
+            <strong>URL Recomendada:</strong><br>
+            ${config.urlDirecta}
+        </div>
+        
+        <div class="cuadro-importante">
+            <h3>📱 Recomendación para Redes Sociales</h3>
+            <p>Se sugiere poner la URL recomendada a disposición en las redes sociales del complejo deportivo. Esta URL pre-carga automáticamente la ciudad y el complejo, facilitando el proceso de reserva para los clientes.</p>
+        </div>
+        
+        <h2>Proceso de Reserva (Paso a Paso)</h2>
+        <p>El sistema guía al usuario a través de 6 pasos simples (para clientes que inician desde cero el proceso de compras, desde el ingreso a la plataforma www.reservatuscanchas.cl):</p>
+        
+        <div class="paso">
+            <h4>Paso 1: Selección de Ciudad</h4>
+            <p>El cliente selecciona la ciudad donde se encuentra el complejo deportivo.</p>
+        </div>
+        
+        <div class="paso">
+            <h4>Paso 2: Selección de Complejo</h4>
+            <p>Se elige el complejo deportivo específico de la lista disponible.</p>
+        </div>
+        
+        <div class="paso">
+            <h4>Paso 3: Buscar Disponibilidad</h4>
+            <p>El sistema muestra las canchas disponibles y sus horarios.</p>
+        </div>
+        
+        <div class="paso">
+            <h4>Paso 4: Selección de Cancha y Horario</h4>
+            <p>El cliente elige la cancha específica y el horario deseado.</p>
+        </div>
+        
+        <div class="paso">
+            <h4>Paso 5: Información Personal</h4>
+            <p>Se completa la información de contacto y datos personales.</p>
+        </div>
+        
+        <div class="paso">
+            <h4>Paso 6: Pago y Confirmación</h4>
+            <p>Se selecciona el tipo de pago (50% o 100%) y se procesa el pago a través de WebPay.</p>
+        </div>
+        
+        <h2>Opciones de Pago</h2>
+        <ul>
+            <li><strong>Pago Total (100%):</strong> Se paga el monto completo al momento de la reserva.</li>
+            <li><strong>Pago Parcial (50%):</strong> Se paga la mitad al reservar y el resto al llegar al complejo.</li>
+        </ul>
+        
+        <div class="cuadro-info">
+            <h3>Confirmación de Reserva</h3>
+            <p>Una vez completado el pago online, el cliente recibe un email de confirmación con su código de reserva único. <strong>El complejo también recibe un correo automático</strong> con los detalles de la nueva reserva.</p>
+        </div>
+        
+        <h2>Sistema de Pago WebPay</h2>
+        <p>El sistema utiliza WebPay de Transbank, garantizando transacciones seguras y confiables para todos los pagos realizados a través de la plataforma.</p>
+    </div>
+
+    <!-- SECCIÓN 3: CONSULTAR RESERVAS -->
+    <div class="page-break">
+        <h1>3. Consultar Reservas Existentes</h1>
+        
+        <h2>Búsqueda por Código</h2>
+        <p>Los clientes pueden consultar el estado de sus reservas ingresando el código único que recibieron por email al momento de la confirmación.</p>
+        
+        <div class="cuadro-info">
+            <h3>Información Visible</h3>
+            <ul>
+                <li>Estado de la reserva (confirmada, cancelada, completada).</li>
+                <li>Detalles de la cancha y horario reservado.</li>
+                <li>Información de pago (monto, tipo de pago).</li>
+                <li>Datos de contacto registrados.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 4: PANEL OWNER -->
+    <div class="page-break">
+        <h1>4. Panel de Administración - Owner</h1>
+        
+        <div class="contacto-info">
+            <h3>Credenciales de Acceso</h3>
+            <p><strong>Panel:</strong> https://www.reservatuscanchas.cl/admin-dashboard.html</p>
+            <p><strong>Usuario:</strong> ${config.emailOwner}</p>
+            <p><strong>Contraseña:</strong> [Proporcionada por el administrador]</p>
+        </div>
+        
+        <h2>Funcionalidades Principales</h2>
+        
+        <h3>Dashboard</h3>
+        <p>Vista general con estadísticas en tiempo real, incluyendo:</p>
+        <ul>
+            <li>Ingresos del día, semana y mes.</li>
+            <li>Número de reservas activas.</li>
+            <li>Ocupación de canchas.</li>
+            <li>Actualización automática de nuevas reservas.</li>
+        </ul>
+        
+        <h3>Reservas</h3>
+        <p>Gestión completa de todas las reservas del complejo:</p>
+        <ul>
+            <li>Visualización de reservas con verificación de pago (50%/100%).</li>
+            <li>Posibilidad de realizar reservas desde el panel administrativo.</li>
+            <li>Modificación y cancelación de reservas.</li>
+            <li>Búsqueda y filtrado avanzado.</li>
+        </ul>
+        
+        <div class="cuadro-importante">
+            <h3>Realizar Reservas desde el Panel</h3>
+            <p>Los administradores pueden crear reservas directamente desde el panel, seleccionando cancha, horario y cliente. Estas reservas aparecen marcadas como "Reserva Administrativa" en el sistema.</p>
+        </div>
+        
+        <div class="seccion-cancha">
+            <h3>🏟️ Gestión de Canchas</h3>
+            <ul>
+                <li>Configuración de precios por horario.</li>
+                <li>Establecimiento de horarios de funcionamiento.</li>
+                <li>Gestión de disponibilidad.</li>
+                <li>Configuración de tipos de cancha.</li>
+            </ul>
+        </div>
+        
+        <div class="seccion-cancha">
+            <h3>📊 Reportes Financieros</h3>
+            <ul>
+                <li>Reportes de ingresos por período.</li>
+                <li>Análisis de ocupación.</li>
+                <li>Exportación a Excel y PDF.</li>
+                <li>Comparativas mensuales y anuales.</li>
+            </ul>
+        </div>
+        
+        <div class="seccion-cancha">
+            <h3>💰 Reporte (Control de Gastos e Ingresos)</h3>
+            <p>Sistema completo de control financiero:</p>
+            
+            <h4>📋 Categorías de Gastos (10 categorías):</h4>
+            <ul style="columns: 2; column-gap: 20px;">
+                <li>Mantenimiento de canchas.</li>
+                <li>Servicios básicos (luz, agua, gas).</li>
+                <li>Personal y salarios.</li>
+                <li>Equipamiento deportivo.</li>
+                <li>Marketing y publicidad.</li>
+                <li>Seguros y permisos.</li>
+                <li>Reparaciones y mejoras.</li>
+                <li>Suministros de oficina.</li>
+                <li>Capacitación del personal.</li>
+                <li>Otros gastos operacionales.</li>
+            </ul>
+            
+            <h4>💵 Categorías de Ingresos (6 categorías):</h4>
+            <ul style="columns: 2; column-gap: 20px;">
+                <li>Reservas de canchas.</li>
+                <li>Servicios adicionales.</li>
+                <li>Venta de productos.</li>
+                <li>Eventos especiales.</li>
+                <li>Membresías.</li>
+                <li>Otros ingresos.</li>
+            </ul>
+            
+            <h4>⚖️ Control Financiero</h4>
+            <ul>
+                <li>Balance automático entre ingresos y gastos.</li>
+                <li>Dashboard financiero en tiempo real.</li>
+                <li>Proyecciones y análisis de tendencias.</li>
+                <li>Alertas de gastos excesivos.</li>
+            </ul>
+            
+            <h4>⚙️ Gestión de Categorías</h4>
+            <p>Posibilidad de crear, editar y eliminar categorías personalizadas según las necesidades específicas del complejo.</p>
+        </div>
+        
+        <h2>Tabla de Permisos Owner</h2>
+        <table class="no-break">
+            <thead>
+                <tr>
+                    <th>Funcionalidad</th>
+                    <th>Owner</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Dashboard Completo</td>
+                    <td>✅</td>
+                    <td>Acceso a todas las estadísticas e ingresos</td>
+                </tr>
+                <tr>
+                    <td>Gestión de Reservas</td>
+                    <td>✅</td>
+                    <td>Ver, crear, modificar y cancelar reservas</td>
+                </tr>
+                <tr>
+                    <td>Gestión de Canchas</td>
+                    <td>✅</td>
+                    <td>Configurar precios, horarios y disponibilidad</td>
+                </tr>
+                <tr>
+                    <td>Reportes Financieros</td>
+                    <td>✅</td>
+                    <td>Acceso completo a todos los reportes</td>
+                </tr>
+                <tr>
+                    <td>Control de Gastos</td>
+                    <td>✅</td>
+                    <td>Registrar y categorizar gastos</td>
+                </tr>
+                <tr>
+                    <td>Control de Ingresos</td>
+                    <td>✅</td>
+                    <td>Registrar y categorizar ingresos</td>
+                </tr>
+                <tr>
+                    <td>Gestión de Usuarios</td>
+                    <td>✅</td>
+                    <td>Crear y administrar cuentas de Manager</td>
+                </tr>
+                <tr>
+                    <td>Configuración del Sistema</td>
+                    <td>✅</td>
+                    <td>Acceso a configuraciones avanzadas</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECCIÓN 5: PANEL MANAGER -->
+    <div class="page-break">
+        <h1>5. Panel de Administración - Manager</h1>
+        
+        <div class="contacto-info">
+            <h3>Credenciales de Acceso</h3>
+            <p><strong>Panel:</strong> https://www.reservatuscanchas.cl/admin-dashboard.html</p>
+            <p><strong>Usuario:</strong> ${config.emailManager}</p>
+            <p><strong>Contraseña:</strong> [Proporcionada por el administrador]</p>
+        </div>
+        
+        <h2>Funcionalidades Principales</h2>
+        
+        <h3>Dashboard</h3>
+        <p>Vista limitada sin información financiera sensible:</p>
+        <ul>
+            <li>Número de reservas del día.</li>
+            <li>Ocupación de canchas.</li>
+            <li>Reservas pendientes.</li>
+            <li>Sin acceso a ingresos monetarios.</li>
+        </ul>
+        
+        <h3>Reservas</h3>
+        <p>Gestión operacional de reservas:</p>
+        <ul>
+            <li>Visualización de reservas sin precios.</li>
+            <li>Verificación de pago (50%/100%).</li>
+            <li>Modificación de horarios.</li>
+            <li>Cancelación de reservas.</li>
+            <li>Sin acceso a información financiera.</li>
+        </ul>
+        
+        <h3>Canchas</h3>
+        <p>Acceso de solo lectura:</p>
+        <ul>
+            <li>Visualización de horarios.</li>
+            <li>Consulta de disponibilidad.</li>
+            <li>Sin posibilidad de modificar precios.</li>
+            <li>Sin acceso a configuraciones.</li>
+        </ul>
+        
+        <h2>Tabla de Permisos Manager</h2>
+        <table class="no-break">
+            <thead>
+                <tr>
+                    <th>Funcionalidad</th>
+                    <th>Manager</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Dashboard Básico</td>
+                    <td>✅</td>
+                    <td>Estadísticas sin información financiera</td>
+                </tr>
+                <tr>
+                    <td>Gestión de Reservas</td>
+                    <td>✅</td>
+                    <td>Operaciones sin acceso a precios</td>
+                </tr>
+                <tr>
+                    <td>Vista de Canchas</td>
+                    <td>✅</td>
+                    <td>Solo lectura, sin modificaciones</td>
+                </tr>
+                <tr>
+                    <td>Reportes Financieros</td>
+                    <td>❌</td>
+                    <td>Sin acceso a información monetaria</td>
+                </tr>
+                <tr>
+                    <td>Control de Gastos</td>
+                    <td>❌</td>
+                    <td>Sin acceso a registros financieros</td>
+                </tr>
+                <tr>
+                    <td>Control de Ingresos</td>
+                    <td>❌</td>
+                    <td>Sin acceso a información de ingresos</td>
+                </tr>
+                <tr>
+                    <td>Gestión de Usuarios</td>
+                    <td>❌</td>
+                    <td>Sin permisos de administración</td>
+                </tr>
+                <tr>
+                    <td>Configuración del Sistema</td>
+                    <td>❌</td>
+                    <td>Sin acceso a configuraciones</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECCIÓN 6: COMISIONES Y PAGOS -->
+    <div class="page-break">
+        <h1>6. Comisiones y Pagos</h1>
+        
+        <div class="comisiones-info">
+            <h3>💰 Estructura de Comisiones</h3>
+            
+            <h4>Comisiones por Reservas Web</h4>
+            <p><strong>3.5% + IVA</strong> - Aplicable cuando:</p>
+            <ul>
+                <li>La reserva se realizó a través de la página web (www.reservatuscanchas.cl).</li>
+                <li>El pago se procesó mediante Transbank.</li>
+            </ul>
+            
+            <h4>Comisiones por Reservas Administrativas</h4>
+            <p><strong>1.75% + IVA</strong> - Aplicable cuando:</p>
+            <ul>
+                <li>La reserva se realizó a través del panel de administración.</li>
+                <li>El pago se procesó directamente en el complejo.</li>
+            </ul>
+        </div>
+        
+        <div class="cuadro-info">
+            <h3>💳 Proceso de Pagos</h3>
+            <p><strong>Los pagos se ejecutan automáticamente en la noche del día que la persona hizo uso de la cancha.</strong></p>
+            
+            <h4>Detalles del Proceso:</h4>
+            <ul>
+                <li>El sistema identifica automáticamente las reservas completadas.</li>
+                <li>Calcula las comisiones correspondientes según el tipo de reserva.</li>
+                <li>Procesa el pago neto (monto total - comisiones) al complejo.</li>
+                <li>Envía notificación por email con el detalle del pago.</li>
+            </ul>
+        </div>
+        
+        <div class="cuadro-importante">
+            <h3>📊 Ejemplo de Cálculo</h3>
+            <p><strong>Reserva Web de $20.000:</strong></p>
+            <ul>
+                <li>Comisión (3.5% + IVA): $826</li>
+                <li>Pago al complejo: $19.174</li>
+            </ul>
+            
+            <p><strong>Reserva Administrativa de $20.000:</strong></p>
+            <ul>
+                <li>Comisión (1.75% + IVA): $413</li>
+                <li>Pago al complejo: $19.587</li>
+            </ul>
+        </div>
+        
+        <h2>Reportes de Comisiones</h2>
+        <p>En el panel de administración, los Owners pueden consultar:</p>
+        <ul>
+            <li>Historial de pagos recibidos.</li>
+            <li>Detalle de comisiones aplicadas.</li>
+            <li>Reportes mensuales de ingresos netos.</li>
+            <li>Comparativas entre reservas web y administrativas.</li>
+        </ul>
+    </div>
+
+    <!-- SECCIÓN 7: PREGUNTAS FRECUENTES -->
+    <div class="page-break">
+        <h1>7. Preguntas Frecuentes</h1>
+        
+        <h3>¿Cómo cambio la contraseña?</h3>
+        <p>Para cambiar la contraseña, acceda al panel de administración y utilice la opción "Cambiar Contraseña" en el menú de configuración. El sistema enviará un código de verificación por email para confirmar el cambio.</p>
+        
+        <h3>¿Puedo crear más usuarios?</h3>
+        <p>Sí, como Owner puede crear cuentas adicionales de Manager desde el panel de administración. Los Managers tienen acceso limitado a las funcionalidades operacionales.</p>
+        
+        <h3>¿Cómo cancelo una reserva?</h3>
+        <p>Las reservas pueden cancelarse desde el panel de administración en la sección "Reservas". El sistema procesará automáticamente el reembolso según las políticas establecidas.</p>
+        
+        <h3>¿Los reportes se actualizan en tiempo real?</h3>
+        <p>Sí, el dashboard y los reportes principales se actualizan en tiempo real. Los reportes detallados pueden tener un retraso de hasta 15 minutos para procesar la información.</p>
+        
+        <h3>¿Puedo modificar precios?</h3>
+        <p>Sí, como Owner puede modificar los precios de las canchas desde la sección "Gestión de Canchas" en el panel de administración. Los cambios se aplican inmediatamente.</p>
+        
+        <h3>¿Cómo exporto reportes?</h3>
+        <p>Los reportes pueden exportarse en formato Excel o PDF desde la sección "Reportes Financieros". Seleccione el período deseado y haga clic en "Exportar".</p>
+        
+        <h3>¿Qué pasa si hay un problema con el pago?</h3>
+        <p>En caso de problemas con pagos, contacte inmediatamente al soporte técnico. El sistema registra todas las transacciones para facilitar la resolución de problemas.</p>
+        
+        <h3>¿Puedo configurar horarios especiales?</h3>
+        <p>Sí, puede configurar horarios especiales, días festivos y tarifas diferenciadas desde la sección de configuración de canchas.</p>
+    </div>
+
+    <!-- SECCIÓN 8: SOPORTE Y CONTACTO -->
+    <div class="page-break">
+        <h1>8. Soporte y Contacto</h1>
+        
+        <div class="contacto-info">
+            <h3>📞 ReservaTusCanchas - Contacto</h3>
+            <p><strong>Email Comercial:</strong> contacto@reservatuscanchas.cl</p>
+            <p><strong>Email Técnico:</strong> soporte@reservatuscanchas.cl</p>
+            <p><strong>Teléfono:</strong> +56 9 8891 9588</p>
+            <p><strong>Horario de Atención:</strong> Lunes a Viernes, 9:00 - 18:00 hrs</p>
+        </div>
+        
+        <h2>Tipos de Soporte Disponibles</h2>
+        <ul>
+            <li><strong>Soporte Técnico:</strong> Problemas con el sistema, errores, configuración.</li>
+            <li><strong>Soporte de Pagos:</strong> Consultas sobre transacciones, reembolsos, comisiones.</li>
+            <li><strong>Soporte de Capacitación:</strong> Entrenamiento en el uso del sistema.</li>
+            <li><strong>Soporte de Configuración:</strong> Ayuda con la configuración inicial del complejo.</li>
+        </ul>
+        
+        <div class="cuadro-importante">
+            <h3>🚨 Soporte de Emergencia</h3>
+            <p>Para problemas críticos que afecten el funcionamiento del sistema, contacte inmediatamente por teléfono durante el horario de atención.</p>
+        </div>
+        
+        <div class="page-break">
+            <h2>Información del Complejo</h2>
+            <div class="contacto-info">
+                <h3>${config.nombreComplejo}</h3>
+                <p><strong>Ubicación:</strong> ${config.ciudad}, Chile</p>
+                <p><strong>Dirección:</strong> ${config.direccion}</p>
+                <p><strong>Teléfono:</strong> ${config.telefono}</p>
+                <p><strong>Administrador:</strong> ${config.administrador}</p>
+                <p><strong>Email Owner:</strong> ${config.emailOwner}</p>
+                <p><strong>Email Manager:</strong> ${config.emailManager}</p>
+            </div>
+        </div>
+        
+        
+        <div class="cuadro-info">
+            <h3>💡 Consejos para un Mejor Soporte</h3>
+            <ul>
+                <li>Describa el problema con el mayor detalle posible.</li>
+                <li>Incluya capturas de pantalla si es relevante.</li>
+                <li>Mencione el navegador y dispositivo que está utilizando.</li>
+                <li>Proporcione el código de error si aparece alguno.</li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>
+`;
+
+  // Guardar el archivo HTML
+  const rutaHTML = path.join(__dirname, '..', 'Manual_Usuario_NewLifeGalilea.html');
+  fs.writeFileSync(rutaHTML, contenido);
+  
+  console.log('✅ HTML del manual de New Life Galilea generado exitosamente!');
+  console.log(`📄 Archivo creado: ${rutaHTML}`);
+  console.log('🎯 Próximo paso: Convertir a PDF usando el navegador');
+  
+  return rutaHTML;
+}
+
+// Ejecutar si se llama directamente
+if (require.main === module) {
+  generarPDFNewLife();
+}
+
+module.exports = { generarPDFNewLife };

@@ -1436,10 +1436,14 @@ function generarHorariosBasicos() {
     let horaInicio = 8;
     let horaFin = 23;
     
-    // Borde Río puede ser ID 6 (desarrollo) o ID 7 (producción)
-    if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+    // Configuración específica por complejo
+    if (complejoId == 6) { // Espacio Deportivo Borde Río
         // Borde Río: 10:00 a 23:00 todos los días
         horaInicio = 10;
+        horaFin = 23;
+    } else if (complejoId == 7) { // Complejo Demo 3
+        // Complejo Demo 3: 16:00 a 23:00 todos los días
+        horaInicio = 16;
         horaFin = 23;
     }
     
@@ -1641,10 +1645,13 @@ function renderizarCalendario(data = null) {
             let horaDisponible = false;
             const horaNum = parseInt(hora.split(':')[0]);
             
-            // Borde Río puede ser ID 6 (desarrollo) o ID 7 (producción)
-            if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+            // Borde Río es ID 6, Complejo Demo 3 es ID 7
+            if (complejoId == 6) { // Espacio Deportivo Borde Río
                 // Borde Río: 10:00 a 23:00 todos los días
                 horaDisponible = horaNum >= 10 && horaNum <= 23;
+            } else if (complejoId == 7) { // Complejo Demo 3
+                // Complejo Demo 3: 16:00 a 23:00 todos los días
+                horaDisponible = horaNum >= 16 && horaNum <= 23;
             } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
                 horaDisponible = horaNum >= 16 && horaNum <= 23;
             } else { // Sábado y Domingo: 12:00 a 23:00
@@ -1775,8 +1782,8 @@ function generarHoras(fecha = null) {
     let horaFin = 23;
     
     // Configuración de horarios por complejo
-    // Borde Río puede ser ID 6 (desarrollo) o ID 7 (producción)
-    if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+    // Borde Río es ID 6, Complejo Demo 3 es ID 7
+    if (complejoId == 6) { // Espacio Deportivo Borde Río
         // Borde Río: 10:00 a 23:00 todos los días
         horaInicio = 10;
         horaFin = 23;

@@ -157,13 +157,15 @@ body {
 .canchas-grid-expanded .galpon-container,
 .canchas-grid-expanded .complejo-abierto-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1800px;         /* ← AUMENTADO: De 1400px a 1800px */
+    min-width: 100%;           /* ← AGREGADO: Forzar ancho mínimo */
     margin: 0 auto;
-    padding: 60px;
+    padding: 20px;             /* ← REDUCIDO: De 40px a 20px */
     border-radius: 25px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
     border: 4px solid;
     position: relative;
+    box-sizing: border-box;    /* ← AGREGADO: Incluir borders en cálculo */
 }
 
 .canchas-grid-expanded .galpon-container {
@@ -505,31 +507,31 @@ body {
     }
 }
 
-/* Calle genérica (Monte Perdido o Don Victor) */
+/* Calle genérica (Monte Perdido, Don Victor o Av. Ricardo Vicuña) */
 .calle-complejo {
     position: absolute;
-    right: -120px; /* FUERA del contenedor verde - proporcionada */
-    top: 0;
-    bottom: 0;
-    width: 120px; /* Ancho proporcionado y equilibrado */
+    bottom: -60px; /* FUERA del contenedor verde - en la parte inferior */
+    left: 0;
+    right: 0;
+    height: 60px; /* Altura proporcionada y equilibrada */
     background: #4a4a4a;
     border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     font-weight: bold;
-    writing-mode: vertical-rl;
+    writing-mode: horizontal-tb; /* Texto horizontal */
     text-orientation: mixed;
-    transform: rotate(180deg);
+    transform: none; /* Sin rotación */
     box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
     border: 3px solid #333;
     z-index: 10; /* Asegurar que esté por debajo del estacionamiento */
 }
 
 .calle-complejo::before {
-    transform: rotate(180deg);
+    transform: none; /* Sin rotación para texto horizontal */
     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
@@ -539,6 +541,10 @@ body {
 
 .calle-complejo[data-calle="DON VICTOR"]::before {
     content: 'CALLE DON VICTOR';
+}
+
+.calle-complejo[data-calle="AV. RICARDO VICUÑA"]::before {
+    content: 'AV. RICARDO VICUÑA';
 }
 
 .calle-complejo[data-calle="RUTA Q-575"]::before {
@@ -837,20 +843,19 @@ body {
     /* Calle para complejo Fundación Gunnen en móvil */
     .calle-complejo {
         position: absolute;
-        right: -60px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 50px;
-        height: 100%;
+        bottom: -40px; /* En la parte inferior en móvil */
+        left: 0;
+        right: 0;
+        height: 40px; /* Altura reducida para móvil */
         border-radius: 8px;
-        writing-mode: vertical-rl;
+        writing-mode: horizontal-tb; /* Texto horizontal */
         text-orientation: mixed;
-        transform: translateY(-50%) rotate(180deg);
+        transform: none; /* Sin rotación */
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 0.6rem;
-        padding: 8px 4px;
+        padding: 4px 8px;
         z-index: 5;
     }
     

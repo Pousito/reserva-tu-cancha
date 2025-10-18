@@ -13,14 +13,28 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         .login-card {
             background: white;
             border-radius: 15px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            max-width: 400px;
+            max-width: 750px;
             width: 100%;
+            margin: 0 auto;
+        }
+        .container {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        .row {
+            justify-content: center !important;
+        }
+        .col-md-6 {
+            display: flex;
+            justify-content: center;
         }
         .login-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -100,6 +114,29 @@
         }
         #password {
             padding-right: 45px;
+        }
+        
+        /* Centrado perfecto para pantallas grandes */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 800px;
+            }
+        }
+        
+        /* Mejoras para pantallas pequeñas */
+        @media (max-width: 767px) {
+            body {
+                padding: 15px;
+            }
+            .login-header {
+                padding: 1.5rem;
+            }
+            .login-body {
+                padding: 1.5rem;
+            }
+            .col-md-6 {
+                display: block;
+            }
         }
     </style>
 </head>

@@ -2899,9 +2899,9 @@ async function cargarHorariosComplejo(complejo) {
         console.log('Complejo Demo 1 - Horarios: 10:00-22:00 todos los días');
         horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
     } else if (complejo.nombre === 'Complejo Demo 3') {
-        // Complejo Demo 3: 09:00-23:00 todos los días
-        console.log('Complejo Demo 3 - Horarios: 09:00-23:00 todos los días');
-        horarios = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        // Complejo Demo 3: 16:00-23:00 todos los días
+        console.log('Complejo Demo 3 - Horarios: 16:00-23:00 todos los días');
+        horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3065,8 +3065,8 @@ async function cargarHorariosBasicos() {
         // Complejo Demo 1: 10:00-22:00 todos los días
         horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
     } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
-        // Complejo Demo 3: 09:00-23:00 todos los días
-        horarios = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        // Complejo Demo 3: 16:00-23:00 todos los días
+        horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3167,8 +3167,8 @@ async function cargarHorariosConDisponibilidadInmediata() {
         // Complejo Demo 1: 10:00-22:00 todos los días
         horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
     } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
-        // Complejo Demo 3: 09:00-23:00 todos los días
-        horarios = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        // Complejo Demo 3: 16:00-23:00 todos los días
+        horarios = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
     } else {
         // Otros complejos: horario estándar
         horarios = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3288,8 +3288,8 @@ async function validarHorariosSegunFecha() {
             // Complejo Demo 1: 10:00-22:00 todos los días
             horariosValidos = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
         } else if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
-            // Complejo Demo 3: 09:00-23:00 todos los días
-            horariosValidos = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+            // Complejo Demo 3: 16:00-23:00 todos los días
+            horariosValidos = ['16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
         } else {
             // Otros complejos: horario estándar
             horariosValidos = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
@@ -3334,7 +3334,7 @@ async function renderizarCanchasConDisponibilidad() {
         const nombreCalle = complejoSeleccionado.nombre === 'Complejo En Desarrollo' ? 'MONTE PERDIDO' : 
                            complejoSeleccionado.nombre === 'Fundación Gunnen' ? 'DON VICTOR' : 
                            complejoSeleccionado.nombre === 'Complejo Demo 1' ? 'CALLE DEMO' :
-                           complejoSeleccionado.nombre === 'Complejo Demo 3' ? 'AV. LOS ROBLES' :
+                           complejoSeleccionado.nombre === 'Complejo Demo 3' ? 'AV. RICARDO VICUÑA' :
                            'RUTA Q-575';
         
         // Crear contenedor (galpón para Complejo En Desarrollo, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
@@ -3388,6 +3388,7 @@ async function renderizarCanchasConDisponibilidad() {
             console.log('🎨 Contenedor Demo 3 creado');
             
             // Mostrar TODAS las canchas (fútbol y padel)
+            console.log('📊 Canchas detectadas:', canchasOrdenadas);
             console.log('📊 Canchas a renderizar:', canchasOrdenadas.map(c => `${c.nombre} (${c.tipo}) - ID: ${c.id}`));
             
             // Crear contenedores específicos para cada posición
@@ -3405,9 +3406,13 @@ async function renderizarCanchasConDisponibilidad() {
             
             // Eliminado: padelInferior ya no se usa
             
+            // Variable para acumular la Cancha 3 horizontal
+            let cancha3Horizontal = null;
+            
             // Crear canchas y asignar a contenedores específicos
             for (const cancha of canchasOrdenadas) {
                 console.log(`🎨 Procesando cancha: ${cancha.nombre} (ID: ${cancha.id}, Tipo: ${cancha.tipo})`);
+                console.log(`🔍 Verificando ID ${cancha.id} para Cancha 3:`, cancha.id === 8 || cancha.id === 13);
                 
                 const canchaCard = await crearCanchaCard(cancha, fecha, hora);
                 console.log(`🎨 Tarjeta de cancha creada para: ${cancha.nombre}`);
@@ -3426,15 +3431,20 @@ async function renderizarCanchasConDisponibilidad() {
                 // IDs locales: 11, 12, 13, 14, 15
                 // IDs producción: 6, 7, 8, 9, 10
                 if (cancha.id === 6 || cancha.id === 11) { // Cancha 1 Fútbol
+                    canchaCard.classList.add('cancha-futbol');
                     futbolIzquierda.appendChild(canchaCard);
                     console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolIzquierda`);
                 } else if (cancha.id === 7 || cancha.id === 12) { // Cancha 2 Fútbol
+                    canchaCard.classList.add('cancha-futbol');
                     futbolDerecha.appendChild(canchaCard);
                     console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolDerecha`);
                 } else if (cancha.id === 8 || cancha.id === 13) { // Cancha 3 Fútbol (horizontal)
-                    futbolGrande.appendChild(canchaCard);
-                    console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolGrande`);
+                    // SOLO GUARDAR en variable, NO agregar al DOM aún
+                    canchaCard.classList.add('demo3-cancha-horizontal');
+                    cancha3Horizontal = canchaCard;
+                    console.log(`🎨 Cancha 3 identificada y guardada (se agregará al final)`);
                 } else if (cancha.id === 9 || cancha.id === 14) { // Cancha 1 Padel (única cancha de padel)
+                    canchaCard.classList.add('cancha-padel');
                     padelSuperior.appendChild(canchaCard);
                     console.log(`🎨 Cancha ${cancha.nombre} asignada a padelSuperior`);
                 } else if (cancha.id === 10 || cancha.id === 15) { // Cancha 2 Padel - IGNORAR
@@ -3445,21 +3455,273 @@ async function renderizarCanchasConDisponibilidad() {
                 // Eliminado: Cancha 2 Padel (IDs 10 y 15) - ya no se renderiza
             }
             
-            // Agregar contenedores al grid principal
-            console.log('🎨 Agregando contenedores al grid principal...');
-            demo3Container.appendChild(futbolIzquierda);
-            console.log('🎨 futbolIzquierda agregado');
-            demo3Container.appendChild(futbolDerecha);
-            console.log('🎨 futbolDerecha agregado');
-            demo3Container.appendChild(futbolGrande);
-            console.log('🎨 futbolGrande agregado');
-            demo3Container.appendChild(padelSuperior);
-            console.log('🎨 padelSuperior agregado');
-            // Eliminado: padelInferior - ya no se usa
+            // Crear contenedor para las canchas superiores
+            const canchasSuperiores = document.createElement('div');
+            canchasSuperiores.className = 'demo3-canchas-superiores';
             
-            console.log('🎨 Agregando demo3Container a canchasHorizontales...');
+            // Agregar las 3 canchas superiores al contenedor
+            console.log('🎨 Agregando canchas superiores...');
+            canchasSuperiores.appendChild(futbolIzquierda);
+            console.log('🎨 futbolIzquierda agregado');
+            canchasSuperiores.appendChild(futbolDerecha);
+            console.log('🎨 futbolDerecha agregado');
+            canchasSuperiores.appendChild(padelSuperior);
+            console.log('🎨 padelSuperior agregado');
+            
+            // ORDEN CORRECTO DE AGREGADO:
+            console.log('📦 Agregando elementos en orden correcto...');
+            
+            // 1° Canchas superiores
+            demo3Container.appendChild(canchasSuperiores);
+            console.log('✅ Step 1: Canchas superiores agregadas (F1, F2, Pádel)');
+            
+            // 2° Cancha 3 horizontal - Crear contenedor específico
+            if (cancha3Horizontal) {
+                // Crear contenedor específico para Cancha 3 con ancho exacto
+                const contenedorCancha3 = document.createElement('div');
+                contenedorCancha3.className = 'demo3-contenedor-cancha3';
+                
+                // Agregar Cancha 3 al contenedor específico
+                contenedorCancha3.appendChild(cancha3Horizontal);
+                
+                // Agregar el contenedor específico al contenedor principal
+                demo3Container.appendChild(contenedorCancha3);
+                console.log('✅ Step 2: Cancha 3 horizontal agregada con contenedor específico');
+            } else {
+                console.warn('⚠️ Cancha 3 no fue encontrada');
+            }
+            
+            console.log('🎯 Demo3Container creado:', demo3Container);
+            console.log('✅ CanchasSuperiores tiene hijos:', canchasSuperiores.children.length);
+            console.log('📊 Demo3Container tiene hijos:', demo3Container.children.length);
+            
+            console.log('🎨 Configurando layout con Cancha 3...');
+            
+            // Configurar flex layout (column para 3 arriba + 1 abajo)
+            demo3Container.style.display = 'flex';
+            demo3Container.style.flexDirection = 'column';
+            demo3Container.style.gap = '20px';
+            demo3Container.style.justifyContent = 'center';
+            demo3Container.style.alignItems = 'center';
+            demo3Container.style.width = '100%';
+            demo3Container.style.maxWidth = '600px';
+            console.log('🎨 Layout con Cancha 3 configurado');
+            
+            // Forzar estilos en el contenedor padre para centrar
+            canchasHorizontales.style.display = 'flex';
+            canchasHorizontales.style.justifyContent = 'center';
+            canchasHorizontales.style.alignItems = 'center';
+            canchasHorizontales.style.width = '100%';
+            
             canchasHorizontales.appendChild(demo3Container);
             console.log('🎨 demo3Container agregado exitosamente');
+            
+            // ASEGURAR GAP DESPUÉS DE CARGAR ESTILOS
+            setTimeout(() => {
+                demo3Container.style.gap = '4px';
+                demo3Container.style.columnGap = '4px';
+                demo3Container.style.maxWidth = 'fit-content';
+                demo3Container.style.width = 'fit-content';
+                demo3Container.style.margin = '0 auto';
+                
+                // Re-aplicar estilos del contenedor padre
+                canchasHorizontales.style.display = 'flex';
+                canchasHorizontales.style.justifyContent = 'center';
+                canchasHorizontales.style.alignItems = 'center';
+                canchasHorizontales.style.width = '100%';
+                canchasHorizontales.style.maxWidth = 'none'; // Remover limitación de max-width
+                canchasHorizontales.style.overflow = 'visible'; // Asegurar que no se corte
+                
+                // Aplicar estilos a contenedores superiores
+                const canchasGridExpanded = canchasHorizontales.closest('.canchas-grid-expanded');
+                if (canchasGridExpanded) {
+                    canchasGridExpanded.style.maxWidth = 'none';
+                    canchasGridExpanded.style.width = '100%';
+                    canchasGridExpanded.style.overflow = 'visible';
+                    console.log('🎨 Estilos aplicados a canchas-grid-expanded');
+                }
+                
+                // Forzar estilos específicos en cancha de padel
+                const padelCancha = demo3Container.querySelector('.demo3-padel-superior');
+                if (padelCancha) {
+                    padelCancha.style.width = '80px';
+                    padelCancha.style.maxWidth = '80px';
+                    padelCancha.style.flex = '0 0 80px';
+                    console.log('🎨 Estilos forzados en cancha de padel: 80px');
+                }
+                
+                // DEBUGGING: Ajustar superposición manualmente
+                // Cambia estos valores para mover las canchas:
+                // - Valores positivos: mueven hacia la derecha
+                // - Valores negativos: mueven hacia la izquierda
+                const futbolIzquierda = demo3Container.querySelector('.demo3-futbol-izquierda');
+                const futbolDerecha = demo3Container.querySelector('.demo3-futbol-derecha');
+                
+                if (futbolIzquierda) {
+                    futbolIzquierda.style.transform = 'translateX(0px)'; // Ajustar aquí
+                }
+                if (futbolDerecha) {
+                    futbolDerecha.style.transform = 'translateX(-10px)'; // Ajustar aquí
+                }
+                if (padelCancha) {
+                    padelCancha.style.transform = 'translateX(-20px)'; // Ajustar aquí
+                }
+                
+                console.log('🔧 DEBUGGING: Usa translateX() para ajustar posiciones manualmente');
+                
+                console.log('🎨 Gap re-aplicado después de timeout');
+                
+                // DEBUGGING TARDÍO - DESPUÉS DE APLICAR ESTILOS
+                console.log('🔍 === DEBUGGING TARDÍO ===');
+                const lateStyles = window.getComputedStyle(demo3Container);
+                console.log('🔍 demo3Container computed styles (tardío):');
+                console.log('  - gap:', lateStyles.gap);
+                console.log('  - column-gap:', lateStyles.columnGap);
+                console.log('  - display:', lateStyles.display);
+                console.log('  - flex-direction:', lateStyles.flexDirection);
+                console.log('  - justify-content:', lateStyles.justifyContent);
+                console.log('  - width:', lateStyles.width);
+                console.log('  - margin:', lateStyles.margin);
+                
+        // Debugging de hijos tardío
+        Array.from(demo3Container.children).forEach((child, index) => {
+            console.log(`🔍 Hijo ${index} tardío (${child.className}):`);
+            const childStyles = window.getComputedStyle(child);
+            console.log(`  - width: ${childStyles.width}`);
+            console.log(`  - margin: ${childStyles.margin}`);
+            console.log(`  - padding: ${childStyles.padding}`);
+
+            const rect = child.getBoundingClientRect();
+            console.log(`  - getBoundingClientRect: left=${rect.left}, right=${rect.right}, width=${rect.width}`);
+        });
+        
+        // Calcular ancho total del grupo
+        const totalWidth = Array.from(demo3Container.children).reduce((sum, child) => {
+            const rect = child.getBoundingClientRect();
+            return sum + rect.width;
+        }, 0);
+        const gaps = (demo3Container.children.length - 1) * 4; // 4px por gap
+        const totalGroupWidth = totalWidth + gaps;
+        console.log(`🔍 Ancho total del grupo: ${totalGroupWidth}px (canchas: ${totalWidth}px + gaps: ${gaps}px)`);
+        
+        // Debugging del contenedor padre
+        const canchasHorizontalesRect = canchasHorizontales.getBoundingClientRect();
+        const canchasHorizontalesStyles = window.getComputedStyle(canchasHorizontales);
+        console.log(`🔍 === DEBUGGING CONTENEDOR PADRE ===`);
+        console.log(`🔍 canchasHorizontales width: ${canchasHorizontalesStyles.width}`);
+        console.log(`🔍 canchasHorizontales max-width: ${canchasHorizontalesStyles.maxWidth}`);
+        console.log(`🔍 canchasHorizontales overflow: ${canchasHorizontalesStyles.overflow}`);
+        console.log(`🔍 canchasHorizontales getBoundingClientRect: left=${canchasHorizontalesRect.left}, right=${canchasHorizontalesRect.right}, width=${canchasHorizontalesRect.width}`);
+        
+        // Debugging del contenedor abuelo (si existe)
+        const contenedorAbuelo = canchasHorizontales.parentElement;
+        if (contenedorAbuelo) {
+            const abueloRect = contenedorAbuelo.getBoundingClientRect();
+            const abueloStyles = window.getComputedStyle(contenedorAbuelo);
+            console.log(`🔍 === DEBUGGING CONTENEDOR ABUELO ===`);
+            console.log(`🔍 Abuelo className: ${contenedorAbuelo.className}`);
+            console.log(`🔍 Abuelo width: ${abueloStyles.width}`);
+            console.log(`🔍 Abuelo max-width: ${abueloStyles.maxWidth}`);
+            console.log(`🔍 Abuelo overflow: ${abueloStyles.overflow}`);
+            console.log(`🔍 Abuelo getBoundingClientRect: left=${abueloRect.left}, right=${abueloRect.right}, width=${abueloRect.width}`);
+            console.log(`🔍 === FIN DEBUGGING CONTENEDOR ABUELO ===`);
+        }
+        
+        // Debugging del viewport
+        console.log(`🔍 === DEBUGGING VIEWPORT ===`);
+        console.log(`🔍 window.innerWidth: ${window.innerWidth}`);
+        console.log(`🔍 document.documentElement.clientWidth: ${document.documentElement.clientWidth}`);
+        console.log(`🔍 === FIN DEBUGGING VIEWPORT ===`);
+        
+        console.log(`🔍 === FIN DEBUGGING CONTENEDOR PADRE ===`);
+        
+        // Debugging específico para cancha de padel
+        const padelCanchaDebug = demo3Container.querySelector('.demo3-padel-superior');
+        if (padelCanchaDebug) {
+            const padelStyles = window.getComputedStyle(padelCanchaDebug);
+            const padelRect = padelCanchaDebug.getBoundingClientRect();
+            console.log(`🔍 === DEBUGGING CANCHA PADEL ===`);
+            console.log(`🔍 Padel computed width: ${padelStyles.width}`);
+            console.log(`🔍 Padel computed max-width: ${padelStyles.maxWidth}`);
+            console.log(`🔍 Padel computed flex: ${padelStyles.flex}`);
+            console.log(`🔍 Padel getBoundingClientRect: left=${padelRect.left}, right=${padelRect.right}, width=${padelRect.width}`);
+            console.log(`🔍 Padel container width: ${demo3Container.getBoundingClientRect().width}`);
+            console.log(`🔍 === FIN DEBUGGING PADEL ===`);
+        }
+                
+                // Calcular distancia entre canchas
+                if (demo3Container.children.length >= 2) {
+                    const cancha1 = demo3Container.children[0];
+                    const cancha2 = demo3Container.children[1];
+                    const rect1 = cancha1.getBoundingClientRect();
+                    const rect2 = cancha2.getBoundingClientRect();
+                    const distancia = rect2.left - rect1.right;
+                    console.log(`🔍 Distancia entre Cancha 1 y Cancha 2: ${distancia}px`);
+                }
+                
+                // Verificar si el CSS se está cargando
+                const cssRules = Array.from(document.styleSheets).find(sheet => 
+                    sheet.href && sheet.href.includes('demo3-special.css')
+                );
+                if (cssRules) {
+                    console.log('🔍 CSS demo3-special.css encontrado y cargado');
+                } else {
+                    console.log('⚠️ CSS demo3-special.css NO encontrado');
+                }
+                
+                console.log('🔍 === FIN DEBUGGING TARDÍO ===');
+            }, 500);
+            
+            // DEBUGGING PROFUNDO DEL ESPACIADO
+            console.log('🔍 === DEBUGGING ESPACIADO ===');
+            console.log('🔍 demo3Container children count:', demo3Container.children.length);
+            console.log('🔍 demo3Container computed styles:');
+            const demo3Styles = window.getComputedStyle(demo3Container);
+            console.log('  - display:', demo3Styles.display);
+            console.log('  - flex-direction:', demo3Styles.flexDirection);
+            console.log('  - gap:', demo3Styles.gap);
+            console.log('  - justify-content:', demo3Styles.justifyContent);
+            console.log('  - align-items:', demo3Styles.alignItems);
+            console.log('  - width:', demo3Styles.width);
+            console.log('  - max-width:', demo3Styles.maxWidth);
+            console.log('  - margin:', demo3Styles.margin);
+            console.log('  - padding:', demo3Styles.padding);
+            
+            // Debugging de cada contenedor hijo
+            Array.from(demo3Container.children).forEach((child, index) => {
+                console.log(`🔍 Hijo ${index} (${child.className}):`);
+                const childStyles = window.getComputedStyle(child);
+                console.log(`  - width: ${childStyles.width}`);
+                console.log(`  - height: ${childStyles.height}`);
+                console.log(`  - margin: ${childStyles.margin}`);
+                console.log(`  - margin-left: ${childStyles.marginLeft}`);
+                console.log(`  - margin-right: ${childStyles.marginRight}`);
+                console.log(`  - padding: ${childStyles.padding}`);
+                console.log(`  - padding-left: ${childStyles.paddingLeft}`);
+                console.log(`  - padding-right: ${childStyles.paddingRight}`);
+                console.log(`  - border: ${childStyles.border}`);
+                console.log(`  - border-left: ${childStyles.borderLeft}`);
+                console.log(`  - border-right: ${childStyles.borderRight}`);
+                console.log(`  - flex: ${childStyles.flex}`);
+                console.log(`  - gap: ${childStyles.gap}`);
+                console.log(`  - position: ${childStyles.position}`);
+                console.log(`  - left: ${childStyles.left}`);
+                console.log(`  - right: ${childStyles.right}`);
+                
+                // Calcular posición real
+                const rect = child.getBoundingClientRect();
+                console.log(`  - getBoundingClientRect: left=${rect.left}, right=${rect.right}, width=${rect.width}`);
+            });
+            
+            // Debugging del contenedor padre
+            const parentStyles = window.getComputedStyle(canchasHorizontales);
+            console.log('🔍 canchasHorizontales computed styles:');
+            console.log('  - gap:', parentStyles.gap);
+            console.log('  - margin:', parentStyles.margin);
+            console.log('  - padding:', parentStyles.padding);
+            console.log('  - display:', parentStyles.display);
+            console.log('  - justify-content:', parentStyles.justifyContent);
+            console.log('🔍 === FIN DEBUGGING ===');
         } else {
             // Renderizado normal para otros complejos
             for (const cancha of canchasOrdenadas) {
@@ -3535,7 +3797,7 @@ async function renderizarCanchasConDisponibilidad() {
             const jugadoresPorEquipo = complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' ? '5 jugadores por equipo' : 
                                      complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' && cancha.nombre === 'Cancha 3' ? '7 jugadores por equipo' :
                                      complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'futbol' ? '7 jugadores por equipo' :
-                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'padel' ? '2 jugadores por equipo' :
+                                     complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.tipo === 'padel' ? '2 jugadores<br>por equipo' :
                                      '7 jugadores por equipo';
             
             // Construir HTML del precio (con promoción si aplica)
@@ -3561,29 +3823,32 @@ async function renderizarCanchasConDisponibilidad() {
             console.log('🔍 DEBUG: complejoSeleccionado.nombre =', complejoSeleccionado.nombre, 'cancha.nombre =', cancha.nombre);
             if (complejoSeleccionado.nombre === 'Complejo Demo 3' && cancha.nombre === 'Cancha 3') {
                 canchaCard.innerHTML = `
-                    ${tipoIndicator}
-                    <div class="cancha-icon">
-                        <i class="fas ${iconClass}"></i>
+                    <!-- Sección izquierda: Badge + Ícono -->
+                    <div class="cancha-izquierda">
+                        <div class="cancha-badge">FÚTBOL</div>
+                        <div class="cancha-icono-grande">⚽</div>
                     </div>
-                    <div class="cancha-info">
-                        <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
-                        ${precioHTML}
-                        <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>
+                    
+                    <!-- Sección central: Info -->
+                    <div class="cancha-centro">
+                        <h3 class="cancha-nombre">Cancha 3</h3>
+                        <p class="cancha-precio">$15.000 por hora</p>
+                        <div class="cancha-jugadores">
+                            <i class="fas fa-users me-1"></i>
+                            <span>7 jugadores por equipo</span>
+                        </div>
                     </div>
-                    <div class="estado-disponibilidad">
-                        ${estadoBadge}
+                    
+                    <!-- Sección derecha: Botón -->
+                    <div class="cancha-derecha">
+                        <button class="cancha-boton">Disponible</button>
                     </div>
                 `;
-                // FORZAR CLASES HORIZONTALES
-                canchaCard.style.display = 'flex';
-                canchaCard.style.flexDirection = 'row';
-                canchaCard.style.justifyContent = 'space-between';
-                canchaCard.style.alignItems = 'center';
-                canchaCard.style.width = '100%';
-                canchaCard.style.height = '100%';
+                // Aplicar clases para Cancha 3 horizontal
+                canchaCard.classList.add('demo3-cancha-horizontal');
                 
-                // FORZAR ACTUALIZACIÓN - CAMBIO v4.1
-                console.log('🎯 Cancha 3 HTML actualizado con descripción idéntica:', canchaCard.innerHTML);
+                // FORZAR ACTUALIZACIÓN - CAMBIO v5.0
+                console.log('🎯 Cancha 3 HTML actualizado con estructura definitiva:', canchaCard.innerHTML);
             } else {
                 // HTML normal para otras canchas
                 canchaCard.innerHTML = `
@@ -3591,7 +3856,7 @@ async function renderizarCanchasConDisponibilidad() {
                     <div class="cancha-icon">
                         <i class="fas ${iconClass}"></i>
                     </div>
-                    <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha')}</h5>
+                    <h5>${cancha.nombre.replace('Cancha Techada', 'Cancha').replace('Cancha 1', cancha.tipo === 'padel' ? 'Cancha Pádel' : 'Cancha 1').replace('Cancha 2', 'Cancha 2').replace('Cancha 3', 'Cancha 3')}</h5>
                     ${precioHTML}
                     ${esTechado ? '<p class="text-info small"><i class="fas fa-home me-1"></i>Techada</p>' : ''}
                     <p class="text-info small"><i class="fas fa-users me-1"></i>${jugadoresPorEquipo}</p>

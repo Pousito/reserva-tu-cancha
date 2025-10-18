@@ -2164,6 +2164,195 @@ app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, requireRo
   }
 });
 
+// Endpoint para crear una nueva cancha (panel de administración)
+app.post('/api/admin/canchas', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    console.log('⚽ Creando nueva cancha...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    const { nombre, tipo, precio_hora, complejo_id } = req.body;
+    
+    // Validar datos requeridos
+    if (!nombre || !tipo || !precio_hora || !complejo_id) {
+      return res.status(400).json({ error: 'Faltan datos requeridos' });
+    }
+    
+    // Verificar que el usuario tenga acceso al complejo
+    const userRole = req.user.rol;
+    if (userRole !== 'super_admin' && req.user.complejo_id != complejo_id) {
+      return res.status(403).json({ error: 'No tienes permisos para crear canchas en este complejo' });
+    }
+    
+    // Crear la cancha
+    const result = await db.query(`
+      INSERT INTO canchas (nombre, tipo, precio_hora, complejo_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `, [nombre, tipo, precio_hora, complejo_id]);
+    
+    console.log(`✅ Cancha creada: ${result[0].nombre} (ID: ${result[0].id})`);
+    res.status(201).json(result[0]);
+  } catch (error) {
+    console.error('❌ Error creando cancha:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para actualizar una cancha (panel de administración)
+app.put('/api/admin/canchas/:id', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, tipo, precio_hora } = req.body;
+    
+    console.log(`⚽ Actualizando cancha ID: ${id}...`);
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    // Validar datos requeridos
+    if (!nombre || !tipo || !precio_hora) {
+      return res.status(400).json({ error: 'Faltan datos requeridos' });
+    }
+    
+    // Verificar que la cancha existe y el usuario tiene acceso
+    const canchaExistente = await db.query('SELECT * FROM canchas WHERE id = $1', [id]);
+    if (canchaExistente.length === 0) {
+      return res.status(404).json({ error: 'Cancha no encontrada' });
+    }
+    
+    const userRole = req.user.rol;
+    if (userRole !== 'super_admin' && req.user.complejo_id != canchaExistente[0].complejo_id) {
+      return res.status(403).json({ error: 'No tienes permisos para modificar esta cancha' });
+    }
+    
+    // Actualizar la cancha
+    const result = await db.query(`
+      UPDATE canchas 
+      SET nombre = $1, tipo = $2, precio_hora = $3
+      WHERE id = $4
+      RETURNING *
+    `, [nombre, tipo, precio_hora, id]);
+    
+    console.log(`✅ Cancha actualizada: ${result[0].nombre} (ID: ${result[0].id})`);
+    res.json(result[0]);
+  } catch (error) {
+    console.error('❌ Error actualizando cancha:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para eliminar una cancha (panel de administración)
+app.delete('/api/admin/canchas/:id', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`⚽ Eliminando cancha ID: ${id}...`);
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    // Verificar que la cancha existe y el usuario tiene acceso
+    const canchaExistente = await db.query('SELECT * FROM canchas WHERE id = $1', [id]);
+    if (canchaExistente.length === 0) {
+      return res.status(404).json({ error: 'Cancha no encontrada' });
+    }
+    
+    const userRole = req.user.rol;
+    if (userRole !== 'super_admin' && req.user.complejo_id != canchaExistente[0].complejo_id) {
+      return res.status(403).json({ error: 'No tienes permisos para eliminar esta cancha' });
+    }
+    
+    // Verificar si hay reservas asociadas
+    const reservas = await db.query('SELECT COUNT(*) as total FROM reservas WHERE cancha_id = $1', [id]);
+    const totalReservas = parseInt(reservas[0].total);
+    
+    if (totalReservas > 0) {
+      return res.status(400).json({ 
+        error: `No se puede eliminar la cancha porque tiene ${totalReservas} reserva(s) asociada(s)` 
+      });
+    }
+    
+    // Eliminar la cancha
+    await db.query('DELETE FROM canchas WHERE id = $1', [id]);
+    
+    console.log(`✅ Cancha eliminada: ${canchaExistente[0].nombre} (ID: ${id})`);
+    res.json({ message: 'Cancha eliminada exitosamente' });
+  } catch (error) {
+    console.error('❌ Error eliminando cancha:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Función para registrar movimientos financieros automáticamente
+async function registrarMovimientosFinancieros(reservaInfo) {
+  try {
+    console.log('💰 Registrando movimientos financieros para reserva:', reservaInfo.codigo_reserva);
+    
+    // Obtener el complejo_id de la reserva
+    const canchaInfo = await db.get('SELECT complejo_id FROM canchas WHERE id = $1', [reservaInfo.cancha_id]);
+    if (!canchaInfo) {
+      throw new Error('No se pudo obtener información de la cancha');
+    }
+    
+    const complejoId = canchaInfo.complejo_id;
+    const fechaReserva = new Date(reservaInfo.fecha);
+    const montoReserva = parseFloat(reservaInfo.precio_total);
+    const comision = parseFloat(reservaInfo.comision_aplicada) || 0;
+    
+    // Obtener las categorías del complejo
+    const categoriaIngreso = await db.get(
+      'SELECT id FROM categorias_gastos WHERE complejo_id = $1 AND tipo = $2 AND nombre = $3',
+      [complejoId, 'ingreso', 'Reservas Web']
+    );
+    
+    const categoriaEgreso = await db.get(
+      'SELECT id FROM categorias_gastos WHERE complejo_id = $1 AND tipo = $2 AND nombre = $3',
+      [complejoId, 'gasto', 'Comisión Plataforma']
+    );
+    
+    if (!categoriaIngreso || !categoriaEgreso) {
+      console.log('⚠️ Categorías financieras no encontradas para el complejo:', complejoId);
+      return;
+    }
+    
+    // Registrar ingreso por la reserva
+    await db.run(`
+      INSERT INTO gastos_ingresos (complejo_id, categoria_id, tipo, monto, fecha, descripcion, metodo_pago)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [
+      complejoId,
+      categoriaIngreso.id,
+      'ingreso',
+      montoReserva,
+      fechaReserva,
+      `Reserva ${reservaInfo.codigo_reserva} - ${reservaInfo.nombre_cliente}`,
+      'Web'
+    ]);
+    
+    console.log('✅ Ingreso registrado:', montoReserva);
+    
+    // Registrar egreso por comisión (solo si hay comisión)
+    if (comision > 0) {
+      await db.run(`
+        INSERT INTO gastos_ingresos (complejo_id, categoria_id, tipo, monto, fecha, descripcion, metodo_pago)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        complejoId,
+        categoriaEgreso.id,
+        'gasto',
+        comision,
+        fechaReserva,
+        `Comisión plataforma - Reserva ${reservaInfo.codigo_reserva}`,
+        'Automático'
+      ]);
+      
+      console.log('✅ Egreso por comisión registrado:', comision);
+    }
+    
+    console.log('💰 Movimientos financieros registrados exitosamente');
+    
+  } catch (error) {
+    console.error('❌ Error registrando movimientos financieros:', error);
+    throw error;
+  }
+}
+
 // Endpoint para confirmar una reserva (panel de administración)
 app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
@@ -2193,6 +2382,15 @@ app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requi
         `, [codigoReserva]);
 
         if (reservaInfo) {
+          // Registrar movimientos financieros automáticamente
+          try {
+            await registrarMovimientosFinancieros(reservaInfo);
+            console.log('💰 Movimientos financieros registrados automáticamente');
+          } catch (finError) {
+            console.error('❌ Error registrando movimientos financieros:', finError);
+            // No fallar la confirmación si hay error en el registro financiero
+          }
+
           const emailData = {
             codigo_reserva: reservaInfo.codigo_reserva,
             email_cliente: reservaInfo.email_cliente,
@@ -3343,6 +3541,15 @@ app.post('/api/reservas', async (req, res) => {
         // Enviar emails de confirmación (cliente + administradores)
         const emailResults = await emailService.sendConfirmationEmails(emailData);
         console.log('📧 Emails de confirmación procesados:', emailResults);
+        
+        // Registrar movimientos financieros automáticamente
+        try {
+          await registrarMovimientosFinancieros(reservaInfo);
+          console.log('💰 Movimientos financieros registrados automáticamente');
+        } catch (finError) {
+          console.error('❌ Error registrando movimientos financieros:', finError);
+          // No fallar la reserva por error en el registro financiero
+        }
       }
     } catch (emailError) {
       console.error('⚠️ Error enviando emails de confirmación:', emailError.message);
