@@ -8472,6 +8472,86 @@ app.get('/api/admin/debug-court-permissions/:id', authenticateToken, async (req,
   }
 });
 
+// ===== ENDPOINT PARA CREAR CATEGORÍAS FINANCIERAS DEL COMPLEJO DEMO 3 =====
+app.get('/api/admin/crear-categorias-demo3', authenticateToken, async (req, res) => {
+  try {
+    console.log('🏗️ Creando categorías financieras para Complejo Demo 3...');
+    
+    // Verificar que el usuario pertenece al Complejo Demo 3
+    if (req.user.complejo_id !== 8) {
+      return res.status(403).json({ error: 'Solo usuarios del Complejo Demo 3 pueden ejecutar esta acción' });
+    }
+    
+    const complejoId = req.user.complejo_id;
+    console.log(`🔍 Creando categorías para complejo ID: ${complejoId}`);
+    
+    // Verificar categorías existentes
+    const categoriasExistentes = await db.query(`
+      SELECT * FROM categorias_gastos 
+      WHERE complejo_id = $1 
+      ORDER BY tipo, nombre
+    `, [complejoId]);
+    
+    console.log(`📊 Categorías existentes: ${categoriasExistentes.length}`);
+    
+    // Categorías necesarias para el sistema de reservas
+    const categoriasNecesarias = [
+      { nombre: 'Reservas Web', tipo: 'ingreso' },
+      { nombre: 'Comisión Plataforma', tipo: 'gasto' }
+    ];
+    
+    const categoriasCreadas = [];
+    const categoriasExistentesNombres = categoriasExistentes.map(c => c.nombre);
+    
+    for (const categoria of categoriasNecesarias) {
+      if (!categoriasExistentesNombres.includes(categoria.nombre)) {
+        console.log(`➕ Creando categoría: ${categoria.nombre} (${categoria.tipo})`);
+        
+        await db.run(`
+          INSERT INTO categorias_gastos (complejo_id, nombre, tipo, descripcion, activa)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [
+          complejoId,
+          categoria.nombre,
+          categoria.tipo,
+          `Categoría automática para ${categoria.nombre}`,
+          true
+        ]);
+        
+        categoriasCreadas.push(categoria);
+        console.log(`✅ Categoría creada: ${categoria.nombre}`);
+      } else {
+        console.log(`⚠️ Categoría ya existe: ${categoria.nombre}`);
+      }
+    }
+    
+    // Verificar categorías finales
+    const categoriasFinales = await db.query(`
+      SELECT * FROM categorias_gastos 
+      WHERE complejo_id = $1 
+      ORDER BY tipo, nombre
+    `, [complejoId]);
+    
+    res.json({
+      success: true,
+      message: 'Categorías financieras procesadas exitosamente',
+      complejo_id: complejoId,
+      categorias_creadas: categoriasCreadas,
+      categorias_existentes_iniciales: categoriasExistentes.length,
+      categorias_finales: categoriasFinales.length,
+      categorias: categoriasFinales
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando categorías financieras:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creando categorías financieras',
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT TEMPORAL PARA DEBUG DE MOVIMIENTOS FINANCIEROS =====
 app.get('/api/admin/debug-movimientos-financieros/:codigoReserva', authenticateToken, async (req, res) => {
   try {
