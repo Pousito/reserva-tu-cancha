@@ -8551,6 +8551,144 @@ app.get('/api/admin/crear-categorias-demo3', authenticateToken, async (req, res)
   }
 });
 
+// ===== ENDPOINT PARA REGISTRAR MOVIMIENTOS FINANCIEROS MANUALMENTE =====
+app.get('/api/admin/registrar-movimientos-manual/:codigoReserva', authenticateToken, async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    console.log('💰 Registrando movimientos financieros manualmente para reserva:', codigoReserva);
+    
+    // 1. Buscar la reserva
+    const reserva = await db.query(`
+      SELECT r.*, c.complejo_id, co.nombre as complejo_nombre 
+      FROM reservas r 
+      JOIN canchas c ON r.cancha_id = c.id 
+      JOIN complejos co ON c.complejo_id = co.id 
+      WHERE r.codigo_reserva = $1
+    `, [codigoReserva]);
+    
+    if (reserva.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+    
+    const reservaInfo = reserva[0];
+    console.log('📋 Reserva encontrada:', {
+      codigo: reservaInfo.codigo_reserva,
+      estado: reservaInfo.estado,
+      precio_total: reservaInfo.precio_total,
+      comision_aplicada: reservaInfo.comision_aplicada,
+      complejo_id: reservaInfo.complejo_id
+    });
+    
+    // 2. Buscar categorías financieras del complejo
+    const categorias = await db.query(`
+      SELECT * FROM categorias_gastos 
+      WHERE complejo_id = $1 
+      ORDER BY tipo, nombre
+    `, [reservaInfo.complejo_id]);
+    
+    console.log('📊 Categorías encontradas:', categorias.length);
+    
+    if (categorias.length === 0) {
+      return res.status(400).json({ 
+        error: 'No hay categorías financieras configuradas para este complejo',
+        complejo_id: reservaInfo.complejo_id
+      });
+    }
+    
+    // 3. Buscar categorías específicas
+    const categoriaIngreso = categorias.find(c => c.nombre === 'Reservas Web' && c.tipo === 'ingreso');
+    const categoriaEgreso = categorias.find(c => c.nombre === 'Comisión Plataforma' && c.tipo === 'gasto');
+    
+    if (!categoriaIngreso || !categoriaEgreso) {
+      return res.status(400).json({ 
+        error: 'Categorías financieras incompletas',
+        categorias_encontradas: categorias.map(c => ({ nombre: c.nombre, tipo: c.tipo })),
+        categoria_ingreso_encontrada: !!categoriaIngreso,
+        categoria_egreso_encontrada: !!categoriaEgreso
+      });
+    }
+    
+    // 4. Registrar movimientos financieros
+    const fechaReserva = new Date(reservaInfo.fecha);
+    const montoReserva = parseFloat(reservaInfo.precio_total);
+    const comision = parseFloat(reservaInfo.comision_aplicada) || 0;
+    
+    const movimientosCreados = [];
+    
+    // Ingreso por reserva
+    const ingresoResult = await db.run(`
+      INSERT INTO gastos_ingresos (complejo_id, categoria_id, tipo, monto, fecha, descripcion, metodo_pago)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, monto, descripcion
+    `, [
+      reservaInfo.complejo_id, 
+      categoriaIngreso.id, 
+      'ingreso', 
+      montoReserva, 
+      fechaReserva,
+      `Reserva ${reservaInfo.codigo_reserva} - ${reservaInfo.nombre_cliente}`, 
+      'Web'
+    ]);
+    
+    movimientosCreados.push({
+      tipo: 'ingreso',
+      monto: montoReserva,
+      descripcion: ingresoResult.descripcion,
+      id: ingresoResult.id
+    });
+    
+    console.log('✅ Ingreso registrado:', montoReserva);
+    
+    // Egreso por comisión (si existe)
+    if (comision > 0) {
+      const egresoResult = await db.run(`
+        INSERT INTO gastos_ingresos (complejo_id, categoria_id, tipo, monto, fecha, descripcion, metodo_pago)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, monto, descripcion
+      `, [
+        reservaInfo.complejo_id, 
+        categoriaEgreso.id, 
+        'gasto', 
+        comision, 
+        fechaReserva,
+        `Comisión plataforma - Reserva ${reservaInfo.codigo_reserva}`, 
+        'Automático'
+      ]);
+      
+      movimientosCreados.push({
+        tipo: 'gasto',
+        monto: comision,
+        descripcion: egresoResult.descripcion,
+        id: egresoResult.id
+      });
+      
+      console.log('✅ Egreso por comisión registrado:', comision);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Movimientos financieros registrados exitosamente',
+      reserva: {
+        codigo: reservaInfo.codigo_reserva,
+        estado: reservaInfo.estado,
+        precio_total: reservaInfo.precio_total,
+        comision_aplicada: reservaInfo.comision_aplicada,
+        complejo_id: reservaInfo.complejo_id
+      },
+      movimientos_creados: movimientosCreados,
+      total_movimientos: movimientosCreados.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error registrando movimientos financieros:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error registrando movimientos financieros',
+      error: error.message
+    });
+  }
+});
+
 // ===== ENDPOINT TEMPORAL PARA DEBUG DE MOVIMIENTOS FINANCIEROS =====
 app.get('/api/admin/debug-movimientos-financieros/:codigoReserva', authenticateToken, async (req, res) => {
   try {
