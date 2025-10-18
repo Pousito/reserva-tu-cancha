@@ -1102,16 +1102,23 @@ async function exportToPDF() {
     // Intentar cargar el logo del complejo
     if (userData.complejo_id) {
         try {
-            // Mapeo de logos (inline para no depender de script externo)
-            // ID 6: Borde Río (desarrollo), ID 7: Borde Río (producción)
-            const logosMap = {
-                1: '/images/logos/borde-rio.png',  // Complejo En Desarrollo
-                2: '/images/logos/borde-rio.png',  // Complejo Demo 1
-                7: '/images/logos/borde-rio.png',  // Espacio Deportivo Borde Río
-                8: '/images/logos/demo3-new-life-galilea.png'  // Complejo Demo 3
-            };
+            // Mapeo de logos (por nombre para evitar problemas de ID entre desarrollo/producción)
+            let logoPath = null;
             
-            const logoPath = logosMap[userData.complejo_id];
+            if (userData.complejo_nombre && userData.complejo_nombre.toLowerCase().includes('demo 3')) {
+                logoPath = '/images/logos/demo3-new-life-galilea.png';
+                console.log(`🔍 Complejo Demo 3 detectado por nombre: ${userData.complejo_nombre}`);
+            } else {
+                // Mapeo por ID para otros complejos
+                const logosMap = {
+                    1: '/images/logos/borde-rio.png',  // Complejo En Desarrollo
+                    2: '/images/logos/borde-rio.png',  // Complejo Demo 1
+                    7: '/images/logos/borde-rio.png',  // Espacio Deportivo Borde Río (producción)
+                    8: '/images/logos/demo3-new-life-galilea.png'  // Complejo Demo 3 (producción)
+                };
+                logoPath = logosMap[userData.complejo_id];
+                console.log(`🔍 Buscando logo para complejo ID: ${userData.complejo_id}, nombre: ${userData.complejo_nombre}`);
+            }
             
             if (logoPath) {
                 // Intentar cargar el logo
