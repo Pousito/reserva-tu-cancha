@@ -7981,19 +7981,30 @@ app.get('/api/admin/create-demo3-users', async (req, res) => {
     const complejoId = complejoResult[0].id;
     console.log(`✅ Complejo Demo 3 encontrado: ID ${complejoId}`);
 
-    // Verificar si los usuarios ya existen
-    const existingUsers = await db.query(
+    // Verificar usuarios existentes (todos los usuarios del complejo)
+    const allUsers = await db.query(
+      'SELECT email, rol, nombre, activo FROM usuarios WHERE complejo_id = $1 ORDER BY rol, email',
+      [complejoId]
+    );
+
+    console.log(`🔍 Usuarios existentes en Complejo Demo 3: ${allUsers.length}`);
+    allUsers.forEach(user => {
+      console.log(`   - ${user.email} (${user.rol})`);
+    });
+
+    // Verificar si los usuarios específicos ya existen
+    const targetUsers = await db.query(
       'SELECT email, rol FROM usuarios WHERE email IN ($1, $2)',
       ['owner@complejodemo3.cl', 'manager@complejodemo3.cl']
     );
 
-    console.log(`🔍 Usuarios existentes encontrados: ${existingUsers.length}`);
+    console.log(`🔍 Usuarios objetivo encontrados: ${targetUsers.length}`);
     const results = [];
 
     // Crear usuario Owner
     const ownerEmail = 'owner@complejodemo3.cl';
     const ownerPassword = 'Owner1234!';
-    const ownerExists = existingUsers.find(u => u.email === ownerEmail);
+    const ownerExists = targetUsers.find(u => u.email === ownerEmail);
 
     if (ownerExists) {
       console.log(`⚠️ Usuario Owner ya existe: ${ownerEmail}`);
@@ -8005,7 +8016,7 @@ app.get('/api/admin/create-demo3-users', async (req, res) => {
         VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
       `, [
         ownerEmail,
-        ownerPassword, // En producción esto debería estar hasheado
+        ownerPassword,
         'owner',
         complejoId,
         'Owner Complejo Demo 3',
@@ -8018,7 +8029,7 @@ app.get('/api/admin/create-demo3-users', async (req, res) => {
     // Crear usuario Manager
     const managerEmail = 'manager@complejodemo3.cl';
     const managerPassword = 'Manager1234!';
-    const managerExists = existingUsers.find(u => u.email === managerEmail);
+    const managerExists = targetUsers.find(u => u.email === managerEmail);
 
     if (managerExists) {
       console.log(`⚠️ Usuario Manager ya existe: ${managerEmail}`);
@@ -8030,7 +8041,7 @@ app.get('/api/admin/create-demo3-users', async (req, res) => {
         VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
       `, [
         managerEmail,
-        managerPassword, // En producción esto debería estar hasheado
+        managerPassword,
         'manager',
         complejoId,
         'Manager Complejo Demo 3',
@@ -8055,6 +8066,7 @@ app.get('/api/admin/create-demo3-users', async (req, res) => {
         id: complejoId,
         nombre: 'Complejo Demo 3'
       },
+      existingUsers: allUsers,
       results: results,
       totalUsers: finalUsers.length,
       users: finalUsers,
