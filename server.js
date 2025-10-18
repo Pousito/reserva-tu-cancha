@@ -8135,6 +8135,87 @@ app.get('/api/admin/update-demo3-passwords', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA LIMPIAR BLOQUEOS TEMPORALES PROBLEMÁTICOS =====
+app.get('/api/admin/limpiar-bloqueos-demo3', async (req, res) => {
+  try {
+    console.log('🧹 Limpiando bloqueos temporales problemáticos...');
+    
+    // 1. Verificar canchas del Complejo Demo 3
+    const canchasDemo3 = await db.query(`
+      SELECT c.id, c.nombre, c.tipo 
+      FROM canchas c 
+      JOIN complejos co ON c.complejo_id = co.id 
+      WHERE co.nombre = $1 
+      ORDER BY c.id
+    `, ['Complejo Demo 3']);
+
+    console.log(`🏟️ Canchas del Complejo Demo 3: ${canchasDemo3.length}`);
+    const canchaIds = canchasDemo3.map(c => c.id);
+    console.log(`🔍 IDs de canchas: ${canchaIds.join(', ')}`);
+
+    // 2. Verificar bloqueos temporales para estas canchas
+    const bloqueos = await db.query(`
+      SELECT id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en 
+      FROM bloqueos_temporales 
+      WHERE cancha_id = ANY($1) 
+      ORDER BY fecha, cancha_id
+    `, [canchaIds]);
+
+    console.log(`📊 Bloqueos encontrados: ${bloqueos.length}`);
+
+    // 3. Identificar bloqueos problemáticos (que cubren todo el día)
+    const bloqueosProblematicos = bloqueos.filter(b => 
+      b.hora_inicio === '00:00:00' && b.hora_fin === '23:59:59'
+    );
+
+    console.log(`🚨 Bloqueos problemáticos: ${bloqueosProblematicos.length}`);
+
+    // 4. Eliminar bloqueos problemáticos
+    let eliminados = 0;
+    for (const bloqueo of bloqueosProblematicos) {
+      await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueo.id]);
+      eliminados++;
+      console.log(`   ✅ Eliminado: ${bloqueo.id}`);
+    }
+
+    // 5. Verificar bloqueos restantes
+    const bloqueosRestantes = await db.query(`
+      SELECT COUNT(*) as total 
+      FROM bloqueos_temporales 
+      WHERE cancha_id = ANY($1)
+    `, [canchaIds]);
+
+    // 6. Verificar IDs duplicados en canchas
+    const idsDuplicados = await db.query(`
+      SELECT id, COUNT(*) as count 
+      FROM canchas 
+      GROUP BY id 
+      HAVING COUNT(*) > 1
+    `);
+
+    res.json({
+      success: true,
+      message: 'Limpieza de bloqueos completada',
+      complejo: 'Complejo Demo 3',
+      canchas: canchasDemo3,
+      bloqueosEncontrados: bloqueos.length,
+      bloqueosProblematicos: bloqueosProblematicos.length,
+      bloqueosEliminados: eliminados,
+      bloqueosRestantes: parseInt(bloqueosRestantes[0].total),
+      idsDuplicados: idsDuplicados.length,
+      detallesIdsDuplicados: idsDuplicados
+    });
+
+  } catch (error) {
+    console.error('❌ Error limpiando bloqueos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error limpiando bloqueos temporales',
+      error: error.message
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
