@@ -3,12 +3,23 @@
    Enfoque: Ocultar el icono nativo y crear uno personalizado
    ======================================== */
 
+/* ========================================
+   ESTILOS MÓVILES CON MÁXIMA PRIORIDAD
+   Para sobrescribir cualquier estilo existente
+   ======================================== */
+
 @media (max-width: 767px) {
     
-    /* CONTENEDOR PERSONALIZADO PARA LOS SELECTORES */
+    /* CONTENEDOR PERSONALIZADO PARA LOS SELECTORES - MÁXIMA PRIORIDAD */
     .date-time-selector {
-        position: relative;
-        margin-bottom: 20px;
+        position: relative !important;
+        margin-bottom: 20px !important;
+        padding: 25px !important;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+        border-radius: 15px !important;
+        border: 2px solid #e9ecef !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        transition: all 0.3s ease !important;
     }
     
     /* OCULTAR COMPLETAMENTE EL ICONO NATIVO DEL CALENDARIO */
@@ -23,12 +34,12 @@
         pointer-events: none !important;
     }
     
-    /* ESTILIZAR EL INPUT DE FECHA SIN EL ICONO NATIVO */
+    /* ESTILIZAR EL INPUT DE FECHA SIN EL ICONO NATIVO - MÁXIMA PRIORIDAD */
     .date-time-selector input[type="date"] {
         width: 100% !important;
-        padding: 18px 50px 18px 18px !important;
-        font-size: 1.3rem !important;
-        min-height: 60px !important;
+        padding: 22px 60px 22px 22px !important;
+        font-size: 1.4rem !important;
+        min-height: 65px !important;
         border: 3px solid #e9ecef !important;
         border-radius: 12px !important;
         background-color: #ffffff !important;
@@ -36,6 +47,8 @@
         transition: all 0.3s ease !important;
         position: relative !important;
         text-align: left !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
     }
     
     /* ICONO PERSONALIZADO DEL CALENDARIO A LA DERECHA */
@@ -59,12 +72,12 @@
         font-size: 1.2rem;
     }
     
-    /* ESTILIZAR EL SELECTOR DE HORA */
+    /* ESTILIZAR EL SELECTOR DE HORA - MÁXIMA PRIORIDAD */
     .date-time-selector select.form-select {
         width: 100% !important;
-        padding: 18px 50px 18px 18px !important;
-        font-size: 1.3rem !important;
-        min-height: 60px !important;
+        padding: 22px 60px 22px 22px !important;
+        font-size: 1.4rem !important;
+        min-height: 65px !important;
         border: 3px solid #e9ecef !important;
         border-radius: 12px !important;
         background-color: #ffffff !important;
@@ -72,6 +85,8 @@
         transition: all 0.3s ease !important;
         position: relative !important;
         text-align: left !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
         /* Remover la flecha nativa */
         -webkit-appearance: none !important;
         -moz-appearance: none !important;
@@ -386,5 +401,59 @@
     #mis-reservas .input-group::before {
         font-size: 1rem !important;
         padding: 12px 18px !important;
+    }
+}
+
+/* ========================================
+   ESTILOS ADICIONALES DE MÁXIMA PRIORIDAD
+   Para asegurar que sobrescriban cualquier conflicto
+   ======================================== */
+
+@media (max-width: 767px) {
+    
+    /* SOBRESCRIBIR CUALQUIER ESTILO CONFLICTIVO DEL ARCHIVO PRINCIPAL */
+    .date-time-selector input[type="date"],
+    .date-time-selector select.form-select {
+        /* Forzar estilos móviles */
+        font-size: 1.4rem !important;
+        min-height: 65px !important;
+        padding: 22px 60px 22px 22px !important;
+        border-radius: 12px !important;
+        border: 3px solid #e9ecef !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Asegurar que los iconos personalizados sean visibles */
+    .date-time-selector::after {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.3rem !important;
+        background-color: #667eea !important;
+        color: white !important;
+        border-radius: 8px !important;
+        position: absolute !important;
+        right: 15px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        z-index: 5 !important;
+        pointer-events: none !important;
+    }
+    
+    /* Ocultar completamente cualquier icono nativo */
+    .date-time-selector input[type="date"]::-webkit-calendar-picker-indicator,
+    .date-time-selector select.form-select::-webkit-calendar-picker-indicator {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
     }
 }
