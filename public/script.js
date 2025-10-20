@@ -4326,6 +4326,12 @@ async function confirmarReserva() {
     const precioTotalCancha = canchaSeleccionada.precio_hora; // Precio TOTAL de la cancha (siempre 100%)
     const precioAPagar = pagarMitad ? Math.round(precioTotalCancha / 2) : precioTotalCancha; // Lo que paga el cliente
     
+    console.log('🔍 DEBUG - Variables antes de formData:');
+    console.log('🔍 descuentoAplicado:', descuentoAplicado);
+    console.log('🔍 precioTotalCancha:', precioTotalCancha);
+    console.log('🔍 precioAPagar:', precioAPagar);
+    console.log('🔍 porcentajePagado:', porcentajePagado);
+    
     const formData = {
         cancha_id: canchaSeleccionada.id,
         fecha: document.getElementById('fechaSelect').value,
