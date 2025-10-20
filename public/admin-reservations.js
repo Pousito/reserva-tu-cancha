@@ -365,7 +365,9 @@ function actualizarTituloCalendarioPorRol() {
         actualizarTituloCalendario();
     } else if (userRole === 'owner' || userRole === 'manager') {
         // Para owner y manager, mostrar el nombre específico de su complejo
-        tituloCalendario.innerHTML = `<i class="fas fa-calendar-week me-2"></i>Calendario Semanal ${complejoNombre}`;
+        // Remover "Complejo" del nombre si ya lo contiene para evitar duplicación
+        const nombreLimpio = complejoNombre.startsWith('Complejo ') ? complejoNombre.substring(9) : complejoNombre;
+        tituloCalendario.innerHTML = `<i class="fas fa-calendar-week me-2"></i>Calendario Semanal - ${nombreLimpio}`;
         console.log(`📅 Título del calendario actualizado para ${userRole}: ${complejoNombre}`);
     }
 }
@@ -390,7 +392,9 @@ function actualizarTituloCalendario() {
     if (complejoSeleccionado) {
         const complejo = complejos.find(c => c.id == complejoSeleccionado);
         if (complejo) {
-            tituloCalendario.innerHTML = `<i class="fas fa-calendar-week me-2"></i>Calendario Semanal ${complejo.nombre}`;
+            // Remover "Complejo" del nombre si ya lo contiene para evitar duplicación
+            const nombreLimpio = complejo.nombre.startsWith('Complejo ') ? complejo.nombre.substring(9) : complejo.nombre;
+            tituloCalendario.innerHTML = `<i class="fas fa-calendar-week me-2"></i>Calendario Semanal - ${nombreLimpio}`;
         }
     } else {
         tituloCalendario.innerHTML = `<i class="fas fa-calendar-week me-2"></i>Calendario Semanal - Todos los Complejos`;
