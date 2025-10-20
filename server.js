@@ -1186,6 +1186,55 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
   }
 });
 
+// Endpoint temporal para eliminar cancha duplicada de pádel
+app.delete('/api/admin/eliminar-cancha-padel-duplicada', async (req, res) => {
+  try {
+    console.log('🗑️ Eliminando cancha 2 de pádel duplicada...');
+    
+    // Verificar canchas de pádel existentes
+    const canchasPadel = await db.query(
+      'SELECT id, nombre, tipo, complejo_id FROM canchas WHERE complejo_id = 8 AND tipo = $1 ORDER BY id',
+      ['padel']
+    );
+    
+    console.log('📋 Canchas de pádel encontradas:', canchasPadel);
+    
+    if (canchasPadel && canchasPadel.length > 1) {
+      // Eliminar la cancha 2 de pádel (ID: 10)
+      const result = await db.query('DELETE FROM canchas WHERE id = $1', [10]);
+      console.log('✅ Cancha 2 de pádel eliminada exitosamente');
+      
+      // Verificar que se eliminó
+      const canchasRestantes = await db.query(
+        'SELECT id, nombre, tipo, complejo_id FROM canchas WHERE complejo_id = 8 AND tipo = $1 ORDER BY id',
+        ['padel']
+      );
+      
+      console.log('📋 Canchas de pádel restantes:', canchasRestantes);
+      
+      res.json({
+        success: true,
+        message: 'Cancha 2 de pádel eliminada exitosamente',
+        canchas_restantes: canchasRestantes
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'Solo hay una cancha de pádel, no se necesita eliminar ninguna',
+        canchas: canchasPadel
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Error eliminando cancha:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message
+    });
+  }
+});
+
 // Endpoint legacy eliminado - usar /api/disponibilidad/:cancha_id/:fecha en su lugar
 
 // Función auxiliar para convertir tiempo a minutos
