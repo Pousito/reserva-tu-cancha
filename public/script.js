@@ -3492,7 +3492,10 @@ async function renderizarCanchasConDisponibilidad() {
         
         // Agregar nombre del complejo como atributo data para CSS dinámico
         if (!esTechado) {
-            galponContainer.setAttribute('data-complejo', `COMPLEJO ${complejoSeleccionado.nombre.toUpperCase()}`);
+            // Evitar duplicar la palabra "COMPLEJO" si ya está en el nombre
+            const nombreComplejo = complejoSeleccionado.nombre.toUpperCase();
+            const tituloComplejo = nombreComplejo.startsWith('COMPLEJO ') ? nombreComplejo : `COMPLEJO ${nombreComplejo}`;
+            galponContainer.setAttribute('data-complejo', tituloComplejo);
         }
 
         // Crear calle (Monte Perdido, Don Victor o Ruta Q-575) - se agregará DESPUÉS del contenedor
