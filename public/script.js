@@ -4357,18 +4357,28 @@ async function confirmarReserva() {
         
         // Crear bloqueo temporal y proceder al pago
         console.log('🔒 Creando bloqueo temporal y procediendo al pago...');
+        console.log('📋 formData completo:', formData);
+        console.log('🆔 sessionId:', sessionId);
+        
+        const datosEnvio = {
+            ...formData,
+            session_id: sessionId
+        };
+        console.log('📤 Datos que se enviarán:', datosEnvio);
+        
         const response = await fetch(`${API_BASE}/reservas/bloquear-y-pagar`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                ...formData,
-                session_id: sessionId
-            })
+            body: JSON.stringify(datosEnvio)
         });
         
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', response.headers);
+        
         const result = await response.json();
+        console.log('📡 Response body:', result);
         
         if (response.ok) {
             console.log('✅ Bloqueo temporal creado, redirigiendo a pago...', result);
