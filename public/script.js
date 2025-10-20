@@ -3604,14 +3604,18 @@ async function renderizarCanchasConDisponibilidad() {
             canchasFutbolSuperiores.appendChild(futbolDerecha);
             console.log('🎨 futbolDerecha agregado');
             
-            // ORDEN CORRECTO DE AGREGADO:
-            console.log('📦 Agregando elementos en orden correcto...');
+            // ORDEN CORRECTO DE AGREGADO PARA MOBILE:
+            console.log('📦 Agregando elementos en orden MOBILE: F1, F2, Pádel, C3...');
 
             // 1° Canchas de fútbol superiores (F1 y F2)
             demo3ContainerInner.appendChild(canchasFutbolSuperiores);
             console.log('✅ Step 1: Canchas de fútbol superiores agregadas (F1, F2)');
 
-            // 2° Cancha 3 horizontal - Crear contenedor específico
+            // 2° Cancha de pádel (ANTES de Cancha 3 para grid mobile)
+            demo3ContainerInner.appendChild(padelSuperior);
+            console.log('✅ Step 2: Cancha de pádel agregada (posición 3 para mobile)');
+
+            // 3° Cancha 3 horizontal AL FINAL
             let contenedorCancha3 = null;
             if (cancha3Horizontal) {
                 // Crear contenedor específico para Cancha 3 con ancho exacto
@@ -3623,14 +3627,10 @@ async function renderizarCanchasConDisponibilidad() {
 
                 // Agregar el contenedor específico al contenedor principal
                 demo3ContainerInner.appendChild(contenedorCancha3);
-                console.log('✅ Step 2: Cancha 3 horizontal agregada con contenedor específico');
+                console.log('✅ Step 3: Cancha 3 horizontal agregada AL FINAL');
             } else {
                 console.warn('⚠️ Cancha 3 no fue encontrada');
             }
-
-            // 3° Cancha de pádel al costado (ocupa 2 filas)
-            demo3ContainerInner.appendChild(padelSuperior);
-            console.log('✅ Step 3: Cancha de pádel agregada al costado');
             
             console.log('🎯 Demo3ContainerInner creado:', demo3ContainerInner);
             console.log('✅ CanchasFutbolSuperiores tiene hijos:', canchasFutbolSuperiores.children.length);
@@ -3638,25 +3638,28 @@ async function renderizarCanchasConDisponibilidad() {
 
             console.log('🎨 Configurando layout con Cancha 3 y Pádel al costado...');
 
-            // Configurar CSS Grid layout (2 filas x 2 columnas, con pádel ocupando 2 filas)
-            demo3ContainerInner.style.display = 'grid';
-            demo3ContainerInner.style.gridTemplateAreas = '"futbol-sup padel" "cancha3 padel"';
-            demo3ContainerInner.style.gridTemplateColumns = '2fr 1fr'; // Lado izq más ancho que pádel
-            demo3ContainerInner.style.gridTemplateRows = 'auto auto';
-            demo3ContainerInner.style.gap = '20px';
-            demo3ContainerInner.style.width = '100%';
-            demo3ContainerInner.style.maxWidth = '100%';
-            demo3ContainerInner.style.minHeight = '500px';
-            demo3ContainerInner.style.padding = '20px';
+            // Configurar CSS Grid layout SOLO EN DESKTOP (NO en móvil)
+            if (window.innerWidth > 768) {
+                demo3ContainerInner.style.display = 'grid';
+                demo3ContainerInner.style.gridTemplateAreas = '"futbol-sup padel" "cancha3 padel"';
+                demo3ContainerInner.style.gridTemplateColumns = '2fr 1fr';
+                demo3ContainerInner.style.gridTemplateRows = 'auto auto';
+                demo3ContainerInner.style.gap = '20px';
+                demo3ContainerInner.style.width = '100%';
+                demo3ContainerInner.style.maxWidth = '100%';
+                demo3ContainerInner.style.minHeight = '500px';
+                demo3ContainerInner.style.padding = '20px';
 
-            // Asignar grid areas a los contenedores
-            canchasFutbolSuperiores.style.gridArea = 'futbol-sup';
-            if (contenedorCancha3) {
-                contenedorCancha3.style.gridArea = 'cancha3';
+                // Asignar grid areas SOLO EN DESKTOP
+                canchasFutbolSuperiores.style.gridArea = 'futbol-sup';
+                if (contenedorCancha3) {
+                    contenedorCancha3.style.gridArea = 'cancha3';
+                }
+                padelSuperior.style.gridArea = 'padel';
+                console.log('🎨 CSS Grid layout configurado para DESKTOP');
+            } else {
+                console.log('📱 MÓVIL detectado - Grid inline NO aplicado, CSS manejará el layout');
             }
-            padelSuperior.style.gridArea = 'padel';
-
-            console.log('🎨 CSS Grid layout configurado (2x2 con pádel al costado)');
             
             // Forzar estilos en el contenedor padre para centrar
             canchasHorizontales.style.display = 'flex';
@@ -3670,13 +3673,13 @@ async function renderizarCanchasConDisponibilidad() {
             // Agregar el contenedor principal al DOM
             canchasHorizontales.appendChild(demo3Container);
             console.log('🎨 demo3Container agregado exitosamente');
-            
-            // ===== IMPLEMENTAR ZOOM Y PAN PARA MÓVIL =====
-            if (window.innerWidth <= 768) {
-                console.log('📱 Inicializando zoom y pan para móvil...');
-                inicializarZoomPanDemo3(demo3Container);
-                mostrarIndicadorZoom();
-            }
+
+            // ===== ZOOM Y PAN DESHABILITADO - Causa problemas de renderizado en móvil =====
+            // if (window.innerWidth <= 768) {
+            //     console.log('📱 Inicializando zoom y pan para móvil...');
+            //     inicializarZoomPanDemo3(demo3Container);
+            //     mostrarIndicadorZoom();
+            // }
             
             // ASEGURAR GRID DESPUÉS DE CARGAR ESTILOS
             setTimeout(() => {
