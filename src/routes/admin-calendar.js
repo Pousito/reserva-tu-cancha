@@ -76,8 +76,11 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         let startOfWeek, endOfWeek;
         
         if (fechaInicio && fechaFin) {
-            startOfWeek = new Date(fechaInicio);
-            endOfWeek = new Date(fechaFin);
+            // Parsear fechas en zona horaria local para evitar problemas de UTC
+            const [yearInicio, monthInicio, dayInicio] = fechaInicio.split('-').map(Number);
+            const [yearFin, monthFin, dayFin] = fechaFin.split('-').map(Number);
+            startOfWeek = new Date(yearInicio, monthInicio - 1, dayInicio);
+            endOfWeek = new Date(yearFin, monthFin - 1, dayFin);
         } else {
             // Calcular semana actual (lunes a domingo)
             const today = new Date();
@@ -102,6 +105,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             fechaInicio: `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`,
             fechaFin: `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`
         });
+        console.log('📅 Parámetros recibidos:', { fechaInicio, fechaFin, complejoId });
         
         // Construir consulta base
         let query = `
@@ -137,9 +141,11 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         if (user.rol === 'owner' || user.rol === 'manager') {
             query += ` AND comp.id = $${queryParams.length + 1}`;
             queryParams.push(user.complejo_id);
+            console.log('🔍 DEBUG - Filtrando por complejo del usuario:', user.complejo_id, 'tipo:', typeof user.complejo_id);
         } else if (complejoId && user.rol === 'super_admin') {
             query += ` AND comp.id = $${queryParams.length + 1}`;
             queryParams.push(complejoId);
+            console.log('🔍 DEBUG - Filtrando por complejo seleccionado:', complejoId);
         }
         
         query += ` ORDER BY r.fecha, r.hora_inicio, c.nombre`;
@@ -162,6 +168,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         // Debug: Mostrar reservas obtenidas
         console.log('🔍 Reservas obtenidas de la BD:', reservations);
+        console.log('🔍 Número de reservas encontradas:', reservations ? reservations.length : 0);
         if (reservations && reservations.length > 0) {
             console.log('📋 Primera reserva:', reservations[0]);
             // Buscar reservas para 12/09/2025
