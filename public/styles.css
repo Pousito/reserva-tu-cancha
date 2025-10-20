@@ -1366,6 +1366,66 @@ section {
         font-size: 18px !important;
         padding: 18px 15px !important;
     }
+
+    /* CÓDIGO DE DESCUENTO - MEJORADO PARA MÓVIL */
+    #codigoDescuento {
+        min-height: 55px !important;
+        font-size: 18px !important;
+        padding: 16px 15px !important;
+        border-radius: 10px !important;
+        border: 2px solid #e9ecef !important;
+        font-weight: 500 !important;
+    }
+
+    #codigoDescuento:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+        font-size: 18px !important;
+    }
+
+    #codigoDescuento::placeholder {
+        font-size: 16px !important;
+        color: #adb5bd !important;
+    }
+
+    /* Botón Aplicar descuento en móvil */
+    #aplicarDescuento {
+        min-height: 55px !important;
+        font-size: 17px !important;
+        padding: 16px 20px !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+    }
+
+    /* Input group del código de descuento específico para móvil */
+    .modal-body .input-group {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    .modal-body .input-group .form-control {
+        flex: 1 !important;
+        min-height: 55px !important;
+        font-size: 18px !important;
+        padding: 16px 15px !important;
+        border-radius: 12px !important;
+    }
+
+    .modal-body .input-group .btn {
+        min-height: 55px !important;
+        font-size: 17px !important;
+        padding: 16px 20px !important;
+        border-radius: 12px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Input group del código de descuento en móvil */
+    #codigoDescuento + .btn {
+        min-height: 55px !important;
+        font-size: 17px !important;
+    }
     
     /* Botones de filtro mejorados */
     .btn-outline-secondary {
@@ -1463,7 +1523,32 @@ section {
     }
     
     .modal-body {
-        padding: 1rem;
+        padding: 1.5rem;
+    }
+
+    /* Todos los inputs del modal en móvil */
+    .modal-body .form-control {
+        min-height: 50px !important;
+        font-size: 17px !important;
+        padding: 14px 15px !important;
+    }
+
+    .modal-body .form-control:focus {
+        font-size: 17px !important;
+    }
+
+    /* Labels del modal más visibles */
+    .modal-body .form-label {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Botones del modal más grandes */
+    .modal-footer .btn {
+        min-height: 50px !important;
+        font-size: 17px !important;
+        padding: 12px 24px !important;
     }
     
     /* Footer */
@@ -3166,7 +3251,7 @@ html {
     
     /* LAYOUT 1: Canchas 1, 2 + Pádel en móvil */
     .demo3-layout-1 {
-        display: flex;
+    display: flex;
         flex-direction: row;
         justify-content: space-between;
         align-items: stretch;
@@ -3177,13 +3262,13 @@ html {
     
     /* LAYOUT 2: Cancha 3 horizontal en móvil */
     .demo3-layout-2 {
-        display: flex;
+    display: flex;
         justify-content: flex-start;
-        align-items: center;
+    align-items: center;
         padding: 8px;
-        width: 100%;
-    }
-    
+    width: 100%;
+}
+
     /* Canchas en Layout 1 - móvil */
     .demo3-layout-1 .cancha-card {
         flex: 1;
@@ -3372,7 +3457,7 @@ html {
         gap: 3px; /* Reducir gap de 4px a 3px */
         padding: 6px; /* Reducir padding de 8px a 6px */
         min-width: 100%;
-        overflow: visible;
+    overflow: visible;
     }
     
     .demo3-layout-2 {
@@ -3869,7 +3954,7 @@ html {
         min-height: auto !important; /* Igual que móvil */
         height: auto !important; /* Igual que móvil */
     }
-}
+    }
     
     .demo3-container .cancha-card:hover {
         border-color: #667eea;
@@ -3911,18 +3996,18 @@ html {
     background: #6c757d !important; /* Gris para fútbol no seleccionado */
     border: 2px solid #6c757d !important;
     opacity: 0.6;
-}
-
-/* Indicador visual de disponibilidad */
-.demo3-container .cancha-card.disponible {
+    }
+    
+    /* Indicador visual de disponibilidad */
+    .demo3-container .cancha-card.disponible {
     /* Mantener colores base según tipo */
-}
-
-.demo3-container .cancha-card.ocupada {
+    }
+    
+    .demo3-container .cancha-card.ocupada {
     background: #dc3545 !important; /* Rojo para ocupada */
     border: 2px solid #dc3545 !important;
-    opacity: 0.8;
-}
+        opacity: 0.8;
+    }
 
 .demo3-container .cancha-card.no-seleccionada {
     background: #6c757d !important; /* Gris para no seleccionada */
