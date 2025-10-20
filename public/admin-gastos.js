@@ -223,7 +223,20 @@ async function cargarMovimientos() {
 
         if (!response.ok) throw new Error('Error al cargar movimientos');
 
-        movimientos = await response.json();
+        const responseText = await response.text();
+        console.log('🔍 Respuesta raw movimientos:', responseText);
+        
+        try {
+            movimientos = JSON.parse(responseText);
+            console.log('✅ Movimientos parseados:', movimientos);
+        } catch (parseError) {
+            console.error('❌ Error parseando JSON:', parseError);
+            console.error('❌ Texto que causó el error:', responseText);
+            throw new Error('Error parseando respuesta del servidor');
+        }
+        
+        // Inicializar movimientos filtrados con todos los movimientos
+        window.movimientosFiltrados = [...movimientos];
         
         renderizarTabla();
         actualizarEstadisticas();
@@ -335,25 +348,80 @@ function actualizarGraficos() {
 function actualizarGraficoEgresos() {
     const ctx = document.getElementById('gastosChart');
     
-    // Agrupar egresos por categoría
-    const egresosPorCategoria = {};
-    movimientos
-        .filter(m => m.tipo === 'gasto')
-        .forEach(m => {
-            if (!egresosPorCategoria[m.categoria_nombre]) {
-                egresosPorCategoria[m.categoria_nombre] = {
-                    monto: 0,
-                    color: m.categoria_color
-                };
-            }
-            egresosPorCategoria[m.categoria_nombre].monto += Number(m.monto);
-        });
+    // Obtener el filtro de tipo activo
+    const tipoFiltro = document.getElementById('filterTipo').value;
+    console.log('🎯 Actualizando gráfico - Filtro activo:', tipoFiltro);
+    console.log('📊 Movimientos disponibles:', movimientos.length);
+    console.log('📊 Movimientos:', movimientos);
     
-    const labels = Object.keys(egresosPorCategoria);
-    const data = labels.map(label => egresosPorCategoria[label].monto);
-    const colors = labels.map(label => egresosPorCategoria[label].color);
+    // Determinar qué tipo de movimiento mostrar
+    let tituloGrafico = 'Distribución de Ingresos y Egresos';
+    
+    if (tipoFiltro === 'ingreso') {
+        tituloGrafico = 'Distribución de Ingresos';
+        console.log('💰 Configurando gráfico para INGRESOS');
+    } else if (tipoFiltro === 'gasto') {
+        tituloGrafico = 'Distribución de Egresos';
+        console.log('💸 Configurando gráfico para EGRESOS');
+    } else {
+        // Si no hay filtro o es "todos", mostrar ambos tipos combinados
+        tituloGrafico = 'Distribución de Ingresos y Egresos';
+        console.log('📊 Configurando gráfico para AMBOS TIPOS');
+    }
+    
+    console.log('🏷️ Título del gráfico:', tituloGrafico);
+    
+    // Actualizar el título del elemento HTML
+    const tituloElement = document.getElementById('gastosChartTitle');
+    if (tituloElement) {
+        tituloElement.textContent = tituloGrafico;
+        console.log('📝 Título HTML actualizado a:', tituloGrafico);
+    }
+    
+    // Agrupar movimientos por categoría
+    const movimientosPorCategoria = {};
+    
+    // Usar los movimientos filtrados globalmente si existen, sino usar todos
+    let movimientosFiltrados = window.movimientosFiltrados || movimientos;
+    
+    // Si hay un filtro de tipo específico, aplicar filtro adicional
+    if (tipoFiltro === 'ingreso' || tipoFiltro === 'gasto') {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === tipoFiltro);
+        console.log(`🔍 Movimientos filtrados para ${tipoFiltro}:`, movimientosFiltrados.length);
+    } else {
+        console.log('🔍 Mostrando todos los movimientos filtrados:', movimientosFiltrados.length);
+    }
+    
+    // Agrupar por categoría
+    movimientosFiltrados.forEach(m => {
+        if (!movimientosPorCategoria[m.categoria_nombre]) {
+            movimientosPorCategoria[m.categoria_nombre] = {
+                monto: 0,
+                color: m.categoria_color
+            };
+        }
+        movimientosPorCategoria[m.categoria_nombre].monto += Number(m.monto);
+    });
+    
+    console.log('📊 Movimientos por categoría:', movimientosPorCategoria);
+    
+    const labels = Object.keys(movimientosPorCategoria);
+    const data = labels.map(label => movimientosPorCategoria[label].monto);
+    const colors = labels.map(label => movimientosPorCategoria[label].color);
     
     if (gastosChart) gastosChart.destroy();
+    
+    // Si no hay datos, mostrar mensaje
+    if (labels.length === 0) {
+        ctx.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #6b7280;">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p style="margin: 0; font-size: 1.1rem;">No hay datos para mostrar</p>
+                <p style="margin: 0; font-size: 0.9rem; opacity: 0.7;">${tituloGrafico}</p>
+            </div>
+        `;
+        return;
+    }
     
     gastosChart = new Chart(ctx, {
         type: 'doughnut',
@@ -369,6 +437,16 @@ function actualizarGraficoEgresos() {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
+                title: {
+                    display: true,
+                    text: tituloGrafico,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: {
                     position: 'bottom',
                     labels: {
@@ -779,7 +857,125 @@ function updateCategoriasFilter() {
 }
 
 function applyFilters() {
-    cargarMovimientos();
+    // Filtrar datos localmente en lugar de recargar desde el servidor
+    filtrarMovimientosLocalmente();
+    actualizarGraficos();
+}
+
+// ============================================
+// FILTRAR MOVIMIENTOS LOCALMENTE
+// ============================================
+
+function filtrarMovimientosLocalmente() {
+    // Obtener filtros
+    const tipo = document.getElementById('filterTipo').value;
+    const categoria = document.getElementById('filterCategoria').value;
+    const fechaDesde = document.getElementById('filterFechaDesde').value;
+    const fechaHasta = document.getElementById('filterFechaHasta').value;
+    
+    console.log('🔍 Aplicando filtros locales:', { tipo, categoria, fechaDesde, fechaHasta });
+    
+    // Filtrar movimientos
+    let movimientosFiltrados = [...movimientos]; // Copia de todos los movimientos
+    
+    if (tipo) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === tipo);
+        console.log(`📊 Filtrado por tipo ${tipo}:`, movimientosFiltrados.length);
+    }
+    
+    if (categoria) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.categoria_id == categoria);
+        console.log(`📊 Filtrado por categoría ${categoria}:`, movimientosFiltrados.length);
+    }
+    
+    if (fechaDesde) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.fecha >= fechaDesde);
+        console.log(`📊 Filtrado desde ${fechaDesde}:`, movimientosFiltrados.length);
+    }
+    
+    if (fechaHasta) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.fecha <= fechaHasta);
+        console.log(`📊 Filtrado hasta ${fechaHasta}:`, movimientosFiltrados.length);
+    }
+    
+    // Actualizar la variable global de movimientos filtrados
+    window.movimientosFiltrados = movimientosFiltrados;
+    
+    // Renderizar tabla con datos filtrados
+    renderizarTablaConDatos(movimientosFiltrados);
+    actualizarEstadisticasConDatos(movimientosFiltrados);
+    
+    console.log('✅ Filtros aplicados localmente. Movimientos mostrados:', movimientosFiltrados.length);
+}
+
+// ============================================
+// FUNCIONES AUXILIARES PARA FILTROS
+// ============================================
+
+function renderizarTablaConDatos(datos) {
+    const tbody = document.getElementById('movimientosTableBody');
+    
+    if (datos.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted py-5">
+                    <i class="fas fa-inbox fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
+                    No hay movimientos que coincidan con los filtros
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = datos.map(mov => `
+        <tr>
+            <td>${formatDate(mov.fecha)}</td>
+            <td>
+                <span class="badge-modern badge-${mov.tipo}">
+                    <i class="fas fa-${mov.tipo === 'ingreso' ? 'arrow-up' : 'arrow-down'}"></i>
+                    ${mov.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}
+                </span>
+            </td>
+            <td>
+                <div class="category-badge" style="color: ${mov.categoria_color}">
+                    <i class="${mov.categoria_icono}"></i>
+                    ${mov.categoria_nombre}
+                </div>
+            </td>
+            <td class="fw-bold">$${Number(mov.monto).toLocaleString('es-CL')}</td>
+            <td>${mov.descripcion || '-'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="editarMovimiento(${mov.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="eliminarMovimiento(${mov.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function actualizarEstadisticasConDatos(datos) {
+    const totalIngresos = datos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
+    const totalGastos = datos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
+    const balance = totalIngresos - totalGastos;
+    
+    document.getElementById('totalIngresos').textContent = `$${totalIngresos.toLocaleString('es-CL')}`;
+    document.getElementById('totalGastos').textContent = `$${totalGastos.toLocaleString('es-CL')}`;
+    document.getElementById('balance').textContent = `$${balance.toLocaleString('es-CL')}`;
+    
+    const balanceChange = document.getElementById('changeBalance');
+    if (balance > 0) {
+        balanceChange.className = 'stat-card-change positive';
+        balanceChange.innerHTML = '<i class="fas fa-arrow-up"></i> Balance positivo';
+    } else if (balance < 0) {
+        balanceChange.className = 'stat-card-change negative';
+        balanceChange.innerHTML = '<i class="fas fa-arrow-down"></i> Balance negativo';
+    } else {
+        balanceChange.className = 'stat-card-change';
+        balanceChange.innerHTML = 'Balance neutro';
+    }
 }
 
 // ============================================
@@ -1335,18 +1531,37 @@ async function cargarListaCategorias() {
     try {
         console.log('📋 Cargando lista de categorías...');
         
+        console.log('🔑 Token de autenticación:', localStorage.getItem('adminToken') ? 'Presente' : 'Ausente');
+        
         const response = await authenticatedFetch(`${API_BASE}/gastos/categorias`);
         
-        if (!response.ok) throw new Error('Error al cargar categorías');
+        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error del servidor:', errorText);
+            throw new Error('Error al cargar categorías');
+        }
         
         const data = await response.json();
         console.log('✅ Categorías cargadas:', data);
+        console.log('🔍 Primer elemento para debug:', data[0]);
+        console.log('🔍 Estructura del primer elemento:', Object.keys(data[0] || {}));
+        console.log('🔍 Nombre del primer elemento:', data[0]?.nombre);
+        console.log('🔍 Descripción del primer elemento:', data[0]?.descripcion);
         
         // Separar por tipo
         const egresosItems = data.filter(cat => cat.tipo === 'gasto');
         const ingresosItems = data.filter(cat => cat.tipo === 'ingreso');
         
+        console.log('💸 Egresos items:', egresosItems.length);
+        console.log('💰 Ingresos items:', ingresosItems.length);
+        console.log('💸 Primer egreso:', egresosItems[0]);
+        console.log('💰 Primer ingreso:', ingresosItems[0]);
+        
         // Renderizar tablas
+        console.log('🎨 Renderizando egresos:', egresosItems.length);
+        console.log('🎨 Renderizando ingresos:', ingresosItems.length);
         renderizarTablaCategorias('listaCategoriasEgresos', egresosItems);
         renderizarTablaCategorias('listaCategoriasIngresos', ingresosItems);
         
@@ -1362,13 +1577,20 @@ async function cargarListaCategorias() {
 
 // Renderizar tabla de categorías
 function renderizarTablaCategorias(tbodyId, categorias) {
+    console.log(`🎨 Renderizando tabla ${tbodyId} con ${categorias.length} categorías`);
     const tbody = document.getElementById(tbodyId);
+    
+    if (!tbody) {
+        console.error(`❌ No se encontró el elemento con ID: ${tbodyId}`);
+        return;
+    }
     
     if (categorias.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center" style="color: white;">
-                    <i class="fas fa-inbox"></i> No hay categorías de este tipo
+                <td colspan="5" class="text-center" style="color: rgba(255,255,255,0.7); padding: 2rem;">
+                    <i class="fas fa-inbox fa-2x mb-2 d-block" style="opacity: 0.5;"></i>
+                    No hay categorías de este tipo
                 </td>
             </tr>
         `;
@@ -1376,6 +1598,10 @@ function renderizarTablaCategorias(tbodyId, categorias) {
     }
     
     tbody.innerHTML = categorias.map(cat => {
+        console.log('🎨 Renderizando categoría:', cat);
+        console.log('🎨 Nombre de la categoría:', cat.nombre);
+        console.log('🎨 Descripción de la categoría:', cat.descripcion);
+        
         // Botones de edición y eliminación para todas las categorías
         const botonesAccion = `
             <button class="btn btn-sm btn-primary" onclick="abrirModalCategoria(${cat.id}, '${cat.tipo}')" title="Editar">
@@ -1386,15 +1612,23 @@ function renderizarTablaCategorias(tbodyId, categorias) {
             </button>
         `;
         
+        // Asegurar que los campos existan
+        const nombre = cat.nombre || 'Sin nombre';
+        const descripcion = cat.descripcion || 'Sin descripción';
+        const icono = cat.icono || 'fas fa-circle';
+        const color = cat.color || '#6c757d';
+        
+        console.log('🎨 Campos procesados:', { nombre, descripcion, icono, color });
+        
         return `
             <tr style="color: white;">
-                <td><i class="${cat.icono}" style="color: ${cat.color}; font-size: 1.2rem;"></i></td>
-                <td><strong>${cat.nombre}</strong></td>
-                <td>${cat.descripcion || '-'}</td>
+                <td style="text-align: center;"><i class="${icono}" style="color: ${color}; font-size: 1.5rem;"></i></td>
+                <td style="font-weight: 600; font-size: 1rem; color: white;">${nombre}</td>
+                <td style="font-style: italic; opacity: 0.9; font-size: 0.9rem; color: rgba(255,255,255,0.8);">${descripcion}</td>
                 <td>
-                    <span class="badge" style="background-color: ${cat.color};">${cat.color}</span>
+                    <span class="badge" style="background-color: ${color}; color: white; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.875rem;">${color}</span>
                 </td>
-                <td>${botonesAccion}</td>
+                <td style="text-align: right;">${botonesAccion}</td>
             </tr>
         `;
     }).join('');
