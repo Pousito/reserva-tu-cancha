@@ -9,7 +9,7 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     border: 2px solid #dee2e6;
     position: relative;
-    overflow: visible; /* Cambiado de hidden a visible para móvil */
+    overflow: hidden; /* Mantener contenido dentro del contenedor */
     width: 100%; /* Asegurar que ocupe todo el ancho disponible */
     box-sizing: border-box;
 }
@@ -214,18 +214,21 @@
 @media (max-width: 768px) {
     /* Reducir espacios de contenedores padre */
     .canchas-container {
-        overflow: visible;
+        overflow-x: hidden; /* Evitar scroll horizontal */
+        overflow-y: visible;
         padding: 5px; /* Reducido padding */
         margin-top: 0; /* Sin margen superior */
     }
 
     #canchasGrid {
-        overflow: visible;
+        overflow-x: hidden; /* Evitar scroll horizontal */
+        overflow-y: visible;
         margin-top: 0; /* Sin margen superior */
     }
 
     .canchas-grid-expanded {
-        overflow: visible;
+        overflow-x: hidden; /* Evitar scroll horizontal */
+        overflow-y: visible;
         width: 100%;
         margin-top: 0; /* Sin margen superior */
         padding-top: 0; /* Sin padding superior */
@@ -234,9 +237,9 @@
     .demo3-container {
         padding: 10px 8px; /* Reducido padding */
         margin: 5px auto; /* Reducido margen superior */
-        width: 100%;
-        max-width: 100%;
-        overflow: visible;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden; /* Mantener contenido dentro */
         box-sizing: border-box;
     }
 
@@ -246,7 +249,9 @@
         flex-direction: column !important;
         gap: 10px; /* Reducido gap entre canchas */
         padding: 5px; /* Reducido padding interno */
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
     }
 
     /* Canchas de fútbol superiores - lado a lado (2 columnas) */
@@ -313,11 +318,11 @@
 @media (max-width: 480px) {
     /* Móviles pequeños - LAYOUT VERTICAL MÁS COMPACTO */
     .demo3-container {
-        width: 100%;
-        max-width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
         padding: 8px 6px; /* Más compacto */
         margin: 3px auto; /* Menos margen */
-        overflow: visible;
+        overflow: hidden; /* Mantener contenido dentro */
         box-sizing: border-box;
     }
 
@@ -326,7 +331,9 @@
         flex-direction: column !important;
         gap: 8px; /* Gap más pequeño */
         padding: 5px; /* Padding más pequeño */
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
     }
 
     /* Canchas de fútbol - lado a lado */

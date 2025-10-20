@@ -733,6 +733,8 @@ function forzarLayoutVerticalMovil() {
         demo3ContainerInner.style.setProperty('flex-direction', 'column', 'important');
         demo3ContainerInner.style.setProperty('gap', '12px', 'important');
         demo3ContainerInner.style.setProperty('width', '100%', 'important');
+        demo3ContainerInner.style.setProperty('max-width', '100%', 'important');
+        demo3ContainerInner.style.setProperty('box-sizing', 'border-box', 'important');
 
         // Forzar canchas superiores en horizontal
         const futbolSuperiores = document.querySelector('.demo3-canchas-futbol-superiores');
@@ -782,14 +784,14 @@ function forzarLayoutVerticalMovil() {
             cancha3.style.setProperty('min-width', '0', 'important');
         }
 
-        // Contenedor - ancho completo sin scroll
+        // Contenedor - ancho completo sin scroll, contenido dentro del borde
         const demo3Container = document.querySelector('.demo3-container');
         if (demo3Container) {
             demo3Container.style.setProperty('width', '100%', 'important');
             demo3Container.style.setProperty('max-width', '100%', 'important');
-            demo3Container.style.setProperty('overflow', 'visible', 'important');
+            demo3Container.style.setProperty('overflow', 'hidden', 'important');
             demo3Container.style.setProperty('box-sizing', 'border-box', 'important');
-            console.log('📱 Contenedor sin scroll - todo visible');
+            console.log('📱 Contenedor sin scroll - contenido dentro del borde');
         }
 
         console.log('✅ Layout VERTICAL móvil aplicado correctamente');
