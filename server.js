@@ -1091,12 +1091,12 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     }
     
     // Verificar que la cancha existe
-    const cancha = await db.get(
-      'SELECT c.*, co.nombre as complejo_nombre FROM canchas c JOIN complejos co ON c.complejo_id = co.id WHERE c.id = ?',
+    const cancha = await db.query(
+      'SELECT c.*, co.nombre as complejo_nombre FROM canchas c JOIN complejos co ON c.complejo_id = co.id WHERE c.id = $1',
       [cancha_id]
     );
     
-    if (!cancha) {
+    if (!cancha || cancha.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Cancha no encontrada'
@@ -1104,20 +1104,20 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     }
     
     // Verificar disponibilidad
-    const disponibilidad = await db.get(
+    const disponibilidad = await db.query(
       `SELECT * FROM reservas 
-       WHERE cancha_id = ? 
-       AND fecha = ? 
+       WHERE cancha_id = $1 
+       AND fecha = $2 
        AND (
-         (hora_inicio <= ? AND hora_fin > ?) OR
-         (hora_inicio < ? AND hora_fin >= ?) OR
-         (hora_inicio >= ? AND hora_fin <= ?)
+         (hora_inicio <= $3 AND hora_fin > $3) OR
+         (hora_inicio < $4 AND hora_fin >= $4) OR
+         (hora_inicio >= $3 AND hora_fin <= $4)
        )
        AND estado != 'cancelada'`,
-      [cancha_id, fecha, hora_inicio, hora_inicio, hora_fin, hora_fin, hora_inicio, hora_fin]
+      [cancha_id, fecha, hora_inicio, hora_fin]
     );
     
-    if (disponibilidad) {
+    if (disponibilidad && disponibilidad.length > 0) {
       return res.status(409).json({
         success: false,
         error: 'La cancha ya está reservada en ese horario'
@@ -1147,10 +1147,10 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
     
     const bloqueoId = `BLOCK_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
     
-    await db.run(
+    await db.query(
       `INSERT INTO bloqueos_temporales 
        (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, codigo_reserva)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         bloqueoId,
         cancha_id,
@@ -1171,7 +1171,7 @@ app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
       bloqueo_id: bloqueoId,
       codigo_reserva: codigoReserva,
       expira_en: expiraEn.toISOString(),
-      cancha: cancha,
+      cancha: cancha[0],
       datos_cliente: datosCliente,
       message: 'Bloqueo temporal creado exitosamente'
     });
