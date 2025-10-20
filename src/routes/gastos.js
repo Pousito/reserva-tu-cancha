@@ -79,11 +79,18 @@ router.get('/categorias', authenticateToken, async (req, res) => {
         let params = [];
         let paramIndex = 1;
         
+        console.log('👤 Usuario autenticado:', { 
+            id: req.user.userId, 
+            rol: req.user.rol, 
+            complejo_id: req.user.complejo_id 
+        });
+        
         // Filtrar por complejo del usuario (owners/managers ven solo su complejo)
-        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
+        if (req.user.rol === 'owner' || req.user.rol === 'manager') {
             query += ` AND complejo_id = $${paramIndex}`;
-            params.push(usuario.complejo_id);
+            params.push(req.user.complejo_id);
             paramIndex++;
+            console.log('🔍 Filtro por complejo:', req.user.complejo_id);
         }
         // super_admin ve categorías de todos los complejos
         
@@ -91,13 +98,48 @@ router.get('/categorias', authenticateToken, async (req, res) => {
             query += ` AND tipo = $${paramIndex}`;
             params.push(tipo);
             paramIndex++;
+            console.log('🔍 Filtro por tipo:', tipo);
         }
         
         query += ' ORDER BY nombre ASC';
         
+        console.log('📋 Query final:', query);
+        console.log('📋 Parámetros:', params);
+        
         const categorias = await db.query(query, params);
         
-        res.json(categorias);
+        console.log('🔍 Resultado completo de db.query:', categorias);
+        console.log('🔍 Tipo de resultado:', typeof categorias);
+        console.log('🔍 Propiedades del resultado:', Object.keys(categorias || {}));
+        
+        // Validar que la consulta devolvió resultados
+        if (!categorias) {
+            console.log('⚠️ La consulta no devolvió resultados');
+            return res.json([]);
+        }
+        
+        // Manejar tanto el formato estándar (con rows) como el formato directo (array)
+        let categoriasData = [];
+        
+        if (categorias.rows && Array.isArray(categorias.rows)) {
+            // Formato estándar de PostgreSQL
+            categoriasData = categorias.rows;
+            console.log('📋 Usando formato estándar (rows):', categoriasData.length);
+        } else if (Array.isArray(categorias)) {
+            // Formato directo (array)
+            categoriasData = categorias;
+            console.log('📋 Usando formato directo (array):', categoriasData.length);
+        } else {
+            console.log('⚠️ Formato de resultado no reconocido');
+            return res.json([]);
+        }
+        
+        console.log('📋 Categorías encontradas:', categoriasData.length);
+        if (categoriasData.length > 0) {
+            console.log('🔍 Primer elemento:', categoriasData[0]);
+        }
+        
+        res.json(categoriasData);
     } catch (error) {
         console.error('❌ Error al obtener categorías:', error);
         res.status(500).json({ 
@@ -139,9 +181,9 @@ router.get('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, r
         let paramIndex = 1;
         
         // Filtrar por complejo
-        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
+        if (req.user.rol === 'owner' || req.user.rol === 'manager') {
             query += ` AND gi.complejo_id = $${paramIndex}`;
-            params.push(usuario.complejo_id);
+            params.push(req.user.complejo_id);
             paramIndex++;
         }
         
@@ -172,9 +214,32 @@ router.get('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, r
         
         query += ' ORDER BY gi.fecha DESC, gi.creado_en DESC';
         
+        console.log('🔍 Query final movimientos:', query);
+        console.log('🔍 Parámetros movimientos:', params);
+        
         const movimientos = await db.query(query, params);
         
-        res.json(movimientos);
+        console.log('🔍 Resultado query movimientos:', movimientos);
+        console.log('🔍 Tipo de resultado:', typeof movimientos);
+        console.log('🔍 Propiedades:', Object.keys(movimientos || {}));
+        
+        // Manejar tanto el formato estándar (con rows) como el formato directo (array)
+        let movimientosData = [];
+        
+        if (movimientos && movimientos.rows && Array.isArray(movimientos.rows)) {
+            // Formato estándar de PostgreSQL
+            movimientosData = movimientos.rows;
+            console.log('✅ Enviando movimientos.rows:', movimientosData.length);
+        } else if (Array.isArray(movimientos)) {
+            // Formato directo (array)
+            movimientosData = movimientos;
+            console.log('✅ Enviando movimientos (array):', movimientosData.length);
+        } else {
+            console.log('⚠️ Formato no reconocido, enviando array vacío');
+            movimientosData = [];
+        }
+        
+        res.json(movimientosData);
     } catch (error) {
         console.error('❌ Error al obtener movimientos:', error);
         res.status(500).json({ 
@@ -189,6 +254,7 @@ router.get('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, r
 router.post('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
     try {
         const usuario = req.user;
+        console.log('👤 Usuario completo en crear movimiento:', usuario);
         const { tipo, categoria_id, monto, fecha, descripcion, metodo_pago, numero_documento } = req.body;
         
         // Validaciones
@@ -214,10 +280,15 @@ router.post('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, 
         }
         
         // Verificar categoría
-        const categoria = await db.get(
+        console.log('🔍 Verificando categoría ID:', categoria_id);
+        const categoriaResult = await db.query(
             'SELECT * FROM categorias_gastos WHERE id = $1',
             [categoria_id]
         );
+        console.log('🔍 Resultado verificación categoría:', categoriaResult);
+        console.log('🔍 categoriaResult.rows:', categoriaResult.rows);
+        
+        const categoria = categoriaResult[0];
         
         if (!categoria) {
             return res.status(404).json({ 
@@ -234,12 +305,12 @@ router.post('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, 
         }
         
         // Determinar complejo_id
-        const complejo_id = usuario.rol === 'super_admin' 
-            ? (req.body.complejo_id || usuario.complejo_id)
-            : usuario.complejo_id;
+        const complejo_id = req.user.rol === 'super_admin' 
+            ? (req.body.complejo_id || req.user.complejo_id)
+            : req.user.complejo_id;
         
         // Insertar movimiento
-        const result = await db.run(`
+        const result = await db.query(`
             INSERT INTO gastos_ingresos (
                 complejo_id, categoria_id, tipo, monto, fecha, 
                 descripcion, metodo_pago, numero_documento, usuario_id
@@ -247,15 +318,20 @@ router.post('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, 
             RETURNING *
         `, [
             complejo_id, categoria_id, tipo, monto, fecha,
-            descripcion, metodo_pago, numero_documento, usuario.id
+            descripcion, metodo_pago, numero_documento, req.user.userId
         ]);
         
         console.log(`✅ Movimiento creado: ${tipo} - $${monto}`);
+        console.log('🔍 Resultado inserción:', result);
+        console.log('🔍 result.rows:', result.rows);
+        
+        // Manejar ambos formatos de respuesta de PostgreSQL
+        const movimientoData = result[0];
         
         res.status(201).json({
             success: true,
             message: 'Movimiento creado correctamente',
-            data: result
+            data: movimientoData
         });
     } catch (error) {
         console.error('❌ Error al crear movimiento:', error);
@@ -275,10 +351,11 @@ router.put('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async (re
         const { categoria_id, monto, fecha, descripcion, metodo_pago, numero_documento } = req.body;
         
         // Verificar movimiento
-        const movimiento = await db.get(
+        const movimientoResult = await db.query(
             'SELECT * FROM gastos_ingresos WHERE id = $1',
             [id]
         );
+        const movimiento = movimientoResult[0];
         
         if (!movimiento) {
             return res.status(404).json({ 
@@ -288,7 +365,7 @@ router.put('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async (re
         }
         
         // Verificar permisos
-        if (usuario.rol !== 'super_admin' && movimiento.complejo_id !== usuario.complejo_id) {
+        if (req.user.rol !== 'super_admin' && movimiento.complejo_id !== req.user.complejo_id) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'No tienes permiso para editar este movimiento' 
@@ -296,7 +373,7 @@ router.put('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async (re
         }
         
         // Actualizar
-        const result = await db.run(`
+        const result = await db.query(`
             UPDATE gastos_ingresos 
             SET 
                 categoria_id = COALESCE($1, categoria_id),
@@ -313,7 +390,7 @@ router.put('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async (re
         res.json({
             success: true,
             message: 'Movimiento actualizado correctamente',
-            data: result
+            data: result[0]
         });
     } catch (error) {
         console.error('❌ Error al actualizar movimiento:', error);
@@ -332,10 +409,15 @@ router.delete('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async 
         const { id } = req.params;
         
         // Verificar movimiento
-        const movimiento = await db.get(
+        const movimientoResult = await db.query(
             'SELECT * FROM gastos_ingresos WHERE id = $1',
             [id]
         );
+        console.log('🔍 Resultado query eliminar:', movimientoResult);
+        console.log('🔍 Tipo de resultado:', typeof movimientoResult);
+        console.log('🔍 Es array:', Array.isArray(movimientoResult));
+        
+        const movimiento = movimientoResult[0];
         
         if (!movimiento) {
             return res.status(404).json({ 
@@ -345,7 +427,7 @@ router.delete('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async 
         }
         
         // Verificar permisos
-        if (usuario.rol !== 'super_admin' && movimiento.complejo_id !== usuario.complejo_id) {
+        if (req.user.rol !== 'super_admin' && movimiento.complejo_id !== req.user.complejo_id) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'No tienes permiso para eliminar este movimiento' 
@@ -353,7 +435,7 @@ router.delete('/movimientos/:id', authenticateToken, requireOwnerOrAdmin, async 
         }
         
         // Eliminar
-        await db.run('DELETE FROM gastos_ingresos WHERE id = $1', [id]);
+        await db.query('DELETE FROM gastos_ingresos WHERE id = $1', [id]);
         
         res.json({
             success: true,
@@ -390,7 +472,7 @@ router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, r
         }
         
         // Obtener complejo_id del usuario
-        const complejo_id = usuario.complejo_id;
+        const complejo_id = req.user.complejo_id;
         
         if (!complejo_id) {
             return res.status(400).json({ 
@@ -400,10 +482,11 @@ router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, r
         }
         
         // Verificar si ya existe en este complejo
-        const existente = await db.get(
+        const existenteResult = await db.query(
             'SELECT id FROM categorias_gastos WHERE nombre = $1 AND complejo_id = $2',
             [nombre, complejo_id]
         );
+        const existente = existenteResult[0];
         
         if (existente) {
             return res.status(409).json({ 
@@ -413,7 +496,7 @@ router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, r
         }
         
         // Crear categoría asociada al complejo
-        const result = await db.run(`
+        const result = await db.query(`
             INSERT INTO categorias_gastos (complejo_id, nombre, descripcion, icono, color, tipo, es_predefinida)
             VALUES ($1, $2, $3, $4, $5, $6, false)
             RETURNING *
@@ -424,7 +507,7 @@ router.post('/categorias', authenticateToken, requireOwnerOrAdmin, async (req, r
         res.status(201).json({
             success: true,
             message: 'Categoría creada correctamente',
-            data: result
+            data: result[0]
         });
     } catch (error) {
         console.error('❌ Error al crear categoría:', error);
@@ -444,10 +527,11 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
         const { nombre, descripcion, icono, color } = req.body;
         
         // Verificar que existe
-        const categoria = await db.get(
+        const categoriaResult = await db.query(
             'SELECT * FROM categorias_gastos WHERE id = $1',
             [id]
         );
+        const categoria = categoriaResult[0];
         
         if (!categoria) {
             return res.status(404).json({ 
@@ -457,8 +541,8 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
         }
         
         // Verificar que pertenece al complejo del usuario (owners/managers)
-        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
-            if (categoria.complejo_id !== usuario.complejo_id) {
+        if (req.user.rol === 'owner' || req.user.rol === 'manager') {
+            if (categoria.complejo_id !== req.user.complejo_id) {
                 return res.status(403).json({ 
                     success: false, 
                     message: 'No tienes permiso para editar esta categoría' 
@@ -468,10 +552,11 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
         
         // Verificar nombre duplicado en el mismo complejo
         if (nombre && nombre !== categoria.nombre) {
-            const existente = await db.get(
+            const existenteResult = await db.query(
                 'SELECT id FROM categorias_gastos WHERE nombre = $1 AND complejo_id = $2 AND id != $3',
                 [nombre, categoria.complejo_id, id]
             );
+            const existente = existenteResult[0];
             
             if (existente) {
                 return res.status(409).json({ 
@@ -482,7 +567,7 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
         }
         
         // Actualizar
-        const result = await db.run(`
+        const result = await db.query(`
             UPDATE categorias_gastos 
             SET 
                 nombre = COALESCE($1, nombre),
@@ -496,7 +581,7 @@ router.put('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (req
         res.json({
             success: true,
             message: 'Categoría actualizada correctamente',
-            data: result
+            data: result[0]
         });
     } catch (error) {
         console.error('❌ Error al actualizar categoría:', error);
@@ -515,10 +600,11 @@ router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (
         const { id } = req.params;
         
         // Verificar que existe
-        const categoria = await db.get(
+        const categoriaResult = await db.query(
             'SELECT * FROM categorias_gastos WHERE id = $1',
             [id]
         );
+        const categoria = categoriaResult[0];
         
         if (!categoria) {
             return res.status(404).json({ 
@@ -528,8 +614,8 @@ router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (
         }
         
         // Verificar que pertenece al complejo del usuario (owners/managers)
-        if (usuario.rol === 'owner' || usuario.rol === 'manager') {
-            if (categoria.complejo_id !== usuario.complejo_id) {
+        if (req.user.rol === 'owner' || req.user.rol === 'manager') {
+            if (categoria.complejo_id !== req.user.complejo_id) {
                 return res.status(403).json({ 
                     success: false, 
                     message: 'No tienes permiso para eliminar esta categoría' 
@@ -538,10 +624,11 @@ router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (
         }
         
         // Verificar si hay movimientos
-        const movimientos = await db.get(
+        const movimientosResult = await db.query(
             'SELECT COUNT(*) as total FROM gastos_ingresos WHERE categoria_id = $1',
             [id]
         );
+        const movimientos = movimientosResult[0];
         
         if (movimientos.total > 0) {
             return res.status(409).json({ 
@@ -551,7 +638,7 @@ router.delete('/categorias/:id', authenticateToken, requireOwnerOrAdmin, async (
         }
         
         // Eliminar
-        await db.run('DELETE FROM categorias_gastos WHERE id = $1', [id]);
+        await db.query('DELETE FROM categorias_gastos WHERE id = $1', [id]);
         
         res.json({
             success: true,
@@ -578,9 +665,9 @@ router.get('/estadisticas', authenticateToken, requireOwnerOrAdmin, async (req, 
         let paramIndex = 1;
         
         // Filtrar por complejo
-        if (usuario.rol !== 'super_admin') {
+        if (req.user.rol !== 'super_admin') {
             whereClause += ` AND complejo_id = $${paramIndex}`;
-            params.push(usuario.complejo_id);
+            params.push(req.user.complejo_id);
             paramIndex++;
         }
         
@@ -598,7 +685,7 @@ router.get('/estadisticas', authenticateToken, requireOwnerOrAdmin, async (req, 
         }
         
         // Obtener resumen
-        const resumen = await db.get(`
+        const resumenResult = await db.query(`
             SELECT 
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
@@ -607,6 +694,7 @@ router.get('/estadisticas', authenticateToken, requireOwnerOrAdmin, async (req, 
             FROM gastos_ingresos
             WHERE ${whereClause}
         `, params);
+        const resumen = resumenResult[0];
         
         res.json({
             success: true,

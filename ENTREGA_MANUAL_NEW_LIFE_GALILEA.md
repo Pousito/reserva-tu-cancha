@@ -326,3 +326,5 @@ El manual está **100% listo** para ser entregado al administrador del Complejo 
 El manual está completamente terminado, personalizado y listo para ser entregado al administrador del Complejo New Life Galilea en Los Ángeles.
 
 **¡Excelente trabajo en equipo!** 🚀⚽
+
+

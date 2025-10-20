@@ -188,24 +188,24 @@ function reaplicarEstilosComplejo() {
 
 function aplicarDiseñoLimpioDemo3() {
     console.log('🎨 === APLICANDO DISEÑO LIMPIO DEMO 3 ===');
-    
+
     // Buscar el contenedor demo3
     const demo3Container = document.querySelector('.demo3-container');
     if (!demo3Container) {
         console.log('❌ No se encontró demo3-container');
         return;
     }
-    
+
     // Buscar el contenedor padre
     const canchasHorizontales = demo3Container.closest('.canchas-horizontales');
     if (!canchasHorizontales) {
         console.log('❌ No se encontró canchas-horizontales');
         return;
     }
-    
-    // Aplicar estilos al contenedor principal (demo3-container-inner)
+
+    // IMPORTANTE: SOLO aplicar estilos de DESKTOP cuando la pantalla es > 768px
     const demo3ContainerInner = demo3Container.querySelector('.demo3-container-inner');
-    if (demo3ContainerInner) {
+    if (demo3ContainerInner && window.innerWidth > 768) {
         demo3ContainerInner.style.cssText = `
             display: grid !important;
             grid-template-areas: "futbol-sup padel" "cancha3 cancha3" !important;
@@ -221,62 +221,67 @@ function aplicarDiseñoLimpioDemo3() {
             box-shadow: none !important;
             box-sizing: border-box !important;
         `;
+        console.log('✅ Estilos de DESKTOP aplicados al contenedor inner');
+    } else if (demo3ContainerInner) {
+        console.log('📱 MÓVIL detectado - NO aplicando estilos de desktop grid');
     }
     
-    // Aplicar estilos al contenedor padre
-    canchasHorizontales.style.cssText = `
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        max-width: none !important;
-        min-height: 320px !important;
-        padding: 20px !important;
-        margin: 0 !important;
-        background: transparent !important;
-        overflow: visible !important;
-    `;
-    
-    // Aplicar estilos a los contenedores de canchas
-    const futbolSuperiores = demo3Container.querySelector('.demo3-futbol-superiores');
-    const futbolIzquierda = demo3Container.querySelector('.demo3-futbol-izquierda');
-    const futbolDerecha = demo3Container.querySelector('.demo3-futbol-derecha');
-    const padelCancha = demo3Container.querySelector('.demo3-padel-superior');
-
-    // Estilos para contenedor de canchas de fútbol superiores
-    if (futbolSuperiores) {
-        futbolSuperiores.style.cssText = `
-            grid-area: futbol-sup !important;
+    // SOLO aplicar estilos de desktop si window.innerWidth > 768
+    if (window.innerWidth > 768) {
+        // Aplicar estilos al contenedor padre - SOLO EN DESKTOP
+        canchasHorizontales.style.cssText = `
             display: flex !important;
-            gap: 20px !important;
-            justify-content: space-between !important;
-            align-items: stretch !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+            max-width: none !important;
+            min-height: 320px !important;
+            padding: 20px !important;
+            margin: 0 !important;
+            background: transparent !important;
+            overflow: visible !important;
         `;
-    }
 
-    // Estilos para canchas de fútbol individuales
-    [futbolIzquierda, futbolDerecha].forEach((cancha, index) => {
-        if (cancha) {
-            cancha.style.cssText = `
-                flex: 1 !important;
-                min-width: 0 !important;
-                height: 400px !important;
+        // Aplicar estilos a los contenedores de canchas
+        const futbolSuperiores = demo3Container.querySelector('.demo3-futbol-superiores');
+        const futbolIzquierda = demo3Container.querySelector('.demo3-futbol-izquierda');
+        const futbolDerecha = demo3Container.querySelector('.demo3-futbol-derecha');
+        const padelCancha = demo3Container.querySelector('.demo3-padel-superior');
+
+        // Estilos para contenedor de canchas de fútbol superiores
+        if (futbolSuperiores) {
+            futbolSuperiores.style.cssText = `
+                grid-area: futbol-sup !important;
                 display: flex !important;
-                flex-direction: column !important;
+                gap: 20px !important;
                 justify-content: space-between !important;
-                align-items: center !important;
-                background: #f8f9fa !important;
-                border: 2px solid #28a745 !important;
-                border-radius: 12px !important;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-                transition: transform 0.2s ease !important;
-                margin: 0 !important;
-                padding: 20px !important;
-                gap: 12px !important;
-                overflow: hidden !important;
-                position: relative !important;
-                box-sizing: border-box !important;
+                align-items: stretch !important;
             `;
+        }
+
+        // Estilos para canchas de fútbol individuales - SOLO DESKTOP
+        [futbolIzquierda, futbolDerecha].forEach((cancha, index) => {
+            if (cancha) {
+                cancha.style.cssText = `
+                    flex: 1 !important;
+                    min-width: 0 !important;
+                    height: 400px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    justify-content: space-between !important;
+                    align-items: center !important;
+                    background: #f8f9fa !important;
+                    border: 2px solid #28a745 !important;
+                    border-radius: 12px !important;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+                    transition: transform 0.2s ease !important;
+                    margin: 0 !important;
+                    padding: 20px !important;
+                    gap: 12px !important;
+                    overflow: hidden !important;
+                    position: relative !important;
+                    box-sizing: border-box !important;
+                `;
             
             // Agregar hover effect
             cancha.addEventListener('mouseenter', () => {
@@ -336,276 +341,279 @@ function aplicarDiseñoLimpioDemo3() {
                 console.log('❌ No se encontró texto de jugadores en fútbol');
             }
             
-            console.log(`✅ Cancha fútbol ${index + 1} estilizada`);
-        }
-    });
-    
-    // Estilos para cancha de pádel (altura similar a canchas de fútbol)
-    if (padelCancha) {
-        padelCancha.style.cssText = `
-            grid-area: padel !important;
-            width: 100% !important;
-            height: 400px !important;
-            min-height: 400px !important;
-            max-height: 400px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            background: #f8f9fa !important;
-            border: 2px solid #6c757d !important;
-            border-radius: 12px !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-            transition: transform 0.2s ease !important;
-            margin: 0 !important;
-            padding: 20px !important;
-            gap: 12px !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-            position: relative !important;
-        `;
-        
-        // Agregar hover effect
-        padelCancha.addEventListener('mouseenter', () => {
-            padelCancha.style.transform = 'translateY(-2px)';
-            padelCancha.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)';
-        });
-        
-        padelCancha.addEventListener('mouseleave', () => {
-            padelCancha.style.transform = 'translateY(0)';
-            padelCancha.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-        });
-        
-        // Ajustar iconos y contenido de padel
-        const padelIconContainer = padelCancha.querySelector('.cancha-icon');
-        if (padelIconContainer) {
-            padelIconContainer.style.flexShrink = '0';
-            padelIconContainer.style.marginTop = '30px';
-        }
-        
-        const padelIcon = padelCancha.querySelector('.fas');
-        if (padelIcon) {
-            padelIcon.style.fontSize = '40px';
-            padelIcon.style.color = '#6c757d';
-        }
-        
-        const padelInfo = padelCancha.querySelector('.cancha-info');
-        if (padelInfo) {
-            padelInfo.style.flex = '0';
-            padelInfo.style.textAlign = 'center';
-            padelInfo.style.width = '100%';
-        }
-        
-        // Asegurar que el texto de jugadores se vea en padel
-        const padelJugadoresText = padelCancha.querySelector('.text-info.small');
-        if (padelJugadoresText) {
-            padelJugadoresText.style.display = 'block';
-            padelJugadoresText.style.visibility = 'visible';
-            padelJugadoresText.style.opacity = '1';
-            padelJugadoresText.style.color = '#17a2b8';
-            padelJugadoresText.style.fontSize = '0.85rem';
-            padelJugadoresText.style.margin = '1px 0';
-            padelJugadoresText.style.lineHeight = '1.2';
-            padelJugadoresText.style.position = 'relative';
-            padelJugadoresText.style.zIndex = '10';
-            padelJugadoresText.style.whiteSpace = 'normal';
-            padelJugadoresText.style.fontWeight = '600';
-            padelJugadoresText.style.textAlign = 'center';
-            padelJugadoresText.style.width = '100%';
-            padelJugadoresText.style.maxWidth = '100%';
-            padelJugadoresText.style.overflow = 'visible';
-            padelJugadoresText.style.textOverflow = 'unset';
-            padelJugadoresText.style.padding = '0';
-            padelJugadoresText.style.background = 'transparent';
-            padelJugadoresText.style.borderRadius = '0';
-            console.log('✅ Texto de jugadores encontrado en padel:', padelJugadoresText.textContent);
-        } else {
-            console.log('❌ No se encontró texto de jugadores en padel');
-        }
-        
-        console.log('✅ Cancha padel estilizada');
-    }
-    
-    // Limpiar cualquier estilo conflictivo de cancha-card
-    const canchaCards = demo3Container.querySelectorAll('.cancha-card');
-    canchaCards.forEach(card => {
-        card.style.cssText = `
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            width: 100% !important;
-            height: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-        `;
-    });
-    
-    // Estilos para contenedor de Cancha 3 - Ocupa toda el área del grid
-    const contenedorCancha3 = demo3Container.querySelector('.demo3-contenedor-cancha3');
-    if (contenedorCancha3) {
-        contenedorCancha3.style.cssText = `
-            grid-area: cancha3 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: flex !important;
-            justify-content: stretch !important;
-            align-items: stretch !important;
-            box-sizing: border-box !important;
-        `;
-    }
-
-    // Estilos para Cancha 3 horizontal - Ocupará todo el ancho disponible
-    const canchaHorizontal = demo3Container.querySelector('.demo3-cancha-horizontal');
-    if (canchaHorizontal) {
-        canchaHorizontal.style.cssText = `
-            width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-            height: 250px !important;
-            display: flex !important;
-            flex-direction: row !important;
-            justify-content: space-around !important;
-            align-items: center !important;
-            padding: 20px !important;
-            gap: 30px !important;
-            background: white !important;
-            border: 3px solid #2E7D32 !important;
-            border-radius: 16px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-            box-sizing: border-box !important;
-            margin: 0 !important;
-        `;
-        
-        // Estilizar sección izquierda
-        const canchaIzquierda = canchaHorizontal.querySelector('.cancha-izquierda');
-        if (canchaIzquierda) {
-            canchaIzquierda.style.cssText = `
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                gap: 10px !important;
-            `;
-        }
-        
-        // Estilizar badge
-        const canchaBadge = canchaHorizontal.querySelector('.cancha-badge');
-        if (canchaBadge) {
-            canchaBadge.style.cssText = `
-                background: #333 !important;
-                color: white !important;
-                padding: 6px 16px !important;
-                border-radius: 20px !important;
-                font-size: 12px !important;
-                font-weight: 600 !important;
-                white-space: nowrap !important;
-            `;
-        }
-        
-        // Estilizar ícono grande - Usar mismo ícono de fútbol que canchas 1 y 2
-        const canchaIconoGrande = canchaHorizontal.querySelector('.cancha-icono-grande');
-        if (canchaIconoGrande) {
-            canchaIconoGrande.style.cssText = `
-                font-size: 50px !important;
-                color: #28a745 !important; /* ← Mismo color verde que canchas de fútbol */
-            `;
-            
-            // Cambiar el ícono a pelota de fútbol (si no lo es ya)
-            const iconElement = canchaIconoGrande.querySelector('i');
-            if (iconElement) {
-                iconElement.className = 'fas fa-futbol'; // ← Ícono de pelota de fútbol
-                iconElement.style.color = '#28a745';
-            } else {
-                // Si no hay elemento i, crear uno
-                canchaIconoGrande.innerHTML = '<i class="fas fa-futbol" style="color: #28a745;"></i>';
+                console.log(`✅ Cancha fútbol ${index + 1} estilizada`);
             }
-        }
-        
-        // Estilizar sección centro
-        const canchaCentro = canchaHorizontal.querySelector('.cancha-centro');
-        if (canchaCentro) {
-            canchaCentro.style.cssText = `
+        });
+
+        // Estilos para cancha de pádel (altura similar a canchas de fútbol) - SOLO DESKTOP
+        if (padelCancha) {
+            padelCancha.style.cssText = `
+                grid-area: padel !important;
+                width: 100% !important;
+                height: 400px !important;
+                min-height: 400px !important;
+                max-height: 400px !important;
                 display: flex !important;
                 flex-direction: column !important;
+                justify-content: space-between !important;
                 align-items: center !important;
-                gap: 8px !important;
-                flex: 1 !important;
-            `;
-        }
-        
-        // Estilizar nombre
-        const canchaNombre = canchaHorizontal.querySelector('.cancha-nombre');
-        if (canchaNombre) {
-            canchaNombre.style.cssText = `
-                font-size: 28px !important;
-                font-weight: 700 !important;
-                color: #555 !important;
+                background: #f8f9fa !important;
+                border: 2px solid #6c757d !important;
+                border-radius: 12px !important;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+                transition: transform 0.2s ease !important;
                 margin: 0 !important;
+                padding: 20px !important;
+                gap: 12px !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                position: relative !important;
             `;
+
+            // Agregar hover effect
+            padelCancha.addEventListener('mouseenter', () => {
+                padelCancha.style.transform = 'translateY(-2px)';
+                padelCancha.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)';
+            });
+
+            padelCancha.addEventListener('mouseleave', () => {
+                padelCancha.style.transform = 'translateY(0)';
+                padelCancha.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            });
+
+            // Ajustar iconos y contenido de padel
+            const padelIconContainer = padelCancha.querySelector('.cancha-icon');
+            if (padelIconContainer) {
+                padelIconContainer.style.flexShrink = '0';
+                padelIconContainer.style.marginTop = '30px';
+            }
+
+            const padelIcon = padelCancha.querySelector('.fas');
+            if (padelIcon) {
+                padelIcon.style.fontSize = '40px';
+                padelIcon.style.color = '#6c757d';
+            }
+
+            const padelInfo = padelCancha.querySelector('.cancha-info');
+            if (padelInfo) {
+                padelInfo.style.flex = '0';
+                padelInfo.style.textAlign = 'center';
+                padelInfo.style.width = '100%';
+            }
+
+            // Asegurar que el texto de jugadores se vea en padel
+            const padelJugadoresText = padelCancha.querySelector('.text-info.small');
+            if (padelJugadoresText) {
+                padelJugadoresText.style.display = 'block';
+                padelJugadoresText.style.visibility = 'visible';
+                padelJugadoresText.style.opacity = '1';
+                padelJugadoresText.style.color = '#17a2b8';
+                padelJugadoresText.style.fontSize = '0.85rem';
+                padelJugadoresText.style.margin = '1px 0';
+                padelJugadoresText.style.lineHeight = '1.2';
+                padelJugadoresText.style.position = 'relative';
+                padelJugadoresText.style.zIndex = '10';
+                padelJugadoresText.style.whiteSpace = 'normal';
+                padelJugadoresText.style.fontWeight = '600';
+                padelJugadoresText.style.textAlign = 'center';
+                padelJugadoresText.style.width = '100%';
+                padelJugadoresText.style.maxWidth = '100%';
+                padelJugadoresText.style.overflow = 'visible';
+                padelJugadoresText.style.textOverflow = 'unset';
+                padelJugadoresText.style.padding = '0';
+                padelJugadoresText.style.background = 'transparent';
+                padelJugadoresText.style.borderRadius = '0';
+                console.log('✅ Texto de jugadores encontrado en padel:', padelJugadoresText.textContent);
+            } else {
+                console.log('❌ No se encontró texto de jugadores en padel');
+            }
+
+            console.log('✅ Cancha padel estilizada');
         }
-        
-        // Estilizar precio
-        const canchaPrecio = canchaHorizontal.querySelector('.cancha-precio');
-        if (canchaPrecio) {
-            canchaPrecio.style.cssText = `
-                font-size: 18px !important;
-                color: #666 !important;
+
+        // Limpiar cualquier estilo conflictivo de cancha-card - SOLO DESKTOP
+        const canchaCards = demo3Container.querySelectorAll('.cancha-card');
+        canchaCards.forEach(card => {
+            card.style.cssText = `
                 margin: 0 !important;
-            `;
-        }
-        
-        // Estilizar jugadores
-        const canchaJugadores = canchaHorizontal.querySelector('.cancha-jugadores');
-        if (canchaJugadores) {
-            canchaJugadores.style.cssText = `
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                width: 100% !important;
+                height: 100% !important;
                 display: flex !important;
+                justify-content: center !important;
                 align-items: center !important;
-                gap: 8px !important;
-                color: #17a2b8 !important; /* ← Mismo color que canchas 1 y 2 */
-                font-weight: 600 !important;
             `;
-            
-            // Estilizar el ícono de personas para que sea igual a las canchas 1 y 2
-            const iconoPersonas = canchaJugadores.querySelector('.fas.fa-users');
-            if (iconoPersonas) {
-                iconoPersonas.style.cssText = `
-                    color: #17a2b8 !important; /* ← Mismo color que canchas 1 y 2 */
-                    font-size: 2.3rem !important; /* ← Tamaño perfecto y muy visible */
-                    margin-right: 8px !important; /* ← Margen ajustado para ícono grande */
+        });
+
+        // Estilos para contenedor de Cancha 3 - Ocupa toda el área del grid - SOLO DESKTOP
+        const contenedorCancha3 = demo3Container.querySelector('.demo3-contenedor-cancha3');
+        if (contenedorCancha3) {
+            contenedorCancha3.style.cssText = `
+                grid-area: cancha3 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: flex !important;
+                justify-content: stretch !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
+            `;
+        }
+
+        // Estilos para Cancha 3 horizontal - Ocupará todo el ancho disponible - SOLO DESKTOP
+        const canchaHorizontal = demo3Container.querySelector('.demo3-cancha-horizontal');
+        if (canchaHorizontal) {
+            canchaHorizontal.style.cssText = `
+                width: 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                height: 250px !important;
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: space-around !important;
+                align-items: center !important;
+                padding: 20px !important;
+                gap: 30px !important;
+                background: white !important;
+                border: 3px solid #2E7D32 !important;
+                border-radius: 16px !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            `;
+
+            // Estilizar sección izquierda
+            const canchaIzquierda = canchaHorizontal.querySelector('.cancha-izquierda');
+            if (canchaIzquierda) {
+                canchaIzquierda.style.cssText = `
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    gap: 10px !important;
                 `;
             }
+
+            // Estilizar badge
+            const canchaBadge = canchaHorizontal.querySelector('.cancha-badge');
+            if (canchaBadge) {
+                canchaBadge.style.cssText = `
+                    background: #333 !important;
+                    color: white !important;
+                    padding: 6px 16px !important;
+                    border-radius: 20px !important;
+                    font-size: 12px !important;
+                    font-weight: 600 !important;
+                    white-space: nowrap !important;
+                `;
+            }
+
+            // Estilizar ícono grande - Usar mismo ícono de fútbol que canchas 1 y 2
+            const canchaIconoGrande = canchaHorizontal.querySelector('.cancha-icono-grande');
+            if (canchaIconoGrande) {
+                canchaIconoGrande.style.cssText = `
+                    font-size: 50px !important;
+                    color: #28a745 !important; /* ← Mismo color verde que canchas de fútbol */
+                `;
+
+                // Cambiar el ícono a pelota de fútbol (si no lo es ya)
+                const iconElement = canchaIconoGrande.querySelector('i');
+                if (iconElement) {
+                    iconElement.className = 'fas fa-futbol'; // ← Ícono de pelota de fútbol
+                    iconElement.style.color = '#28a745';
+                } else {
+                    // Si no hay elemento i, crear uno
+                    canchaIconoGrande.innerHTML = '<i class="fas fa-futbol" style="color: #28a745;"></i>';
+                }
+            }
+
+            // Estilizar sección centro
+            const canchaCentro = canchaHorizontal.querySelector('.cancha-centro');
+            if (canchaCentro) {
+                canchaCentro.style.cssText = `
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                    flex: 1 !important;
+                `;
+            }
+
+            // Estilizar nombre
+            const canchaNombre = canchaHorizontal.querySelector('.cancha-nombre');
+            if (canchaNombre) {
+                canchaNombre.style.cssText = `
+                    font-size: 28px !important;
+                    font-weight: 700 !important;
+                    color: #555 !important;
+                    margin: 0 !important;
+                `;
+            }
+
+            // Estilizar precio
+            const canchaPrecio = canchaHorizontal.querySelector('.cancha-precio');
+            if (canchaPrecio) {
+                canchaPrecio.style.cssText = `
+                    font-size: 18px !important;
+                    color: #666 !important;
+                    margin: 0 !important;
+                `;
+            }
+
+            // Estilizar jugadores
+            const canchaJugadores = canchaHorizontal.querySelector('.cancha-jugadores');
+            if (canchaJugadores) {
+                canchaJugadores.style.cssText = `
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                    color: #17a2b8 !important; /* ← Mismo color que canchas 1 y 2 */
+                    font-weight: 600 !important;
+                `;
+
+                // Estilizar el ícono de personas para que sea igual a las canchas 1 y 2
+                const iconoPersonas = canchaJugadores.querySelector('.fas.fa-users');
+                if (iconoPersonas) {
+                    iconoPersonas.style.cssText = `
+                        color: #17a2b8 !important; /* ← Mismo color que canchas 1 y 2 */
+                        font-size: 2.3rem !important; /* ← Tamaño perfecto y muy visible */
+                        margin-right: 8px !important; /* ← Margen ajustado para ícono grande */
+                    `;
+                }
+            }
+
+            // Estilizar botón
+            const canchaBoton = canchaHorizontal.querySelector('.cancha-boton');
+            if (canchaBoton) {
+                canchaBoton.style.cssText = `
+                    padding: 12px 24px !important;
+                    background: #2E7D32 !important;
+                    color: white !important;
+                    border: none !important;
+                    border-radius: 8px !important;
+                    font-weight: 700 !important;
+                    font-size: 16px !important;
+                    cursor: pointer !important;
+                    transition: background 0.2s ease !important;
+                `;
+
+                // Agregar hover effect
+                canchaBoton.addEventListener('mouseenter', () => {
+                    canchaBoton.style.background = '#1B5E20';
+                });
+
+                canchaBoton.addEventListener('mouseleave', () => {
+                    canchaBoton.style.background = '#2E7D32';
+                });
+            }
+
+            console.log('✅ Cancha 3 horizontal estilizada con solución definitiva');
         }
-        
-        // Estilizar botón
-        const canchaBoton = canchaHorizontal.querySelector('.cancha-boton');
-        if (canchaBoton) {
-            canchaBoton.style.cssText = `
-                padding: 12px 24px !important;
-                background: #2E7D32 !important;
-                color: white !important;
-                border: none !important;
-                border-radius: 8px !important;
-                font-weight: 700 !important;
-                font-size: 16px !important;
-                cursor: pointer !important;
-                transition: background 0.2s ease !important;
-            `;
-            
-            // Agregar hover effect
-            canchaBoton.addEventListener('mouseenter', () => {
-                canchaBoton.style.background = '#1B5E20';
-            });
-            
-            canchaBoton.addEventListener('mouseleave', () => {
-                canchaBoton.style.background = '#2E7D32';
-            });
-        }
-        
-        console.log('✅ Cancha 3 horizontal estilizada con solución definitiva');
-    }
+
+        console.log('🎨 === ESTILOS DE DESKTOP APLICADOS EXITOSAMENTE ===');
+    } // FIN if (window.innerWidth > 768)
     
     // Configurar detección de cambios de deporte
     detectarCambioDeporte();
@@ -613,194 +621,132 @@ function aplicarDiseñoLimpioDemo3() {
     console.log('🎨 === DISEÑO LIMPIO APLICADO EXITOSAMENTE ===');
 }
 
-// Función para ejecutar cuando se detecte el demo3-container
-function ejecutarCuandoEsteListo() {
-    const demo3Container = document.querySelector('.demo3-container');
-    if (demo3Container) {
-        console.log('🎨 demo3-container encontrado, aplicando diseño limpio...');
-        aplicarDiseñoLimpioDemo3();
-    } else {
-        // Si no está listo, intentar de nuevo en 500ms
-        setTimeout(ejecutarCuandoEsteListo, 500);
-    }
-}
+// DESHABILITADO COMPLETAMENTE - Dejar que CSS maneje todo
+// function ejecutarCuandoEsteListo() {
+//     const demo3Container = document.querySelector('.demo3-container');
+//     if (demo3Container) {
+//         console.log('🎨 demo3-container encontrado, aplicando diseño limpio...');
+//         aplicarDiseñoLimpioDemo3();
+//     } else {
+//         // Si no está listo, intentar de nuevo en 500ms
+//         setTimeout(ejecutarCuandoEsteListo, 500);
+//     }
+// }
 
 // Ejecutar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ejecutarCuandoEsteListo);
-} else {
-    ejecutarCuandoEsteListo();
-}
+// if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', ejecutarCuandoEsteListo);
+// } else {
+//     ejecutarCuandoEsteListo();
+// }
 
 // También ejecutar después de delays adicionales para asegurar que se aplique
-setTimeout(ejecutarCuandoEsteListo, 2000);
-setTimeout(ejecutarCuandoEsteListo, 3000);
+// setTimeout(ejecutarCuandoEsteListo, 2000);
+// setTimeout(ejecutarCuandoEsteListo, 3000);
 
-// Configurar detección de deporte después de un delay adicional
-setTimeout(() => {
-    detectarCambioDeporte();
-    aplicarColoresPorDeporte();
-    console.log('🔄 Detección de deporte configurada con delay');
-}, 1000);
+console.log('📱 demo3-clean.js: TODO EL JAVASCRIPT DESHABILITADO - Solo CSS activo');
 
-// Forzar aplicación de colores después de un delay más largo
-setTimeout(() => {
-    console.log('🔄 Forzando aplicación de colores por deporte...');
-    aplicarColoresPorDeporte();
-}, 4000);
+// TODOS LOS TIMEOUTS DESHABILITADOS - Solo CSS
+// setTimeout(() => {
+//     detectarCambioDeporte();
+//     aplicarColoresPorDeporte();
+//     console.log('🔄 Detección de deporte configurada con delay');
+// }, 1000);
 
-// Configurar detección de cambios después de un delay adicional
-setTimeout(() => {
-    console.log('🔄 Configurando detección de cambios de deporte...');
-    detectarCambioDeporte();
-}, 5000);
-
-// Re-aplicar estilos de padel específicamente después de un delay adicional
-setTimeout(() => {
-    const padelCancha = document.querySelector('.demo3-padel-superior');
-    if (padelCancha) {
-        padelCancha.style.width = '210px';
-        padelCancha.style.minWidth = '210px';
-        padelCancha.style.maxWidth = '210px';
-        padelCancha.style.flex = '0 0 210px';
-        console.log('🔄 Estilos de padel re-aplicados con delay (210px)');
-    }
-}, 1000);
-
-// Re-aplicar estilos de texto de jugadores después de un delay
-setTimeout(() => {
-    console.log('🔍 Buscando elementos de texto de jugadores...');
-    
-    // Buscar todos los elementos text-info.small en las canchas demo3
-    const allTextInfo = document.querySelectorAll('.text-info.small');
-    console.log('🔍 Total elementos .text-info.small encontrados:', allTextInfo.length);
-    
-    // Buscar específicamente en las canchas demo3
-    const jugadoresTexts = document.querySelectorAll('.demo3-futbol-izquierda .text-info.small, .demo3-futbol-derecha .text-info.small, .demo3-padel-superior .text-info.small');
-    console.log('🔍 Elementos .text-info.small en canchas demo3:', jugadoresTexts.length);
-    
-    // También buscar en cancha-info
-    const canchaInfoTexts = document.querySelectorAll('.demo3-futbol-izquierda .cancha-info .text-info.small, .demo3-futbol-derecha .cancha-info .text-info.small, .demo3-padel-superior .cancha-info .text-info.small');
-    console.log('🔍 Elementos .text-info.small en .cancha-info:', canchaInfoTexts.length);
-    
-    // Aplicar estilos a todos los elementos encontrados
-    const allJugadoresTexts = [...jugadoresTexts, ...canchaInfoTexts];
-    allJugadoresTexts.forEach(text => {
-        text.style.display = 'block';
-        text.style.visibility = 'visible';
-        text.style.opacity = '1';
-        text.style.color = '#17a2b8';
-        text.style.fontSize = '0.85rem';
-        text.style.margin = '1px 0';
-        text.style.lineHeight = '1.2';
-        text.style.position = 'relative';
-        text.style.zIndex = '10';
-        text.style.whiteSpace = 'normal';
-        text.style.fontWeight = '600';
-        text.style.textAlign = 'center';
-        text.style.width = '100%';
-        text.style.maxWidth = '100%';
-        text.style.overflow = 'visible';
-        text.style.textOverflow = 'unset';
-        text.style.padding = '0';
-        text.style.background = 'transparent';
-        text.style.borderRadius = '0';
-        console.log('🔄 Texto encontrado:', text.textContent);
-    });
-    console.log('🔄 Texto de jugadores re-aplicado:', allJugadoresTexts.length, 'elementos');
-    
-    // Re-aplicar estilos del ícono de personas en cancha 3
-    const iconoPersonasCancha3 = document.querySelector('.demo3-cancha-horizontal .cancha-jugadores .fas.fa-users');
-    if (iconoPersonasCancha3) {
-        iconoPersonasCancha3.style.color = '#17a2b8';
-        iconoPersonasCancha3.style.fontSize = '2.3rem'; /* ← Tamaño perfecto y muy visible */
-        iconoPersonasCancha3.style.marginRight = '8px';
-        console.log('🔄 Ícono de personas en cancha 3 re-aplicado');
-    }
-    
-    // Re-aplicar colores por deporte después del delay
-    aplicarColoresPorDeporte();
-}, 2000);
-
-// Función para forzar layout VERTICAL en móvil
+// Función para layout móvil - GRID 2x2 SIMPLE
 function forzarLayoutVerticalMovil() {
     const demo3ContainerInner = document.querySelector('.demo3-container-inner');
     if (demo3ContainerInner && window.innerWidth <= 768) {
-        console.log('📱 Forzando layout VERTICAL en móvil');
+        console.log('📱 ========== LAYOUT MÓVIL: GRID 2x2 ==========');
+        console.log('📱 Ancho de ventana:', window.innerWidth);
 
-        // FORZAR layout FLEX VERTICAL
-        demo3ContainerInner.style.setProperty('display', 'flex', 'important');
-        demo3ContainerInner.style.setProperty('flex-direction', 'column', 'important');
-        demo3ContainerInner.style.setProperty('gap', '12px', 'important');
+        const altura = window.innerWidth <= 480 ? '120px' : '140px';
+        const gap = window.innerWidth <= 480 ? '6px' : '8px';
+
+        // Layout: Grid 2x2 simple
+        demo3ContainerInner.style.setProperty('display', 'grid', 'important');
+        demo3ContainerInner.style.setProperty('grid-template-columns', '1fr 1fr', 'important');
+        demo3ContainerInner.style.setProperty('grid-template-rows', 'auto auto', 'important');
+        demo3ContainerInner.style.setProperty('gap', gap, 'important');
         demo3ContainerInner.style.setProperty('width', '100%', 'important');
-        demo3ContainerInner.style.setProperty('max-width', '100%', 'important');
-        demo3ContainerInner.style.setProperty('box-sizing', 'border-box', 'important');
+        demo3ContainerInner.style.setProperty('padding', '0', 'important');
+        console.log('✅ Contenedor inner: Grid 2x2 configurado');
 
-        // Forzar canchas superiores en horizontal
+        // Ocultar wrapper de canchas fútbol superiores
         const futbolSuperiores = document.querySelector('.demo3-canchas-futbol-superiores');
         if (futbolSuperiores) {
-            futbolSuperiores.style.setProperty('flex-direction', 'row', 'important');
-            futbolSuperiores.style.setProperty('display', 'flex', 'important');
-            futbolSuperiores.style.setProperty('width', '100%', 'important');
-            futbolSuperiores.style.setProperty('order', '1', 'important');
-            console.log('📱 Canchas superiores en fila horizontal');
+            futbolSuperiores.style.setProperty('display', 'contents', 'important');
+            console.log('✅ Wrapper futbol-superiores: display contents');
         }
 
-        // Canchas de fútbol - 50-50 MÁS COMPACTAS
+        // Posicionar cada cancha en el grid
         const futbolIzquierda = document.querySelector('.demo3-futbol-izquierda');
         const futbolDerecha = document.querySelector('.demo3-futbol-derecha');
-        if (futbolIzquierda) {
-            futbolIzquierda.style.setProperty('flex', '1', 'important');
-            futbolIzquierda.style.setProperty('min-width', '0', 'important');
-            futbolIzquierda.style.setProperty('height', window.innerWidth <= 480 ? '150px' : '170px', 'important');
-        }
-        if (futbolDerecha) {
-            futbolDerecha.style.setProperty('flex', '1', 'important');
-            futbolDerecha.style.setProperty('min-width', '0', 'important');
-            futbolDerecha.style.setProperty('height', window.innerWidth <= 480 ? '150px' : '170px', 'important');
-        }
-
-        // Pádel - fila completa MÁS COMPACTA
         const padelCancha = document.querySelector('.demo3-padel-superior');
-        if (padelCancha) {
-            padelCancha.style.setProperty('width', '100%', 'important');
-            padelCancha.style.setProperty('min-width', '0', 'important');
-            padelCancha.style.setProperty('height', window.innerWidth <= 480 ? '150px' : '170px', 'important');
-            padelCancha.style.setProperty('order', '2', 'important');
-            console.log('📱 Cancha de pádel en fila completa');
+        const cancha3 = document.querySelector('.demo3-cancha-horizontal');
+
+        if (futbolIzquierda) {
+            futbolIzquierda.style.setProperty('grid-column', '1', 'important');
+            futbolIzquierda.style.setProperty('grid-row', '1', 'important');
+            futbolIzquierda.style.setProperty('height', altura, 'important');
+            console.log(`✅ Cancha 1 Fútbol: posición (1,1) - ${altura}`);
         }
 
-        // Cancha 3 MÁS COMPACTA
+        if (futbolDerecha) {
+            futbolDerecha.style.setProperty('grid-column', '2', 'important');
+            futbolDerecha.style.setProperty('grid-row', '1', 'important');
+            futbolDerecha.style.setProperty('height', altura, 'important');
+            console.log(`✅ Cancha 2 Fútbol: posición (2,1) - ${altura}`);
+        }
+
+        if (padelCancha) {
+            padelCancha.style.setProperty('grid-column', '1', 'important');
+            padelCancha.style.setProperty('grid-row', '2', 'important');
+            padelCancha.style.setProperty('height', altura, 'important');
+            console.log(`✅ Cancha Pádel: posición (1,2) - ${altura}`);
+        }
+
+        // Ocultar wrapper de cancha 3
         const contenedorCancha3 = document.querySelector('.demo3-contenedor-cancha3');
         if (contenedorCancha3) {
-            contenedorCancha3.style.setProperty('width', '100%', 'important');
-            contenedorCancha3.style.setProperty('order', '3', 'important');
+            contenedorCancha3.style.setProperty('display', 'contents', 'important');
         }
 
-        const cancha3 = document.querySelector('.demo3-cancha-horizontal');
         if (cancha3) {
-            cancha3.style.setProperty('height', window.innerWidth <= 480 ? '120px' : '140px', 'important');
+            cancha3.style.setProperty('grid-column', '2', 'important');
+            cancha3.style.setProperty('grid-row', '2', 'important');
+            cancha3.style.setProperty('height', altura, 'important');
             cancha3.style.setProperty('width', '100%', 'important');
-            cancha3.style.setProperty('min-width', '0', 'important');
+            console.log(`✅ Cancha 3: posición (2,2) - ${altura}`);
         }
 
-        // Contenedor - ancho completo sin scroll, contenido dentro del borde
+        // Contenedor principal - SIN borde azul, transparente
         const demo3Container = document.querySelector('.demo3-container');
         if (demo3Container) {
             demo3Container.style.setProperty('width', '100%', 'important');
             demo3Container.style.setProperty('max-width', '100%', 'important');
-            demo3Container.style.setProperty('overflow', 'hidden', 'important');
-            demo3Container.style.setProperty('box-sizing', 'border-box', 'important');
-            console.log('📱 Contenedor sin scroll - contenido dentro del borde');
+            demo3Container.style.setProperty('overflow', 'visible', 'important');
+            demo3Container.style.setProperty('border', 'none', 'important');
+            demo3Container.style.setProperty('background', 'transparent', 'important');
+            demo3Container.style.setProperty('padding', '0', 'important');
+            demo3Container.style.setProperty('margin', '0', 'important');
+            console.log('✅ Contenedor: transparente, sin borde');
         }
 
-        console.log('✅ Layout VERTICAL móvil aplicado correctamente');
+        console.log('📊 RESUMEN GRID 2x2:');
+        console.log(`   ┌─────────┬─────────┐`);
+        console.log(`   │ Fútbol1 │ Fútbol2 │`);
+        console.log(`   ├─────────┼─────────┤`);
+        console.log(`   │  Pádel  │ Cancha3 │`);
+        console.log(`   └─────────┴─────────┘`);
+        console.log(`   Altura: ${altura}, Gap: ${gap}`);
+        console.log('📱 ==========================================');
     }
 }
 
-// Ejecutar forzado de layout vertical en móvil
-setTimeout(forzarLayoutVerticalMovil, 1000);
-setTimeout(forzarLayoutVerticalMovil, 3000);
+// DESHABILITADO: Dejar que CSS maneje el layout móvil completamente
+// setTimeout(forzarLayoutVerticalMovil, 1000);
+// setTimeout(forzarLayoutVerticalMovil, 3000);
 
 // Ejecutar al cambiar tamaño de ventana
-window.addEventListener('resize', forzarLayoutVerticalMovil);
+// window.addEventListener('resize', forzarLayoutVerticalMovil);

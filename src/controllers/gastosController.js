@@ -162,10 +162,11 @@ async function createMovimiento(req, res) {
         }
         
         // Verificar que la categoría existe y es del tipo correcto
-        const categoria = await db.get(
+        const categoriaResult = await db.query(
             'SELECT * FROM categorias_gastos WHERE id = $1',
             [categoria_id]
         );
+        const categoria = categoriaResult.rows[0];
         
         if (!categoria) {
             return res.status(404).json({ 
@@ -198,10 +199,11 @@ async function createMovimiento(req, res) {
         }
         
         // Verificar que el complejo existe
-        const complejo = await db.get(
+        const complejoResult = await db.query(
             'SELECT id FROM complejos WHERE id = $1',
             [complejo_id]
         );
+        const complejo = complejoResult.rows[0];
         
         if (!complejo) {
             return res.status(404).json({ 
@@ -211,7 +213,7 @@ async function createMovimiento(req, res) {
         }
         
         // Insertar movimiento
-        const result = await db.run(`
+        const result = await db.query(`
             INSERT INTO gastos_ingresos (
                 complejo_id, 
                 categoria_id, 
@@ -241,7 +243,7 @@ async function createMovimiento(req, res) {
         res.status(201).json({
             success: true,
             message: 'Movimiento creado correctamente',
-            data: result
+            data: result.rows[0]
         });
     } catch (error) {
         console.error('❌ Error al crear movimiento:', error);
@@ -271,10 +273,11 @@ async function updateMovimiento(req, res) {
         } = req.body;
         
         // Verificar que el movimiento existe
-        let movimiento = await db.get(
+        const movimientoResult = await db.query(
             'SELECT * FROM gastos_ingresos WHERE id = $1',
             [id]
         );
+        let movimiento = movimientoResult.rows[0];
         
         if (!movimiento) {
             return res.status(404).json({ 
@@ -293,10 +296,11 @@ async function updateMovimiento(req, res) {
         
         // Validaciones
         if (categoria_id) {
-            const categoria = await db.get(
+            const categoriaResult = await db.query(
                 'SELECT * FROM categorias_gastos WHERE id = $1',
                 [categoria_id]
             );
+            const categoria = categoriaResult.rows[0];
             
             if (!categoria) {
                 return res.status(404).json({ 
@@ -321,7 +325,7 @@ async function updateMovimiento(req, res) {
         }
         
         // Actualizar movimiento
-        const result = await db.run(`
+        const result = await db.query(`
             UPDATE gastos_ingresos 
             SET 
                 categoria_id = COALESCE($1, categoria_id),
@@ -348,7 +352,7 @@ async function updateMovimiento(req, res) {
         res.json({
             success: true,
             message: 'Movimiento actualizado correctamente',
-            data: result
+            data: result.rows[0]
         });
     } catch (error) {
         console.error('❌ Error al actualizar movimiento:', error);
@@ -370,10 +374,11 @@ async function deleteMovimiento(req, res) {
         const { id } = req.params;
         
         // Verificar que el movimiento existe
-        const movimiento = await db.get(
+        const movimientoResult = await db.query(
             'SELECT * FROM gastos_ingresos WHERE id = $1',
             [id]
         );
+        const movimiento = movimientoResult.rows[0];
         
         if (!movimiento) {
             return res.status(404).json({ 
@@ -391,7 +396,7 @@ async function deleteMovimiento(req, res) {
         }
         
         // Eliminar movimiento
-        await db.run('DELETE FROM gastos_ingresos WHERE id = $1', [id]);
+        await db.query('DELETE FROM gastos_ingresos WHERE id = $1', [id]);
         
         console.log(`✅ Movimiento eliminado: ID ${id}`);
         
@@ -443,7 +448,7 @@ async function getEstadisticas(req, res) {
         }
         
         // Obtener resumen
-        const resumen = await db.get(`
+        const resumenResult = await db.query(`
             SELECT 
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
@@ -452,6 +457,7 @@ async function getEstadisticas(req, res) {
             FROM gastos_ingresos
             WHERE ${whereClause}
         `, params);
+        const resumen = resumenResult.rows[0];
         
         res.json({
             success: true,
@@ -496,10 +502,11 @@ async function createCategoria(req, res) {
         }
         
         // Verificar si ya existe una categoría con ese nombre
-        const existente = await db.get(
+        const existenteResult = await db.query(
             'SELECT id FROM categorias_gastos WHERE nombre = $1',
             [nombre]
         );
+        const existente = existenteResult.rows[0];
         
         if (existente) {
             return res.status(409).json({ 
@@ -509,7 +516,7 @@ async function createCategoria(req, res) {
         }
         
         // Crear categoría (personalizada, no predefinida)
-        const result = await db.run(`
+        const result = await db.query(`
             INSERT INTO categorias_gastos (nombre, descripcion, icono, color, tipo, es_predefinida)
             VALUES ($1, $2, $3, $4, $5, false)
             RETURNING *
@@ -520,7 +527,7 @@ async function createCategoria(req, res) {
         res.status(201).json({
             success: true,
             message: 'Categoría creada correctamente',
-            data: result
+            data: result.rows[0]
         });
     } catch (error) {
         console.error('❌ Error al crear categoría:', error);
@@ -542,10 +549,11 @@ async function updateCategoria(req, res) {
         const { nombre, descripcion, icono, color } = req.body;
         
         // Verificar que la categoría existe
-        const categoria = await db.get(
+        const categoriaResult = await db.query(
             'SELECT * FROM categorias_gastos WHERE id = $1',
             [id]
         );
+        const categoria = categoriaResult.rows[0];
         
         if (!categoria) {
             return res.status(404).json({ 
@@ -556,10 +564,11 @@ async function updateCategoria(req, res) {
         
         // Verificar nombre duplicado si se está cambiando
         if (nombre && nombre !== categoria.nombre) {
-            const existente = await db.get(
+            const existenteResult = await db.query(
                 'SELECT id FROM categorias_gastos WHERE nombre = $1 AND id != $2',
                 [nombre, id]
             );
+            const existente = existenteResult.rows[0];
             
             if (existente) {
                 return res.status(409).json({ 
@@ -570,7 +579,7 @@ async function updateCategoria(req, res) {
         }
         
         // Actualizar categoría
-        const result = await db.run(`
+        const result = await db.query(`
             UPDATE categorias_gastos 
             SET 
                 nombre = COALESCE($1, nombre),
@@ -586,7 +595,7 @@ async function updateCategoria(req, res) {
         res.json({
             success: true,
             message: 'Categoría actualizada correctamente',
-            data: result
+            data: result.rows[0]
         });
     } catch (error) {
         console.error('❌ Error al actualizar categoría:', error);
@@ -607,10 +616,11 @@ async function deleteCategoria(req, res) {
         const { id } = req.params;
         
         // Verificar que la categoría existe
-        const categoria = await db.get(
+        const categoriaResult = await db.query(
             'SELECT * FROM categorias_gastos WHERE id = $1',
             [id]
         );
+        const categoria = categoriaResult.rows[0];
         
         if (!categoria) {
             return res.status(404).json({ 
@@ -620,10 +630,11 @@ async function deleteCategoria(req, res) {
         }
         
         // Verificar si hay movimientos con esta categoría
-        const movimientos = await db.get(
+        const movimientosResult = await db.query(
             'SELECT COUNT(*) as total FROM gastos_ingresos WHERE categoria_id = $1',
             [id]
         );
+        const movimientos = movimientosResult.rows[0];
         
         if (movimientos.total > 0) {
             return res.status(409).json({ 
@@ -633,7 +644,7 @@ async function deleteCategoria(req, res) {
         }
         
         // Eliminar categoría
-        await db.run('DELETE FROM categorias_gastos WHERE id = $1', [id]);
+        await db.query('DELETE FROM categorias_gastos WHERE id = $1', [id]);
         
         console.log(`✅ Categoría eliminada: ${id}`);
         

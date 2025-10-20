@@ -245,7 +245,11 @@ class ReportService {
         doc.setTextColor(100, 100, 100);
         const periodoY = infoY + (complex.email ? 40 : 35);
         doc.text(`Período: ${this.formatDate(dateFrom)} al ${this.formatDate(dateTo)}`, 20, periodoY);
-        doc.text(`Generado el: ${this.formatDate(new Date().toISOString().split('T')[0])}`, 20, periodoY + 7);
+        // Obtener fecha actual en Chile
+        const fechaActualChile = new Date().toLocaleDateString('en-CA', {
+            timeZone: 'America/Santiago'
+        });
+        doc.text(`Generado el: ${this.formatDate(fechaActualChile)}`, 20, periodoY + 7);
 
         let yPosition = periodoY + 20;
 
@@ -482,7 +486,11 @@ class ReportService {
         
         summarySheet.getCell('A10').value = '🕐 Generado:';
         summarySheet.getCell('A10').font = { bold: true, color: { argb: 'FF7F8C8D' } };
-        summarySheet.getCell('B10').value = this.formatDate(new Date().toISOString().split('T')[0]);
+        // Obtener fecha actual en Chile para Excel
+        const fechaActualChileExcel = new Date().toLocaleDateString('en-CA', {
+            timeZone: 'America/Santiago'
+        });
+        summarySheet.getCell('B10').value = this.formatDate(fechaActualChileExcel);
 
         // Resumen general con encabezado destacado
         summarySheet.mergeCells('A12:B12');
@@ -817,12 +825,36 @@ class ReportService {
      * Formatear fecha para mostrar
      */
     formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-CL', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        try {
+            let fechaStr = dateString;
+            
+            // Si tiene timestamp, extraer solo la fecha
+            if (typeof dateString === 'string' && dateString.includes('T')) {
+                fechaStr = dateString.split('T')[0];
+            }
+            
+            // Si es formato YYYY-MM-DD, agregar mediodía para evitar desfase de zona horaria
+            if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                const date = new Date(fechaStr + 'T12:00:00');
+                return date.toLocaleDateString('es-CL', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'America/Santiago'
+                });
+            }
+            
+            const date = new Date(fechaStr);
+            return date.toLocaleDateString('es-CL', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'America/Santiago'
+            });
+        } catch (error) {
+            console.error('❌ Error formateando fecha:', error);
+            return dateString;
+        }
     }
 
     /**

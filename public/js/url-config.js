@@ -9,7 +9,14 @@ const isDevelopment = window.location.hostname === 'localhost' ||
                      window.location.hostname === '' ||
                      window.location.hostname.startsWith('192.168.') ||
                      window.location.hostname.startsWith('10.') ||
-                     window.location.hostname.startsWith('172.');
+                     window.location.hostname.startsWith('172.') ||
+                     window.location.hostname.includes('localhost');
+
+// Detectar producción (incluyendo dominios de Render y otros servicios)
+const isProduction = window.location.hostname.includes('reservatuscanchas.cl') ||
+                    window.location.hostname.includes('render.com') ||
+                    window.location.hostname.includes('onrender.com') ||
+                    (!isDevelopment && window.location.protocol === 'https:');
 
 // Obtener el hostname actual para desarrollo
 const currentHost = window.location.hostname;
@@ -38,7 +45,7 @@ const URL_CONFIG = {
 };
 
 // Obtener la configuración actual
-const currentConfig = isDevelopment ? URL_CONFIG.development : URL_CONFIG.production;
+const currentConfig = isProduction ? URL_CONFIG.production : URL_CONFIG.development;
 
 // Exportar funciones para uso global
 window.URL_CONFIG = {
@@ -62,7 +69,7 @@ window.URL_CONFIG = {
   
   // Función para verificar si estamos en producción
   isProduction() {
-    return !isDevelopment;
+    return isProduction;
   },
   
   // Función para obtener la configuración completa
@@ -74,19 +81,14 @@ window.URL_CONFIG = {
 // Definir API_BASE globalmente para compatibilidad
 window.API_BASE = window.URL_CONFIG.API_URL;
 
-// Log para debugging (solo en desarrollo)
-if (isDevelopment) {
-  console.log('🔧 URL Config cargado:', {
-    environment: 'development',
-    baseUrl: window.URL_CONFIG.BASE_URL,
-    apiUrl: window.URL_CONFIG.API_URL,
-    apiBase: window.API_BASE
-  });
-} else {
-  console.log('🌐 URL Config cargado:', {
-    environment: 'production',
-    baseUrl: window.URL_CONFIG.BASE_URL,
-    apiUrl: window.URL_CONFIG.API_URL,
-    apiBase: window.API_BASE
-  });
-}
+// Log para debugging
+console.log('🔧 URL Config cargado:', {
+  hostname: window.location.hostname,
+  protocol: window.location.protocol,
+  environment: isProduction ? 'production' : 'development',
+  isDevelopment: isDevelopment,
+  isProduction: isProduction,
+  baseUrl: window.URL_CONFIG.BASE_URL,
+  apiUrl: window.URL_CONFIG.API_URL,
+  apiBase: window.API_BASE
+});
