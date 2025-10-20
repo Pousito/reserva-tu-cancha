@@ -1058,7 +1058,133 @@ app.get('/api/bloqueos-temporales/:codigo', async (req, res) => {
   }
 });
 
-// Endpoint movido a src/routes/reservations.js para mejor organización
+// Endpoint para crear bloqueo temporal y proceder al pago
+app.post('/api/reservas/bloquear-y-pagar', async (req, res) => {
+  try {
+    console.log('🔒 Iniciando proceso de bloqueo y pago...');
+    console.log('📋 Datos recibidos:', req.body);
+    
+    const {
+      cancha_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      nombre_cliente,
+      rut_cliente,
+      email_cliente,
+      telefono_cliente,
+      precio_total,
+      codigo_descuento,
+      porcentaje_pagado,
+      monto_pagado,
+      session_id
+    } = req.body;
+    
+    // Validar datos requeridos
+    if (!cancha_id || !fecha || !hora_inicio || !hora_fin || !nombre_cliente || !email_cliente || !session_id || precio_total === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan datos requeridos',
+        campos_faltantes: ['cancha_id', 'fecha', 'hora_inicio', 'hora_fin', 'nombre_cliente', 'email_cliente', 'session_id', 'precio_total'].filter(field => !req.body[field] && req.body[field] !== 0),
+        datos_recibidos: req.body
+      });
+    }
+    
+    // Verificar que la cancha existe
+    const cancha = await db.get(
+      'SELECT c.*, co.nombre as complejo_nombre FROM canchas c JOIN complejos co ON c.complejo_id = co.id WHERE c.id = ?',
+      [cancha_id]
+    );
+    
+    if (!cancha) {
+      return res.status(404).json({
+        success: false,
+        error: 'Cancha no encontrada'
+      });
+    }
+    
+    // Verificar disponibilidad
+    const disponibilidad = await db.get(
+      `SELECT * FROM reservas 
+       WHERE cancha_id = ? 
+       AND fecha = ? 
+       AND (
+         (hora_inicio <= ? AND hora_fin > ?) OR
+         (hora_inicio < ? AND hora_fin >= ?) OR
+         (hora_inicio >= ? AND hora_fin <= ?)
+       )
+       AND estado != 'cancelada'`,
+      [cancha_id, fecha, hora_inicio, hora_inicio, hora_fin, hora_fin, hora_inicio, hora_fin]
+    );
+    
+    if (disponibilidad) {
+      return res.status(409).json({
+        success: false,
+        error: 'La cancha ya está reservada en ese horario'
+      });
+    }
+    
+    // Generar código de reserva único
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let codigoReserva = '';
+    for (let i = 0; i < 6; i++) {
+      codigoReserva += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    
+    // Crear bloqueo temporal (15 minutos)
+    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    
+    const datosCliente = {
+      nombre_cliente,
+      rut_cliente,
+      email_cliente,
+      telefono_cliente,
+      precio_total,
+      codigo_descuento,
+      porcentaje_pagado,
+      monto_pagado
+    };
+    
+    const bloqueoId = `BLOCK_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    
+    await db.run(
+      `INSERT INTO bloqueos_temporales 
+       (id, cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, codigo_reserva)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bloqueoId,
+        cancha_id,
+        fecha,
+        hora_inicio,
+        hora_fin,
+        session_id,
+        expiraEn.toISOString(),
+        JSON.stringify(datosCliente),
+        codigoReserva
+      ]
+    );
+    
+    console.log('✅ Bloqueo temporal creado:', bloqueoId);
+    
+    res.json({
+      success: true,
+      bloqueo_id: bloqueoId,
+      codigo_reserva: codigoReserva,
+      expira_en: expiraEn.toISOString(),
+      cancha: cancha,
+      datos_cliente: datosCliente,
+      message: 'Bloqueo temporal creado exitosamente'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en bloquearYPagar:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message
+    });
+  }
+});
 
 // Endpoint legacy eliminado - usar /api/disponibilidad/:cancha_id/:fecha en su lugar
 
