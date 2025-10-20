@@ -160,7 +160,7 @@ body {
     max-width: 1800px;         /* ← AUMENTADO: De 1400px a 1800px */
     min-width: 100%;           /* ← AGREGADO: Forzar ancho mínimo */
     margin: 0 auto;
-    padding: 20px;             /* ← REDUCIDO: De 40px a 20px */
+    padding: 14px;             /* ← REDUCIDO EN 30%: De 20px a 14px */
     border-radius: 25px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
     border: 4px solid;
@@ -272,7 +272,7 @@ body {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border: 3px solid #4caf50;
     border-radius: 15px;
-    padding: 25px 30px 90px 30px; /* Padding balanceado - más espacio abajo para la calle */
+    padding: 18px 21px 63px 21px; /* Padding reducido en 30% - más compacto */
     position: relative;
     margin-bottom: 80px; /* Espacio suficiente para la calle */
     max-width: 900px; /* Centrado en pantalla completa */
@@ -510,7 +510,7 @@ body {
 /* Calle genérica (Monte Perdido, Don Victor o Av. Ricardo Vicuña) */
 .calle-complejo {
     position: relative; /* Cambiado de absolute a relative para que sea parte del flujo del grid */
-    margin-top: 20px; /* Separación del complejo */
+    margin-top: 0px !important; /* Sin separación - pegada al contorno inferior */
     width: 100%;
     height: 60px; /* Altura proporcionada y equilibrada */
     background: #4a4a4a;
@@ -599,6 +599,56 @@ body {
     overflow: visible; /* Permitir que se vean completos */
     z-index: 1; /* Asegurar contexto de apilamiento correcto */
     box-sizing: border-box; /* Incluir padding en el cálculo del ancho */
+}
+
+/* Estilos específicos para Complejo Demo 3 */
+.complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .canchas-horizontales {
+    overflow: visible !important;
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+    justify-content: center !important;
+}
+
+/* SOBRESCRIBIR estilos del canchas-grid-expanded para Demo 3 */
+.complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .canchas-grid-expanded .canchas-horizontales .cancha-card {
+    flex: none !important; /* Eliminar flex forzado */
+    width: auto !important; /* Permitir ancho automático */
+    max-width: none !important; /* Eliminar restricción de ancho máximo */
+}
+
+/* FORZAR estilos específicos para Demo 3 - SOBRESCRIBIR canchas-grid-expanded */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .cancha-card {
+    flex: 0 0 28% !important; /* Cambiar a porcentaje para fútbol */
+    width: auto !important;
+    max-width: none !important;
+    min-width: auto !important;
+}
+
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .cancha-card:last-child {
+    flex: 0 0 30% !important; /* Cambiar a 30% para pádel - similar a fútbol */
+    width: auto !important;
+    max-width: none !important;
+    min-width: auto !important;
+}
+
+/* SOBRESCRIBIR TODOS los estilos de canchas-grid-expanded para Demo 3 */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .canchas-horizontales .cancha-card {
+    flex: none !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: auto !important;
+}
+
+/* SOBRESCRIBIR estilos de botones badge para Demo 3 */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .estado-disponibilidad .badge {
+    padding: 1px 3px !important;
+    font-size: 0.45rem !important;
+    border-radius: 2px !important;
+    min-height: 16px !important;
+    max-width: 70px !important;
+    margin: 0 auto !important;
+    display: block !important;
 }
 
 /* Gap proporcionado en layout expandido */
@@ -842,7 +892,7 @@ body {
     /* Calle para complejo Fundación Gunnen en móvil */
     .calle-complejo {
         position: relative; /* Mantener relative en móvil */
-        margin-top: 15px; /* Separación reducida para móvil */
+        margin-top: 0px !important; /* Sin separación - pegada al contorno inferior */
         width: 100%;
         height: 40px; /* Altura reducida para móvil */
         border-radius: 8px;
@@ -2931,283 +2981,461 @@ html {
 
 /* ===== ESTILOS ESPECÍFICOS PARA COMPLEJO DEMO 3 - CSS GRID ===== */
 
-/* Contenedor principal del Complejo Demo 3 usando CSS Grid */
+/* NUEVO DISEÑO DEL COMPLEJO DEMO 3 - 2 LAYOUTS SEPARADOS */
+
+/* Contenedor principal del Complejo Demo 3 */
 .demo3-container {
-    display: grid;
-    grid-template-areas: 
-        "futbol1 futbol2 padel"
-        "cancha3 cancha3 cancha3";
-    grid-template-columns: 1fr 1fr 0.3fr;
-    grid-template-rows: auto auto;
-    gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px; /* Reducido en 30% de 20px a 14px */
     width: 100%;
     max-width: 100%;
-    padding: 8px;
+    margin: 0 auto;
+    padding: 14px; /* Reducido en 30% de 20px a 14px */
     box-sizing: border-box;
     position: relative;
     overflow: visible;
-    min-height: 200px;
-    margin: 0 auto;
 }
 
-/* Contenedor interno para el layout específico */
-.demo3-container-inner {
-    display: contents; /* Permite que los hijos directos participen en el grid del padre */
-}
-
-/* Contenedor de canchas superiores (F1, F2, Pádel) */
-.demo3-canchas-superiores {
-    display: contents; /* Los hijos directos participan en el grid */
-}
-
-/* Contenedores individuales para cada cancha */
-.demo3-futbol-izquierda {
-    grid-area: futbol1;
+/* LAYOUT 1: Canchas 1, 2 (fútbol) + Pádel */
+.demo3-layout-1 {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.demo3-futbol-derecha {
-    grid-area: futbol2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.demo3-padel-superior {
-    grid-area: padel;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-/* Contenedor para la cancha 3 horizontal */
-.demo3-contenedor-cancha3 {
-    grid-area: cancha3;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+    justify-content: space-between;
+    align-items: stretch; /* Cambiar de center a stretch para igualar alturas */
+    gap: 10px;
     width: 100%;
+    min-width: 100%;
+    padding: 10px; /* Reducido en 30% de 15px a 10px */
+    background: transparent; /* Eliminar fondo */
+    border: none; /* Eliminar borde */
+    box-shadow: none; /* Eliminar sombra */
+    overflow: visible;
 }
 
-/* Cancha horizontal específica */
+/* LAYOUT 2: Cancha 3 (horizontal) */
+.demo3-layout-2 {
+    display: flex;
+    justify-content: flex-start; /* Cambiar de center a flex-start */
+    align-items: center;
+    width: 100%;
+    padding: 10px; /* Reducido en 30% de 15px a 10px */
+    background: transparent; /* Eliminar fondo */
+    border: none; /* Eliminar borde */
+    box-shadow: none; /* Eliminar sombra */
+}
+
+/* Cancha horizontal específica - SOLO MÓVIL */
 .demo3-cancha-horizontal {
-    width: 100%;
-    max-width: 100%;
+    margin: 0; /* Quitar margin auto para que no se centre */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px; /* Reducir padding vertical para más espacio */
 }
 
-/* ===== RESPONSIVE PARA COMPLEJO DEMO 3 EN MÓVIL ===== */
+/* SOBRESCRIBIR para desktop con mayor especificidad */
+@media (min-width: 769px) {
+    .demo3-cancha-horizontal {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+}
+
+/* Ancho y altura SOLO para desktop - no afecta móvil */
+@media (min-width: 769px) {
+    .demo3-cancha-horizontal {
+        width: 450px !important; /* Ancho aumentado para mejor visibilidad */
+        max-width: 450px !important; /* FORZAR */
+        min-height: 240px !important; /* Altura aumentada para mostrar todo el contenido */
+        height: auto !important; /* Altura automática para adaptarse al contenido */
+        padding: 20px 25px !important; /* Padding aumentado para mejor distribución */
+        border-radius: 12px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        border: 2px solid rgba(255,255,255,0.3) !important; /* Mismo borde */
+        position: relative !important;
+        z-index: 1 !important;
+        margin: 0 !important; /* Quitar centrado para alinear a la izquierda */
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    /* Forzar ancho de Cancha 3 también desde el layout */
+    .demo3-layout-2 .cancha-card {
+        width: 450px !important;
+        max-width: 450px !important;
+        min-height: 240px !important; /* Altura aumentada para mostrar todo el contenido */
+        height: auto !important; /* Altura automática para adaptarse al contenido */
+        margin: 0 !important; /* Quitar centrado para alinear a la izquierda */
+    }
+    
+    /* Badge de tipo de deporte (FÚTBOL) en Cancha 3 desktop */
+    .demo3-cancha-horizontal .cancha-tipo {
+        margin-bottom: 8px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        padding: 4px 10px !important;
+        border-radius: 4px !important;
+    }
+
+    /* Mejorar distribución del contenido en Cancha 3 desktop */
+    .demo3-cancha-horizontal h5 {
+        margin: 0 0 10px 0 !important;
+        font-size: 1.2rem !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+    }
+
+    .demo3-cancha-horizontal p {
+        margin: 6px 0 !important;
+        font-size: 0.9rem !important;
+        text-align: center !important;
+        line-height: 1.4 !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+    }
+
+    .demo3-cancha-horizontal .cancha-icon {
+        margin: 10px 0 !important;
+        font-size: 1.8rem !important;
+    }
+
+    .demo3-cancha-horizontal .estado-disponibilidad {
+        margin-top: 15px !important;
+        align-self: center !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    /* Hacer que el botón de Cancha 3 sea igual al de Canchas 1 y 2 */
+    .demo3-cancha-horizontal .estado-disponibilidad .badge {
+        padding: 8px 16px !important;
+        font-size: 0.9rem !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        background-color: white !important;
+        color: #28a745 !important;
+        border: 2px solid #28a745 !important;
+    }
+    
+    /* Alinear Layout 2 con el borde izquierdo de Cancha 1 */
+    .demo3-layout-2 {
+        display: flex !important;
+        justify-content: flex-start !important; /* Alinear a la izquierda */
+        align-items: flex-start !important;
+        margin-top: 20px !important; /* Espacio entre layouts */
+        clear: both !important; /* Evitar que se superponga */
+        padding-left: 0 !important; /* Sin padding izquierdo */
+    }
+}
+
+/* Contenido izquierdo de la Cancha 3 (icono, nombre, precio, jugadores) */
+.demo3-cancha-horizontal .cancha-icon,
+.demo3-cancha-horizontal h5,
+.demo3-cancha-horizontal p {
+    margin: 0;
+    flex: 1;
+}
+
+/* Estado disponibilidad en la parte derecha */
+.demo3-cancha-horizontal .estado-disponibilidad {
+    flex: 0 0 auto;
+    margin-left: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -5px; /* Subir el botón para que no se salga del borde */
+}
+
+/* ===== RESPONSIVE PARA COMPLEJO DEMO 3 EN MÓVIL - NUEVO DISEÑO ===== */
 
 @media (max-width: 768px) {
-    /* Contenedor principal en móvil - CSS Grid optimizado */
+    /* Contenedor principal en móvil */
     .demo3-container {
-        display: grid;
-        grid-template-areas: 
-            "futbol1 futbol2 padel"
-            "cancha3 cancha3 cancha3";
-        grid-template-columns: 1fr 1fr 0.25fr;
-        grid-template-rows: auto auto;
-        gap: 4px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 6px;
-        overflow: visible;
-        user-select: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        max-width: 100%;
-        box-sizing: border-box;
-        min-height: 180px;
+        gap: 12px;
+        padding: 6px; /* Reducir padding de 10px a 6px */
     }
     
-    /* Habilitar scroll dentro del complejo en móvil */
-    .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] {
-        max-height: 70vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-    
-    /* Habilitar zoom táctil */
-    .demo3-container {
-        -webkit-touch-callout: none;
-        -webkit-tap-highlight-color: transparent;
-    }
-    
-    /* Contenedor interno en móvil - Grid */
-    .demo3-container-inner {
-        display: contents;
-    }
-    
-    /* Canchas superiores en móvil - Grid */
-    .demo3-canchas-superiores {
-        display: contents;
-    }
-    
-    /* Ajustar canchas individuales en móvil - Grid areas */
-    .demo3-futbol-izquierda {
-        grid-area: futbol1;
-    }
-    
-    .demo3-futbol-derecha {
-        grid-area: futbol2;
-    }
-    
-    .demo3-padel-superior {
-        grid-area: padel;
-    }
-    
-    /* Contenedor de cancha 3 en móvil - Grid */
-    .demo3-contenedor-cancha3 {
-        grid-area: cancha3;
+    /* LAYOUT 1: Canchas 1, 2 + Pádel en móvil */
+    .demo3-layout-1 {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: stretch;
+        gap: 8px;
+        padding: 8px;
         width: 100%;
     }
     
-    /* Cancha horizontal en móvil */
-    .demo3-cancha-horizontal {
+    /* LAYOUT 2: Cancha 3 horizontal en móvil */
+    .demo3-layout-2 {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 8px;
         width: 100%;
-        max-width: 100%;
     }
     
-    /* Ajustar tarjetas de cancha en móvil */
-    .demo3-container .cancha-card {
-        padding: 6px 3px;
-        font-size: 0.7rem;
-        min-height: 100px;
-        width: 100%;
-        max-width: 100%;
+    /* Canchas en Layout 1 - móvil */
+    .demo3-layout-1 .cancha-card {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        width: auto;
+        min-height: 120px;
+        height: auto;
+        padding: 8px 10px;
+        font-size: 0.75rem;
         border-radius: 8px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
+    /* Cancha Pádel en móvil */
+    .demo3-layout-1 .cancha-card:last-child {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        width: auto;
+    }
+    
+    /* Cancha 3 horizontal en móvil */
+    .demo3-cancha-horizontal {
+        width: 190px !important;
+        max-width: 190px !important;
+        min-height: auto !important;
+        height: auto !important;
+        padding: 10px 12px !important;
+        margin: 0 !important;
+    }
+    
+    .demo3-layout-2 .cancha-card {
+        width: 190px !important;
+        max-width: 190px !important;
+        min-height: auto !important;
+        height: auto !important;
+        padding: 10px 12px !important;
+        margin: 0 !important;
+    }
+    
+    /* Botón "Disponible" de Cancha 3 igual a Canchas 1 y 2 en móvil */
+    .demo3-layout-2 .cancha-card .estado-disponibilidad .badge {
+        display: block !important;
+        margin: 0 auto !important;
+        padding: 4px 8px !important;
+        font-size: 0.6rem !important;
+        border-radius: 4px !important;
+        margin-top: 4px !important;
+    }
+
+    /* ESTILOS DEL BOTÓN "Disponible" (.cancha-boton) DE CANCHA 3 EN MÓVIL - Igual a Canchas 1 y 2 */
+    .demo3-layout-2 .cancha-card .cancha-boton {
+        background-color: white !important;
+        color: #28a745 !important;
+        border: 2px solid #28a745 !important;
+        padding: 4px 8px !important;
+        font-size: 0.6rem !important;
+        border-radius: 4px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        display: block !important;
+        margin: 4px auto 0 auto !important;
+    }
+
+    .demo3-layout-2 .cancha-card .cancha-boton:hover {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+
+    /* Botones "Disponible" centrados en móvil */
+    .demo3-layout-1 .cancha-card .estado-disponibilidad .badge {
+        display: block !important;
+        margin: 0 auto !important;
+        padding: 4px 8px !important;
+        font-size: 0.6rem !important;
+        border-radius: 4px !important;
+        margin-top: 4px !important;
+    }
+    
+    .demo3-layout-2 .cancha-card .estado-disponibilidad .badge {
+        display: block !important;
+        margin: 0 auto !important;
+        padding: 4px 8px !important;
+        font-size: 0.6rem !important;
+        border-radius: 4px !important;
+        margin-top: 4px !important;
+    }
+    
+    /* SOBRESCRIBIR estilos de canchas-grid-expanded para Demo 3 en móvil */
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .cancha-card {
+        flex: 0 0 90px !important;
+        width: 90px !important;
+        max-width: 90px !important;
+        min-width: 90px !important;
+    }
+    
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .cancha-card:last-child {
+        flex: 0 0 100px !important;
+        width: 100px !important;
+        max-width: 100px !important;
+        min-width: 100px !important;
+    }
+    
+    /* Cancha 3 horizontal en móvil */
+    .demo3-layout-2 .cancha-card {
+        width: 250px !important; /* Ancho específico para móvil - FORZAR */
+        max-width: 250px !important; /* FORZAR */
+        padding: 10px;
+        font-size: 0.8rem;
+        min-height: 100px;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    }
+    
+    /* Ajustes específicos para Cancha 3 horizontal en móvil */
+    .demo3-cancha-horizontal {
+        width: 250px !important; /* Ancho más amplio para coincidir con Cancha 1 + Cancha 2 + gap - FORZAR */
+        max-width: 250px !important; /* FORZAR */
+        padding: 10px;
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .demo3-cancha-horizontal .estado-disponibilidad {
+        margin-left: 10px;
+    }
+    
+    /* Textos optimizados para móvil */
     .demo3-container .cancha-card h5 {
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         margin-bottom: 2px;
+        font-weight: 600;
     }
     
     .demo3-container .cancha-card .cancha-icon {
         font-size: 0.8rem;
-        margin-bottom: 2px;
+        margin-bottom: 3px;
     }
     
     .demo3-container .cancha-card p {
-        font-size: 0.6rem;
-        margin-bottom: 1px;
+        font-size: 0.55rem;
+        margin-bottom: 2px;
+        line-height: 1.1;
     }
     
     .demo3-container .cancha-card .text-info.small {
-        font-size: 0.55rem;
-        line-height: 1.1;
+        font-size: 0.5rem;
+        line-height: 1.0;
+    }
+    
+    /* Botones optimizados para móvil */
+    .demo3-container .cancha-card .btn {
+        padding: 2px 4px;
+        font-size: 0.5rem;
+        border-radius: 3px;
+        min-height: 18px;
+        max-width: 80px;
+        margin: 0 auto;
+    }
+    
+    /* Botones específicos para Layout 1 (más pequeños) */
+    .demo3-layout-1 .cancha-card .estado-disponibilidad .badge {
+        padding: 1px 3px !important;
+        font-size: 0.45rem !important;
+        border-radius: 2px !important;
+        min-height: 16px !important;
+        max-width: 70px !important;
+        margin: 0 auto !important;
+        display: block !important;
     }
 }
 
-/* ===== SCROLL DENTRO DEL COMPLEJO PARA DEMO 3 ===== */
-
-/* Habilitar scroll dentro del contenedor del complejo */
-.complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] {
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
-    max-height: 80vh;
-    position: relative;
-}
-
-/* Ajustar el contenedor de canchas horizontales para Demo 3 */
-.complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .canchas-horizontales {
-    overflow: visible;
-    width: 100%;
-    max-width: none;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 0;
-    margin: 0;
-    min-height: 100%;
-}
-
-/* ===== RESPONSIVE PARA PANTALLAS MUY PEQUEÑAS ===== */
+/* ===== RESPONSIVE PARA PANTALLAS PEQUEÑAS ===== */
 
 @media (max-width: 480px) {
     .demo3-container {
-        display: grid;
-        grid-template-areas: 
-            "futbol1 futbol2 padel"
-            "cancha3 cancha3 cancha3";
-        grid-template-columns: 1fr 1fr 0.2fr;
-        grid-template-rows: auto auto;
-        gap: 3px;
-        width: 100%;
-        padding: 4px;
-        min-height: 160px;
+        gap: 12px;
+        padding: 8px;
     }
     
-    /* Scroll optimizado para pantallas pequeñas */
-    .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] {
-        max-height: 65vh;
-        overflow-y: auto;
-        overflow-x: hidden;
+    .demo3-layout-1 {
+        gap: 3px; /* Reducir gap de 4px a 3px */
+        padding: 6px; /* Reducir padding de 8px a 6px */
+        min-width: 100%;
+        overflow: visible;
     }
     
-    .demo3-canchas-superiores {
-        gap: 4px;
+    .demo3-layout-2 {
+        padding: 8px;
+        justify-content: flex-start; /* Alinear a la izquierda */
     }
     
-    .demo3-container .cancha-card {
-        padding: 6px 3px;
-        font-size: 0.7rem;
-        min-height: 100px;
+    /* Canchas más pequeñas en pantallas pequeñas */
+    .demo3-layout-1 .cancha-card {
+        flex: 0 0 30%; /* Reducir aún más para pantallas pequeñas */
+        padding: 4px 1px;
+        font-size: 0.6rem;
+        min-height: 90px;
     }
     
-    .demo3-container .cancha-card h5 {
-        font-size: 0.8rem;
+    .demo3-layout-1 .cancha-card:last-child {
+        flex: 0 0 28%; /* Aumentar para que se vea mejor */
+        max-width: 28%;
+        min-width: 65px;
     }
     
-    .demo3-container .cancha-card .cancha-icon {
-        font-size: 1rem;
+    /* Botones más pequeños para pantallas pequeñas */
+    .demo3-layout-1 .cancha-card .estado-disponibilidad .badge {
+        padding: 1px 2px !important;
+        font-size: 0.4rem !important;
+        border-radius: 2px !important;
+        min-height: 14px !important;
+        max-width: 60px !important;
+        margin: 0 auto !important;
+        display: block !important;
     }
     
-    .demo3-padel-superior {
-        flex: 0 0 14%;
-        max-width: 14%;
-        min-width: 45px;
+    .demo3-layout-2 .cancha-card {
+        width: 180px !important; /* Ancho específico para pantallas pequeñas - FORZAR */
+        max-width: 180px !important; /* FORZAR */
+        padding: 8px;
+        font-size: 0.75rem;
+        min-height: 90px;
     }
-}
 
-/* ===== RESPONSIVE PARA PANTALLAS ULTRA PEQUEÑAS ===== */
+    /* ESTILOS DEL BOTÓN "Disponible" (.cancha-boton) DE CANCHA 3 EN PANTALLAS PEQUEÑAS */
+    .demo3-layout-2 .cancha-card .cancha-boton {
+        background-color: white !important;
+        color: #28a745 !important;
+        border: 2px solid #28a745 !important;
+        padding: 3px 6px !important;
+        font-size: 0.55rem !important;
+        border-radius: 3px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        display: block !important;
+        margin: 3px auto 0 auto !important;
+    }
 
-@media (max-width: 360px) {
-    .demo3-container {
-        display: grid;
-        grid-template-areas: 
-            "futbol1 futbol2 padel"
-            "cancha3 cancha3 cancha3";
-        grid-template-columns: 1fr 1fr 0.15fr;
-        grid-template-rows: auto auto;
-        gap: 2px;
-        width: 100%;
-        padding: 3px;
-        min-height: 140px;
+    /* Ajustes específicos para Cancha 3 horizontal en pantallas pequeñas */
+    .demo3-cancha-horizontal {
+        width: 180px; /* Ancho calculado para coincidir con Cancha 1 + Cancha 2 + gap */
+        max-width: 180px;
+        padding: 8px;
     }
     
-    /* Scroll optimizado para pantallas ultra pequeñas */
-    .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] {
-        max-height: 60vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-    
-    .demo3-canchas-superiores {
-        gap: 3px;
-    }
-    
-    .demo3-container .cancha-card {
-        padding: 4px 2px;
-        font-size: 0.65rem;
-        min-height: 80px;
+    .demo3-cancha-horizontal .estado-disponibilidad {
+        margin-left: 8px;
     }
     
     .demo3-container .cancha-card h5 {
@@ -3215,15 +3443,125 @@ html {
     }
     
     .demo3-container .cancha-card .cancha-icon {
+        font-size: 1rem;
+    }
+    
+    .demo3-container .cancha-card p {
+        font-size: 0.65rem;
+    }
+    
+    .demo3-container .cancha-card .text-info.small {
+        font-size: 0.6rem;
+    }
+    
+    .demo3-container .cancha-card .btn {
+        padding: 5px 10px;
+        font-size: 0.65rem;
+        min-height: 28px;
+    }
+}
+
+/* ===== RESPONSIVE PARA PANTALLAS ULTRA PEQUEÑAS ===== */
+
+@media (max-width: 360px) {
+    .demo3-container {
+        gap: 10px;
+        padding: 6px;
+    }
+    
+    .demo3-layout-1 {
+        gap: 2px; /* Reducir gap de 3px a 2px */
+        padding: 4px; /* Reducir padding de 6px a 4px */
+        min-width: 100%;
+        overflow: visible;
+    }
+    
+    .demo3-layout-2 {
+        padding: 6px;
+        justify-content: flex-start; /* Alinear a la izquierda */
+    }
+    
+    /* Canchas ultra pequeñas */
+    .demo3-layout-1 .cancha-card {
+        flex: 0 0 28%; /* Reducir aún más para pantallas ultra pequeñas */
+        padding: 2px 1px;
+        font-size: 0.55rem;
+        min-height: 70px;
+    }
+    
+    .demo3-layout-1 .cancha-card:last-child {
+        flex: 0 0 26%; /* Aumentar para que se vea mejor */
+        max-width: 26%;
+        min-width: 60px;
+    }
+    
+    /* Botones ultra pequeños */
+    .demo3-layout-1 .cancha-card .estado-disponibilidad .badge {
+        padding: 1px 2px !important;
+        font-size: 0.35rem !important;
+        border-radius: 1px !important;
+        min-height: 12px !important;
+        max-width: 50px !important;
+        margin: 0 auto !important;
+        display: block !important;
+    }
+    
+    .demo3-layout-2 .cancha-card {
+        width: 170px !important; /* Ancho específico para pantallas ultra pequeñas - FORZAR */
+        max-width: 170px !important; /* FORZAR */
+        padding: 6px;
+        font-size: 0.7rem;
+        min-height: 80px;
+    }
+
+    /* ESTILOS DEL BOTÓN "Disponible" (.cancha-boton) DE CANCHA 3 EN PANTALLAS ULTRA PEQUEÑAS */
+    .demo3-layout-2 .cancha-card .cancha-boton {
+        background-color: white !important;
+        color: #28a745 !important;
+        border: 2px solid #28a745 !important;
+        padding: 2px 5px !important;
+        font-size: 0.5rem !important;
+        border-radius: 2px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        display: block !important;
+        margin: 2px auto 0 auto !important;
+    }
+
+    /* Ajustes específicos para Cancha 3 horizontal en pantallas ultra pequeñas */
+    .demo3-cancha-horizontal {
+        width: 170px; /* Ancho calculado para coincidir con Cancha 1 + Cancha 2 + gap */
+        max-width: 170px;
+        padding: 6px;
+    }
+    
+    .demo3-cancha-horizontal .estado-disponibilidad {
+        margin-left: 6px;
+    }
+    
+    .demo3-container .cancha-card h5 {
+        font-size: 0.7rem;
+    }
+    
+    .demo3-container .cancha-card .cancha-icon {
         font-size: 0.9rem;
     }
     
-    .demo3-padel-superior {
-        flex: 0 0 12%;
-        max-width: 12%;
-        min-width: 40px;
+    .demo3-container .cancha-card p {
+        font-size: 0.6rem;
+    }
+    
+    .demo3-container .cancha-card .text-info.small {
+        font-size: 0.55rem;
+    }
+    
+    .demo3-container .cancha-card .btn {
+        padding: 4px 8px;
+        font-size: 0.6rem;
+        min-height: 24px;
     }
 }
+
 
 /* ===== OPTIMIZACIÓN DE INTERACCIONES TÁCTILES ===== */
 
@@ -3235,6 +3573,9 @@ html {
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    background: #a5d6a7 !important; /* Fondo verde más suave como el complejo */
+    border: 2px solid #a5d6a7 !important; /* Borde verde más suave */
+    color: white !important; /* Texto blanco para contraste */
 }
 
 /* Efecto de presión táctil */
@@ -3246,13 +3587,289 @@ html {
 /* Mejorar el área táctil en móvil */
 @media (max-width: 768px) {
     .demo3-container .cancha-card {
-        min-height: 120px;
-        padding: 12px 8px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border: 2px solid transparent;
+        min-height: 140px !important; /* Altura suficiente para todo el contenido */
+        padding: 15px 12px !important; /* Más padding para mejor espaciado */
+        border-radius: 12px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        border: 2px solid rgba(255,255,255,0.3) !important; /* Borde blanco semi-transparente */
         transition: all 0.3s ease;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        text-align: center !important;
     }
+    
+    /* Mejorar textos en móvil */
+    .demo3-container .cancha-card h5 {
+        font-size: 0.8rem !important;
+        margin-bottom: 4px !important;
+        font-weight: 600 !important;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    }
+    
+    .demo3-container .cancha-card .cancha-icon {
+        font-size: 1.2rem !important;
+        margin-bottom: 6px !important;
+        color: white !important;
+    }
+    
+    .demo3-container .cancha-card p {
+        font-size: 0.7rem !important;
+        margin-bottom: 3px !important;
+        line-height: 1.2 !important;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    }
+    
+    .demo3-container .cancha-card .text-info.small {
+        font-size: 0.65rem !important;
+        line-height: 1.1 !important;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Mejorar botón Disponible */
+    .demo3-container .cancha-card .estado-disponibilidad {
+        margin-top: 8px !important;
+        text-align: center !important;
+    }
+    
+    .demo3-container .cancha-card .estado-disponibilidad .badge {
+        padding: 6px 12px !important;
+        font-size: 0.7rem !important;
+        border-radius: 6px !important;
+        min-height: 24px !important;
+        display: inline-block !important;
+        background: rgba(255,255,255,0.9) !important;
+        color: #28a745 !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(255,255,255,0.5) !important;
+    }
+}
+
+/* Versión DESKTOP - copia exacta del móvil, solo escalada */
+@media (min-width: 769px) {
+    .demo3-container .cancha-card {
+        /* Usar exactamente los mismos valores que móvil, solo escalados */
+        min-height: auto !important;
+        height: auto !important;
+        padding: 12px 15px !important; /* Igual que móvil */
+        border-radius: 12px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        border: 2px solid rgba(255,255,255,0.3) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        text-align: center !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* Ajustar ancho de cancha de pádel con máxima especificidad */
+    .canchas-grid-expanded .complejo-abierto-container .demo3-container .cancha-card[data-tipo="padel"] {
+        flex: 0 0 30% !important; /* Ancho similar a las canchas de fútbol */
+        min-width: 30% !important;
+        max-width: 30% !important;
+        width: 30% !important;
+    }
+    
+    /* Reducir ancho de canchas de fútbol para compensar con máxima especificidad */
+    .canchas-grid-expanded .complejo-abierto-container .demo3-container .cancha-card[data-tipo="futbol"] {
+        flex: 0 0 28% !important; /* Reducir ancho de fútbol */
+        min-width: 28% !important;
+        max-width: 28% !important;
+        width: 28% !important;
+    }
+    
+    /* Forzar ancho de pádel también desde Layout 1 */
+    .demo3-layout-1 .cancha-card[data-tipo="padel"] {
+        flex: 0 0 30% !important; /* Ancho similar a las canchas de fútbol */
+        min-width: 30% !important;
+        max-width: 30% !important;
+        width: 30% !important;
+    }
+    
+    /* Forzar ancho de fútbol también desde Layout 1 */
+    .demo3-layout-1 .cancha-card[data-tipo="futbol"] {
+        flex: 0 0 28% !important;
+        min-width: 28% !important;
+        max-width: 28% !important;
+        width: 28% !important;
+    }
+    
+    /* SOBRESCRIBIR reglas de móvil para PC - máxima especificidad */
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .cancha-card[data-tipo="padel"] {
+        flex: 0 0 30% !important; /* Forzar 30% para pádel en PC - similar a fútbol */
+        width: auto !important;
+        max-width: none !important;
+        min-width: auto !important;
+    }
+    
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-1 .cancha-card[data-tipo="futbol"] {
+        flex: 0 0 28% !important; /* Forzar 28% para fútbol en PC */
+        width: auto !important;
+        max-width: none !important;
+        min-width: auto !important;
+    }
+    
+    /* SOBRESCRIBIR reglas de móvil para Cancha 3 en PC - máxima especificidad */
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card {
+        width: 450px !important; /* Forzar 450px para Cancha 3 en PC */
+        max-width: 450px !important;
+        min-width: 450px !important;
+        min-height: 240px !important; /* Altura aumentada para mostrar todo el contenido */
+        height: auto !important; /* Altura automática para adaptarse al contenido */
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    /* SOBRESCRIBIR estilos del botón de Cancha 3 en desktop - máxima especificidad */
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card .estado-disponibilidad {
+        margin-top: 15px !important;
+        margin-left: 0 !important;
+        align-self: center !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card .estado-disponibilidad .badge {
+        padding: 8px 16px !important;
+        font-size: 0.9rem !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        background-color: white !important;
+        color: #28a745 !important;
+        border: 2px solid #28a745 !important;
+        display: inline-block !important;
+    }
+
+    /* SOBRESCRIBIR estilos de textos de Cancha 3 en desktop - máxima especificidad */
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card h5 {
+        margin: 0 0 10px 0 !important;
+        font-size: 1.2rem !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        color: white !important;
+        line-height: 1.3 !important;
+    }
+
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card p {
+        margin: 6px 0 !important;
+        font-size: 0.9rem !important;
+        text-align: center !important;
+        line-height: 1.4 !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        color: white !important;
+    }
+
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card .cancha-icon {
+        margin: 10px 0 !important;
+        font-size: 1.8rem !important;
+        color: white !important;
+    }
+
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card .cancha-tipo {
+        margin-bottom: 8px !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        padding: 4px 10px !important;
+        border-radius: 4px !important;
+    }
+
+    /* ESTILOS DEL BOTÓN "Disponible" DE CANCHA 3 EN DESKTOP - Igual a Canchas 1 y 2 */
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card .cancha-boton {
+        background-color: white !important;
+        color: #28a745 !important;
+        border: 2px solid #28a745 !important;
+        padding: 8px 16px !important;
+        font-size: 0.9rem !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+    }
+
+    .canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-layout-2 .cancha-card .cancha-boton:hover {
+        background-color: #28a745 !important;
+        color: white !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+    }
+
+    /* Textos en desktop - iguales a móvil */
+    .demo3-container .cancha-card h5 {
+        font-size: 0.8rem !important; /* Igual que móvil */
+        margin-bottom: 4px !important;
+        font-weight: 600 !important;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+        line-height: 1.2 !important;
+    }
+    
+    .demo3-container .cancha-card .cancha-icon {
+        font-size: 1.2rem !important; /* Igual que móvil */
+        margin-bottom: 6px !important;
+        color: white !important;
+    }
+    
+    .demo3-container .cancha-card p {
+        font-size: 0.7rem !important; /* Igual que móvil */
+        margin-bottom: 3px !important;
+        line-height: 1.2 !important;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+        white-space: normal !important; /* Permitir que el texto se ajuste */
+        overflow: visible !important; /* Permitir que se vea todo el texto */
+        text-overflow: unset !important; /* Quitar ellipsis */
+        word-wrap: break-word !important; /* Permitir salto de línea */
+    }
+    
+    .demo3-container .cancha-card .text-info.small {
+        font-size: 0.65rem !important; /* Similar a móvil */
+        line-height: 1.1 !important;
+        color: white !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+        margin-bottom: 3px !important;
+        white-space: normal !important; /* Permitir que el texto se ajuste */
+        overflow: visible !important; /* Permitir que se vea todo el texto */
+        word-wrap: break-word !important; /* Permitir salto de línea */
+    }
+    
+    /* Botón Disponible en desktop similar a móvil */
+    .demo3-container .cancha-card .estado-disponibilidad {
+        margin-top: 8px !important; /* Igual que móvil */
+        text-align: center !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .demo3-container .cancha-card .estado-disponibilidad .badge {
+        padding: 6px 12px !important; /* Igual que móvil */
+        font-size: 0.7rem !important; /* Igual que móvil */
+        border-radius: 6px !important; /* Igual que móvil */
+        min-height: 24px !important; /* Igual que móvil */
+        display: inline-block !important;
+        background: rgba(255,255,255,0.9) !important;
+        color: #28a745 !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(255,255,255,0.5) !important;
+    }
+    
+    /* Forzar altura con máxima especificidad - igual que móvil */
+    .canchas-grid-expanded .complejo-abierto-container .demo3-container .cancha-card {
+        min-height: auto !important; /* Igual que móvil */
+        height: auto !important; /* Igual que móvil */
+    }
+}
     
     .demo3-container .cancha-card:hover {
         border-color: #667eea;
@@ -3264,17 +3881,54 @@ html {
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     
-    /* Indicador visual de disponibilidad */
-    .demo3-container .cancha-card.disponible {
-        border-color: #28a745;
-        background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
-    }
-    
-    .demo3-container .cancha-card.ocupada {
-        border-color: #dc3545;
-        background: linear-gradient(135deg, #ffffff 0%, #fff8f8 100%);
-        opacity: 0.8;
-    }
+/* Sistema de colores dinámicos para Demo 3 - FORZAR CON MAYOR ESPECIFICIDAD */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-container .cancha-card {
+    background: #a5d6a7 !important; /* Verde más suave similar al fondo del contorno */
+    border: 2px solid #a5d6a7 !important;
+    color: white !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+
+/* Cancha de Pádel - Azul por defecto - FORZAR CON MAYOR ESPECIFICIDAD */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-container .cancha-card[data-tipo="padel"] {
+    background: #2196f3 !important; /* Azul para pádel */
+    border: 2px solid #2196f3 !important;
+    color: white !important;
+}
+
+/* Cuando se selecciona FÚTBOL - Pádel se vuelve gris - FORZAR CON MAYOR ESPECIFICIDAD */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-container[data-tipo-seleccionado="futbol"] .cancha-card[data-tipo="padel"] {
+    background: #6c757d !important; /* Gris para pádel no seleccionado */
+    border: 2px solid #6c757d !important;
+    opacity: 0.6;
+}
+
+/* Cuando se selecciona PÁDEL - Fútbol se vuelve gris - FORZAR CON MAYOR ESPECIFICIDAD */
+.canchas-grid-expanded .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .demo3-container[data-tipo-seleccionado="padel"] .cancha-card[data-tipo="futbol"] {
+    background: #6c757d !important; /* Gris para fútbol no seleccionado */
+    border: 2px solid #6c757d !important;
+    opacity: 0.6;
+}
+
+/* Indicador visual de disponibilidad */
+.demo3-container .cancha-card.disponible {
+    /* Mantener colores base según tipo */
+}
+
+.demo3-container .cancha-card.ocupada {
+    background: #dc3545 !important; /* Rojo para ocupada */
+    border: 2px solid #dc3545 !important;
+    opacity: 0.8;
+}
+
+.demo3-container .cancha-card.no-seleccionada {
+    background: #6c757d !important; /* Gris para no seleccionada */
+    border: 2px solid #6c757d !important;
+    opacity: 0.6;
+}
     
     /* Mejorar la legibilidad del texto */
     .demo3-container .cancha-card h5 {

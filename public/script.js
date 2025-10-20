@@ -2029,6 +2029,17 @@ function configurarEventListeners() {
         }
     });
 
+    // Función para actualizar colores dinámicos en Demo 3
+    function actualizarColoresDinamicosDemo3(tipoSeleccionado) {
+        if (complejoSeleccionado && complejoSeleccionado.nombre === 'Complejo Demo 3') {
+            const demo3Container = document.querySelector('.demo3-container');
+            if (demo3Container) {
+                demo3Container.setAttribute('data-tipo-seleccionado', tipoSeleccionado);
+                console.log('🎨 Colores dinámicos actualizados para Demo 3:', tipoSeleccionado);
+            }
+        }
+    }
+
     // Selección de tipo de cancha
     document.querySelectorAll('input[name="tipoCancha"]').forEach(radio => {
         radio.addEventListener('change', function() {
@@ -2043,6 +2054,10 @@ function configurarEventListeners() {
             
             tipoCanchaSeleccionado = this.value;
             console.log('🎯 Tipo de cancha seleccionado:', tipoCanchaSeleccionado);
+            
+            // Actualizar colores dinámicos para Demo 3
+            actualizarColoresDinamicosDemo3(tipoCanchaSeleccionado);
+            
             console.log('🎯 Llamando a mostrarPaso(4)...');
             mostrarPaso(4);
             console.log('✅ mostrarPaso(4) completado, continuando...');
@@ -3510,42 +3525,30 @@ async function renderizarCanchasConDisponibilidad() {
             });
         }
         
-        // Renderizado especial para Complejo Demo 3
+        // Renderizado especial para Complejo Demo 3 - NUEVO DISEÑO CON 2 LAYOUTS
         if (complejoSeleccionado.nombre === 'Complejo Demo 3') {
-            console.log('🎨 Renderizando Complejo Demo 3 con distribución especial...');
+            console.log('🎨 Renderizando Complejo Demo 3 con 2 layouts...');
             console.log('🎨 Total de canchas:', canchasOrdenadas.length);
             console.log('🎨 Canchas disponibles:', canchasOrdenadas);
             
-            // Crear contenedor principal con grid
+            // Crear contenedor principal
             const demo3Container = document.createElement('div');
             demo3Container.className = 'demo3-container';
             console.log('🎨 Contenedor Demo 3 creado');
             
-            // Crear contenedor interno para el nuevo diseño móvil
-            const demo3ContainerInner = document.createElement('div');
-            demo3ContainerInner.className = 'demo3-container-inner';
+            // Crear Layout 1: Cancha 1, Cancha 2, Cancha Pádel
+            const layout1 = document.createElement('div');
+            layout1.className = 'demo3-layout-1';
             
-            // Mostrar TODAS las canchas (fútbol y padel)
-            console.log('📊 Canchas detectadas:', canchasOrdenadas);
-            console.log('📊 Canchas a renderizar:', canchasOrdenadas.map(c => `${c.nombre} (${c.tipo}) - ID: ${c.id}`));
+            // Crear Layout 2: Cancha 3
+            const layout2 = document.createElement('div');
+            layout2.className = 'demo3-layout-2';
             
-            // Crear contenedores específicos para cada posición
-            const futbolIzquierda = document.createElement('div');
-            futbolIzquierda.className = 'demo3-futbol-izquierda';
-            
-            const futbolDerecha = document.createElement('div');
-            futbolDerecha.className = 'demo3-futbol-derecha';
-            
-            const futbolGrande = document.createElement('div');
-            futbolGrande.className = 'demo3-futbol-grande';
-            
-            const padelSuperior = document.createElement('div');
-            padelSuperior.className = 'demo3-padel-superior';
-            
-            // Eliminado: padelInferior ya no se usa
-            
-            // Variable para acumular la Cancha 3 horizontal
-            let cancha3Horizontal = null;
+            // Variables para almacenar las canchas
+            let cancha1 = null;
+            let cancha2 = null;
+            let canchaPadel = null;
+            let cancha3 = null;
             
             // Crear canchas y asignar a contenedores específicos
             for (const cancha of canchasOrdenadas) {
@@ -3553,6 +3556,7 @@ async function renderizarCanchasConDisponibilidad() {
                 console.log(`🔍 Verificando ID ${cancha.id} para Cancha 3:`, cancha.id === 8 || cancha.id === 13);
                 
                 const canchaCard = await crearCanchaCard(cancha, fecha, hora);
+                canchaCard.setAttribute('data-tipo', cancha.tipo); // Para colores dinámicos
                 console.log(`🎨 Tarjeta de cancha creada para: ${cancha.nombre}`);
                 
                 // Determinar si la cancha debe estar en gris (no seleccionada)
@@ -3565,155 +3569,48 @@ async function renderizarCanchasConDisponibilidad() {
                     console.log(`🎨 Cancha ${cancha.nombre} marcada como no seleccionada`);
                 }
                 
-                // Asignar a contenedor específico según ID
+                // Asignar a layout según ID
                 // IDs locales: 11, 12, 13, 14, 15
                 // IDs producción: 6, 7, 8, 9, 10
                 if (cancha.id === 6 || cancha.id === 11) { // Cancha 1 Fútbol
-                    canchaCard.classList.add('cancha-futbol');
-                    futbolIzquierda.appendChild(canchaCard);
-                    console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolIzquierda`);
+                    cancha1 = canchaCard;
+                    console.log(`🎨 Cancha 1 Fútbol asignada`);
                 } else if (cancha.id === 7 || cancha.id === 12) { // Cancha 2 Fútbol
-                    canchaCard.classList.add('cancha-futbol');
-                    futbolDerecha.appendChild(canchaCard);
-                    console.log(`🎨 Cancha ${cancha.nombre} asignada a futbolDerecha`);
+                    cancha2 = canchaCard;
+                    console.log(`🎨 Cancha 2 Fútbol asignada`);
                 } else if (cancha.id === 8 || cancha.id === 13) { // Cancha 3 Fútbol (horizontal)
-                    // SOLO GUARDAR en variable, NO agregar al DOM aún
-                    canchaCard.classList.add('demo3-cancha-horizontal');
-                    cancha3Horizontal = canchaCard;
-                    console.log(`🎨 Cancha 3 identificada y guardada (se agregará al final)`);
-                } else if (cancha.id === 9 || cancha.id === 14) { // Cancha 1 Padel (única cancha de padel)
-                    canchaCard.classList.add('cancha-padel');
-                    padelSuperior.appendChild(canchaCard);
-                    console.log(`🎨 Cancha ${cancha.nombre} asignada a padelSuperior`);
+                    cancha3 = canchaCard;
+                    cancha3.classList.add('demo3-cancha-horizontal');
+                    console.log(`🎨 Cancha 3 Fútbol asignada`);
+                } else if (cancha.id === 9 || cancha.id === 14) { // Cancha 1 Padel
+                    canchaPadel = canchaCard;
+                    console.log(`🎨 Cancha Pádel asignada`);
                 } else if (cancha.id === 10 || cancha.id === 15) { // Cancha 2 Padel - IGNORAR
                     console.log(`🎨 Cancha ${cancha.nombre} (ID: ${cancha.id}) ignorada - solo renderizamos 1 cancha de padel`);
                 } else {
-                    console.warn(`⚠️ Cancha ${cancha.nombre} (ID: ${cancha.id}) no fue asignada a ningún contenedor`);
+                    console.warn(`⚠️ Cancha ${cancha.nombre} (ID: ${cancha.id}) no fue asignada a ningún layout`);
                 }
                 // Eliminado: Cancha 2 Padel (IDs 10 y 15) - ya no se renderiza
             }
             
-            // Crear contenedor para las canchas de fútbol superiores (solo 2)
-            const canchasFutbolSuperiores = document.createElement('div');
-            canchasFutbolSuperiores.className = 'demo3-futbol-superiores';
-
-            // Agregar las 2 canchas de fútbol superiores al contenedor
-            console.log('🎨 Agregando canchas de fútbol superiores...');
-            canchasFutbolSuperiores.appendChild(futbolIzquierda);
-            console.log('🎨 futbolIzquierda agregado');
-            canchasFutbolSuperiores.appendChild(futbolDerecha);
-            console.log('🎨 futbolDerecha agregado');
+            // Agregar canchas a Layout 1: Cancha 1, Cancha 2, Cancha Pádel
+            if (cancha1) layout1.appendChild(cancha1);
+            if (cancha2) layout1.appendChild(cancha2);
+            if (canchaPadel) layout1.appendChild(canchaPadel);
             
-            // ORDEN CORRECTO DE AGREGADO PARA MOBILE:
-            console.log('📦 Agregando elementos en orden MOBILE: F1, F2, Pádel, C3...');
-
-            // 1° Canchas de fútbol superiores (F1 y F2)
-            demo3ContainerInner.appendChild(canchasFutbolSuperiores);
-            console.log('✅ Step 1: Canchas de fútbol superiores agregadas (F1, F2)');
-
-            // 2° Cancha de pádel (ANTES de Cancha 3 para grid mobile)
-            demo3ContainerInner.appendChild(padelSuperior);
-            console.log('✅ Step 2: Cancha de pádel agregada (posición 3 para mobile)');
-
-            // 3° Cancha 3 horizontal AL FINAL
-            let contenedorCancha3 = null;
-            if (cancha3Horizontal) {
-                // Crear contenedor específico para Cancha 3 con ancho exacto
-                contenedorCancha3 = document.createElement('div');
-                contenedorCancha3.className = 'demo3-contenedor-cancha3';
-
-                // Agregar Cancha 3 al contenedor específico
-                contenedorCancha3.appendChild(cancha3Horizontal);
-
-                // Agregar el contenedor específico al contenedor principal
-                demo3ContainerInner.appendChild(contenedorCancha3);
-                console.log('✅ Step 3: Cancha 3 horizontal agregada AL FINAL');
-            } else {
-                console.warn('⚠️ Cancha 3 no fue encontrada');
-            }
+            // Agregar Cancha 3 a Layout 2
+            if (cancha3) layout2.appendChild(cancha3);
             
-            console.log('🎯 Demo3ContainerInner creado:', demo3ContainerInner);
-            console.log('✅ CanchasFutbolSuperiores tiene hijos:', canchasFutbolSuperiores.children.length);
-            console.log('📊 Demo3ContainerInner tiene hijos:', demo3ContainerInner.children.length);
-
-            console.log('🎨 Configurando layout con Cancha 3 y Pádel al costado...');
-
-            // Configurar CSS Grid layout SOLO EN DESKTOP (NO en móvil)
-            if (window.innerWidth > 768) {
-                demo3ContainerInner.style.display = 'grid';
-                demo3ContainerInner.style.gridTemplateAreas = '"futbol-sup padel" "cancha3 padel"';
-                demo3ContainerInner.style.gridTemplateColumns = '2fr 1fr';
-                demo3ContainerInner.style.gridTemplateRows = 'auto auto';
-                demo3ContainerInner.style.gap = '20px';
-                demo3ContainerInner.style.width = '100%';
-                demo3ContainerInner.style.maxWidth = '100%';
-                demo3ContainerInner.style.minHeight = '500px';
-                demo3ContainerInner.style.padding = '20px';
-
-                // Asignar grid areas SOLO EN DESKTOP
-                canchasFutbolSuperiores.style.gridArea = 'futbol-sup';
-                if (contenedorCancha3) {
-                    contenedorCancha3.style.gridArea = 'cancha3';
-                }
-                padelSuperior.style.gridArea = 'padel';
-                console.log('🎨 CSS Grid layout configurado para DESKTOP');
-            } else {
-                console.log('📱 MÓVIL detectado - Grid inline NO aplicado, CSS manejará el layout');
-            }
+            // Agregar layouts al contenedor principal
+            demo3Container.appendChild(layout1);
+            demo3Container.appendChild(layout2);
             
-            // Forzar estilos en el contenedor padre para centrar
-            canchasHorizontales.style.display = 'flex';
-            canchasHorizontales.style.justifyContent = 'center';
-            canchasHorizontales.style.alignItems = 'center';
-            canchasHorizontales.style.width = '100%';
-            
-            // Agregar el contenedor interno al contenedor principal
-            demo3Container.appendChild(demo3ContainerInner);
+            // Configurar colores dinámicos
+            demo3Container.setAttribute('data-tipo-seleccionado', tipoCanchaSeleccionado || 'futbol');
             
             // Agregar el contenedor principal al DOM
             canchasHorizontales.appendChild(demo3Container);
-            console.log('🎨 demo3Container agregado exitosamente');
-
-            // ===== ZOOM Y PAN DESHABILITADO - Causa problemas de renderizado en móvil =====
-            // if (window.innerWidth <= 768) {
-            //     console.log('📱 Inicializando zoom y pan para móvil...');
-            //     inicializarZoomPanDemo3(demo3Container);
-            //     mostrarIndicadorZoom();
-            // }
-            
-            // ASEGURAR GRID DESPUÉS DE CARGAR ESTILOS
-            setTimeout(() => {
-                // Aplicar grid al demo3ContainerInner (no al demo3Container)
-                demo3ContainerInner.style.display = 'grid';
-                demo3ContainerInner.style.gridTemplateAreas = '"futbol-sup padel" "cancha3 padel"';
-                demo3ContainerInner.style.gridTemplateColumns = '2fr 1fr';
-                demo3ContainerInner.style.gridTemplateRows = 'auto auto';
-                demo3ContainerInner.style.gap = '20px';
-                demo3ContainerInner.style.maxWidth = '100%';
-                demo3ContainerInner.style.width = '100%';
-                demo3ContainerInner.style.margin = '0 auto';
-                demo3ContainerInner.style.padding = '20px';
-                demo3ContainerInner.style.boxSizing = 'border-box';
-                
-                // Re-aplicar estilos del contenedor padre
-                canchasHorizontales.style.display = 'flex';
-                canchasHorizontales.style.justifyContent = 'center';
-                canchasHorizontales.style.alignItems = 'center';
-                canchasHorizontales.style.width = '100%';
-                canchasHorizontales.style.maxWidth = 'none'; // Remover limitación de max-width
-                canchasHorizontales.style.overflow = 'visible'; // Asegurar que no se corte
-                
-                // Aplicar estilos a contenedores superiores
-                const canchasGridExpanded = canchasHorizontales.closest('.canchas-grid-expanded');
-                if (canchasGridExpanded) {
-                    canchasGridExpanded.style.maxWidth = 'none';
-                    canchasGridExpanded.style.width = '100%';
-                    canchasGridExpanded.style.overflow = 'visible';
-                    console.log('🎨 Estilos aplicados a canchas-grid-expanded');
-                }
-                
-                console.log('🎨 Gap re-aplicado después de timeout');
-            }, 100);
+            console.log('🎨 demo3Container con 2 layouts agregado exitosamente');
         } else {
             // Renderizado normal para otros complejos
             for (const cancha of canchasOrdenadas) {
