@@ -247,3 +247,5 @@ if (require.main === module) {
 }
 
 module.exports = { generarManualNewLife, config };
+
+
