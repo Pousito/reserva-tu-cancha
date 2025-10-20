@@ -2106,7 +2106,8 @@ async function seleccionarSlot(fecha, hora) {
         fecha: fecha,
         horaInicio: hora,
         horaFin: horaFinStr,
-        bloqueoId: bloqueoAdmin.bloqueo.id
+        bloqueoId: bloqueoAdmin.bloqueo.id,
+        bloqueosPorCancha: bloqueoAdmin.bloqueos || [] // Guardar todos los bloqueos para poder encontrar el correcto
     };
     
     abrirModalReserva(true); // Ocultar selector de complejo cuando se abre desde calendario
@@ -2892,6 +2893,30 @@ async function crearReservaAdmin() {
 }
 
 /**
+ * Actualizar el bloqueoId específico para la cancha seleccionada
+ */
+function actualizarBloqueoIdPorCancha() {
+    const canchaSelect = document.getElementById('modalCancha');
+    const canchaId = canchaSelect.value;
+    
+    if (!canchaId || !window.reservaSeleccionada || !window.reservaSeleccionada.bloqueosPorCancha) {
+        return;
+    }
+    
+    // Buscar el bloqueo específico para esta cancha
+    const bloqueoEspecifico = window.reservaSeleccionada.bloqueosPorCancha.find(
+        bloqueo => bloqueo.cancha_id == canchaId
+    );
+    
+    if (bloqueoEspecifico) {
+        window.reservaSeleccionada.bloqueoId = bloqueoEspecifico.id;
+        console.log('🔒 BloqueoId actualizado para cancha', canchaId, ':', bloqueoEspecifico.id);
+    } else {
+        console.warn('⚠️ No se encontró bloqueo específico para cancha', canchaId);
+    }
+}
+
+/**
  * Actualizar el precio mostrado en el modal cuando se selecciona una cancha
  */
 function actualizarPrecioModal() {
@@ -3099,7 +3124,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Calcular precio cuando cambian los campos
-    document.getElementById('modalCancha').addEventListener('change', actualizarPrecioModal);
+    document.getElementById('modalCancha').addEventListener('change', function() {
+        actualizarPrecioModal();
+        actualizarBloqueoIdPorCancha();
+    });
     
     // Cargar horas cuando cambia la fecha
     // document.getElementById('modalFecha').addEventListener('change', cargarHorasModal);
@@ -3234,7 +3262,11 @@ async function crearBloqueoTemporalAdmin(fecha, horaInicio, horaFin) {
             }
         }, 2 * 60 * 1000); // 2 minutos
         
-        return { success: true, bloqueo: bloqueoTemporalAdmin };
+        return { 
+            success: true, 
+            bloqueo: bloqueoTemporalAdmin,
+            bloqueos: result.bloqueos || [] // Retornar todos los bloqueos creados
+        };
         
     } catch (error) {
         console.error('❌ Error creando bloqueo temporal administrativo:', error);
