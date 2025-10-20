@@ -8,6 +8,7 @@ router.get('/complejos/:ciudadId', reservationController.getComplejosByCiudad);
 router.get('/canchas/:complejoId/:tipo', reservationController.getCanchasByComplejoAndTipo);
 router.get('/disponibilidad/:canchaId/:fecha', reservationController.getDisponibilidad);
 router.post('/reservas', reservationController.createReserva);
+router.post('/bloquear-y-pagar', reservationController.bloquearYPagar);
 router.get('/reservas', reservationController.getAllReservas);
 router.get('/reservas/:busqueda', reservationController.getReservaByCodigo);
 

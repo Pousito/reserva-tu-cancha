@@ -223,7 +223,7 @@ async function testDatabase(req, res) {
     // Verificar si la tabla usuarios existe (PostgreSQL)
     const result = await db.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'usuarios'");
     
-    if (result.length === 0) {
+    if (result.rows.length === 0) {
       console.log('❌ Tabla usuarios NO existe');
       res.json({ 
         success: false, 
@@ -237,7 +237,7 @@ async function testDatabase(req, res) {
     
     // Contar usuarios
     const countResult = await db.query("SELECT COUNT(*) as count FROM usuarios");
-    const usersCount = countResult[0].count;
+    const usersCount = countResult.rows[0].count;
     
     res.json({ 
       success: true, 
@@ -255,12 +255,151 @@ async function testDatabase(req, res) {
   }
 }
 
+/**
+ * Bloquear cancha temporalmente y proceder al pago
+ * POST /api/reservas/bloquear-y-pagar
+ */
+async function bloquearYPagar(req, res) {
+  try {
+    console.log('🔒 Iniciando proceso de bloqueo y pago...');
+    console.log('📋 Datos recibidos:', req.body);
+    
+    const {
+      cancha_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      nombre_cliente,
+      rut_cliente,
+      email_cliente,
+      telefono_cliente,
+      precio_total,
+      codigo_descuento,
+      porcentaje_pagado,
+      monto_pagado,
+      session_id
+    } = req.body;
+    
+    // Validar datos requeridos
+    if (!cancha_id || !fecha || !hora_inicio || !hora_fin || !nombre_cliente || !email_cliente || !session_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan datos requeridos'
+      });
+    }
+    
+    // Verificar que la cancha existe
+    const cancha = await db.query(
+      'SELECT c.*, co.nombre as complejo_nombre FROM canchas c JOIN complejos co ON c.complejo_id = co.id WHERE c.id = $1',
+      [cancha_id]
+    );
+    
+    if (!cancha || cancha.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Cancha no encontrada'
+      });
+    }
+    
+    // Verificar disponibilidad
+    const disponibilidad = await db.query(
+      `SELECT * FROM reservas 
+       WHERE cancha_id = $1 
+       AND fecha = $2 
+       AND (
+         (hora_inicio <= $3 AND hora_fin > $3) OR
+         (hora_inicio < $4 AND hora_fin >= $4) OR
+         (hora_inicio >= $3 AND hora_fin <= $4)
+       )
+       AND estado != 'cancelada'`,
+      [cancha_id, fecha, hora_inicio, hora_fin]
+    );
+    
+    if (disponibilidad && disponibilidad.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'La cancha ya está reservada en ese horario'
+      });
+    }
+    
+    // Generar código de reserva único
+    const codigoReserva = generarCodigoReserva();
+    
+    // Crear bloqueo temporal (15 minutos)
+    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    
+    const datosCliente = {
+      nombre_cliente,
+      rut_cliente,
+      email_cliente,
+      telefono_cliente,
+      precio_total,
+      codigo_descuento,
+      porcentaje_pagado,
+      monto_pagado
+    };
+    
+    const bloqueoResult = await db.query(
+      `INSERT INTO bloqueos_temporales 
+       (cancha_id, fecha, hora_inicio, hora_fin, session_id, expira_en, datos_cliente, codigo_reserva)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id`,
+      [
+        cancha_id,
+        fecha,
+        hora_inicio,
+        hora_fin,
+        session_id,
+        expiraEn,
+        JSON.stringify(datosCliente),
+        codigoReserva
+      ]
+    );
+    
+    console.log('✅ Bloqueo temporal creado:', bloqueoResult[0].id);
+    
+    // Invalidar caché de disponibilidad
+    await invalidateCacheOnReservation(cancha_id, fecha);
+    
+    res.json({
+      success: true,
+      bloqueo_id: bloqueoResult[0].id,
+      codigo_reserva: codigoReserva,
+      expira_en: expiraEn,
+      cancha: cancha[0],
+      datos_cliente: datosCliente,
+      message: 'Bloqueo temporal creado exitosamente'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en bloquearYPagar:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message
+    });
+  }
+}
+
+/**
+ * Generar código de reserva único
+ */
+function generarCodigoReserva() {
+  const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let codigo = '';
+  for (let i = 0; i < 6; i++) {
+    codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+  }
+  return codigo;
+}
+
 module.exports = {
   getCiudades,
   getComplejosByCiudad,
   getCanchasByComplejoAndTipo,
   getDisponibilidad,
   createReserva,
+  bloquearYPagar,
   getAllReservas,
   getReservaByCodigo,
   testDatabase
