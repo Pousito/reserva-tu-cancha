@@ -4,10 +4,10 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Importar middleware de seguridad
-const { securityMiddleware } = require('./src/middleware/advanced-security');
-const securityHeaders = require('./src/middleware/security-headers');
-const { validateReservationInput, validatePaymentInput } = require('./src/utils/validation');
+// Importar middleware de seguridad (temporalmente deshabilitado)
+// const { securityMiddleware } = require('./src/middleware/advanced-security');
+// const securityHeaders = require('./src/middleware/security-headers');
+// const { validateReservationInput, validatePaymentInput } = require('./src/utils/validation');
 // const compression = require('compression'); // Temporalmente deshabilitado para deploy
 const { 
   requireRolePermission, 
@@ -85,9 +85,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Middleware de Seguridad Avanzado
-const securityLimits = securityMiddleware(app);
-app.use(securityHeaders);
+// Middleware de Seguridad Avanzado (temporalmente deshabilitado)
+// const securityLimits = securityMiddleware(app);
+// app.use(securityHeaders);
 
 // Middleware de Compresión (temporalmente deshabilitado)
 // app.use(compression({
