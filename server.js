@@ -99,6 +99,14 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// ===== RUTAS DE MONITOREO (deben ir al principio) =====
+app.use('/api/monitoring', monitoringRoutes);
+
+// Dashboard de monitoreo
+app.get('/monitoring', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
+});
+
 // Configurar sistema de alertas
 alertSystem.setupAlerts();
 
@@ -580,13 +588,6 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
-// ===== RUTAS DE MONITOREO =====
-app.use('/api/monitoring', monitoringRoutes);
-
-// Dashboard de monitoreo
-app.get('/monitoring', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
-});
 
 // ===== RUTAS OPTIMIZADAS DE DISPONIBILIDAD =====
 const availabilityRoutes = require('./src/routes/availability');
