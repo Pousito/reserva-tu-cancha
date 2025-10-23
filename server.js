@@ -4,19 +4,19 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Importar sistema de monitoreo (temporalmente deshabilitado para deploy)
-// const metricsCollector = require('./src/utils/metrics-collector');
-// const alertSystem = require('./src/utils/alert-system');
-// const monitoringRoutes = require('./src/routes/monitoring');
-// const {
-//   apiMetricsMiddleware,
-//   databaseMetricsMiddleware,
-//   authMetricsMiddleware,
-//   pageMetricsMiddleware,
-//   errorMetricsMiddleware,
-//   userMetricsMiddleware,
-//   metricsCleanupMiddleware
-// } = require('./src/middleware/metrics-middleware');
+// Importar sistema de monitoreo
+const metricsCollector = require('./src/utils/metrics-collector');
+const alertSystem = require('./src/utils/alert-system');
+const monitoringRoutes = require('./src/routes/monitoring');
+const {
+  apiMetricsMiddleware,
+  databaseMetricsMiddleware,
+  authMetricsMiddleware,
+  pageMetricsMiddleware,
+  errorMetricsMiddleware,
+  userMetricsMiddleware,
+  metricsCleanupMiddleware
+} = require('./src/middleware/metrics-middleware');
 
 // Importar middleware de seguridad
 const { securityMiddleware } = require('./src/middleware/advanced-security');
@@ -99,42 +99,42 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Configurar sistema de alertas (temporalmente deshabilitado para deploy)
-// alertSystem.setupAlerts();
+// Configurar sistema de alertas
+alertSystem.setupAlerts();
 
-// Conectar eventos de métricas con alertas (temporalmente deshabilitado para deploy)
-// metricsCollector.on('slowApiCall', (data) => {
-//   alertSystem.processEvent('slowApi', data);
-// });
+// Conectar eventos de métricas con alertas
+metricsCollector.on('slowApiCall', (data) => {
+  alertSystem.processEvent('slowApi', data);
+});
 
-// metricsCollector.on('slowDatabaseQuery', (data) => {
-//   alertSystem.processEvent('slowDatabaseQuery', data);
-// });
+metricsCollector.on('slowDatabaseQuery', (data) => {
+  alertSystem.processEvent('slowDatabaseQuery', data);
+});
 
-// metricsCollector.on('error', (data) => {
-//   alertSystem.processEvent('error', data);
-// });
+metricsCollector.on('error', (data) => {
+  alertSystem.processEvent('error', data);
+});
 
-// metricsCollector.on('highMemoryUsage', (data) => {
-//   alertSystem.processEvent('highMemoryUsage', data);
-// });
+metricsCollector.on('highMemoryUsage', (data) => {
+  alertSystem.processEvent('highMemoryUsage', data);
+});
 
-// metricsCollector.on('reservationMetric', (data) => {
-//   alertSystem.processEvent('reservation', data);
-// });
+metricsCollector.on('reservationMetric', (data) => {
+  alertSystem.processEvent('reservation', data);
+});
 
-// metricsCollector.on('paymentMetric', (data) => {
-//   alertSystem.processEvent('payment', data);
-// });
+metricsCollector.on('paymentMetric', (data) => {
+  alertSystem.processEvent('payment', data);
+});
 
-// Middleware de métricas (temporalmente deshabilitado para deploy)
-// app.use(apiMetricsMiddleware);
-// app.use(authMetricsMiddleware);
-// app.use(pageMetricsMiddleware);
-// app.use(userMetricsMiddleware);
-// app.use(metricsCleanupMiddleware);
+// Middleware de métricas
+app.use(apiMetricsMiddleware);
+app.use(authMetricsMiddleware);
+app.use(pageMetricsMiddleware);
+app.use(userMetricsMiddleware);
+app.use(metricsCleanupMiddleware);
 
-// Middleware de métricas de base de datos (temporalmente deshabilitado para deploy)
+// Middleware de métricas de base de datos (se aplicará después de la conexión DB)
 
 // Middleware de Seguridad Avanzado
 const securityLimits = securityMiddleware(app);
@@ -433,7 +433,10 @@ async function populateSampleData() {
 }
 
 // Inicializar base de datos al arrancar
-initializeDatabase();
+initializeDatabase().then(() => {
+  // Aplicar middleware de métricas de base de datos después de la conexión
+  app.use(databaseMetricsMiddleware(db));
+});
 
 // ==================== RUTAS API ====================
 
@@ -577,14 +580,13 @@ app.get('/api/debug/insert-all-cities', async (req, res) => {
   }
 });
 
-// ===== RUTAS DE MONITOREO (temporalmente deshabilitado para deploy) =====
-// const monitoringRoutes = require('./src/routes/monitoring');
-// app.use('/api/monitoring', monitoringRoutes);
+// ===== RUTAS DE MONITOREO =====
+app.use('/api/monitoring', monitoringRoutes);
 
-// Dashboard de monitoreo (temporalmente deshabilitado para deploy)
-// app.get('/monitoring', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
-// });
+// Dashboard de monitoreo
+app.get('/monitoring', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
+});
 
 // ===== RUTAS OPTIMIZADAS DE DISPONIBILIDAD =====
 const availabilityRoutes = require('./src/routes/availability');
@@ -3930,8 +3932,8 @@ app.post('/api/reservas/cleanup-test', async (req, res) => {
 
 // Iniciar servidor
 
-// Middleware de errores de métricas (temporalmente deshabilitado para deploy)
-// app.use(errorMetricsMiddleware);
+// Middleware de errores de métricas (debe ir al final)
+app.use(errorMetricsMiddleware);
 
 app.listen(PORT, () => {
   // logger.info('🚀 Servidor ejecutándose', {
