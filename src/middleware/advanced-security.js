@@ -122,19 +122,19 @@ const securityMiddleware = (app) => {
   // 5. Detección de patrones sospechosos
   app.use((req, res, next) => {
     const suspiciousPatterns = [
-      /..//, // Path traversal
+      /\.\.\//, // Path traversal
       /<script[^>]*>.*?</script>/gi, // XSS
       /javascript:/gi, // JavaScript en URLs
-      /unions+select/gi, // SQL injection
-      /drops+table/gi, // SQL injection
-      /inserts+into/gi, // SQL injection
-      /deletes+from/gi, // SQL injection
-      /updates+set/gi, // SQL injection
-      /execs*(/gi, // Command injection
-      /evals*(/gi, // Code injection
+      /union\s+select/gi, // SQL injection
+      /drop\s+table/gi, // SQL injection
+      /insert\s+into/gi, // SQL injection
+      /delete\s+from/gi, // SQL injection
+      /update\s+set/gi, // SQL injection
+      /exec\s*\(/gi, // Command injection
+      /eval\s*\(/gi, // Code injection
       /<iframe/gi, // Iframe injection
-      /onloads*=/gi, // Event handler injection
-      /onerrors*=/gi, // Event handler injection
+      /onload\s*=/gi, // Event handler injection
+      /onerror\s*=/gi, // Event handler injection
     ];
 
     const checkSuspicious = (input) => {
