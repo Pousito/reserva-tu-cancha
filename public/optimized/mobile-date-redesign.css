@@ -1,0 +1,358 @@
+@media (max-width:767px) {
+  .date-time-selector {
+    position: relative!important;
+    margin-bottom: 20px!important;
+    padding: 25px!important;
+    background: linear-gradient(135deg,#fff 0,#f8f9fa 100%)!important;
+    border-radius: 15px!important;
+    border: 2px solid #e9ecef!important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.1)!important;
+    transition: .3s!important
+  }
+  .date-time-selector input[type=date]::-webkit-calendar-picker-indicator {
+    display: none!important;
+    opacity: 0!important;
+    visibility: hidden!important;
+    position: absolute!important;
+    left: -9999px!important;
+    width: 0!important;
+    height: 0!important;
+    pointer-events: none!important
+  }
+  .date-time-selector input[type=date] {
+    width: 100%!important;
+    padding: 22px 60px 22px 22px!important;
+    font-size: 1.4rem!important;
+    min-height: 65px!important;
+    border: 3px solid #e9ecef!important;
+    border-radius: 12px!important;
+    background-color: #fff!important;
+    cursor: pointer!important;
+    position: relative!important;
+    text-align: left!important;
+    font-weight: 600!important;
+    box-shadow: 0 4px 15px rgba(0,0,0,.1)!important
+  }
+  .date-time-selector::after {
+    content: "📅";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 5;
+    background-color: #667eea;
+    color: #fff;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem
+  }
+  .date-time-selector select.form-select {
+    width: 100%!important;
+    padding: 22px 60px 22px 22px!important;
+    font-size: 1.4rem!important;
+    min-height: 65px!important;
+    border: 3px solid #e9ecef!important;
+    border-radius: 12px!important;
+    background-color: #fff!important;
+    cursor: pointer!important;
+    position: relative!important;
+    text-align: left!important;
+    font-weight: 600!important;
+    box-shadow: 0 4px 15px rgba(0,0,0,.1)!important;
+    -webkit-appearance: none!important;
+    -moz-appearance: none!important;
+    appearance: none!important;
+    background-image: none!important
+  }
+  .date-time-selector:has(select.form-select)::after {
+    content: "🕐";
+    background-color: #667eea
+  }
+  .date-time-selector input[type=date]:focus,
+  .date-time-selector select.form-select:focus {
+    border-color: #667eea!important;
+    box-shadow: 0 0 0 .3rem rgba(102,126,234,.25)!important;
+    outline: 0!important
+  }
+  .date-time-selector input[type=date]:hover,
+  .date-time-selector select.form-select:hover {
+    border-color: #667eea!important;
+    background-color: #f8f9fa!important
+  }
+  .date-time-selector input[type=date]:valid,
+  .date-time-selector select.form-select:valid {
+    background-color: #e8f5e8!important;
+    border-color: #28a745!important;
+    color: #155724!important;
+    font-weight: 700!important
+  }
+  .date-time-selector input[type=date]:valid::after,
+  .date-time-selector select.form-select:valid::after {
+    background-color: #28a745!important
+  }
+  .date-time-selector input[type=date].fecha-invalida,
+  .date-time-selector input[type=date]:invalid {
+    background-color: #f8d7da!important;
+    border-color: #dc3545!important;
+    color: #721c24!important;
+    animation: .5s ease-in-out shake!important
+  }
+  .date-time-selector input[type=date].fecha-invalida::after,
+  .date-time-selector input[type=date]:invalid::after {
+    background-color: #dc3545!important;
+    content: "⚠️"!important
+  }
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0)
+    }
+    25% {
+      transform: translateX(-5px)
+    }
+    75% {
+      transform: translateX(5px)
+    }
+  }
+  .date-time-selector input[type=date]:invalid::before {
+    content: "📅 Toca aquí para seleccionar fecha";
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 2
+  }
+  .date-time-selector select.form-select[value=""]::before {
+    content: "🕐 Toca aquí para seleccionar hora";
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 2
+  }
+  .date-time-selector .form-label {
+    font-size: 1.2rem!important;
+    font-weight: 700!important;
+    margin-bottom: 15px!important;
+    color: #495057!important;
+    display: flex!important;
+    align-items: center!important;
+    justify-content: center!important;
+    gap: 8px!important
+  }
+  .date-time-selector .form-label i {
+    font-size: 1.3rem!important;
+    color: #667eea!important
+  }
+  .date-time-selector .form-text {
+    font-size: 1rem!important;
+    font-weight: 600!important;
+    color: #495057!important;
+    text-align: center!important;
+    margin-top: 10px!important;
+    background-color: rgba(102,126,234,.1)!important;
+    padding: 10px 15px!important;
+    border-radius: 8px!important;
+    border: 2px solid rgba(102,126,234,.2)!important
+  }
+  .date-time-selector input[type=date],
+  .date-time-selector select.form-select,
+  .date-time-selector::after {
+    transition: .3s cubic-bezier(.4, 0, .2, 1)!important
+  }
+  .date-time-selector input[type=date]:active,
+  .date-time-selector select.form-select:active {
+    transform: scale(.98)!important
+  }
+  .date-time-selector input[type=date],
+  .date-time-selector select.form-select {
+    -webkit-tap-highlight-color: rgba(102,126,234,0.3)!important;
+    tap-highlight-color: rgba(102,126,234,0.3)!important;
+    touch-action: manipulation!important
+  }
+  #mis-reservas {
+    padding: 30px 15px!important
+  }
+  #mis-reservas .container {
+    padding: 0!important
+  }
+  #mis-reservas h2 {
+    font-size: 2.2rem!important;
+    font-weight: 800!important;
+    margin-bottom: 30px!important;
+    color: #495057!important;
+    text-align: center!important
+  }
+  #mis-reservas .card {
+    border-radius: 15px!important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15)!important;
+    border: none!important;
+    margin: 0!important
+  }
+  #mis-reservas .card-body {
+    padding: 30px 20px!important
+  }
+  #mis-reservas .input-group {
+    flex-direction: column!important;
+    gap: 15px!important
+  }
+  #mis-reservas #codigoReserva {
+    width: 100%!important;
+    min-height: 60px!important;
+    padding: 18px 20px!important;
+    font-size: 1.3rem!important;
+    border: 3px solid #e9ecef!important;
+    border-radius: 12px!important;
+    background-color: #fff!important;
+    transition: .3s!important;
+    text-align: center!important;
+    font-weight: 600!important;
+    box-shadow: 0 4px 15px rgba(0,0,0,.1)!important
+  }
+  #mis-reservas #codigoReserva:focus {
+    border-color: #667eea!important;
+    box-shadow: 0 0 0 .3rem rgba(102,126,234,.25)!important;
+    outline: 0!important;
+    background-color: #f8f9fa!important
+  }
+  #mis-reservas #codigoReserva::placeholder {
+    color: #6c757d!important;
+    font-weight: 500!important;
+    font-size: 1.2rem!important
+  }
+  #mis-reservas #buscarReserva {
+    width: 100%!important;
+    min-height: 60px!important;
+    padding: 18px 20px!important;
+    font-size: 1.3rem!important;
+    font-weight: 700!important;
+    border-radius: 12px!important;
+    background: linear-gradient(135deg,#667eea 0,#764ba2 100%)!important;
+    border: none!important;
+    color: #fff!important;
+    transition: .3s!important;
+    box-shadow: 0 6px 20px rgba(102,126,234,.3)!important;
+    display: flex!important;
+    align-items: center!important;
+    justify-content: center!important;
+    gap: 10px!important
+  }
+  #mis-reservas #buscarReserva:hover {
+    transform: translateY(-2px)!important;
+    box-shadow: 0 8px 25px rgba(102,126,234,.4)!important;
+    background: linear-gradient(135deg,#5a6fd8 0,#6a4190 100%)!important
+  }
+  #mis-reservas #buscarReserva:active {
+    transform: translateY(0)!important;
+    box-shadow: 0 4px 15px rgba(102,126,234,.3)!important
+  }
+  #mis-reservas #buscarReserva i {
+    font-size: 1.4rem!important
+  }
+  #mis-reservas #resultadoReserva {
+    margin-top: 20px!important;
+    padding: 20px!important;
+    border-radius: 12px!important;
+    background-color: #f8f9fa!important;
+    border: 2px solid #e9ecef!important
+  }
+  #mis-reservas .input-group::before {
+    content: "🔍 Busca tu reserva";
+    display: block;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 15px;
+    background-color: rgba(102,126,234,.1);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 2px solid rgba(102,126,234,.2)
+  }
+}
+@media (max-width:480px) {
+  .date-time-selector input[type=date],
+  .date-time-selector select.form-select {
+    min-height: 65px!important;
+    font-size: 1.4rem!important;
+    padding: 20px 55px 20px 20px!important
+  }
+  .date-time-selector::after {
+    right: 18px!important;
+    width: 40px!important;
+    height: 40px!important;
+    font-size: 1.3rem!important
+  }
+  .date-time-selector .form-label {
+    font-size: 1.3rem!important
+  }
+  #mis-reservas h2 {
+    font-size: 2rem!important;
+    margin-bottom: 25px!important
+  }
+  #mis-reservas .card-body {
+    padding: 25px 15px!important
+  }
+  #mis-reservas #buscarReserva,
+  #mis-reservas #codigoReserva {
+    min-height: 65px!important;
+    font-size: 1.4rem!important;
+    padding: 20px 22px!important
+  }
+  #mis-reservas .input-group::before {
+    font-size: 1rem!important;
+    padding: 12px 18px!important
+  }
+}
+@media (max-width:767px) {
+  .date-time-selector input[type=date],
+  .date-time-selector select.form-select {
+    font-size: 1.4rem!important;
+    min-height: 65px!important;
+    padding: 22px 60px 22px 22px!important;
+    border-radius: 12px!important;
+    border: 3px solid #e9ecef!important;
+    background-color: #fff!important;
+    box-shadow: 0 4px 15px rgba(0,0,0,.1)!important;
+    font-weight: 600!important
+  }
+  .date-time-selector::after {
+    display: flex!important;
+    align-items: center!important;
+    justify-content: center!important;
+    width: 40px!important;
+    height: 40px!important;
+    font-size: 1.3rem!important;
+    background-color: #667eea!important;
+    color: #fff!important;
+    border-radius: 8px!important;
+    position: absolute!important;
+    right: 15px!important;
+    top: 50%!important;
+    transform: translateY(-50%)!important;
+    z-index: 5!important;
+    pointer-events: none!important
+  }
+  .date-time-selector input[type=date]::-webkit-calendar-picker-indicator,
+  .date-time-selector select.form-select::-webkit-calendar-picker-indicator {
+    display: none!important;
+    opacity: 0!important;
+    visibility: hidden!important;
+    position: absolute!important;
+    left: -9999px!important;
+    width: 0!important;
+    height: 0!important;
+    pointer-events: none!important
+  }
+}

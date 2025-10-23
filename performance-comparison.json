@@ -1,0 +1,205 @@
+{
+  "timestamp": "2025-10-23T20:22:01.376Z",
+  "environment": "production",
+  "before": {
+    "timestamp": "2025-10-23T20:20:36.364Z",
+    "environment": "production",
+    "results": [
+      {
+        "name": "Dashboard - Estadísticas Generales",
+        "duration": 15,
+        "rows": 1,
+        "timestamp": "2025-10-23T20:20:36.334Z"
+      },
+      {
+        "name": "Dashboard - Reservas por Día (7 días)",
+        "duration": 9,
+        "rows": 2,
+        "timestamp": "2025-10-23T20:20:36.344Z"
+      },
+      {
+        "name": "Disponibilidad - Cancha Específica",
+        "duration": 1,
+        "rows": 0,
+        "timestamp": "2025-10-23T20:20:36.345Z"
+      },
+      {
+        "name": "Disponibilidad - Complejo Completo",
+        "duration": 0,
+        "rows": 2,
+        "timestamp": "2025-10-23T20:20:36.345Z"
+      },
+      {
+        "name": "Reservas Recientes (últimas 5)",
+        "duration": 2,
+        "rows": 2,
+        "timestamp": "2025-10-23T20:20:36.347Z"
+      },
+      {
+        "name": "Reservas de Hoy",
+        "duration": 1,
+        "rows": 0,
+        "timestamp": "2025-10-23T20:20:36.348Z"
+      },
+      {
+        "name": "Análisis - Índices Existentes",
+        "duration": 7,
+        "rows": 49,
+        "timestamp": "2025-10-23T20:20:36.355Z"
+      },
+      {
+        "name": "Análisis - Tamaño de Tablas",
+        "duration": 7,
+        "rows": 14,
+        "timestamp": "2025-10-23T20:20:36.362Z"
+      },
+      {
+        "name": "Análisis - Configuración de Logs",
+        "duration": 2,
+        "rows": 3,
+        "timestamp": "2025-10-23T20:20:36.364Z"
+      }
+    ],
+    "summary": {
+      "totalQueries": 9,
+      "successful": 9,
+      "failed": 0,
+      "averageDuration": 5,
+      "slowQueries": 0
+    }
+  },
+  "after": {
+    "results": [
+      {
+        "name": "Dashboard - Estadísticas Generales",
+        "avgTime": 5,
+        "minTime": 1,
+        "maxTime": 12,
+        "times": [
+          12,
+          1,
+          1
+        ],
+        "iterations": 3,
+        "timestamp": "2025-10-23T20:22:01.357Z"
+      },
+      {
+        "name": "Dashboard - Reservas por Día (7 días)",
+        "avgTime": 3,
+        "minTime": 0,
+        "maxTime": 9,
+        "times": [
+          9,
+          1,
+          0
+        ],
+        "iterations": 3,
+        "timestamp": "2025-10-23T20:22:01.367Z"
+      },
+      {
+        "name": "Disponibilidad - Cancha Específica",
+        "avgTime": 1,
+        "minTime": 0,
+        "maxTime": 1,
+        "times": [
+          1,
+          0,
+          1
+        ],
+        "iterations": 3,
+        "timestamp": "2025-10-23T20:22:01.369Z"
+      },
+      {
+        "name": "Disponibilidad - Complejo Completo",
+        "avgTime": 1,
+        "minTime": 0,
+        "maxTime": 1,
+        "times": [
+          1,
+          0,
+          1
+        ],
+        "iterations": 3,
+        "timestamp": "2025-10-23T20:22:01.371Z"
+      },
+      {
+        "name": "Reservas Recientes (últimas 5)",
+        "avgTime": 1,
+        "minTime": 0,
+        "maxTime": 2,
+        "times": [
+          2,
+          1,
+          0
+        ],
+        "iterations": 3,
+        "timestamp": "2025-10-23T20:22:01.374Z"
+      },
+      {
+        "name": "Búsqueda por Código de Reserva",
+        "avgTime": 1,
+        "minTime": 0,
+        "maxTime": 1,
+        "times": [
+          1,
+          0,
+          1
+        ],
+        "iterations": 3,
+        "timestamp": "2025-10-23T20:22:01.376Z"
+      }
+    ],
+    "summary": {
+      "totalQueries": 6,
+      "averageDuration": 2
+    }
+  },
+  "comparison": {
+    "improvements": [
+      {
+        "name": "Dashboard - Estadísticas Generales",
+        "before": 15,
+        "after": 5,
+        "improvement": 67,
+        "improvementMs": 10
+      },
+      {
+        "name": "Dashboard - Reservas por Día (7 días)",
+        "before": 9,
+        "after": 3,
+        "improvement": 67,
+        "improvementMs": 6
+      },
+      {
+        "name": "Reservas Recientes (últimas 5)",
+        "before": 2,
+        "after": 1,
+        "improvement": 50,
+        "improvementMs": 1
+      }
+    ],
+    "regressions": [
+      {
+        "name": "Disponibilidad - Complejo Completo",
+        "before": 0,
+        "after": 1,
+        "improvement": null,
+        "improvementMs": -1
+      }
+    ],
+    "noChange": [
+      {
+        "name": "Disponibilidad - Cancha Específica",
+        "before": 1,
+        "after": 1,
+        "improvement": 0,
+        "improvementMs": 0
+      }
+    ],
+    "summary": {
+      "totalImprovements": 3,
+      "totalRegressions": 1,
+      "averageImprovement": 61
+    }
+  }
+}

@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const compression = require('compression');
 const { 
   requireRolePermission, 
   requireFinancialAccess, 
@@ -21,6 +22,12 @@ const {
   isFutureDateTime,
   getTimezoneInfo 
 } = require('./src/utils/dateUtils');
+
+// Sistema de Logging Avanzado
+const logger = require('./src/utils/advanced-logger');
+const requestTracking = require('./src/middleware/request-tracking');
+const DatabaseLogger = require('./src/utils/database-logger');
+const alertSystem = require('./src/utils/alert-system');
 // Configuración de entorno - desarrollo vs producción
 if (process.env.NODE_ENV === 'production') {
   // En producción, usar variables de entorno de Render
@@ -72,6 +79,21 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Middleware de Compresión
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// Middleware de Logging Avanzado
+app.use(requestTracking);
 
 // Headers de seguridad para Safari y Transbank
 app.use((req, res, next) => {
@@ -3751,6 +3773,13 @@ app.post('/api/reservas/cleanup-test', async (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
+  logger.info('🚀 Servidor ejecutándose', {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    database: db.getDatabaseInfo().type,
+    timestamp: new Date().toISOString()
+  });
+  
   console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
   console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📊 Base de datos: ${db.getDatabaseInfo().type}`);
@@ -4824,11 +4853,8 @@ function haySuperposicionHorarios(inicio1, fin1, inicio2, fin2) {
   return inicio1Min < fin2Min && fin1Min > inicio2Min;
 }
 
-// ===== FUNCIÓN PARA CONVERTIR HORA A MINUTOS =====
-function timeToMinutes(time) {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
-}
+// ===== FUNCIÓN PARA CONVERTIR HORA A MINUTOS (DUPLICADA - ELIMINADA) =====
+// Esta función ya existe en la línea 1192
 
 // ===== ENDPOINT PARA BLOQUEAR TEMPORALMENTE UNA RESERVA (MEJORADO) =====
 app.post('/api/reservas/bloquear', async (req, res) => {
@@ -8715,7 +8741,22 @@ app.get('/api/admin/debug-movimientos-financieros/:codigoReserva', authenticateT
 // ===== MIDDLEWARE DE ARCHIVOS ESTÁTICOS =====
 // IMPORTANTE: Este middleware debe ir DESPUÉS de todas las rutas de API
 // para evitar que intercepte las peticiones a /api/*
-app.use(express.static('public'));
+// Servir archivos estáticos con caché optimizado
+app.use(express.static('public', {
+  maxAge: '1d', // Cache por 1 día
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // Cache más largo para assets estáticos
+    if (path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 año
+    }
+    // Cache más corto para HTML
+    if (path.match(/\.html$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hora
+    }
+  }
+}));
 
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio

@@ -1,0 +1,332 @@
+@media (max-width:767px) {
+  .demo3-container {
+    transform: none!important;
+    width: 100%!important;
+    max-width: 100%!important;
+    height: auto!important;
+    min-height: 600px!important;
+    overflow: visible!important;
+    padding: 15px 10px!important;
+    margin: 0!important;
+    border: 2px dashed rgba(102,126,234,.3)!important;
+    border-radius: 15px!important;
+    background: linear-gradient(135deg,rgba(102,126,234,.05) 0,rgba(118,75,162,.05) 100%)!important;
+    position: relative!important
+  }
+  .demo3-container::-webkit-scrollbar {
+    height: 8px!important
+  }
+  .demo3-container::-webkit-scrollbar-track {
+    background: #f1f1f1!important;
+    border-radius: 10px!important
+  }
+  .demo3-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg,#667eea 0,#764ba2 100%)!important;
+    border-radius: 10px!important
+  }
+  .demo3-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg,#5a6fd8 0,#6a4190 100%)!important
+  }
+  .demo3-container-inner {
+    width: 100%!important;
+    min-width: 100%!important;
+    height: auto!important;
+    display: flex!important;
+    flex-direction: column!important;
+    gap: 15px!important;
+    margin: 0!important;
+    padding: 15px!important;
+    background: #fff!important;
+    border-radius: 15px!important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15)!important
+  }
+  .demo3-canchas-superiores {
+    display: flex!important;
+    flex-direction: row!important;
+    gap: 10px!important;
+    width: 100%!important;
+    justify-content: space-between!important;
+    align-items: stretch!important;
+    flex-wrap: nowrap!important;
+    height: 250px!important
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda {
+    flex: 1.1!important;
+    min-width: 120px!important;
+    max-width: 140px!important;
+    height: 100%!important;
+    flex-shrink: 0!important;
+    display: flex!important;
+    flex-direction: column!important;
+    justify-content: space-between!important;
+    align-items: center!important;
+    background: #f8f9fa!important;
+    border: 2px solid #28a745!important;
+    border-radius: 12px!important;
+    box-shadow: 0 4px 8px rgba(0,0,0,.1)!important;
+    transition: transform .2s!important;
+    padding: 12px!important;
+    gap: 8px!important;
+    position: relative!important
+  }
+  .demo3-padel-superior {
+    flex: 0.8!important;
+    min-width: 100px!important;
+    max-width: 120px!important;
+    height: 100%!important;
+    flex-shrink: 0!important;
+    display: flex!important;
+    flex-direction: column!important;
+    justify-content: space-between!important;
+    align-items: center!important;
+    background: #f8f9fa!important;
+    border: 2px solid #6c757d!important;
+    border-radius: 12px!important;
+    box-shadow: 0 4px 8px rgba(0,0,0,.1)!important;
+    transition: transform .2s!important;
+    padding: 12px!important;
+    gap: 8px!important;
+    position: relative!important
+  }
+  .demo3-cancha-horizontal {
+    width: 100%!important;
+    min-height: 180px!important;
+    max-height: 200px!important;
+    display: flex!important;
+    flex-direction: row!important;
+    justify-content: space-between!important;
+    align-items: center!important;
+    padding: 12px 10px!important;
+    gap: 12px!important;
+    background: #fff!important;
+    border: 3px solid #2e7d32!important;
+    border-radius: 16px!important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1)!important
+  }
+  .demo3-container::before {
+    content: "🏟️ Complejo Demo 3 - Toca para seleccionar cancha";
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg,#667eea 0,#764ba2 100%);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(102,126,234,.3)
+  }
+  .demo3-container::after {
+    content: "⚽ Fútbol: Canchas 1, 2 y 3 | 🎾 Pádel: Cancha 1";
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(102,126,234,.9);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: .85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 10
+  }
+  .demo3-cancha-horizontal,
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda,
+  .demo3-padel-superior {
+    cursor: pointer!important;
+    -webkit-tap-highlight-color: rgba(102,126,234,0.3)!important;
+    tap-highlight-color: rgba(102,126,234,0.3)!important
+  }
+  .demo3-cancha-horizontal:active,
+  .demo3-futbol-derecha:active,
+  .demo3-futbol-izquierda:active,
+  .demo3-padel-superior:active {
+    transform: scale(.98)!important;
+    transition: transform .1s!important
+  }
+  .demo3-cancha-horizontal .cancha-nombre,
+  .demo3-futbol-derecha h4,
+  .demo3-futbol-izquierda h4,
+  .demo3-padel-superior h4 {
+    font-size: 1.2rem!important;
+    font-weight: 700!important;
+    color: #495057!important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.1)!important;
+    margin: 8px 0!important;
+    line-height: 1.2!important;
+    text-align: center!important
+  }
+  .demo3-futbol-derecha .text-info,
+  .demo3-futbol-izquierda .text-info,
+  .demo3-padel-superior .text-info {
+    font-size: 1rem!important;
+    font-weight: 600!important;
+    color: #666!important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.1)!important;
+    margin: 4px 0!important;
+    line-height: 1.3!important;
+    text-align: center!important
+  }
+  .demo3-futbol-derecha .text-info.small,
+  .demo3-futbol-izquierda .text-info.small,
+  .demo3-padel-superior .text-info.small {
+    font-size: .9rem!important;
+    font-weight: 600!important;
+    color: #17a2b8!important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.1)!important;
+    margin: 4px 0!important;
+    line-height: 1.3!important;
+    text-align: center!important;
+    display: flex!important;
+    align-items: center!important;
+    justify-content: center!important;
+    gap: 4px!important
+  }
+  .demo3-futbol-derecha .cancha-info,
+  .demo3-futbol-izquierda .cancha-info,
+  .demo3-padel-superior .cancha-info {
+    flex: 1!important;
+    display: flex!important;
+    flex-direction: column!important;
+    justify-content: center!important;
+    align-items: center!important;
+    text-align: center!important;
+    gap: 8px!important;
+    padding: 10px 8px!important;
+    min-height: 100px!important
+  }
+  .demo3-futbol-derecha .cancha-icon,
+  .demo3-futbol-izquierda .cancha-icon,
+  .demo3-padel-superior .cancha-icon {
+    flex-shrink: 0!important;
+    margin: 10px 0!important
+  }
+  .demo3-cancha-horizontal .cancha-boton,
+  .demo3-futbol-derecha .estado-disponibilidad .badge,
+  .demo3-futbol-izquierda .estado-disponibilidad .badge,
+  .demo3-padel-superior .estado-disponibilidad .badge {
+    min-height: 40px!important;
+    padding: 10px 16px!important;
+    font-size: .9rem!important;
+    font-weight: 700!important;
+    border-radius: 8px!important;
+    box-shadow: 0 3px 10px rgba(0,0,0,.2)!important;
+    transition: .3s!important;
+    width: 100%!important;
+    text-align: center!important
+  }
+  .demo3-cancha-horizontal .cancha-icono-grande,
+  .demo3-futbol-derecha .fas,
+  .demo3-futbol-izquierda .fas,
+  .demo3-padel-superior .fas {
+    font-size: 2rem!important;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .2))!important
+  }
+  .demo3-cancha-horizontal .cancha-badge,
+  .demo3-futbol-derecha .tipo-indicator,
+  .demo3-futbol-izquierda .tipo-indicator,
+  .demo3-padel-superior .tipo-indicator {
+    font-size: .75rem!important;
+    padding: 5px 10px!important;
+    border-radius: 12px!important;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2)!important
+  }
+}
+@media (max-width:480px) {
+  .demo3-container {
+    padding: 10px 5px!important
+  }
+  .demo3-container::before {
+    font-size: .8rem!important;
+    padding: 6px 12px!important;
+    top: -25px!important
+  }
+  .demo3-container::after {
+    font-size: .7rem!important;
+    padding: 5px 10px!important;
+    bottom: -25px!important
+  }
+  .demo3-canchas-superiores {
+    height: 240px!important;
+    gap: 10px!important
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda {
+    min-width: 120px!important;
+    max-width: 140px!important;
+    padding: 12px!important
+  }
+  .demo3-padel-superior {
+    min-width: 100px!important;
+    max-width: 120px!important;
+    padding: 12px!important
+  }
+  .demo3-cancha-horizontal {
+    min-height: 180px!important;
+    max-height: 200px!important;
+    padding: 12px 10px!important;
+    gap: 12px!important
+  }
+  .demo3-futbol-derecha h4,
+  .demo3-futbol-izquierda h4,
+  .demo3-padel-superior h4 {
+    font-size: 1.1rem!important
+  }
+  .demo3-futbol-derecha .text-info,
+  .demo3-futbol-izquierda .text-info,
+  .demo3-padel-superior .text-info {
+    font-size: 1rem!important
+  }
+  .demo3-futbol-derecha .text-info.small,
+  .demo3-futbol-izquierda .text-info.small,
+  .demo3-padel-superior .text-info.small {
+    font-size: .9rem!important
+  }
+}
+@media (max-width:360px) {
+  .demo3-container {
+    padding: 8px 3px!important
+  }
+  .demo3-canchas-superiores {
+    height: 220px!important;
+    gap: 8px!important
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda {
+    min-width: 100px!important;
+    max-width: 120px!important;
+    padding: 10px!important
+  }
+  .demo3-padel-superior {
+    min-width: 80px!important;
+    max-width: 100px!important;
+    padding: 10px!important
+  }
+  .demo3-cancha-horizontal {
+    min-height: 160px!important;
+    max-height: 180px!important;
+    padding: 10px 8px!important;
+    gap: 10px!important
+  }
+  .demo3-futbol-derecha h4,
+  .demo3-futbol-izquierda h4,
+  .demo3-padel-superior h4 {
+    font-size: 1rem!important
+  }
+  .demo3-futbol-derecha .text-info,
+  .demo3-futbol-izquierda .text-info,
+  .demo3-padel-superior .text-info {
+    font-size: .9rem!important
+  }
+  .demo3-futbol-derecha .text-info.small,
+  .demo3-futbol-izquierda .text-info.small,
+  .demo3-padel-superior .text-info.small {
+    font-size: .8rem!important
+  }
+}

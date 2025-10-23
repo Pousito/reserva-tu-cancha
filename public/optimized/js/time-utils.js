@@ -1,0 +1,1 @@
+function formatearHora(r){if(!r)return"";if(r.includes(":")){const a=r.split(":");return`${a[0]}:${a[1]}`}return r}function formatearRangoHoras(r,a){return`${formatearHora(r)} - ${formatearHora(a)}`}

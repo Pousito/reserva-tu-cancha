@@ -1,0 +1,186 @@
+@media (max-width:768px) {
+  .demo3-container {
+    margin: 10px auto;
+    padding: 12px;
+    border-radius: 15px;
+    min-width: 700px;
+    width: max-content;
+    overflow: visible;
+    box-sizing: border-box
+  }
+  .demo3-container-inner {
+    display: grid!important;
+    grid-template: "futbol-sup padel" "cancha3 cancha3"!important;
+    grid-template-columns: 1.5fr 1fr!important;
+    grid-template-rows: auto auto!important;
+    gap: 12px;
+    padding: 12px;
+    min-height: auto
+  }
+  .demo3-canchas-futbol-superiores {
+    display: flex;
+    flex-direction: row!important;
+    gap: 10px;
+    grid-area: futbol-sup
+  }
+  .demo3-contenedor-cancha3 {
+    grid-area: cancha3;
+    display: flex;
+    justify-content: center
+  }
+  .demo3-canchas-padel {
+    grid-area: padel;
+    display: flex;
+    flex-direction: column;
+    gap: 10px
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda {
+    min-width: 200px!important;
+    flex: 1;
+    height: 280px!important
+  }
+  .demo3-padel-superior {
+    min-width: 180px!important;
+    width: 100%!important;
+    height: 280px!important
+  }
+  .demo3-cancha-card {
+    padding: 12px;
+    min-height: 80px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px
+  }
+  .demo3-cancha-izquierda {
+    min-width: 60px
+  }
+  .demo3-cancha-badge {
+    font-size: 10px;
+    padding: 3px 8px
+  }
+  .demo3-cancha-icono-grande {
+    font-size: 1.8rem
+  }
+  .demo3-cancha-nombre {
+    font-size: 1.1rem;
+    margin-bottom: 4px
+  }
+  .demo3-cancha-precio {
+    font-size: .95rem;
+    margin-bottom: 4px
+  }
+  .demo3-cancha-jugadores {
+    font-size: .8rem
+  }
+  .demo3-cancha-boton {
+    padding: 8px 16px;
+    font-size: .8rem;
+    border-radius: 20px
+  }
+}
+@media (max-width:480px) {
+  .demo3-container {
+    margin: 5px auto;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 650px;
+    width: max-content;
+    overflow: visible;
+    box-sizing: border-box
+  }
+  .demo3-container-inner {
+    display: grid!important;
+    grid-template: "futbol-sup padel" "cancha3 cancha3"!important;
+    grid-template-columns: 1.5fr 1fr!important;
+    padding: 8px;
+    gap: 8px
+  }
+  .demo3-canchas-futbol-superiores {
+    flex-direction: row!important;
+    gap: 6px
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda {
+    min-width: 180px!important;
+    flex: 1;
+    height: 250px!important
+  }
+  .demo3-padel-superior {
+    min-width: 160px!important;
+    width: 100%!important;
+    height: 250px!important
+  }
+  .demo3-cancha-horizontal {
+    height: 160px!important;
+    width: 100%!important;
+    min-width: 380px!important
+  }
+  .demo3-cancha-card {
+    padding: 10px
+  }
+  .demo3-cancha-izquierda {
+    min-width: 60px
+  }
+  .demo3-cancha-badge {
+    font-size: 9px;
+    padding: 2px 6px
+  }
+  .demo3-cancha-icono-grande {
+    font-size: 1.5rem
+  }
+  .demo3-cancha-nombre {
+    font-size: 1rem;
+    margin-bottom: 2px
+  }
+  .demo3-cancha-precio {
+    font-size: .9rem;
+    margin-bottom: 2px
+  }
+  .demo3-cancha-jugadores {
+    font-size: .75rem;
+    justify-content: center
+  }
+  .demo3-cancha-boton {
+    padding: 6px 12px;
+    font-size: .75rem;
+    border-radius: 15px
+  }
+}
+@media (max-width:768px) and (orientation:landscape) {
+  .demo3-container {
+    min-width: 700px;
+    width: max-content;
+    overflow: visible;
+    box-sizing: border-box
+  }
+  .demo3-container-inner {
+    display: grid!important;
+    grid-template: "futbol-sup padel" "cancha3 cancha3"!important;
+    grid-template-columns: 1.5fr 1fr!important;
+    gap: 12px
+  }
+  .demo3-canchas-futbol-superiores {
+    flex-direction: row!important;
+    grid-area: futbol-sup
+  }
+  .demo3-contenedor-cancha3 {
+    grid-area: cancha3
+  }
+  .demo3-canchas-padel {
+    grid-area: padel;
+    flex-direction: column
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda {
+    min-width: 200px!important;
+    flex: 1;
+    height: 280px!important
+  }
+  .demo3-padel-superior {
+    min-width: 180px!important;
+    width: 100%!important;
+    height: 280px!important
+  }
+}

@@ -35,7 +35,19 @@
     "clean-duplicate-courts": "node scripts/maintenance/clean-duplicate-courts.js",
     "auto-backup": "node scripts/maintenance/auto-backup.js",
     "check-charts": "node scripts/diagnostic/check-charts-production.js",
-    "test": "echo \"No tests specified\" && exit 0",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest tests/integration/",
+    "test:performance": "jest tests/performance/",
+    "test:all": "jest --verbose",
+    "logs:report": "node scripts/monitoring/log-monitor.js report",
+    "logs:monitor": "node scripts/monitoring/log-monitor.js monitor",
+    "logs:cleanup": "node scripts/monitoring/log-monitor.js cleanup",
+    "optimize:assets": "node scripts/optimization/optimize-assets.js",
+    "optimize:css": "cleancss -o public/optimized/styles.min.css public/styles.css",
+    "optimize:js": "terser public/script.js -o public/optimized/script.min.js --compress --mangle",
+    "optimize:all": "npm run optimize:assets && npm run optimize:css && npm run optimize:js",
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js",
     "setup-postgresql": "node scripts/setup-postgresql-local.js",
@@ -71,7 +83,12 @@
     "fix-production-db": "node scripts/fix-production-database.js",
     "fix-production-schema": "node scripts/fix-production-schema.js",
     "update-borderio-price": "node scripts/update-borderio-price.js",
-    "generar-manual": "node scripts/generar-manual-usuario.js"
+    "generar-manual": "node scripts/generar-manual-usuario.js",
+    "benchmark-current": "node scripts/performance/benchmark-current.js",
+    "optimize-database": "node scripts/performance/create-optimized-indexes.js",
+    "compare-performance": "node scripts/performance/compare-performance.js",
+    "optimize-full": "npm run benchmark-current && npm run optimize-database && npm run compare-performance",
+    "rollback-optimization": "node scripts/performance/rollback-indexes.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
@@ -97,8 +114,17 @@
     "transbank-sdk": "^6.1.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@types/jest": "^30.0.0",
+    "babel-jest": "^30.2.0",
+    "clean-css-cli": "^5.6.3",
+    "compression": "^1.8.1",
+    "jest": "^30.2.0",
     "nodemon": "^3.0.1",
-    "puppeteer": "^24.25.0"
+    "puppeteer": "^24.25.0",
+    "supertest": "^7.1.4",
+    "terser": "^5.44.0"
   },
   "keywords": [
     "reservas",

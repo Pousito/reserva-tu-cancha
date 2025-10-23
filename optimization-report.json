@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-10-23T20:56:30.667Z",
+  "stats": {
+    "css": {
+      "original": 324264,
+      "optimized": 232911,
+      "savings": 91353
+    },
+    "js": {
+      "original": 1208169,
+      "optimized": 643934,
+      "savings": 564235
+    },
+    "images": {
+      "original": 0,
+      "optimized": 0,
+      "savings": 0
+    }
+  },
+  "total": {
+    "original": 1532433,
+    "optimized": 876845,
+    "savings": 655588,
+    "savingsPercent": 42.8
+  }
+}

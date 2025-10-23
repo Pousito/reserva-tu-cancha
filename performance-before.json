@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-10-23T20:20:36.364Z",
+  "environment": "production",
+  "results": [
+    {
+      "name": "Dashboard - Estadísticas Generales",
+      "duration": 15,
+      "rows": 1,
+      "timestamp": "2025-10-23T20:20:36.334Z"
+    },
+    {
+      "name": "Dashboard - Reservas por Día (7 días)",
+      "duration": 9,
+      "rows": 2,
+      "timestamp": "2025-10-23T20:20:36.344Z"
+    },
+    {
+      "name": "Disponibilidad - Cancha Específica",
+      "duration": 1,
+      "rows": 0,
+      "timestamp": "2025-10-23T20:20:36.345Z"
+    },
+    {
+      "name": "Disponibilidad - Complejo Completo",
+      "duration": 0,
+      "rows": 2,
+      "timestamp": "2025-10-23T20:20:36.345Z"
+    },
+    {
+      "name": "Reservas Recientes (últimas 5)",
+      "duration": 2,
+      "rows": 2,
+      "timestamp": "2025-10-23T20:20:36.347Z"
+    },
+    {
+      "name": "Reservas de Hoy",
+      "duration": 1,
+      "rows": 0,
+      "timestamp": "2025-10-23T20:20:36.348Z"
+    },
+    {
+      "name": "Análisis - Índices Existentes",
+      "duration": 7,
+      "rows": 49,
+      "timestamp": "2025-10-23T20:20:36.355Z"
+    },
+    {
+      "name": "Análisis - Tamaño de Tablas",
+      "duration": 7,
+      "rows": 14,
+      "timestamp": "2025-10-23T20:20:36.362Z"
+    },
+    {
+      "name": "Análisis - Configuración de Logs",
+      "duration": 2,
+      "rows": 3,
+      "timestamp": "2025-10-23T20:20:36.364Z"
+    }
+  ],
+  "summary": {
+    "totalQueries": 9,
+    "successful": 9,
+    "failed": 0,
+    "averageDuration": 5,
+    "slowQueries": 0
+  }
+}

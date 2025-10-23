@@ -1,0 +1,379 @@
+.demo3-container {
+  background: linear-gradient(135deg,#f8f9fa 0,#e9ecef 100%);
+  border-radius: 20px;
+  padding: 25px;
+  margin: 20px 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,.1);
+  border: 2px solid #dee2e6;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box
+}
+.demo3-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,#28a745,#20c997,#17a2b8)
+}
+.demo3-container-inner {
+  display: grid;
+  grid-template: "futbol-sup padel" "cancha3 padel-placeholder"/2fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  min-height: 500px;
+  padding: 20px
+}
+.demo3-canchas-futbol-superiores {
+  grid-area: futbol-sup;
+  display: flex;
+  gap: 15px;
+  align-items: stretch
+}
+.demo3-contenedor-cancha3 {
+  grid-area: cancha3;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center
+}
+.demo3-canchas-padel {
+  grid-area: padel;
+  display: flex;
+  flex-direction: column;
+  gap: 15px
+}
+.demo3-cancha-card {
+  background: #fff;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,.08);
+  border: 2px solid transparent;
+  transition: .3s;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 120px;
+  position: relative;
+  overflow: hidden
+}
+.demo3-cancha-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #6c757d;
+  transition: .3s
+}
+.demo3-cancha-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,.15);
+  border-color: #007bff
+}
+.demo3-cancha-card:hover::before {
+  background: #007bff
+}
+.demo3-cancha-card.futbol::before {
+  background: #28a745
+}
+.demo3-cancha-card.padel::before {
+  background: #fd7e14
+}
+.demo3-cancha-izquierda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px
+}
+.demo3-cancha-badge {
+  background: #6c757d;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px
+}
+.demo3-cancha-badge.futbol {
+  background: #28a745
+}
+.demo3-cancha-badge.padel {
+  background: #fd7e14
+}
+.demo3-cancha-icono-grande {
+  font-size: 2.5rem;
+  opacity: .8
+}
+.demo3-cancha-centro {
+  flex: 1;
+  text-align: center
+}
+.demo3-cancha-nombre {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #343a40
+}
+.demo3-cancha-precio {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #28a745;
+  margin: 0 0 8px
+}
+.demo3-cancha-jugadores {
+  font-size: .9rem;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px
+}
+.demo3-cancha-derecha {
+  display: flex;
+  align-items: center
+}
+.demo3-cancha-boton {
+  background: #28a745;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .3s;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: .9rem
+}
+.demo3-cancha-boton:hover {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40,167,69,.3)
+}
+.demo3-cancha-boton.ocupado {
+  background: #dc3545;
+  cursor: not-allowed
+}
+.demo3-cancha-boton.ocupado:hover {
+  background: #c82333;
+  transform: none;
+  box-shadow: none
+}
+.demo3-cancha-horizontal {
+  width: 100%!important;
+  max-width: 100%!important
+}
+@media (max-width:768px) {
+  body::before {
+    content: "CSS MOBILE v35 ACTIVO"!important;
+    position: fixed!important;
+    top: 0!important;
+    left: 0!important;
+    background: red!important;
+    color: #fff!important;
+    padding: 5px!important;
+    z-index: 99999!important;
+    font-size: 10px!important
+  }
+  .canchas-horizontales {
+    min-height: 450px!important;
+    height: auto!important;
+    padding: 10px!important;
+    overflow: visible!important;
+    box-sizing: border-box!important;
+    border: 5px solid red!important
+  }
+  .demo3-container {
+    padding: 0!important;
+    margin: 0!important;
+    width: 100%!important;
+    border: none!important;
+    background: 0 0!important;
+    outline: blue dashed 3px!important
+  }
+  .demo3-container-inner {
+    display: grid!important;
+    grid-template-columns: 1fr 1fr 1fr!important;
+    grid-template-rows: auto auto!important;
+    gap: 3px!important;
+    width: 100%!important;
+    padding: 0!important;
+    margin: 0!important;
+    outline: orange solid 3px!important
+  }
+  .demo3-canchas-futbol-superiores {
+    display: contents!important;
+    outline: purple dotted 2px!important
+  }
+  .demo3-futbol-izquierda {
+    grid-column: 1!important;
+    grid-row: 1!important;
+    outline: green solid 2px!important
+  }
+  .demo3-futbol-derecha {
+    grid-column: 2!important;
+    grid-row: 1!important;
+    outline: green solid 2px!important
+  }
+  .demo3-padel-superior {
+    grid-column: 3!important;
+    grid-row: 1!important;
+    outline: cyan solid 2px!important
+  }
+  .demo3-contenedor-cancha3 {
+    display: contents!important
+  }
+  .demo3-cancha-horizontal {
+    grid-column: 1/4!important;
+    grid-row: 2!important;
+    width: 100%!important;
+    outline: magenta solid 2px!important
+  }
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda,
+  .demo3-padel-superior {
+    width: 100%!important;
+    max-width: 100%!important;
+    min-height: 180px!important;
+    height: auto!important;
+    overflow: visible!important;
+    box-sizing: border-box!important
+  }
+  .demo3-futbol-derecha .cancha-card,
+  .demo3-futbol-izquierda .cancha-card,
+  .demo3-padel-superior .cancha-card {
+    min-height: 100%!important;
+    height: auto!important;
+    width: 100%!important;
+    max-width: 100%!important;
+    padding: 5px!important;
+    display: flex!important;
+    flex-direction: column!important;
+    align-items: center!important;
+    justify-content: space-between!important;
+    gap: 3px!important;
+    font-size: .65rem!important;
+    box-sizing: border-box!important;
+    overflow: visible!important
+  }
+  .demo3-cancha-horizontal {
+    min-height: 140px!important;
+    max-width: 100%!important;
+    overflow: visible!important;
+    box-sizing: border-box!important;
+    height: 100%!important;
+    padding: 8px!important;
+    display: flex!important;
+    flex-direction: row!important;
+    align-items: center!important;
+    justify-content: space-between!important;
+    gap: 8px!important
+  }
+  .demo3-cancha-horizontal .cancha-icon i,
+  .demo3-futbol-derecha .cancha-icon i,
+  .demo3-futbol-izquierda .cancha-icon i,
+  .demo3-padel-superior .cancha-icon i {
+    font-size: 1.3rem!important
+  }
+  .demo3-futbol-derecha .cancha-nombre,
+  .demo3-futbol-izquierda .cancha-nombre,
+  .demo3-padel-superior .cancha-nombre {
+    font-size: .7rem!important;
+    font-weight: 600!important;
+    text-align: center!important;
+    line-height: 1.2!important;
+    white-space: normal!important;
+    overflow: visible!important;
+    max-width: 100%!important;
+    word-wrap: break-word!important;
+    hyphens: auto!important
+  }
+  .demo3-cancha-horizontal .cancha-nombre {
+    font-size: .8rem!important
+  }
+  .demo3-cancha-horizontal .cancha-precio,
+  .demo3-futbol-derecha .cancha-precio,
+  .demo3-futbol-izquierda .cancha-precio,
+  .demo3-padel-superior .cancha-precio {
+    font-size: .6rem!important;
+    white-space: normal!important;
+    line-height: 1.1!important
+  }
+  .demo3-futbol-derecha .btn,
+  .demo3-futbol-izquierda .btn,
+  .demo3-padel-superior .btn {
+    padding: 3px 6px!important;
+    font-size: .55rem!important;
+    white-space: nowrap!important;
+    min-width: 0!important
+  }
+  .demo3-cancha-horizontal .btn {
+    padding: 5px 10px!important;
+    font-size: .65rem!important
+  }
+  .demo3-futbol-derecha .cancha-tipo,
+  .demo3-futbol-izquierda .cancha-tipo,
+  .demo3-padel-superior .cancha-tipo {
+    font-size: .55rem!important;
+    font-weight: 600!important;
+    padding: 2px 4px!important;
+    white-space: nowrap!important;
+    overflow: visible!important;
+    display: block!important
+  }
+  .demo3-futbol-derecha .cancha-jugadores,
+  .demo3-futbol-izquierda .cancha-jugadores,
+  .demo3-padel-superior .cancha-jugadores {
+    font-size: .55rem!important;
+    overflow: visible!important;
+    line-height: 1.1!important;
+    text-align: center!important
+  }
+  .demo3-futbol-derecha *,
+  .demo3-futbol-izquierda *,
+  .demo3-padel-superior * {
+    max-width: 100%!important;
+    box-sizing: border-box!important
+  }
+}
+@media (max-width:480px) {
+  .demo3-cancha-horizontal,
+  .demo3-futbol-derecha,
+  .demo3-futbol-izquierda,
+  .demo3-padel-superior {
+    height: 130px!important;
+    min-height: 130px!important
+  }
+  .demo3-cancha-card {
+    padding: 8px!important
+  }
+  .cancha-nombre,
+  .demo3-cancha-nombre {
+    font-size: .75rem!important
+  }
+  .cancha-precio,
+  .demo3-cancha-precio {
+    font-size: .7rem!important
+  }
+  .cancha-jugadores,
+  .demo3-cancha-jugadores {
+    font-size: .65rem!important
+  }
+  .cancha-boton,
+  .demo3-cancha-boton {
+    padding: 5px 10px!important;
+    font-size: .65rem!important
+  }
+  .cancha-icon i,
+  .cancha-icono-grande,
+  .demo3-cancha-icono-grande {
+    font-size: 1.5rem!important
+  }
+}

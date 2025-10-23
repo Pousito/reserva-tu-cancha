@@ -1,0 +1,182 @@
+body {
+  background: linear-gradient(135deg,#667eea 0,#764ba2 50%,#5b4a9f 100%)!important;
+  background-attachment: fixed!important;
+  min-height: 100vh!important;
+  position: relative!important
+}
+body::before {
+  content: ''!important;
+  position: fixed!important;
+  top: 0!important;
+  left: 0!important;
+  width: 100%!important;
+  height: 100%!important;
+  background-image: radial-gradient(circle at 20% 50%,rgba(255,255,255,.05) 0,transparent 50%),radial-gradient(circle at 80% 80%,rgba(255,255,255,.03) 0,transparent 50%),repeating-linear-gradient(45deg,transparent,transparent 50px,rgba(255,255,255,.02) 50px,rgba(255,255,255,.02) 100px)!important;
+  pointer-events: none!important;
+  z-index: -1!important
+}
+#gestionCategorias {
+  background: rgba(0,0,0,.4)!important;
+  backdrop-filter: blur(20px)!important;
+  border-radius: 16px!important;
+  padding: 1.5rem!important;
+  border: 1px solid rgba(255,255,255,.2)!important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2)!important
+}
+#gestionCategorias .table {
+  background: rgba(0,0,0,.15)!important;
+  backdrop-filter: blur(20px)!important;
+  border-radius: 12px!important;
+  overflow: hidden!important;
+  color: #fff!important;
+  margin-bottom: 0!important;
+  border: 1px solid rgba(255,255,255,.1)!important
+}
+#gestionCategorias .table thead {
+  background: rgba(0,0,0,.25)!important
+}
+#gestionCategorias .table thead th {
+  color: #fff!important;
+  padding: 1rem!important;
+  font-weight: 600!important;
+  text-transform: uppercase!important;
+  font-size: .875rem!important;
+  letter-spacing: .05em!important;
+  border: none!important;
+  white-space: nowrap!important
+}
+#gestionCategorias .table tbody {
+  background: rgba(0,0,0,.1)!important
+}
+#gestionCategorias .table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,.1)!important;
+  transition: .3s!important;
+  background: rgba(0,0,0,.1)!important
+}
+#gestionCategorias .table tbody tr:hover {
+  background: rgba(255,255,255,.15)!important;
+  transform: translateX(2px)!important
+}
+#gestionCategorias .table tbody td {
+  color: #fff!important;
+  padding: 1rem!important;
+  border: none!important;
+  vertical-align: middle!important;
+  background: 0 0!important
+}
+#gestionCategorias .table td,
+#gestionCategorias .table th {
+  background: 0 0!important;
+  border-color: rgba(255,255,255,.1)!important
+}
+#gestionCategorias .nav-tabs {
+  border-bottom: 2px solid rgba(255,255,255,.2)!important;
+  margin-bottom: 0!important
+}
+#gestionCategorias .nav-tabs .nav-link {
+  color: rgba(255,255,255,.7)!important;
+  background: 0 0!important;
+  border: none!important;
+  padding: .75rem 1.5rem!important;
+  font-weight: 600!important;
+  transition: .3s!important;
+  border-radius: 0!important;
+  border-bottom: 3px solid transparent!important
+}
+#gestionCategorias .nav-tabs .nav-link:hover {
+  color: rgba(255,255,255,.9)!important;
+  background: rgba(255,255,255,.1)!important;
+  border-bottom-color: rgba(255,255,255,.5)!important
+}
+#gestionCategorias .nav-tabs .nav-link.active {
+  color: #fff!important;
+  background: rgba(255,255,255,.15)!important;
+  backdrop-filter: blur(10px)!important;
+  border-bottom: 3px solid #fff!important;
+  font-weight: 700!important
+}
+#gestionCategorias .btn-success {
+  background: linear-gradient(135deg,#10b981 0,#059669 100%)!important;
+  border: none!important;
+  padding: .625rem 1.25rem!important;
+  border-radius: 8px!important;
+  font-weight: 600!important;
+  transition: .3s!important;
+  box-shadow: 0 2px 6px rgba(16,185,129,.3)!important
+}
+#gestionCategorias .btn-success:hover {
+  transform: translateY(-2px)!important;
+  box-shadow: 0 4px 12px rgba(16,185,129,.4)!important
+}
+#gestionCategorias .table tbody td:first-child i {
+  font-size: 1.5rem!important;
+  text-shadow: 0 2px 4px rgba(0,0,0,.3)!important
+}
+#gestionCategorias .badge {
+  padding: .5rem 1rem!important;
+  border-radius: 6px!important;
+  font-weight: 600!important;
+  font-size: .875rem!important;
+  border: 1px solid rgba(255,255,255,.2)!important;
+  text-align: center!important;
+  display: inline-block!important
+}
+#gestionCategorias .tab-content {
+  padding: 1rem!important;
+  background: rgba(0,0,0,.2)!important;
+  border-radius: 0 0 12px 12px!important
+}
+#gestionCategorias .table-responsive {
+  background: 0 0!important;
+  border-radius: 12px!important;
+  overflow: hidden!important;
+  margin-top: 1rem!important
+}
+#gestionCategorias .btn-sm {
+  margin: 0 2px!important;
+  font-size: .8rem!important
+}
+#gestionCategorias .btn-primary {
+  background: linear-gradient(135deg,#3b82f6 0,#2563eb 100%)!important
+}
+#gestionCategorias .btn-danger {
+  background: linear-gradient(135deg,#ef4444 0,#dc2626 100%)!important
+}
+#gestionCategorias .table tbody td:nth-child(2) {
+  font-weight: 600!important;
+  font-size: 1rem!important
+}
+#gestionCategorias .table tbody td:nth-child(3) {
+  font-style: italic!important;
+  opacity: .9!important;
+  font-size: .9rem!important
+}
+#gestionCategorias > .d-flex {
+  padding-bottom: 1rem!important;
+  border-bottom: 2px solid rgba(255,255,255,.2)!important;
+  margin-bottom: 1.5rem!important
+}
+#gestionCategorias .table tbody td:last-child {
+  text-align: right!important;
+  white-space: nowrap!important
+}
+#gestionCategorias .btn-sm {
+  padding: .5rem .75rem!important;
+  border-radius: 8px!important;
+  font-weight: 600!important;
+  transition: .3s!important;
+  border: none!important;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1)!important
+}
+#gestionCategorias .btn-sm:hover {
+  transform: translateY(-2px)!important;
+  box-shadow: 0 4px 8px rgba(0,0,0,.2)!important
+}
+#gestionCategorias .table tbody tr:hover td:first-child i {
+  transform: scale(1.1)!important;
+  transition: transform .2s!important
+}
+#gestionCategorias .table tbody td:first-child {
+  text-align: center!important;
+  width: 60px!important
+}
