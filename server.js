@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const compression = require('compression');
+// const compression = require('compression'); // Temporalmente deshabilitado para deploy
 const { 
   requireRolePermission, 
   requireFinancialAccess, 
@@ -23,11 +23,11 @@ const {
   getTimezoneInfo 
 } = require('./src/utils/dateUtils');
 
-// Sistema de Logging Avanzado
-const logger = require('./src/utils/advanced-logger');
-const requestTracking = require('./src/middleware/request-tracking');
-const DatabaseLogger = require('./src/utils/database-logger');
-const alertSystem = require('./src/utils/alert-system');
+// Sistema de Logging Avanzado (temporalmente deshabilitado para deploy)
+// const logger = require('./src/utils/advanced-logger');
+// const requestTracking = require('./src/middleware/request-tracking');
+// const DatabaseLogger = require('./src/utils/database-logger');
+// const alertSystem = require('./src/utils/alert-system');
 // Configuración de entorno - desarrollo vs producción
 if (process.env.NODE_ENV === 'production') {
   // En producción, usar variables de entorno de Render
@@ -80,20 +80,20 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Middleware de Compresión
-app.use(compression({
-  level: 6,
-  threshold: 1024,
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  }
-}));
+// Middleware de Compresión (temporalmente deshabilitado)
+// app.use(compression({
+//   level: 6,
+//   threshold: 1024,
+//   filter: (req, res) => {
+//     if (req.headers['x-no-compression']) {
+//       return false;
+//     }
+//     return compression.filter(req, res);
+//   }
+// }));
 
-// Middleware de Logging Avanzado
-app.use(requestTracking);
+// Middleware de Logging Avanzado (temporalmente deshabilitado)
+// app.use(requestTracking);
 
 // Headers de seguridad para Safari y Transbank
 app.use((req, res, next) => {
@@ -3773,12 +3773,12 @@ app.post('/api/reservas/cleanup-test', async (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  logger.info('🚀 Servidor ejecutándose', {
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
-    database: db.getDatabaseInfo().type,
-    timestamp: new Date().toISOString()
-  });
+  // logger.info('🚀 Servidor ejecutándose', {
+  //   port: PORT,
+  //   environment: process.env.NODE_ENV || 'development',
+  //   database: db.getDatabaseInfo().type,
+  //   timestamp: new Date().toISOString()
+  // });
   
   console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
   console.log(`🌍 Entorno: ${process.env.NODE_ENV || 'development'}`);
