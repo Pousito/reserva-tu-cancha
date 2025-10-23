@@ -116,13 +116,13 @@
     "nodemailer": "^6.9.4",
     "pg": "^8.11.3",
     "transbank-sdk": "^6.1.0",
-    "express-validator": "^latest",
-    "express-slow-down": "^latest",
-    "express-brute": "^latest",
-    "express-brute-redis": "^latest",
-    "express-mongo-sanitize": "^latest",
-    "xss-clean": "^latest",
-    "hpp": "^latest"
+    "express-validator": "^7.0.1",
+    "express-slow-down": "^1.6.0",
+    "express-brute": "^1.0.1",
+    "express-brute-redis": "^0.0.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "xss-clean": "^0.1.4",
+    "hpp": "^0.2.3"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
