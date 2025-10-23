@@ -8925,6 +8925,11 @@ app.use(express.static('public', {
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
+  // Excluir rutas de API y monitoreo
+  if (req.path.startsWith('/api/') || req.path.startsWith('/monitoring')) {
+    return res.status(404).json({ error: 'Ruta no encontrada' });
+  }
+  
   // Si la ruta es para archivos estáticos (CSS, JS, imágenes), devolver 404
   if (req.path.includes('.') && !req.path.endsWith('.html')) {
     return res.status(404).json({ error: 'Archivo no encontrado' });
