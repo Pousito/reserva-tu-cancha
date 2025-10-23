@@ -123,7 +123,7 @@ const securityMiddleware = (app) => {
   app.use((req, res, next) => {
     const suspiciousPatterns = [
       /\.\.\//, // Path traversal
-      /<script[^>]*>.*?</script>/gi, // XSS
+      /<script[^>]*>.*?<\/script>/gi, // XSS
       /javascript:/gi, // JavaScript en URLs
       /union\s+select/gi, // SQL injection
       /drop\s+table/gi, // SQL injection
