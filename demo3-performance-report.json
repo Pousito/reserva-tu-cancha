@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-10-23T21:18:50.821Z",
+  "optimizations": [
+    {
+      "name": "Consulta de Promociones en Lote",
+      "description": "Reemplaza múltiples consultas individuales con una sola consulta optimizada",
+      "impact": "Reduce de N consultas a 1 consulta para verificar promociones",
+      "benefit": "Mejora significativa en rendimiento para Complejo Demo 3"
+    },
+    {
+      "name": "Endpoint de Canchas Optimizado",
+      "description": "Optimiza el endpoint /api/canchas/:complejoId para usar consultas en lote",
+      "impact": "Elimina el problema N+1 en consultas de promociones",
+      "benefit": "Renderizado más rápido después de seleccionar hora"
+    }
+  ],
+  "expectedImprovements": [
+    "Reducción del 80% en consultas de base de datos",
+    "Renderizado 3-5x más rápido del Complejo Demo 3",
+    "Mejor experiencia de usuario al seleccionar horarios"
+  ]
+}

@@ -48,6 +48,7 @@
     "optimize:css": "cleancss -o public/optimized/styles.min.css public/styles.css",
     "optimize:js": "terser public/script.js -o public/optimized/script.min.js --compress --mangle",
     "optimize:all": "npm run optimize:assets && npm run optimize:css && npm run optimize:js",
+    "optimize:demo3": "node scripts/optimization/optimize-demo3-performance.js",
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js",
     "setup-postgresql": "node scripts/setup-postgresql-local.js",
