@@ -4,6 +4,20 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+// Importar sistema de monitoreo
+const metricsCollector = require('./src/utils/metrics-collector');
+const alertSystem = require('./src/utils/alert-system');
+const monitoringRoutes = require('./src/routes/monitoring');
+const {
+  apiMetricsMiddleware,
+  databaseMetricsMiddleware,
+  authMetricsMiddleware,
+  pageMetricsMiddleware,
+  errorMetricsMiddleware,
+  userMetricsMiddleware,
+  metricsCleanupMiddleware
+} = require('./src/middleware/metrics-middleware');
+
 // Importar middleware de seguridad
 const { securityMiddleware } = require('./src/middleware/advanced-security');
 const securityHeaders = require('./src/middleware/security-headers');
@@ -84,6 +98,43 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Configurar sistema de alertas
+alertSystem.setupAlerts();
+
+// Conectar eventos de métricas con alertas
+metricsCollector.on('slowApiCall', (data) => {
+  alertSystem.processEvent('slowApi', data);
+});
+
+metricsCollector.on('slowDatabaseQuery', (data) => {
+  alertSystem.processEvent('slowDatabaseQuery', data);
+});
+
+metricsCollector.on('error', (data) => {
+  alertSystem.processEvent('error', data);
+});
+
+metricsCollector.on('highMemoryUsage', (data) => {
+  alertSystem.processEvent('highMemoryUsage', data);
+});
+
+metricsCollector.on('reservationMetric', (data) => {
+  alertSystem.processEvent('reservation', data);
+});
+
+metricsCollector.on('paymentMetric', (data) => {
+  alertSystem.processEvent('payment', data);
+});
+
+// Middleware de métricas
+app.use(apiMetricsMiddleware);
+app.use(authMetricsMiddleware);
+app.use(pageMetricsMiddleware);
+app.use(userMetricsMiddleware);
+app.use(metricsCleanupMiddleware);
+
+// Middleware de métricas de base de datos (se aplicará después de la conexión DB)
 
 // Middleware de Seguridad Avanzado
 const securityLimits = securityMiddleware(app);
@@ -3869,6 +3920,10 @@ app.post('/api/reservas/cleanup-test', async (req, res) => {
 });
 
 // Iniciar servidor
+
+// Middleware de errores de métricas (debe ir al final)
+app.use(errorMetricsMiddleware);
+
 app.listen(PORT, () => {
   // logger.info('🚀 Servidor ejecutándose', {
   //   port: PORT,

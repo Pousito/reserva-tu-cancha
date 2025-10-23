@@ -92,7 +92,13 @@
     "optimize-database": "node scripts/performance/create-optimized-indexes.js",
     "compare-performance": "node scripts/performance/compare-performance.js",
     "optimize-full": "npm run benchmark-current && npm run optimize-database && npm run compare-performance",
-    "rollback-optimization": "node scripts/performance/rollback-indexes.js"
+    "rollback-optimization": "node scripts/performance/rollback-indexes.js",
+    "monitoring:setup": "node scripts/monitoring/monitoring-optimizer.js",
+    "monitoring:dashboard": "echo 'Dashboard disponible en: http://localhost:3000/monitoring'",
+    "monitoring:metrics": "curl -s http://localhost:3000/api/monitoring/summary | jq",
+    "monitoring:alerts": "curl -s http://localhost:3000/api/monitoring/alerts | jq",
+    "monitoring:health": "curl -s http://localhost:3000/api/monitoring/health | jq",
+    "monitoring:cleanup": "node scripts/monitoring/cleanup-old-metrics.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
