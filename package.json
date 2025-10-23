@@ -49,6 +49,9 @@
     "optimize:js": "terser public/script.js -o public/optimized/script.min.js --compress --mangle",
     "optimize:all": "npm run optimize:assets && npm run optimize:css && npm run optimize:js",
     "optimize:demo3": "node scripts/optimization/optimize-demo3-performance.js",
+    "security:optimize": "node scripts/security/security-optimizer.js",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:check": "node scripts/security/security-checker.js",
     "lint": "echo \"No linter configured\" && exit 0",
     "setup-transbank": "node scripts/setup-transbank.js",
     "setup-postgresql": "node scripts/setup-postgresql-local.js",
@@ -112,7 +115,14 @@
     "node-fetch": "^2.7.0",
     "nodemailer": "^6.9.4",
     "pg": "^8.11.3",
-    "transbank-sdk": "^6.1.0"
+    "transbank-sdk": "^6.1.0",
+    "express-validator": "^latest",
+    "express-slow-down": "^latest",
+    "express-brute": "^latest",
+    "express-brute-redis": "^latest",
+    "express-mongo-sanitize": "^latest",
+    "xss-clean": "^latest",
+    "hpp": "^latest"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
