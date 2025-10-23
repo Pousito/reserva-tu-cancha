@@ -3141,6 +3141,114 @@ app.get('/api/canchas', async (req, res) => {
 
 // Función helper para verificar si hay una promoción activa
 
+// Función helper para verificar si hay una promoción activa
+async function verificarPromocionActiva(canchaId, fecha, hora) {
+  try {
+    console.log(`🎯 Verificando promoción para cancha ${canchaId}, fecha ${fecha}, hora ${hora}`);
+    
+    const promociones = await db.all(`
+      SELECT * FROM promociones_canchas
+      WHERE cancha_id = $1 
+        AND activo = true
+      ORDER BY precio_promocional ASC
+    `, [canchaId]);
+    
+    console.log(`📋 Promociones encontradas para cancha ${canchaId}:`, promociones.length);
+    
+    if (!promociones || promociones.length === 0) {
+      console.log('❌ No hay promociones activas');
+      return null;
+    }
+    
+    const fechaReserva = new Date(fecha + 'T00:00:00');
+    const diaSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaReserva.getDay()];
+    const horaReserva = hora.split(':')[0] + ':' + hora.split(':')[1]; // Normalizar formato HH:MM
+    
+    console.log(`📅 Fecha reserva: ${fecha}, Día semana: ${diaSemana}, Hora: ${horaReserva}`);
+    
+    for (const promo of promociones) {
+      console.log(`\n🔍 Evaluando promoción: ${promo.nombre}`);
+      console.log(`   📌 Tipo fecha: ${promo.tipo_fecha}, Tipo horario: ${promo.tipo_horario}`);
+      
+      // Validar tipo de fecha
+      let fechaValida = false;
+      
+      if (promo.tipo_fecha === 'especifico' && promo.fecha_especifica) {
+        console.log(`   📅 Comparando fechas específicas:`);
+        console.log(`      - Fecha reserva (string): ${fecha}`);
+        console.log(`      - Fecha promo (raw): ${promo.fecha_especifica}`);
+        console.log(`      - Fecha promo (tipo): ${typeof promo.fecha_especifica}`);
+        
+        // Normalizar fecha de promoción (puede venir como Date o string de PostgreSQL)
+        let fechaPromoStr = promo.fecha_especifica;
+        if (promo.fecha_especifica instanceof Date) {
+          fechaPromoStr = promo.fecha_especifica.toISOString().split('T')[0];
+        } else if (typeof promo.fecha_especifica === 'string') {
+          fechaPromoStr = promo.fecha_especifica.split('T')[0];
+        }
+        
+        console.log(`      - Fecha promo (normalizada): ${fechaPromoStr}`);
+        console.log(`      - ¿Son iguales?: ${fecha === fechaPromoStr}`);
+        
+        fechaValida = fecha === fechaPromoStr;
+      } else if (promo.tipo_fecha === 'rango' && promo.fecha_inicio && promo.fecha_fin) {
+        const inicio = new Date(promo.fecha_inicio + 'T00:00:00');
+        const fin = new Date(promo.fecha_fin + 'T00:00:00');
+        fechaValida = fechaReserva >= inicio && fechaReserva <= fin;
+        console.log(`   📅 Validación de rango: ${fechaValida}`);
+      } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
+        const diasPromo = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
+        fechaValida = diasPromo.includes(diaSemana);
+        console.log(`   📅 Validación semanal - Días: ${diasPromo}, Día actual: ${diaSemana}, Válido: ${fechaValida}`);
+      }
+      
+      console.log(`   ✔️ Fecha válida: ${fechaValida}`);
+      if (!fechaValida) continue;
+      
+      // Validar tipo de horario
+      let horarioValido = false;
+      
+      if (promo.tipo_horario === 'especifico' && promo.hora_especifica) {
+        console.log(`   🕐 Comparando horas específicas:`);
+        console.log(`      - Hora reserva: ${horaReserva}`);
+        console.log(`      - Hora promo (raw): ${promo.hora_especifica}`);
+        console.log(`      - Hora promo (tipo): ${typeof promo.hora_especifica}`);
+        
+        // Normalizar hora de promoción
+        let horaPromoStr = promo.hora_especifica;
+        if (typeof promo.hora_especifica === 'string') {
+          horaPromoStr = promo.hora_especifica.substring(0, 5);
+        }
+        
+        console.log(`      - Hora promo (normalizada): ${horaPromoStr}`);
+        console.log(`      - ¿Son iguales?: ${horaReserva === horaPromoStr}`);
+        
+        horarioValido = horaReserva === horaPromoStr;
+      } else if (promo.tipo_horario === 'rango' && promo.hora_inicio && promo.hora_fin) {
+        const horaInicioPromo = promo.hora_inicio.substring(0, 5);
+        const horaFinPromo = promo.hora_fin.substring(0, 5);
+        horarioValido = horaReserva >= horaInicioPromo && horaReserva < horaFinPromo;
+        console.log(`   🕐 Validación de rango: ${horaInicioPromo} <= ${horaReserva} < ${horaFinPromo} = ${horarioValido}`);
+      }
+      
+      console.log(`   ✔️ Horario válido: ${horarioValido}`);
+      
+      if (horarioValido) {
+        console.log(`✅ Promoción APLICADA: ${promo.nombre} - Precio: $${promo.precio_promocional}`);
+        return promo; // Retornar la primera promoción que aplica (menor precio)
+      } else {
+        console.log(`❌ Horario no válido para promoción: ${promo.nombre}`);
+      }
+    }
+    
+    console.log('❌ Ninguna promoción aplica para estos parámetros');
+    return null;
+  } catch (error) {
+    console.error('❌ Error verificando promoción:', error);
+    return null;
+  }
+}
+
 // Función optimizada para verificar promociones en lote (evita N+1 queries)
 async function verificarPromocionesEnLote(canchaIds, fecha, hora) {
   try {
