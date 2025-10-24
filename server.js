@@ -270,14 +270,14 @@ const requireComplexAccess = (req, res, next) => {
   });
 };
 
-// ===== RUTAS PROTEGIDAS (después de definir middleware) =====
-// Dashboard de monitoreo (PROTEGIDO)
-app.get('/monitoring', authenticateToken, requireRole(['super_admin', 'owner', 'manager']), (req, res) => {
+// ===== RUTAS PROTEGIDAS (solo super_admin) =====
+// Dashboard de monitoreo (SOLO SUPER_ADMIN)
+app.get('/monitoring', authenticateToken, requireRole(['super_admin']), (req, res) => {
   res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
 });
 
-// Documentación de API (PROTEGIDA)
-app.get('/api-docs.html', authenticateToken, requireRole(['super_admin', 'owner', 'manager']), (req, res) => {
+// Documentación de API (SOLO SUPER_ADMIN)
+app.get('/api-docs.html', authenticateToken, requireRole(['super_admin']), (req, res) => {
   res.sendFile(path.join(__dirname, 'public/api-docs.html'));
 });
 
