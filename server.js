@@ -84,8 +84,10 @@ const corsOptions = {
       'https://reservatuscanchas.onrender.com'
     ];
     
+    // Permitir requests sin origin (como navegadores que no envían Origin header)
+    // o que vengan de orígenes permitidos
     if (!origin || allowedOrigins.includes(origin)) {
-      console.log('✅ CORS permitido para:', origin);
+      console.log('✅ CORS permitido para:', origin || 'sin origin');
       callback(null, true);
     } else {
       console.log('❌ CORS rechazado para:', origin, 'Permitidos:', allowedOrigins);
@@ -94,7 +96,8 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  optionsSuccessStatus: 200 // Para navegadores legacy
 };
 
 app.use(cors(corsOptions));
@@ -111,16 +114,21 @@ app.use((req, res, next) => {
       'https://reservatuscanchas.onrender.com'
     ];
     
+    // En producción, permitir orígenes específicos o requests sin origin
     if (process.env.NODE_ENV !== 'production' || !origin || allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin || 'https://www.reservatuscanchas.cl');
+      // Si no hay origin, usar el dominio principal
+      const allowedOrigin = origin || 'https://www.reservatuscanchas.cl';
+      res.header('Access-Control-Allow-Origin', allowedOrigin);
       res.header('Access-Control-Allow-Credentials', 'true');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+      console.log('🔧 Headers CORS agregados para origin:', origin || 'sin origin');
     }
   }
   
   // Manejar preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('🔄 Preflight request manejado');
     return res.status(200).end();
   }
   
