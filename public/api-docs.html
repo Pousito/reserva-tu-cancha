@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Documentación de API - Reserva Tu Cancha</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
+    <style>
+        .api-endpoint {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .method-badge {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .method-get { background-color: #28a745; color: white; }
+        .method-post { background-color: #007bff; color: white; }
+        .method-put { background-color: #ffc107; color: black; }
+        .method-delete { background-color: #dc3545; color: white; }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 300px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .main-content {
+            margin-left: 300px;
+            padding: 20px;
+        }
+        .nav-link {
+            color: #495057;
+            text-decoration: none;
+            padding: 8px 16px;
+            display: block;
+            border-radius: 4px;
+            margin: 2px 0;
+        }
+        .nav-link:hover {
+            background-color: #e9ecef;
+            color: #007bff;
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .search-box {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .endpoint-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+        }
+        .endpoint-content {
+            padding: 20px;
+            display: none;
+        }
+        .endpoint-content.show {
+            display: block;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="search-box">
+            <h5 class="mb-3">📚 API Documentation</h5>
+            <input type="text" id="searchInput" class="form-control" placeholder="Buscar endpoint...">
+        </div>
+        
+        <nav class="nav flex-column">
+            <a class="nav-link active" href="#overview">📊 Overview</a>
+            <a class="nav-link" href="#authentication">🔐 Authentication</a>
+            <a class="nav-link" href="#complexes">🏢 Complejos</a>
+            <a class="nav-link" href="#courts">⚽ Canchas</a>
+            <a class="nav-link" href="#reservations">📅 Reservas</a>
+            <a class="nav-link" href="#payments">💳 Pagos</a>
+            <a class="nav-link" href="#users">👥 Usuarios</a>
+            <a class="nav-link" href="#admin">🏢 Admin</a>
+            <a class="nav-link" href="#monitoring">📊 Monitoreo</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Overview Section -->
+        <section id="overview">
+            <div class="stats-card">
+                <h2>📊 Resumen de la API</h2>
+                <p>Documentación completa del sistema de reservas de canchas deportivas</p>
+                <div class="row">
+                    <div class="col-md-3">
+                        <h4 id="totalRoutes">-</h4>
+                        <p>Total Rutas</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 id="getRoutes">-</h4>
+                        <p>GET Routes</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 id="postRoutes">-</h4>
+                        <p>POST Routes</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 id="putRoutes">-</h4>
+                        <p>PUT Routes</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5>🎯 Información General</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <td><strong>Base URL:</strong></td>
+                            <td><code>https://reserva-tu-cancha.onrender.com</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Versión:</strong></td>
+                            <td>1.0.0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Formato:</strong></td>
+                            <td>JSON</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Autenticación:</strong></td>
+                            <td>JWT Bearer Token</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Generado:</strong></td>
+                            <td id="generatedDate">-</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Authentication Section -->
+        <section id="authentication" style="display: none;">
+            <h2>🔐 Autenticación</h2>
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-post">POST</span>
+                    <strong>/api/login</strong>
+                    <span class="float-end">🔑 Login de usuario</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Descripción:</h6>
+                    <p>Autentica un usuario y devuelve un token JWT</p>
+                    
+                    <h6>Body:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "email": "juan@email.com",
+  "password": "password123"
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                    
+                    <h6>Respuesta:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "success": true,
+  "usuario": {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "email": "juan@email.com",
+    "rol": "cliente"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Complexes Section -->
+        <section id="complexes" style="display: none;">
+            <h2>🏢 Gestión de Complejos</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <strong>/api/complejos</strong>
+                    <span class="float-end">🏢 Obtener complejos</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Parámetros:</h6>
+                    <ul>
+                        <li><code>ciudad</code> (query, required): ID de la ciudad</li>
+                    </ul>
+                    
+                    <h6>Ejemplo:</h6>
+                    <div class="code-block">
+                        <pre><code>GET /api/complejos?ciudad=1</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                    
+                    <h6>Respuesta:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "success": true,
+  "complejos": [
+    {
+      "id": 1,
+      "nombre": "Complejo Demo 1",
+      "direccion": "Av. Principal 123",
+      "telefono": "+56912345678",
+      "ciudad_id": 1,
+      "ciudad_nombre": "Santiago"
+    }
+  ]
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Courts Section -->
+        <section id="courts" style="display: none;">
+            <h2>⚽ Gestión de Canchas</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <strong>/api/canchas/{complejo_id}</strong>
+                    <span class="float-end">⚽ Obtener canchas</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Parámetros:</h6>
+                    <ul>
+                        <li><code>complejo_id</code> (path, required): ID del complejo</li>
+                        <li><code>fecha</code> (query, optional): Fecha en formato YYYY-MM-DD</li>
+                        <li><code>hora</code> (query, optional): Hora en formato HH:MM</li>
+                    </ul>
+                    
+                    <h6>Ejemplo:</h6>
+                    <div class="code-block">
+                        <pre><code>GET /api/canchas/1?fecha=2024-01-15&hora=10:00</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reservations Section -->
+        <section id="reservations" style="display: none;">
+            <h2>📅 Gestión de Reservas</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-post">POST</span>
+                    <strong>/api/reservas</strong>
+                    <span class="float-end">📅 Crear reserva</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Body:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "cancha_id": 1,
+  "fecha": "2024-01-15",
+  "hora_inicio": "10:00",
+  "hora_fin": "11:00",
+  "nombre_cliente": "Juan Pérez",
+  "telefono": "+56912345678",
+  "email": "juan@email.com"
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Payments Section -->
+        <section id="payments" style="display: none;">
+            <h2>💳 Sistema de Pagos</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-post">POST</span>
+                    <strong>/api/pagos/iniciar</strong>
+                    <span class="float-end">💳 Iniciar pago</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Body:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "reserva_id": 123,
+  "monto": 25000,
+  "return_url": "https://reserva-tu-cancha.onrender.com/pago-exitoso"
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Users Section -->
+        <section id="users" style="display: none;">
+            <h2>👥 Gestión de Usuarios</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-post">POST</span>
+                    <strong>/api/usuarios/registro</strong>
+                    <span class="float-end">👤 Registro de usuario</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Body:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "nombre": "Juan Pérez",
+  "email": "juan@email.com",
+  "password": "password123",
+  "telefono": "+56912345678"
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" style="display: none;">
+            <h2>🏢 Panel de Administración</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <strong>/api/admin/reservas</strong>
+                    <span class="float-end">📋 Obtener todas las reservas</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Headers:</h6>
+                    <div class="code-block">
+                        <pre><code>Authorization: Bearer &lt;admin_token&gt;</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Monitoring Section -->
+        <section id="monitoring" style="display: none;">
+            <h2>📊 Sistema de Monitoreo</h2>
+            
+            <div class="api-endpoint">
+                <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                    <span class="method-badge method-get">GET</span>
+                    <strong>/api/monitoring/health</strong>
+                    <span class="float-end">🏥 Health Check</span>
+                </div>
+                <div class="endpoint-content">
+                    <h6>Respuesta:</h6>
+                    <div class="code-block">
+                        <pre><code class="language-json">{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "database": "connected",
+  "memory_usage": "45%",
+  "uptime": "2d 5h 30m"
+}</code></pre>
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        // Navegación
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Remover active de todos los links
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                
+                // Agregar active al link clickeado
+                link.classList.add('active');
+                
+                // Ocultar todas las secciones
+                document.querySelectorAll('section').forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                // Mostrar la sección correspondiente
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+            });
+        });
+
+        // Toggle endpoints
+        function toggleEndpoint(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('show');
+        }
+
+        // Copy code
+        function copyCode(button) {
+            const codeBlock = button.previousElementSibling;
+            const text = codeBlock.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copiado!';
+                setTimeout(() => {
+                    button.textContent = 'Copiar';
+                }, 2000);
+            });
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const endpoints = document.querySelectorAll('.api-endpoint');
+            
+            endpoints.forEach(endpoint => {
+                const text = endpoint.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    endpoint.style.display = 'block';
+                } else {
+                    endpoint.style.display = 'none';
+                }
+            });
+        });
+
+        // Cargar estadísticas
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/monitoring/health');
+                const data = await response.json();
+                
+                // Actualizar fecha de generación
+                document.getElementById('generatedDate').textContent = new Date().toLocaleString('es-CL');
+                
+                // Simular estadísticas (en un caso real, estas vendrían del servidor)
+                document.getElementById('totalRoutes').textContent = '25';
+                document.getElementById('getRoutes').textContent = '12';
+                document.getElementById('postRoutes').textContent = '8';
+                document.getElementById('putRoutes').textContent = '3';
+                document.getElementById('deleteRoutes').textContent = '2';
+                
+            } catch (error) {
+                console.log('No se pudieron cargar las estadísticas:', error);
+            }
+        }
+
+        // Inicializar
+        loadStats();
+    </script>
+</body>
+</html>

@@ -1,0 +1,2240 @@
+{
+  "info": {
+    "title": "Reserva Tu Cancha API",
+    "version": "1.0.0",
+    "description": "API para sistema de reservas de canchas deportivas",
+    "baseUrl": "https://reserva-tu-cancha.onrender.com",
+    "generated": "2025-10-24T00:15:03.318Z"
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "route": "/monitoring",
+      "description": "Dashboard de monitoreo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/health",
+      "description": "Health check",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/smtp-connection",
+      "description": "Endpoint para diagnosticar conexión SMTP desde Render",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-insert",
+      "description": "Endpoint de prueba simple para insertar una ciudad",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-all-cities",
+      "description": "Endpoint para insertar todas las ciudades",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/test-payment-return",
+      "description": "Ruta de prueba para simular retorno de Transbank en desarrollo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/simulate-payment-success",
+      "description": "Endpoint para simular pago exitoso completo (bypasea Transbank)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas/:codigo",
+      "description": "Endpoint para obtener datos de una reserva específica",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/:codigo/reenviar-email",
+      "description": "Endpoint para reenviar email de confirmación manualmente",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas/:codigo/pdf",
+      "description": "Endpoint para generar y descargar comprobante PDF",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/transbank-diagnostic",
+      "description": "Endpoint de diagnóstico para Transbank",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/send-confirmation-email",
+      "description": "Endpoint separado para enviar emails de confirmación",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/simulate-payment-cancelled",
+      "description": "Endpoint para simular pago cancelado",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/bloqueos-temporales/:codigo",
+      "description": "Endpoint para obtener datos de un bloqueo temporal",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/bloquear-y-pagar",
+      "description": "Endpoint para crear bloqueo temporal y proceder al pago",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verificar-superposicion/:canchaId/:fecha/:hora",
+      "description": "Endpoint de debug para verificar lógica de superposición",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/disponibilidad-completa/:complejoId/:fecha",
+      "description": "Endpoint optimizado para verificar disponibilidad completa de un complejo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/estadisticas",
+      "description": "Endpoints del panel de administrador",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reservas-recientes",
+      "description": "",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/disponibilidad-baja",
+      "description": "Endpoint para verificar disponibilidad baja",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/kpis",
+      "description": "Endpoint para KPIs avanzados",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reservas-hoy",
+      "description": "",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/test-email-30sep",
+      "description": "Endpoint específico para probar email con fecha 2025-09-30",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/timezone",
+      "description": "Endpoint temporal para debuggear zona horaria",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/send-test-email",
+      "description": "Endpoint temporal para enviar email de prueba con fecha correcta",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/date-fix",
+      "description": "Endpoint de debug temporal para verificar correcciones de fechas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reservas",
+      "description": "Endpoint para obtener todas las reservas (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/complejos",
+      "description": "Endpoint para obtener complejos (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/canchas",
+      "description": "Endpoint para obtener canchas (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/canchas",
+      "description": "Endpoint para crear una nueva cancha (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "PUT",
+      "route": "/api/admin/canchas/:id",
+      "description": "Endpoint para actualizar una cancha (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/admin/canchas/:id",
+      "description": "Endpoint para eliminar una cancha (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "PUT",
+      "route": "/api/admin/reservas/:codigoReserva/confirmar",
+      "description": "Endpoint para confirmar una reserva (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "PUT",
+      "route": "/api/admin/reservas/:codigoReserva/cancelar",
+      "description": "Endpoint para cancelar una reserva (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/reports",
+      "description": "Endpoint para generar reportes (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reports/income/:format",
+      "description": "Endpoint para generar reportes de ingresos en PDF/Excel",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/clean-duplicate-complexes",
+      "description": "Endpoint para limpiar complejos duplicados",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-reservas-structure",
+      "description": "Endpoint para verificar estructura de tabla reservas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-blocking-table",
+      "description": "Endpoint para verificar estructura de tabla bloqueos_temporales",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-canchas",
+      "description": "Endpoint para verificar canchas existentes",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-test-reservations",
+      "description": "Endpoint para insertar reservas de prueba",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-courts",
+      "description": "Endpoint para insertar canchas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-complexes",
+      "description": "Endpoint para insertar complejos",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/force-init",
+      "description": "Endpoint para forzar inicialización de datos",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/postgresql",
+      "description": "Debug endpoint para verificar PostgreSQL",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/ciudades",
+      "description": "Obtener ciudades",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/complejos/:ciudadId",
+      "description": "Obtener complejos por ciudad",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/canchas",
+      "description": "Obtener todas las canchas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/canchas/:complejoId",
+      "description": "Obtener canchas por complejo (con promociones activas)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/canchas/:complejoId/:tipo",
+      "description": "Obtener canchas por complejo y tipo (con promociones activas)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/tipos-canchas/:complejoId",
+      "description": "Obtener tipos de cancha disponibles por complejo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas",
+      "description": "Obtener reservas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas/:busqueda",
+      "description": "Buscar reserva por código o nombre",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas",
+      "description": "Crear reserva (ATÓMICA - Previene condiciones de carrera)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/send-confirmation-email",
+      "description": "===== ENDPOINT PARA ENVÍO DE EMAILS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/emergency/insert-reservas",
+      "description": "Endpoint de emergencia para insertar reservas de prueba",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/table-data",
+      "description": "Endpoint de debug",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/cleanup-test",
+      "description": "Endpoint para limpiar datos de prueba",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/login",
+      "description": "===== ENDPOINT DE LOGIN PARA ADMINISTRADORES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/auth/request-password-reset",
+      "description": "Endpoint para solicitar restablecimiento de contraseña",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/auth/verify-reset-token/:token",
+      "description": "Endpoint para verificar token de restablecimiento",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/auth/reset-password",
+      "description": "Endpoint para restablecer contraseña",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/login-test",
+      "description": "===== ENDPOINT DE DEBUG PARA LOGIN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-users-structure",
+      "description": "===== ENDPOINT DE DEBUG PARA ESTRUCTURA DE USUARIOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/insert-admin-users",
+      "description": "===== ENDPOINT PARA INSERTAR USUARIOS ADMIN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/clean-production-db",
+      "description": "===== ENDPOINT TEMPORAL PARA LIMPIAR BASE DE DATOS DE PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-date-formatting",
+      "description": "===== ENDPOINT DE DEBUG PARA PROBAR FORMATEO DE FECHA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/add-rut-column",
+      "description": "===== ENDPOINT PARA AGREGAR CAMPO RUT_CLIENTE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-simple",
+      "description": "===== ENDPOINT DE PRUEBA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-email-config",
+      "description": "===== ENDPOINT PARA PROBAR CONFIGURACIÓN DE EMAIL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/test-email-send",
+      "description": "===== ENDPOINT PARA PROBAR ENVÍO DE EMAIL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/env-vars",
+      "description": "===== ENDPOINT PARA VERIFICAR VARIABLES DE ENTORNO =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/email-service-status",
+      "description": "===== ENDPOINT PARA VERIFICAR EMAIL SERVICE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-all-blockings",
+      "description": "===== ENDPOINT PARA VERIFICAR BLOQUEOS TEMPORALES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/admin-users",
+      "description": "===== ENDPOINT PARA VERIFICAR USUARIOS ADMINISTRADORES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/bloquear",
+      "description": "===== ENDPOINT PARA BLOQUEAR TEMPORALMENTE UNA RESERVA (MEJORADO) =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/disponibilidad/:cancha_id/:fecha",
+      "description": "===== ENDPOINT PARA VERIFICAR DISPONIBILIDAD CON BLOQUEOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/reservas/bloquear/:bloqueo_id",
+      "description": "===== ENDPOINT PARA LIBERAR BLOQUEO TEMPORAL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/test-bloqueo",
+      "description": "===== ENDPOINT DE DEBUG PARA PROBAR BLOQUEOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/create-admin-users",
+      "description": "===== ENDPOINT PARA CREAR/ACTUALIZAR USUARIOS ADMINISTRADORES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/sync-database",
+      "description": "===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/force-sync-database",
+      "description": "===== ENDPOINT PARA SINCRONIZACIÓN FORZADA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/restore-reservations",
+      "description": "===== ENDPOINT PARA RESTAURAR RESERVAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/simple-restore-reservations",
+      "description": "===== ENDPOINT PARA RESTAURACIÓN SIMPLE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/optimize-database",
+      "description": "===== ENDPOINT PARA OPTIMIZAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/add-role-fields",
+      "description": "===== ENDPOINT PARA AGREGAR CAMPOS DE ROL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/create-role-users",
+      "description": "===== ENDPOINT PARA CREAR USUARIOS DE EJEMPLO CON ROLES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/update-password",
+      "description": "===== ENDPOINT PARA ACTUALIZAR CONTRASEÑA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-password",
+      "description": "===== ENDPOINT PARA VERIFICAR CONTRASEÑA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verify-token",
+      "description": "===== ENDPOINT PARA VERIFICAR TOKEN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/canchas",
+      "description": "===== ENDPOINT PARA VER CANCHAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/create-courts",
+      "description": "===== ENDPOINT PARA CREAR CANCHAS DE PRUEBA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/migrate-fundacion-gunnen",
+      "description": "===== ENDPOINT PARA MIGRAR FUNDACIÓN GUNNEN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/clean-duplicate-complexes",
+      "description": "===== ENDPOINT PARA LIMPIAR DUPLICADOS DE FUNDACIÓN GUNNEN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/delete-duplicates",
+      "description": "===== ENDPOINT SIMPLE PARA ELIMINAR DUPLICADOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/clean-localhost",
+      "description": "===== ENDPOINT PARA LIMPIAR LOCALHOST =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-canchas-production",
+      "description": "===== ENDPOINT PARA CORREGIR CANCHAS EN PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verify-db",
+      "description": "===== ENDPOINT PARA VERIFICAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-complejo-ids",
+      "description": "===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-roles",
+      "description": "===== ENDPOINT PARA ACTUALIZAR ROLES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/list-users",
+      "description": "===== ENDPOINT PARA VER USUARIOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/clean-database",
+      "description": "===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/customers-analysis",
+      "description": "===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/database-structure",
+      "description": "Endpoint de diagnóstico para verificar estructura de BD",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/check-blocking-table",
+      "description": "Endpoint para verificar tabla bloqueos_temporales",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/create-blocking-table",
+      "description": "Endpoint para crear tabla bloqueos_temporales si no existe",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/test-reservation-insert",
+      "description": "Endpoint para probar inserción de reserva",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/add-admin-id-column",
+      "description": "Endpoint para agregar columna admin_id específicamente",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-passwords",
+      "description": "Endpoint para arreglar todas las contraseñas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verify-token",
+      "description": "Endpoint para debuggear tokens JWT",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/passwords",
+      "description": "Endpoint para debuggear contraseñas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/update-super-admin",
+      "description": "Endpoint para actualizar credenciales del super admin",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/test-create-blocking",
+      "description": "Endpoint para probar create-blocking específicamente",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/simulate-create-blocking",
+      "description": "Endpoint para simular create-blocking sin autenticación",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/debug-reservations",
+      "description": "Endpoint de diagnóstico para verificar datos de reservas en producción",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/admin/clear-all-reservations",
+      "description": "Endpoint para limpiar todas las reservas (solo para super admin en producción)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/debug/test-admin-calendar-router",
+      "description": "Endpoint para verificar si el router admin-calendar está funcionando",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/check-jwt-config",
+      "description": "Endpoint para verificar configuración de JWT",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/calendar/create-blocking-temp",
+      "description": "Endpoint temporal para reemplazar create-blocking",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/fix-database-columns",
+      "description": "Endpoint para agregar columnas faltantes en PostgreSQL",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/frontend-debug/:codigo",
+      "description": "🔍 ENDPOINT PARA DEBUGGING FRONTEND - DATOS RAW DE RESERVA",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/admin-reservas/:codigo",
+      "description": "🔍 ENDPOINT PARA VERIFICAR DATOS DEL PANEL DE ADMIN",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/test-reserva/:codigo",
+      "description": "🔍 ENDPOINT ESPECÍFICO PARA PROBAR RESERVA TYUY16",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/date-analysis",
+      "description": "🔍 ENDPOINT DE DIAGNÓSTICO AUTOMATIZADO PARA FECHAS",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/update-magnasports",
+      "description": "===== ENDPOINT PARA ACTUALIZAR MAGNASPORTS EN PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/create-demo3-users",
+      "description": "===== ENDPOINT TEMPORAL PARA CREAR USUARIOS COMPLEJO DEMO 3 =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/update-demo3-passwords",
+      "description": "===== ENDPOINT PARA ACTUALIZAR CONTRASEÑAS DE USUARIOS DEMO 3 =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/limpiar-bloqueos-demo3",
+      "description": "===== ENDPOINT PARA LIMPIAR BLOQUEOS TEMPORALES PROBLEMÁTICOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/corregir-ids-duplicados",
+      "description": "===== ENDPOINT PARA CORREGIR IDs DUPLICADOS DE CANCHAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/limpiar-bloqueos-produccion",
+      "description": "===== ENDPOINT PARA LIMPIAR BLOQUEOS PROBLEMÁTICOS EN PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/test-auth",
+      "description": "===== ENDPOINT DE PRUEBA PARA VERIFICAR AUTENTICACIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/debug-court-permissions/:id",
+      "description": "===== ENDPOINT DE DEBUG PARA VERIFICAR PERMISOS DE CANCHAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/crear-categorias-demo3",
+      "description": "===== ENDPOINT PARA CREAR CATEGORÍAS FINANCIERAS DEL COMPLEJO DEMO 3 =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/registrar-movimientos-manual/:codigoReserva",
+      "description": "===== ENDPOINT PARA REGISTRAR MOVIMIENTOS FINANCIEROS MANUALMENTE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/debug-movimientos-financieros/:codigoReserva",
+      "description": "===== ENDPOINT TEMPORAL PARA DEBUG DE MOVIMIENTOS FINANCIEROS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "*",
+      "description": "Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/monitoring",
+      "description": "Dashboard de monitoreo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/health",
+      "description": "Health check",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/smtp-connection",
+      "description": "Endpoint para diagnosticar conexión SMTP desde Render",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-insert",
+      "description": "Endpoint de prueba simple para insertar una ciudad",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-all-cities",
+      "description": "Endpoint para insertar todas las ciudades",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/test-payment-return",
+      "description": "Ruta de prueba para simular retorno de Transbank en desarrollo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/simulate-payment-success",
+      "description": "Endpoint para simular pago exitoso completo (bypasea Transbank)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas/:codigo",
+      "description": "Endpoint para obtener datos de una reserva específica",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/:codigo/reenviar-email",
+      "description": "Endpoint para reenviar email de confirmación manualmente",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas/:codigo/pdf",
+      "description": "Endpoint para generar y descargar comprobante PDF",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/transbank-diagnostic",
+      "description": "Endpoint de diagnóstico para Transbank",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/send-confirmation-email",
+      "description": "Endpoint separado para enviar emails de confirmación",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/simulate-payment-cancelled",
+      "description": "Endpoint para simular pago cancelado",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/bloqueos-temporales/:codigo",
+      "description": "Endpoint para obtener datos de un bloqueo temporal",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/bloquear-y-pagar",
+      "description": "Endpoint para crear bloqueo temporal y proceder al pago",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verificar-superposicion/:canchaId/:fecha/:hora",
+      "description": "Endpoint de debug para verificar lógica de superposición",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/disponibilidad-completa/:complejoId/:fecha",
+      "description": "Endpoint optimizado para verificar disponibilidad completa de un complejo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/estadisticas",
+      "description": "Endpoints del panel de administrador",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reservas-recientes",
+      "description": "",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/disponibilidad-baja",
+      "description": "Endpoint para verificar disponibilidad baja",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/kpis",
+      "description": "Endpoint para KPIs avanzados",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reservas-hoy",
+      "description": "",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/test-email-30sep",
+      "description": "Endpoint específico para probar email con fecha 2025-09-30",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/timezone",
+      "description": "Endpoint temporal para debuggear zona horaria",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/send-test-email",
+      "description": "Endpoint temporal para enviar email de prueba con fecha correcta",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/date-fix",
+      "description": "Endpoint de debug temporal para verificar correcciones de fechas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reservas",
+      "description": "Endpoint para obtener todas las reservas (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/complejos",
+      "description": "Endpoint para obtener complejos (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/canchas",
+      "description": "Endpoint para obtener canchas (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/canchas",
+      "description": "Endpoint para crear una nueva cancha (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "PUT",
+      "route": "/api/admin/canchas/:id",
+      "description": "Endpoint para actualizar una cancha (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/admin/canchas/:id",
+      "description": "Endpoint para eliminar una cancha (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "PUT",
+      "route": "/api/admin/reservas/:codigoReserva/confirmar",
+      "description": "Endpoint para confirmar una reserva (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "PUT",
+      "route": "/api/admin/reservas/:codigoReserva/cancelar",
+      "description": "Endpoint para cancelar una reserva (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/reports",
+      "description": "Endpoint para generar reportes (panel de administración)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/reports/income/:format",
+      "description": "Endpoint para generar reportes de ingresos en PDF/Excel",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/clean-duplicate-complexes",
+      "description": "Endpoint para limpiar complejos duplicados",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-reservas-structure",
+      "description": "Endpoint para verificar estructura de tabla reservas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-blocking-table",
+      "description": "Endpoint para verificar estructura de tabla bloqueos_temporales",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-canchas",
+      "description": "Endpoint para verificar canchas existentes",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-test-reservations",
+      "description": "Endpoint para insertar reservas de prueba",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-courts",
+      "description": "Endpoint para insertar canchas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/insert-complexes",
+      "description": "Endpoint para insertar complejos",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/force-init",
+      "description": "Endpoint para forzar inicialización de datos",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/postgresql",
+      "description": "Debug endpoint para verificar PostgreSQL",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/ciudades",
+      "description": "Obtener ciudades",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/complejos/:ciudadId",
+      "description": "Obtener complejos por ciudad",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/canchas",
+      "description": "Obtener todas las canchas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/canchas/:complejoId",
+      "description": "Obtener canchas por complejo (con promociones activas)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/canchas/:complejoId/:tipo",
+      "description": "Obtener canchas por complejo y tipo (con promociones activas)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/tipos-canchas/:complejoId",
+      "description": "Obtener tipos de cancha disponibles por complejo",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas",
+      "description": "Obtener reservas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/reservas/:busqueda",
+      "description": "Buscar reserva por código o nombre",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas",
+      "description": "Crear reserva (ATÓMICA - Previene condiciones de carrera)",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/send-confirmation-email",
+      "description": "===== ENDPOINT PARA ENVÍO DE EMAILS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/emergency/insert-reservas",
+      "description": "Endpoint de emergencia para insertar reservas de prueba",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/table-data",
+      "description": "Endpoint de debug",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/cleanup-test",
+      "description": "Endpoint para limpiar datos de prueba",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/login",
+      "description": "===== ENDPOINT DE LOGIN PARA ADMINISTRADORES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/auth/request-password-reset",
+      "description": "Endpoint para solicitar restablecimiento de contraseña",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/auth/verify-reset-token/:token",
+      "description": "Endpoint para verificar token de restablecimiento",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/auth/reset-password",
+      "description": "Endpoint para restablecer contraseña",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/login-test",
+      "description": "===== ENDPOINT DE DEBUG PARA LOGIN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-users-structure",
+      "description": "===== ENDPOINT DE DEBUG PARA ESTRUCTURA DE USUARIOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/insert-admin-users",
+      "description": "===== ENDPOINT PARA INSERTAR USUARIOS ADMIN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/clean-production-db",
+      "description": "===== ENDPOINT TEMPORAL PARA LIMPIAR BASE DE DATOS DE PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-date-formatting",
+      "description": "===== ENDPOINT DE DEBUG PARA PROBAR FORMATEO DE FECHA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/add-rut-column",
+      "description": "===== ENDPOINT PARA AGREGAR CAMPO RUT_CLIENTE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-simple",
+      "description": "===== ENDPOINT DE PRUEBA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/test-email-config",
+      "description": "===== ENDPOINT PARA PROBAR CONFIGURACIÓN DE EMAIL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/test-email-send",
+      "description": "===== ENDPOINT PARA PROBAR ENVÍO DE EMAIL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/env-vars",
+      "description": "===== ENDPOINT PARA VERIFICAR VARIABLES DE ENTORNO =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/email-service-status",
+      "description": "===== ENDPOINT PARA VERIFICAR EMAIL SERVICE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-all-blockings",
+      "description": "===== ENDPOINT PARA VERIFICAR BLOQUEOS TEMPORALES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/admin-users",
+      "description": "===== ENDPOINT PARA VERIFICAR USUARIOS ADMINISTRADORES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/reservas/bloquear",
+      "description": "===== ENDPOINT PARA BLOQUEAR TEMPORALMENTE UNA RESERVA (MEJORADO) =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/disponibilidad/:cancha_id/:fecha",
+      "description": "===== ENDPOINT PARA VERIFICAR DISPONIBILIDAD CON BLOQUEOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/reservas/bloquear/:bloqueo_id",
+      "description": "===== ENDPOINT PARA LIBERAR BLOQUEO TEMPORAL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/test-bloqueo",
+      "description": "===== ENDPOINT DE DEBUG PARA PROBAR BLOQUEOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/create-admin-users",
+      "description": "===== ENDPOINT PARA CREAR/ACTUALIZAR USUARIOS ADMINISTRADORES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/sync-database",
+      "description": "===== ENDPOINT PARA SINCRONIZAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/force-sync-database",
+      "description": "===== ENDPOINT PARA SINCRONIZACIÓN FORZADA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/restore-reservations",
+      "description": "===== ENDPOINT PARA RESTAURAR RESERVAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/simple-restore-reservations",
+      "description": "===== ENDPOINT PARA RESTAURACIÓN SIMPLE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/optimize-database",
+      "description": "===== ENDPOINT PARA OPTIMIZAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/add-role-fields",
+      "description": "===== ENDPOINT PARA AGREGAR CAMPOS DE ROL =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/create-role-users",
+      "description": "===== ENDPOINT PARA CREAR USUARIOS DE EJEMPLO CON ROLES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/update-password",
+      "description": "===== ENDPOINT PARA ACTUALIZAR CONTRASEÑA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/check-password",
+      "description": "===== ENDPOINT PARA VERIFICAR CONTRASEÑA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verify-token",
+      "description": "===== ENDPOINT PARA VERIFICAR TOKEN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/canchas",
+      "description": "===== ENDPOINT PARA VER CANCHAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/create-courts",
+      "description": "===== ENDPOINT PARA CREAR CANCHAS DE PRUEBA =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/migrate-fundacion-gunnen",
+      "description": "===== ENDPOINT PARA MIGRAR FUNDACIÓN GUNNEN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/clean-duplicate-complexes",
+      "description": "===== ENDPOINT PARA LIMPIAR DUPLICADOS DE FUNDACIÓN GUNNEN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/delete-duplicates",
+      "description": "===== ENDPOINT SIMPLE PARA ELIMINAR DUPLICADOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/clean-localhost",
+      "description": "===== ENDPOINT PARA LIMPIAR LOCALHOST =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-canchas-production",
+      "description": "===== ENDPOINT PARA CORREGIR CANCHAS EN PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verify-db",
+      "description": "===== ENDPOINT PARA VERIFICAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-complejo-ids",
+      "description": "===== ENDPOINT PARA CORREGIR COMPLEJO_ID =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-roles",
+      "description": "===== ENDPOINT PARA ACTUALIZAR ROLES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/list-users",
+      "description": "===== ENDPOINT PARA VER USUARIOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/clean-database",
+      "description": "===== ENDPOINT PARA LIMPIAR BASE DE DATOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/customers-analysis",
+      "description": "===== ENDPOINT PARA ANÁLISIS DE CLIENTES =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/database-structure",
+      "description": "Endpoint de diagnóstico para verificar estructura de BD",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/check-blocking-table",
+      "description": "Endpoint para verificar tabla bloqueos_temporales",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/create-blocking-table",
+      "description": "Endpoint para crear tabla bloqueos_temporales si no existe",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/test-reservation-insert",
+      "description": "Endpoint para probar inserción de reserva",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/add-admin-id-column",
+      "description": "Endpoint para agregar columna admin_id específicamente",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/debug/fix-passwords",
+      "description": "Endpoint para arreglar todas las contraseñas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/verify-token",
+      "description": "Endpoint para debuggear tokens JWT",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/passwords",
+      "description": "Endpoint para debuggear contraseñas",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/update-super-admin",
+      "description": "Endpoint para actualizar credenciales del super admin",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/test-create-blocking",
+      "description": "Endpoint para probar create-blocking específicamente",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/simulate-create-blocking",
+      "description": "Endpoint para simular create-blocking sin autenticación",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/debug-reservations",
+      "description": "Endpoint de diagnóstico para verificar datos de reservas en producción",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "route": "/api/admin/clear-all-reservations",
+      "description": "Endpoint para limpiar todas las reservas (solo para super admin en producción)",
+      "parameters": [],
+      "responses": [],
+      "middleware": [
+        "RolePermission"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/debug/test-admin-calendar-router",
+      "description": "Endpoint para verificar si el router admin-calendar está funcionando",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/debug/check-jwt-config",
+      "description": "Endpoint para verificar configuración de JWT",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/api/admin/calendar/create-blocking-temp",
+      "description": "Endpoint temporal para reemplazar create-blocking",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "POST",
+      "route": "/debug/fix-database-columns",
+      "description": "Endpoint para agregar columnas faltantes en PostgreSQL",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/frontend-debug/:codigo",
+      "description": "🔍 ENDPOINT PARA DEBUGGING FRONTEND - DATOS RAW DE RESERVA",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/admin-reservas/:codigo",
+      "description": "🔍 ENDPOINT PARA VERIFICAR DATOS DEL PANEL DE ADMIN",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/test-reserva/:codigo",
+      "description": "🔍 ENDPOINT ESPECÍFICO PARA PROBAR RESERVA TYUY16",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/diagnostic/date-analysis",
+      "description": "🔍 ENDPOINT DE DIAGNÓSTICO AUTOMATIZADO PARA FECHAS",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/debug/update-magnasports",
+      "description": "===== ENDPOINT PARA ACTUALIZAR MAGNASPORTS EN PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/create-demo3-users",
+      "description": "===== ENDPOINT TEMPORAL PARA CREAR USUARIOS COMPLEJO DEMO 3 =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/update-demo3-passwords",
+      "description": "===== ENDPOINT PARA ACTUALIZAR CONTRASEÑAS DE USUARIOS DEMO 3 =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/limpiar-bloqueos-demo3",
+      "description": "===== ENDPOINT PARA LIMPIAR BLOQUEOS TEMPORALES PROBLEMÁTICOS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/corregir-ids-duplicados",
+      "description": "===== ENDPOINT PARA CORREGIR IDs DUPLICADOS DE CANCHAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/limpiar-bloqueos-produccion",
+      "description": "===== ENDPOINT PARA LIMPIAR BLOQUEOS PROBLEMÁTICOS EN PRODUCCIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/test-auth",
+      "description": "===== ENDPOINT DE PRUEBA PARA VERIFICAR AUTENTICACIÓN =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/debug-court-permissions/:id",
+      "description": "===== ENDPOINT DE DEBUG PARA VERIFICAR PERMISOS DE CANCHAS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/crear-categorias-demo3",
+      "description": "===== ENDPOINT PARA CREAR CATEGORÍAS FINANCIERAS DEL COMPLEJO DEMO 3 =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/registrar-movimientos-manual/:codigoReserva",
+      "description": "===== ENDPOINT PARA REGISTRAR MOVIMIENTOS FINANCIEROS MANUALMENTE =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "/api/admin/debug-movimientos-financieros/:codigoReserva",
+      "description": "===== ENDPOINT TEMPORAL PARA DEBUG DE MOVIMIENTOS FINANCIEROS =====",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    },
+    {
+      "method": "GET",
+      "route": "*",
+      "description": "Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio",
+      "parameters": [],
+      "responses": [],
+      "middleware": []
+    }
+  ],
+  "statistics": {
+    "total": 272,
+    "byMethod": {
+      "GET": 184,
+      "POST": 76,
+      "PUT": 6,
+      "DELETE": 6
+    }
+  }
+}

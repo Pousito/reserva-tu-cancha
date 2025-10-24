@@ -1,0 +1,14 @@
+{
+  "generated": "2025-10-24T00:15:03.319Z",
+  "totalRoutes": 272,
+  "routesByMethod": {
+    "GET": 184,
+    "POST": 76,
+    "PUT": 6,
+    "DELETE": 6
+  },
+  "files": [
+    "docs/api-documentation-auto.md",
+    "docs/api-documentation.json"
+  ]
+}

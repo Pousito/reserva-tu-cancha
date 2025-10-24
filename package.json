@@ -98,7 +98,10 @@
     "monitoring:metrics": "curl -s http://localhost:3000/api/monitoring/summary | jq",
     "monitoring:alerts": "curl -s http://localhost:3000/api/monitoring/alerts | jq",
     "monitoring:health": "curl -s http://localhost:3000/api/monitoring/health | jq",
-    "monitoring:cleanup": "node scripts/monitoring/cleanup-old-metrics.js"
+    "monitoring:cleanup": "node scripts/monitoring/cleanup-old-metrics.js",
+    "docs:generate": "node scripts/documentation/api-doc-generator.js",
+    "docs:serve": "node scripts/documentation/serve-docs.js",
+    "docs:open": "open https://reserva-tu-cancha.onrender.com/api-docs.html"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
