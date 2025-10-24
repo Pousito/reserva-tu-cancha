@@ -187,6 +187,7 @@ class DatabaseManager {
           expira_en TIMESTAMP NOT NULL,
           creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           datos_cliente TEXT,
+          codigo_reserva VARCHAR(50),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -270,6 +271,26 @@ class DatabaseManager {
         console.log('✅ Migración: columna creado_por verificada/agregada');
       } catch (migrationError) {
         console.log('⚠️ Migración creado_por:', migrationError.message);
+      }
+
+      // Verificar y agregar columna codigo_reserva si no existe
+      console.log('🔧 Verificando columna codigo_reserva en bloqueos_temporales...');
+      const checkColumn = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'bloqueos_temporales' 
+        AND column_name = 'codigo_reserva'
+      `);
+      
+      if (checkColumn.rows.length === 0) {
+        console.log('🔧 Agregando columna codigo_reserva a bloqueos_temporales...');
+        await client.query(`
+          ALTER TABLE bloqueos_temporales 
+          ADD COLUMN codigo_reserva VARCHAR(50)
+        `);
+        console.log('✅ Columna codigo_reserva agregada exitosamente');
+      } else {
+        console.log('✅ Columna codigo_reserva ya existe');
       }
 
       console.log('✅ Tablas PostgreSQL creadas/verificadas exitosamente');

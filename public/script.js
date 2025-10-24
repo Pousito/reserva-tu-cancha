@@ -1411,6 +1411,10 @@ function actualizarEstadoCancha(canchaId, disponible) {
     }
 }
 
+// Variable para evitar consultas repetitivas
+let ultimaConsultaDisponibilidad = null;
+let consultandoDisponibilidad = false;
+
 // Verificar disponibilidad en tiempo real cuando cambien fecha o hora
 async function verificarDisponibilidadTiempoReal() {
     const fecha = document.getElementById('fechaSelect').value;
@@ -1420,12 +1424,23 @@ async function verificarDisponibilidadTiempoReal() {
         return;
     }
     
+    // Evitar consultas repetitivas
+    const consultaActual = `${fecha}_${hora || 'todas'}`;
+    if (ultimaConsultaDisponibilidad === consultaActual || consultandoDisponibilidad) {
+        console.log('⏭️ Saltando consulta duplicada:', consultaActual);
+        return;
+    }
+    
+    consultandoDisponibilidad = true;
+    ultimaConsultaDisponibilidad = consultaActual;
+    
     console.log('Verificando disponibilidad en tiempo real para:', fecha, hora || 'todas las horas');
     
     // Obtener datos de disponibilidad del complejo
     const complejoId = canchas[0]?.complejo_id;
     if (!complejoId) {
         console.error('No se pudo obtener el ID del complejo');
+        consultandoDisponibilidad = false;
         return;
     }
     
@@ -1444,6 +1459,8 @@ async function verificarDisponibilidadTiempoReal() {
         await actualizarHorariosConDisponibilidad();
     } catch (error) {
         console.error('Error verificando disponibilidad en tiempo real:', error);
+    } finally {
+        consultandoDisponibilidad = false;
     }
 }
 
@@ -1470,8 +1487,23 @@ async function verificarTodasCanchasOcupadas(fecha, hora) {
     return todasOcupadas;
 }
 
+// Cache para disponibilidad
+const cacheDisponibilidad = new Map();
+const CACHE_DURATION = 30000; // 30 segundos
+
 // NUEVA FUNCIÓN OPTIMIZADA: Verificar disponibilidad completa de un complejo
 async function verificarDisponibilidadCompleta(complejoId, fecha) {
+    const cacheKey = `${complejoId}_${fecha}`;
+    const now = Date.now();
+    
+    // Verificar cache
+    if (cacheDisponibilidad.has(cacheKey)) {
+        const cached = cacheDisponibilidad.get(cacheKey);
+        if (now - cached.timestamp < CACHE_DURATION) {
+            console.log('🚀 Usando cache para disponibilidad:', cacheKey);
+            return cached.data;
+        }
+    }
     try {
         console.log('🚀 Verificando disponibilidad completa para complejo:', complejoId, 'fecha:', fecha);
         console.log('🚀 API_BASE:', API_BASE);
@@ -1505,6 +1537,12 @@ async function verificarDisponibilidadCompleta(complejoId, fecha) {
         const disponibilidad = await response.json();
         console.log('✅ Disponibilidad completa obtenida:', Object.keys(disponibilidad).length, 'canchas');
         console.log('🔍 Datos de disponibilidad:', JSON.stringify(disponibilidad, null, 2));
+        
+        // Guardar en cache
+        cacheDisponibilidad.set(cacheKey, {
+            data: disponibilidad,
+            timestamp: now
+        });
         
         return disponibilidad;
     } catch (error) {
@@ -2146,7 +2184,11 @@ function configurarEventListeners() {
             }
         }
         
-        verificarDisponibilidadTiempoReal();
+        // Debounce para evitar llamadas excesivas
+        clearTimeout(window.debounceDisponibilidad);
+        window.debounceDisponibilidad = setTimeout(() => {
+            verificarDisponibilidadTiempoReal();
+        }, 500);
         await validarHorariosSegunFecha();
         
         // NUEVA LÓGICA: Cargar canchas automáticamente si hay complejo y tipo seleccionado
@@ -2199,7 +2241,11 @@ function configurarEventListeners() {
             }
         }
         
-        verificarDisponibilidadTiempoReal();
+        // Debounce para evitar llamadas excesivas
+        clearTimeout(window.debounceDisponibilidad);
+        window.debounceDisponibilidad = setTimeout(() => {
+            verificarDisponibilidadTiempoReal();
+        }, 500);
         
         // Recargar canchas con fecha y hora para obtener precios promocionales
         if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
