@@ -102,16 +102,6 @@ app.use(cors(corsOptions));
 // ===== RUTAS DE MONITOREO (deben ir al principio) =====
 app.use('/api/monitoring', monitoringRoutes);
 
-// Dashboard de monitoreo (PROTEGIDO)
-app.get('/monitoring', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
-});
-
-// Documentación de API (PROTEGIDA)
-app.get('/api-docs.html', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/api-docs.html'));
-});
-
 // Configurar sistema de alertas
 alertSystem.setupAlerts();
 
@@ -279,6 +269,17 @@ const requireComplexAccess = (req, res, next) => {
     error: 'Rol no válido para esta operación' 
   });
 };
+
+// ===== RUTAS PROTEGIDAS (después de definir middleware) =====
+// Dashboard de monitoreo (PROTEGIDO)
+app.get('/monitoring', authenticateToken, requireRole(['super_admin', 'owner', 'manager']), (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
+});
+
+// Documentación de API (PROTEGIDA)
+app.get('/api-docs.html', authenticateToken, requireRole(['super_admin', 'owner', 'manager']), (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/api-docs.html'));
+});
 
 // Sistema de base de datos PostgreSQL unificado - INICIALIZAR DESPUÉS DE CARGAR ENV
 let db;
