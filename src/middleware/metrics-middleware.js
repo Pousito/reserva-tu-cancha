@@ -72,7 +72,9 @@ const apiMetricsMiddleware = (req, res, next) => {
 const databaseMetricsMiddleware = (db) => {
   return (req, res, next) => {
     const originalQuery = db.query;
+    const originalRun = db.run;
     
+    // Interceptar db.query
     db.query = function(query, params, callback) {
       const startTime = Date.now();
       
@@ -80,26 +82,24 @@ const databaseMetricsMiddleware = (db) => {
         const duration = Date.now() - startTime;
         const rowsAffected = result ? (result.rowCount || result.affectedRows || 0) : 0;
         
-        // Registrar métricas de DB
-        metricsCollector.recordDatabaseQuery(
-          query,
-          duration,
-          rowsAffected,
-          error
-        );
+        // Registrar métricas de DB (temporalmente deshabilitado)
+        // metricsCollector.recordDatabaseQuery(
+        //   query,
+        //   duration,
+        //   rowsAffected,
+        //   error
+        // );
         
-        // Procesar eventos para alertas
-        if (error) {
-          alertSystem.processEvent('databaseError', {
-            query,
-            error: error.message,
-            duration
-          });
-        }
+        // Procesar eventos para alertas (temporalmente deshabilitado)
+        // if (error) {
+        //   alertSystem.processEvent('databaseError', {
+        //     query,
+        //     duration,
+        //     error: error.message
+        //   });
+        // }
         
-        if (callback) {
-          callback(error, result);
-        }
+        if (callback) callback(error, result);
       };
       
       return originalQuery.call(this, query, params, wrappedCallback);
@@ -110,7 +110,7 @@ const databaseMetricsMiddleware = (db) => {
 };
 
 /**
- * Middleware para métricas de autenticación
+ * Middleware para recopilar métricas de autenticación
  */
 const authMetricsMiddleware = (req, res, next) => {
   const originalJson = res.json;
@@ -144,7 +144,7 @@ const authMetricsMiddleware = (req, res, next) => {
 };
 
 /**
- * Middleware para métricas de rendimiento de páginas
+ * Middleware para recopilar métricas de páginas
  */
 const pageMetricsMiddleware = (req, res, next) => {
   const startTime = Date.now();
@@ -154,19 +154,19 @@ const pageMetricsMiddleware = (req, res, next) => {
     res.on('finish', () => {
       const duration = Date.now() - startTime;
       
-      metricsCollector.recordApiCall(
-        req.path,
-        req.method,
-        duration,
-        res.statusCode
-      );
+      // metricsCollector.recordApiCall(
+      //   req.path,
+      //   req.method,
+      //   duration,
+      //   res.statusCode
+      // );
       
-      // Procesar eventos para alertas
-      alertSystem.processEvent('pageLoad', {
-        path: req.path,
-        duration,
-        statusCode: res.statusCode
-      });
+      // Procesar eventos para alertas (temporalmente deshabilitado)
+      // alertSystem.processEvent('pageLoad', {
+      //   path: req.path,
+      //   duration,
+      //   statusCode: res.statusCode
+      // });
     });
   }
   
@@ -174,100 +174,76 @@ const pageMetricsMiddleware = (req, res, next) => {
 };
 
 /**
- * Registrar métricas específicas de reservas
+ * Función para registrar métricas de reservas
  */
 function recordReservationMetrics(req, res, duration) {
-  try {
-    const { complejo_id, precio } = req.body;
-    const success = res.statusCode === 200 || res.statusCode === 201;
-    
-    if (success && complejo_id && precio) {
-      metricsCollector.recordReservation(
-        complejo_id,
-        req.body.complejo_nombre || 'Unknown',
-        parseFloat(precio),
-        req.user ? req.user.id : null,
-        true
-      );
-    }
-  } catch (error) {
-    console.error('Error recording reservation metrics:', error);
+  const success = res.statusCode === 200;
+  const complejo_id = req.body.complejo_id;
+  const precio = req.body.precio_total;
+  
+  if (success && complejo_id && precio) {
+    // metricsCollector.recordReservation(
+    //   complejo_id,
+    //   req.body.complejo_nombre || 'Unknown',
+    //   parseFloat(precio),
+    //   success
+    // );
   }
 }
 
 /**
- * Registrar métricas específicas de pagos
+ * Función para registrar métricas de pagos
  */
 function recordPaymentMetrics(req, res, duration) {
-  try {
-    const { amount, payment_method } = req.body;
-    const success = res.statusCode === 200 || res.statusCode === 201;
-    
-    if (amount) {
-      metricsCollector.recordPayment(
-        parseFloat(amount),
-        success,
-        payment_method || 'unknown',
-        req.user ? req.user.id : null
-      );
-    }
-  } catch (error) {
-    console.error('Error recording payment metrics:', error);
+  const success = res.statusCode === 200;
+  const amount = req.body.amount || req.body.monto;
+  const payment_method = req.body.payment_method || req.body.metodo_pago;
+  
+  if (amount) {
+    // metricsCollector.recordPayment(
+    //   parseFloat(amount),
+    //   success,
+    //   payment_method || 'unknown',
+    //   req.ip
+    // );
   }
 }
 
 /**
- * Middleware de monitoreo de errores
+ * Middleware para manejar errores y registrar métricas
  */
 const errorMetricsMiddleware = (err, req, res, next) => {
-  // Registrar error en métricas
-  metricsCollector.recordError('http', err.message, {
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    statusCode: err.status || 500,
-    userId: req.user ? req.user.id : null,
-    ip: req.ip
-  });
-  
-  // Procesar evento para alertas
-  alertSystem.processEvent('httpError', {
-    error: err.message,
-    path: req.path,
-    method: req.method,
-    statusCode: err.status || 500,
-    stack: err.stack
-  });
+  // Registrar error en métricas (temporalmente deshabilitado)
+  // metricsCollector.recordError('http', err.message, {
+  //   stack: err.stack,
+  //   path: req.path,
+  //   method: req.method,
+  //   ip: req.ip,
+  //   userAgent: req.get('User-Agent')
+  // });
   
   next(err);
 };
 
 /**
- * Middleware para métricas de usuarios
+ * Middleware para registrar actividad de usuarios
  */
-const userMetricsMiddleware = (req, res, next) => {
+const userActivityMiddleware = (req, res, next) => {
   if (req.user) {
-    // Registrar usuario activo
-    metricsCollector.recordUserActivity(
-      req.user.id,
-      req.path,
-      req.method,
-      req.ip
-    );
+    // Registrar usuario activo (temporalmente deshabilitado)
+    // metricsCollector.recordUserActivity(
+    //   req.user.id,
+    //   req.path,
+    //   req.method,
+    //   req.ip
+    // );
   }
   
-  next();
-};
-
-/**
- * Middleware de limpieza de métricas
- */
-const metricsCleanupMiddleware = (req, res, next) => {
-  // Limpiar métricas antiguas cada 100 requests
-  if (Math.random() < 0.01) { // 1% de probabilidad
-    metricsCollector.cleanupOldMetrics();
-    alertSystem.cleanupOldAlerts();
-  }
+  // Limpiar métricas antiguas cada 100 requests (temporalmente deshabilitado)
+  // if (Math.random() < 0.01) { // 1% de probabilidad
+  //   metricsCollector.cleanupOldMetrics();
+  //   alertSystem.cleanupOldAlerts();
+  // }
   
   next();
 };
@@ -278,6 +254,7 @@ module.exports = {
   authMetricsMiddleware,
   pageMetricsMiddleware,
   errorMetricsMiddleware,
-  userMetricsMiddleware,
-  metricsCleanupMiddleware
+  userActivityMiddleware,
+  userMetricsMiddleware: userActivityMiddleware,
+  metricsCleanupMiddleware: (req, res, next) => next()
 };
