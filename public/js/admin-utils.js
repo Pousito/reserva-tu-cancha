@@ -217,6 +217,9 @@ function getAuthHeaders() {
 async function authenticatedFetch(url, options = {}) {
     const headers = {
         ...getAuthHeaders(),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         ...options.headers
     };
 
@@ -225,7 +228,8 @@ async function authenticatedFetch(url, options = {}) {
 
     const response = await fetch(fullUrl, {
         ...options,
-        headers
+        headers,
+        cache: 'no-cache'
     });
 
     // Si la respuesta es 401 o 403, redirigir al login

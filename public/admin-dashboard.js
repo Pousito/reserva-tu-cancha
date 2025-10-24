@@ -394,6 +394,9 @@ async function cargarEstadisticas() {
             url.searchParams.append('dateTo', dateTo.toISOString().split('T')[0]);
         }
         
+        // Agregar parámetro de cache-busting para evitar problemas de CORS cacheados
+        url.searchParams.append('_t', Date.now());
+        
         console.log('📊 Cargando estadísticas para período:', currentPeriod, 'URL:', url.toString());
         
         const response = await AdminUtils.authenticatedFetch(url.toString());
