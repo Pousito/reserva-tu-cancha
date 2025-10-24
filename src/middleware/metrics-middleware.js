@@ -154,11 +154,11 @@ const pageMetricsMiddleware = (req, res, next) => {
     res.on('finish', () => {
       const duration = Date.now() - startTime;
       
-      metricsCollector.recordPageLoad(
+      metricsCollector.recordApiCall(
         req.path,
+        req.method,
         duration,
-        res.statusCode,
-        req.get('User-Agent')
+        res.statusCode
       );
       
       // Procesar eventos para alertas
