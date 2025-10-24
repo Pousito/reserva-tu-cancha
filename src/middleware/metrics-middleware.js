@@ -3,8 +3,8 @@
  * Intercepta requests y recopila métricas automáticamente
  */
 
-const metricsCollector = require('../utils/metrics-collector');
-const alertSystem = require('../utils/alert-system');
+// const metricsCollector = require('../utils/metrics-collector');
+// const alertSystem = require('../utils/alert-system');
 
 /**
  * Middleware para recopilar métricas de API
@@ -14,8 +14,8 @@ const apiMetricsMiddleware = (req, res, next) => {
   const originalSend = res.send;
   const originalJson = res.json;
   
-  // Incrementar contador de requests activos
-  metricsCollector.metrics.system.activeRequests++;
+  // Incrementar contador de requests activos (temporalmente deshabilitado)
+  // metricsCollector.metrics.system.activeRequests++;
   
   // Interceptar respuesta
   res.send = function(data) {
@@ -32,14 +32,14 @@ const apiMetricsMiddleware = (req, res, next) => {
     const duration = Date.now() - startTime;
     const userId = req.user ? req.user.id : null;
     
-    // Registrar métricas de API
-    metricsCollector.recordApiCall(
-      req.path,
-      req.method,
-      duration,
-      res.statusCode,
-      userId
-    );
+    // Registrar métricas de API (temporalmente deshabilitado)
+    // metricsCollector.recordApiCall(
+    //   req.path,
+    //   req.method,
+    //   duration,
+    //   res.statusCode,
+    //   userId
+    // );
     
     // Registrar métricas de negocio específicas
     if (req.path.includes('/reservas') && req.method === 'POST') {
@@ -50,17 +50,17 @@ const apiMetricsMiddleware = (req, res, next) => {
       recordPaymentMetrics(req, res, duration);
     }
     
-    // Decrementar contador de requests activos
-    metricsCollector.metrics.system.activeRequests--;
+    // Decrementar contador de requests activos (temporalmente deshabilitado)
+    // metricsCollector.metrics.system.activeRequests--;
     
-    // Procesar eventos para alertas
-    alertSystem.processEvent('apiCall', {
-      endpoint: req.path,
-      method: req.method,
-      duration,
-      statusCode: res.statusCode,
-      userId
-    });
+    // Procesar eventos para alertas (temporalmente deshabilitado)
+    // alertSystem.processEvent('apiCall', {
+    //   endpoint: req.path,
+    //   method: req.method,
+    //   duration,
+    //   statusCode: res.statusCode,
+    //   userId
+    // });
   }
   
   next();
@@ -120,21 +120,21 @@ const authMetricsMiddleware = (req, res, next) => {
       const success = res.statusCode === 200;
       const userId = data.user ? data.user.id : null;
       
-      metricsCollector.recordAuthAttempt(
-        req.path,
-        success,
-        userId,
-        req.ip
-      );
+      // metricsCollector.recordAuthAttempt(
+      //   req.path,
+      //   success,
+      //   userId,
+      //   req.ip
+      // );
       
-      // Procesar eventos para alertas
-      if (!success) {
-        alertSystem.processEvent('authFailure', {
-          endpoint: req.path,
-          ip: req.ip,
-          userAgent: req.get('User-Agent')
-        });
-      }
+      // Procesar eventos para alertas (temporalmente deshabilitado)
+      // if (!success) {
+      //   alertSystem.processEvent('authFailure', {
+      //     endpoint: req.path,
+      //     ip: req.ip,
+      //     userAgent: req.get('User-Agent')
+      //   });
+      // }
     }
     
     return originalJson.call(this, data);
