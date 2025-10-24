@@ -271,6 +271,87 @@ const requireComplexAccess = (req, res, next) => {
 };
 
 // ===== API PARA OCULTAR/MOSTRAR COMPLEJOS =====
+// Endpoint de prueba
+app.post('/api/admin/test', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Endpoint de prueba funcionando',
+      user: req.user
+    });
+  } catch (error) {
+    console.error('❌ Error en endpoint de prueba:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor: ' + error.message
+    });
+  }
+});
+
+// Endpoint de prueba de base de datos
+app.post('/api/admin/test-db', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+  try {
+    console.log(`🔍 Probando consulta simple`);
+    
+    const result = await db.query(
+      'SELECT COUNT(*) as total FROM complejos'
+    );
+    
+    console.log(`🔍 Resultado de consulta:`, result);
+    console.log(`🔍 Result.rows:`, result.rows);
+    console.log(`🔍 Result.rows.length:`, result.rows ? result.rows.length : 'undefined');
+    
+    res.json({
+      success: true,
+      message: 'Consulta de prueba exitosa',
+      result: result.rows,
+      count: result.rows ? result.rows.length : 0,
+      fullResult: result
+    });
+  } catch (error) {
+    console.error('❌ Error en consulta de prueba:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error en consulta: ' + error.message
+    });
+  }
+});
+
+// Endpoint de prueba simple sin autenticación
+app.get('/api/test-simple', async (req, res) => {
+  try {
+    console.log(`🔍 Probando consulta simple sin auth`);
+    
+    // Probar conexión básica
+    const result = await db.query('SELECT 1 as test');
+    
+    console.log(`🔍 Resultado de consulta:`, result);
+    console.log(`🔍 Result.rows:`, result.rows);
+    console.log(`🔍 Result.rows.length:`, result.rows ? result.rows.length : 'undefined');
+    
+    // Probar consulta a complejos
+    const complejosResult = await db.query('SELECT COUNT(*) as total FROM complejos');
+    console.log(`🔍 Resultado complejos:`, complejosResult);
+    
+    res.json({
+      success: true,
+      message: 'Consulta de prueba exitosa',
+      testResult: result.rows,
+      complejosResult: complejosResult.rows,
+      testCount: result.rows ? result.rows.length : 0,
+      complejosCount: complejosResult.rows ? complejosResult.rows.length : 0,
+      fullTestResult: result,
+      fullComplejosResult: complejosResult
+    });
+  } catch (error) {
+    console.error('❌ Error en consulta de prueba:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error en consulta: ' + error.message
+    });
+  }
+});
+
 // Cambiar visibilidad de un complejo (solo super_admin)
 app.post('/api/admin/complejos/:id/visibilidad', authenticateToken, requireRole(['super_admin']), async (req, res) => {
   try {
@@ -285,19 +366,55 @@ app.post('/api/admin/complejos/:id/visibilidad', authenticateToken, requireRole(
     }
     
     // Actualizar visibilidad del complejo
-    const result = await db.query(
-      'UPDATE complejos SET visible = $1 WHERE id = $2 RETURNING id, nombre, visible',
-      [visible, id]
-    );
+    console.log(`🔧 Cambiando visibilidad del complejo ${id} a ${visible}`);
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({
+    let result;
+    try {
+      // Primero verificar si el complejo existe
+      const checkResult = await db.query(
+        'SELECT id, nombre, visible FROM complejos WHERE id = $1',
+        [id]
+      );
+      
+      console.log(`🔍 Verificación de complejo:`, checkResult);
+      
+      // Manejar tanto si la respuesta tiene .rows como si no
+      const checkRows = checkResult.rows || checkResult;
+      if (!checkRows || checkRows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Complejo no encontrado'
+        });
+      }
+      
+      // Ahora actualizar
+      result = await db.query(
+        'UPDATE complejos SET visible = $1 WHERE id = $2 RETURNING id, nombre, visible',
+        [visible, id]
+      );
+      
+      console.log(`🔍 Resultado de la actualización:`, result);
+      
+      // Manejar tanto si la respuesta tiene .rows como si no
+      const resultRows = result.rows || result;
+      console.log(`🔍 Result.rows:`, resultRows);
+      console.log(`🔍 Result.rows.length:`, resultRows ? resultRows.length : 'undefined');
+      
+      if (!resultRows || resultRows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Error al actualizar complejo'
+        });
+      }
+    } catch (dbError) {
+      console.error('❌ Error en consulta SQL:', dbError);
+      return res.status(500).json({
         success: false,
-        error: 'Complejo no encontrado'
+        error: 'Error en base de datos: ' + dbError.message
       });
     }
     
-    const complejo = result.rows[0];
+    const complejo = (result.rows || result)[0];
     
     res.json({
       success: true,
@@ -310,10 +427,11 @@ app.post('/api/admin/complejos/:id/visibilidad', authenticateToken, requireRole(
     });
     
   } catch (error) {
-    console.error('Error cambiando visibilidad del complejo:', error);
+    console.error('❌ Error cambiando visibilidad del complejo:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor: ' + error.message
     });
   }
 });
