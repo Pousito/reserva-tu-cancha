@@ -101,7 +101,18 @@
     "monitoring:cleanup": "node scripts/monitoring/cleanup-old-metrics.js",
     "docs:generate": "node scripts/documentation/api-doc-generator.js",
     "docs:serve": "node scripts/documentation/serve-docs.js",
-    "docs:open": "open https://reserva-tu-cancha.onrender.com/api-docs.html"
+    "docs:open": "open https://reserva-tu-cancha.onrender.com/api-docs.html",
+    "backup:create": "node scripts/backup/backup-automation.js backup",
+    "backup:list": "node scripts/backup/backup-automation.js list",
+    "backup:restore": "node scripts/backup/backup-automation.js restore",
+    "backup:start": "node scripts/backup/backup-scheduler.js start",
+    "backup:stop": "node scripts/backup/backup-scheduler.js stop",
+    "backup:status": "node scripts/backup/backup-scheduler.js status",
+    "backup:next": "node scripts/backup/backup-scheduler.js next",
+    "backup:manual": "node scripts/backup/backup-scheduler.js backup",
+    "backup:logs": "node scripts/backup/backup-scheduler.js logs",
+    "backup:notify:config": "node scripts/backup/backup-notifications.js config",
+    "backup:notify:test": "node scripts/backup/backup-notifications.js test"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
@@ -131,7 +142,10 @@
     "express-brute-redis": "^0.0.1",
     "express-mongo-sanitize": "^2.2.0",
     "xss-clean": "^0.1.4",
-    "hpp": "^0.2.3"
+    "hpp": "^0.2.3",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^2.7.0",
+    "cron-parser": "^4.9.0"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
