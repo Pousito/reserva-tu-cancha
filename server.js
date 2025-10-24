@@ -270,6 +270,54 @@ const requireComplexAccess = (req, res, next) => {
   });
 };
 
+// ===== API PARA OCULTAR/MOSTRAR COMPLEJOS =====
+// Cambiar visibilidad de un complejo (solo super_admin)
+app.post('/api/admin/complejos/:id/visibilidad', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { visible } = req.body;
+    
+    if (typeof visible !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: 'El campo visible debe ser true o false'
+      });
+    }
+    
+    // Actualizar visibilidad del complejo
+    const result = await db.query(
+      'UPDATE complejos SET visible = $1 WHERE id = $2 RETURNING id, nombre, visible',
+      [visible, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Complejo no encontrado'
+      });
+    }
+    
+    const complejo = result.rows[0];
+    
+    res.json({
+      success: true,
+      message: `Complejo ${complejo.nombre} ${visible ? 'mostrado' : 'ocultado'} correctamente`,
+      complejo: {
+        id: complejo.id,
+        nombre: complejo.nombre,
+        visible: complejo.visible
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error cambiando visibilidad del complejo:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
 // ===== RUTAS PROTEGIDAS (solo super_admin) =====
 // Dashboard de monitoreo (SOLO SUPER_ADMIN)
 app.get('/monitoring', authenticateToken, requireRole(['super_admin']), (req, res) => {
@@ -3193,7 +3241,7 @@ app.get('/api/complejos/:ciudadId', async (req, res) => {
   try {
   const { ciudadId } = req.params;
     const complejos = await db.query(
-      'SELECT c.*, ci.nombre as ciudad_nombre FROM complejos c JOIN ciudades ci ON c.ciudad_id = ci.id WHERE c.ciudad_id = $1 ORDER BY c.nombre',
+      'SELECT c.*, ci.nombre as ciudad_nombre FROM complejos c JOIN ciudades ci ON c.ciudad_id = ci.id WHERE c.ciudad_id = $1 AND (c.visible = true OR c.visible IS NULL) ORDER BY c.nombre',
       [ciudadId]
     );
     res.json(complejos);

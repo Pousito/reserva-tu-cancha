@@ -137,6 +137,10 @@ function displayComplexes(complexesToShow) {
                             <i class="fas fa-edit me-1"></i>
                             Editar
                         </button>
+                        <button class="btn ${complex.visible !== false ? 'btn-outline-secondary' : 'btn-outline-success'} btn-sm mb-2" onclick="toggleComplexVisibility(${complex.id}, ${complex.visible !== false})">
+                            <i class="fas ${complex.visible !== false ? 'fa-eye-slash' : 'fa-eye'} me-1"></i>
+                            ${complex.visible !== false ? 'Ocultar' : 'Mostrar'}
+                        </button>
                         <button class="btn btn-outline-danger btn-sm" onclick="deleteComplex(${complex.id})">
                             <i class="fas fa-trash me-1"></i>
                             Eliminar
@@ -327,6 +331,33 @@ function showNotification(message, type) {
             notification.parentNode.removeChild(notification);
         }
     }, 5000);
+}
+
+// Cambiar visibilidad de un complejo
+async function toggleComplexVisibility(complexId, currentVisibility) {
+    try {
+        const newVisibility = !currentVisibility;
+        
+        const response = await AdminUtils.authenticatedFetch(`/admin/complejos/${complexId}/visibilidad`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ visible: newVisibility })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification(result.message, 'success');
+            loadComplexes(); // Recargar la lista
+        } else {
+            const error = await response.json();
+            showNotification(error.error || 'Error cambiando visibilidad', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error de conexión', 'danger');
+    }
 }
 
 // Cerrar sesión
