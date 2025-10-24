@@ -363,6 +363,14 @@ function actualizarHoraActual() {
 
 async function cargarEstadisticas() {
     try {
+        // Limpiar cache del navegador si es necesario
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            for (const cacheName of cacheNames) {
+                await caches.delete(cacheName);
+            }
+        }
+        
         // Construir URL con parámetros de período
         const url = new URL(`${API_BASE}/admin/estadisticas`);
         
@@ -396,10 +404,19 @@ async function cargarEstadisticas() {
         
         // Agregar parámetro de cache-busting para evitar problemas de CORS cacheados
         url.searchParams.append('_t', Date.now());
+        url.searchParams.append('_v', Math.random().toString(36).substr(2, 9));
         
         console.log('📊 Cargando estadísticas para período:', currentPeriod, 'URL:', url.toString());
         
-        const response = await AdminUtils.authenticatedFetch(url.toString());
+        // Forzar una nueva petición sin cache
+        const response = await AdminUtils.authenticatedFetch(url.toString(), {
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         
         if (response && response.ok) {
             const data = await response.json();
