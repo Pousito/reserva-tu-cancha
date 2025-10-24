@@ -358,10 +358,18 @@ async function ensureVisibleFieldExists() {
     // Verificar si result.rows existe y tiene elementos
     if (!result.rows || result.rows.length === 0) {
       console.log('🔧 Agregando campo visible a tabla complejos...');
-      await db.query('ALTER TABLE complejos ADD COLUMN visible BOOLEAN DEFAULT true');
-      await db.query('UPDATE complejos SET visible = true WHERE visible IS NULL');
-      await db.query('CREATE INDEX IF NOT EXISTS idx_complejos_visible ON complejos(visible)');
-      console.log('✅ Campo visible agregado exitosamente');
+      try {
+        await db.query('ALTER TABLE complejos ADD COLUMN visible BOOLEAN DEFAULT true');
+        await db.query('UPDATE complejos SET visible = true WHERE visible IS NULL');
+        await db.query('CREATE INDEX IF NOT EXISTS idx_complejos_visible ON complejos(visible)');
+        console.log('✅ Campo visible agregado exitosamente');
+      } catch (addError) {
+        if (addError.message.includes('already exists')) {
+          console.log('✅ Campo visible ya existe en tabla complejos');
+        } else {
+          throw addError;
+        }
+      }
     } else {
       console.log('✅ Campo visible ya existe en tabla complejos');
     }
