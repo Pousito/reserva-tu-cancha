@@ -346,6 +346,29 @@ const getCurrentTimestampFunction = () => {
   return dbInfo.type === 'PostgreSQL' ? 'NOW()' : "datetime('now')";
 };
 
+// Verificar y agregar campo visible a complejos
+async function ensureVisibleFieldExists() {
+  try {
+    const result = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'complejos' AND column_name = 'visible'
+    `);
+    
+    if (result.rows.length === 0) {
+      console.log('🔧 Agregando campo visible a tabla complejos...');
+      await db.query('ALTER TABLE complejos ADD COLUMN visible BOOLEAN DEFAULT true');
+      await db.query('UPDATE complejos SET visible = true WHERE visible IS NULL');
+      await db.query('CREATE INDEX IF NOT EXISTS idx_complejos_visible ON complejos(visible)');
+      console.log('✅ Campo visible agregado exitosamente');
+    } else {
+      console.log('✅ Campo visible ya existe en tabla complejos');
+    }
+  } catch (error) {
+    console.error('❌ Error verificando campo visible:', error);
+  }
+}
+
 // Inicializar base de datos
 async function initializeDatabase() {
   try {
@@ -362,6 +385,9 @@ async function initializeDatabase() {
     // Inicializar sistema de reportes
     reportService = new ReportService(db);
     console.log('📊 Sistema de reportes inicializado');
+    
+    // Verificar y agregar campo visible a complejos
+    await ensureVisibleFieldExists();
     
     // Poblar con datos de ejemplo si está vacía
     await populateSampleData();
