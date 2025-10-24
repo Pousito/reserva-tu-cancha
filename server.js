@@ -4,10 +4,10 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Importar sistema de monitoreo
-const metricsCollector = require('./src/utils/metrics-collector');
-const alertSystem = require('./src/utils/alert-system');
-const monitoringRoutes = require('./src/routes/monitoring');
+// Importar sistema de monitoreo (temporalmente deshabilitado)
+// const metricsCollector = require('./src/utils/metrics-collector');
+// const alertSystem = require('./src/utils/alert-system');
+// const monitoringRoutes = require('./src/routes/monitoring');
 const {
   apiMetricsMiddleware,
   databaseMetricsMiddleware,
@@ -100,35 +100,35 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ===== RUTAS DE MONITOREO (deben ir al principio) =====
-app.use('/api/monitoring', monitoringRoutes);
+// app.use('/api/monitoring', monitoringRoutes);
 
-// Configurar sistema de alertas
-alertSystem.setupAlerts();
+// Configurar sistema de alertas (temporalmente deshabilitado)
+// alertSystem.setupAlerts();
 
-// Conectar eventos de métricas con alertas
-metricsCollector.on('slowApiCall', (data) => {
-  alertSystem.processEvent('slowApi', data);
-});
+// Conectar eventos de métricas con alertas (temporalmente deshabilitado)
+// metricsCollector.on('slowApiCall', (data) => {
+//   alertSystem.processEvent('slowApi', data);
+// });
 
-metricsCollector.on('slowDatabaseQuery', (data) => {
-  alertSystem.processEvent('slowDatabaseQuery', data);
-});
+// metricsCollector.on('slowDatabaseQuery', (data) => {
+//   alertSystem.processEvent('slowDatabaseQuery', data);
+// });
 
-metricsCollector.on('error', (data) => {
-  alertSystem.processEvent('error', data);
-});
+// metricsCollector.on('error', (data) => {
+//   alertSystem.processEvent('error', data);
+// });
 
-metricsCollector.on('highMemoryUsage', (data) => {
-  alertSystem.processEvent('highMemoryUsage', data);
-});
+// metricsCollector.on('highMemoryUsage', (data) => {
+//   alertSystem.processEvent('highMemoryUsage', data);
+// });
 
-metricsCollector.on('reservationMetric', (data) => {
-  alertSystem.processEvent('reservation', data);
-});
+// metricsCollector.on('reservationMetric', (data) => {
+//   alertSystem.processEvent('reservation', data);
+// });
 
-metricsCollector.on('paymentMetric', (data) => {
-  alertSystem.processEvent('payment', data);
-});
+// metricsCollector.on('paymentMetric', (data) => {
+//   alertSystem.processEvent('payment', data);
+// });
 
 // Middleware de métricas
 app.use(apiMetricsMiddleware);
