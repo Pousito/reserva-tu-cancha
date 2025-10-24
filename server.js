@@ -355,7 +355,8 @@ async function ensureVisibleFieldExists() {
       WHERE table_name = 'complejos' AND column_name = 'visible'
     `);
     
-    if (result.rows.length === 0) {
+    // Verificar si result.rows existe y tiene elementos
+    if (!result.rows || result.rows.length === 0) {
       console.log('🔧 Agregando campo visible a tabla complejos...');
       await db.query('ALTER TABLE complejos ADD COLUMN visible BOOLEAN DEFAULT true');
       await db.query('UPDATE complejos SET visible = true WHERE visible IS NULL');
