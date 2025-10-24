@@ -99,6 +99,34 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Middleware adicional para CORS - asegurar headers en todas las respuestas
+app.use((req, res, next) => {
+  // Solo agregar headers si no están ya presentes
+  if (!res.get('Access-Control-Allow-Origin')) {
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      'https://www.reservatuscanchas.cl',
+      'https://reservatuscanchas.cl',
+      'https://reserva-tu-cancha.onrender.com',
+      'https://reservatuscanchas.onrender.com'
+    ];
+    
+    if (process.env.NODE_ENV !== 'production' || !origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || 'https://www.reservatuscanchas.cl');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    }
+  }
+  
+  // Manejar preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 // ===== RUTAS DE MONITOREO (deben ir al principio) =====
 // app.use('/api/monitoring', monitoringRoutes);
 

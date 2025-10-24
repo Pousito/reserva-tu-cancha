@@ -10,6 +10,12 @@ function setDatabase(databaseInstance) {
  */
 async function getEstadisticas(req, res) {
   try {
+    // Agregar headers CORS explícitos
+    res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://www.reservatuscanchas.cl');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    
     const userRole = req.admin?.rol || req.user?.rol;
     const complexFilter = req.admin?.complejo_id || req.user?.complejo_id;
     

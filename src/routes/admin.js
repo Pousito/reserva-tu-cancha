@@ -8,6 +8,22 @@ function setDatabase(databaseInstance) {
     adminController.setDatabase(databaseInstance);
 }
 
+// Middleware CORS para todas las rutas de admin
+router.use((req, res, next) => {
+  // Agregar headers CORS explícitos
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://www.reservatuscanchas.cl');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  
+  // Manejar preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authController.authenticateAdmin);
 
