@@ -20,7 +20,8 @@ const STATIC_ASSETS = [
   '/js/time-utils.js',
   '/js/url-config.js',
   '/images/logos/borde-rio.png',
-  '/images/logos/demo3-new-life-galilea.png'
+  '/images/logos/demo3-new-life-galilea.png',
+  '/images/logos/reservatuscanchas.png'
 ];
 
 // Instalar Service Worker

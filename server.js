@@ -4,10 +4,10 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Importar sistema de monitoreo (temporalmente deshabilitado)
-// const metricsCollector = require('./src/utils/metrics-collector');
-// const alertSystem = require('./src/utils/alert-system');
-// const monitoringRoutes = require('./src/routes/monitoring');
+// Importar sistema de monitoreo
+const metricsCollector = require('./src/utils/metrics-collector');
+const alertSystem = require('./src/utils/alert-system');
+const monitoringRoutes = require('./src/routes/monitoring');
 const {
   apiMetricsMiddleware,
   databaseMetricsMiddleware,
@@ -136,7 +136,7 @@ app.use((req, res, next) => {
 });
 
 // ===== RUTAS DE MONITOREO (deben ir al principio) =====
-// app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // Configurar sistema de alertas (temporalmente deshabilitado)
 // alertSystem.setupAlerts();
@@ -473,8 +473,8 @@ app.post('/api/admin/complejos/:id/visibilidad', authenticateToken, requireRole(
 });
 
 // ===== RUTAS PROTEGIDAS (solo super_admin) =====
-// Dashboard de monitoreo (SOLO SUPER_ADMIN)
-app.get('/monitoring', authenticateToken, requireRole(['super_admin']), (req, res) => {
+// Dashboard de monitoreo (ACCESO PÚBLICO)
+app.get('/monitoring', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/monitoring-dashboard.html'));
 });
 

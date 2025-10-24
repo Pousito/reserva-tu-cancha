@@ -274,6 +274,7 @@ body {
     border-radius: 15px;
     padding: 18px 21px 63px 21px; /* Padding reducido en 30% - más compacto */
     position: relative;
+    overflow: visible; /* Permitir que elementos absolutos se vean fuera */
     margin-bottom: 80px; /* Espacio suficiente para la calle */
     max-width: 900px; /* Centrado en pantalla completa */
     margin-left: auto;
@@ -610,6 +611,22 @@ body {
     justify-content: center !important;
 }
 
+/* Estilos específicos para Punto Soccer - OVERRIDE FLEX */
+.complejo-abierto-container[data-complejo*="PUNTO SOCCER"] .canchas-horizontales {
+    display: block !important;
+    overflow: visible !important;
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+/* Forzar grid en el contenedor de Punto Soccer */
+.complejo-abierto-container[data-complejo*="PUNTO SOCCER"] .punto-soccer-container {
+    display: grid !important;
+    grid-template-columns: 2fr 1fr !important;
+    gap: 20px !important;
+}
+
 /* SOBRESCRIBIR estilos del canchas-grid-expanded para Demo 3 */
 .complejo-abierto-container[data-complejo*="COMPLEJO DEMO 3"] .canchas-grid-expanded .canchas-horizontales .cancha-card {
     flex: none !important; /* Eliminar flex forzado */
@@ -865,6 +882,333 @@ body {
     }
     
     /* Calle Monte Perdido - MANTENER A LA DERECHA EN M�VIL */
+/* ============================================
+   PUNTO SOCCER CANCHAS SINTÉTICAS - ESTILOS
+   Diseño inspirado en Demo 3 - Responsive
+   ============================================ */
+
+/* Contenedor principal de Punto Soccer */
+.punto-soccer-container {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 3px solid #4caf50;
+    border-radius: 20px;
+    padding: 40px;
+    position: relative !important; /* Asegurar relative para ::after */
+    margin: 20px 0;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+    overflow: visible !important;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Cambiar a 1fr 1fr para mejor distribución */
+    gap: 40px; /* Más espacio entre columnas */
+    min-height: 600px; /* Más altura para separar servicios */
+}
+
+.punto-soccer-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #28a745, #4caf50, #66bb6a);
+}
+
+/* ===== LAYOUT IZQUIERDO: CANCHAS ===== */
+.punto-soccer-layout-canchas {
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Más espacio entre canchas */
+    grid-column: 1;
+    justify-content: center; /* Centrar verticalmente */
+    align-items: center; /* CENTRAR HORIZONTALMENTE */
+    margin-left: 30px; /* Mover canchas más a la derecha */
+}
+
+/* Tarjetas de cancha dentro de Punto Soccer */
+.punto-soccer-layout-canchas .cancha-card {
+    flex: 1;
+    width: 280px; /* ANCHO FIJO PARA CENTRADO */
+    max-width: 280px;
+    border: 3px solid #4caf50 !important;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.2) !important;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 180px;
+}
+
+.punto-soccer-layout-canchas .cancha-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #28a745;
+    border-radius: 12px 12px 0 0;
+}
+
+.punto-soccer-layout-canchas .cancha-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4) !important;
+    border-color: #2e7d32 !important;
+}
+
+/* Cancha techada - color azul */
+.punto-soccer-layout-canchas .punto-soccer-techada {
+    border-color: #2196f3 !important;
+}
+
+.punto-soccer-layout-canchas .punto-soccer-techada::before {
+    background: #2196f3;
+}
+
+.punto-soccer-layout-canchas .punto-soccer-techada:hover {
+    border-color: #1976d2 !important;
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4) !important;
+}
+
+/* ===== LAYOUT DERECHO: SERVICIOS ===== */
+.punto-soccer-layout-servicios {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between !important; /* Separar servicios arriba y abajo */
+    grid-column: 2;
+    background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
+    border-radius: 15px;
+    padding: 20px; /* Padding reducido */
+    border: 2px dashed #81c784;
+    min-height: 100%; /* Ocupar toda la altura disponible */
+}
+
+/* Cajas de servicios (Camarines y Quincho) */
+.punto-soccer-camarines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Camarines arriba */
+    position: relative;
+    margin: 20px 0 40px 0; /* Menos margen superior, más inferior */
+}
+
+.punto-soccer-quincho {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end; /* Quincho abajo */
+    position: relative;
+    margin: 40px 0 20px 0; /* Más margen superior, menos inferior */
+}
+
+/* Caja con letra */
+.punto-soccer-container .servicio-box {
+    background: white !important;
+    width: 100px !important;
+    height: 100px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    border: 3px solid #ff9800 !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 10px !important;
+}
+
+.punto-soccer-container .punto-soccer-quincho .servicio-box {
+    border-color: #e91e63 !important;
+}
+
+.punto-soccer-container .servicio-box:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Letra grande (C o Q) */
+.punto-soccer-container .servicio-letter {
+    font-size: 3rem !important;
+    font-weight: bold !important;
+    color: #ff9800 !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.punto-soccer-container .punto-soccer-quincho .servicio-letter {
+    color: #e91e63 !important;
+}
+
+/* Icono de información */
+.punto-soccer-container .servicio-info-icon {
+    position: absolute !important;
+    bottom: -5px !important;
+    right: -5px !important;
+    background: #4caf50 !important;
+    color: white !important;
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.3s ease !important;
+    font-size: 0.9rem !important;
+}
+
+.punto-soccer-container .servicio-info-icon:hover {
+    background: #388e3c !important;
+    transform: scale(1.1) !important;
+}
+
+/* Etiqueta del servicio */
+.punto-soccer-container .servicio-label {
+    font-weight: bold !important;
+    color: #2e7d32 !important;
+    font-size: 0.95rem !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ===== CALLE CAMINO CERRO COLORADO ===== */
+.complejo-abierto-container[data-complejo*="PUNTO SOCCER"]::after {
+    content: 'CAMINO CERRO COLORADO';
+    position: absolute !important;
+    right: -100px !important;
+    top: 50% !important;
+    transform: translateY(-50%) rotate(90deg) !important;
+    width: 250px !important;
+    height: 50px !important;
+    background: linear-gradient(90deg, #555 0%, #777 50%, #555 100%) !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-weight: bold !important;
+    font-size: 0.7rem !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3) !important;
+    letter-spacing: 2px !important;
+    border: 2px solid #999 !important;
+    z-index: 100 !important;
+}
+
+/* ===== RESPONSIVE: MÓVIL ===== */
+@media (max-width: 768px) {
+    /* Layout vertical en móvil */
+    .punto-soccer-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        gap: 15px;
+        padding: 15px;
+        min-height: auto;
+    }
+
+    .punto-soccer-layout-canchas {
+        grid-column: 1;
+        grid-row: 1;
+        gap: 12px;
+    }
+
+    .punto-soccer-layout-servicios {
+        grid-column: 1;
+        grid-row: 2;
+        flex-direction: row;
+        gap: 15px;
+        padding: 10px;
+    }
+
+    /* Canchas más compactas en móvil */
+    .punto-soccer-layout-canchas .cancha-card {
+        min-height: 100px !important;
+        padding: 12px !important;
+    }
+
+    /* Servicios lado a lado en móvil */
+    .punto-soccer-container .punto-soccer-camarines,
+    .punto-soccer-container .punto-soccer-quincho {
+        flex: 1 !important;
+    }
+
+    .punto-soccer-container .servicio-box {
+        width: 70px !important;
+        height: 70px !important;
+    }
+
+    .punto-soccer-container .servicio-letter {
+        font-size: 2rem !important;
+    }
+
+    .punto-soccer-container .servicio-info-icon {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.75rem !important;
+    }
+
+    .punto-soccer-container .servicio-label {
+        font-size: 0.8rem !important;
+    }
+
+    /* Calle más pequeña en móvil */
+    .punto-soccer-container::after {
+        right: -100px;
+        width: 200px;
+        height: 45px;
+        font-size: 0.6rem;
+        letter-spacing: 1px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Móviles muy pequeños */
+    .punto-soccer-container {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .punto-soccer-layout-canchas .cancha-card {
+        min-height: 90px !important;
+        padding: 10px !important;
+    }
+
+    .punto-soccer-container .servicio-box {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    .punto-soccer-container .servicio-letter {
+        font-size: 1.5rem !important;
+    }
+
+    .punto-soccer-container .servicio-info-icon {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 0.65rem !important;
+        bottom: -3px !important;
+        right: -3px !important;
+    }
+
+    .punto-soccer-container .servicio-label {
+        font-size: 0.7rem !important;
+    }
+
+    .punto-soccer-container::after {
+        right: -70px;
+        width: 150px;
+        height: 35px;
+        font-size: 0.5rem;
+        letter-spacing: 0.5px;
+    }
+}
+
     .calle-monte-perdido {
         position: absolute;
         right: -60px;

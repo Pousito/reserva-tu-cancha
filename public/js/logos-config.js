@@ -7,13 +7,13 @@ const LOGOS_CONFIG = {
     // Mapeo de ID de complejo a nombre de archivo de logo
     1: {
         nombre: 'Complejo En Desarrollo',
-        archivo: 'borde-rio.png',
-        path: '/images/logos/borde-rio.png'
+        archivo: 'reservatuscanchas.png',
+        path: '/images/logos/reservatuscanchas.png'
     },
     2: {
         nombre: 'Complejo Demo 1',
-        archivo: 'borde-rio.png',
-        path: '/images/logos/borde-rio.png'
+        archivo: 'reservatuscanchas.png',
+        path: '/images/logos/reservatuscanchas.png'
     },
     7: {
         nombre: 'Espacio Deportivo Borde Río',
@@ -24,6 +24,11 @@ const LOGOS_CONFIG = {
         nombre: 'Complejo Demo 3',
         archivo: 'demo3-new-life-galilea.png',
         path: '/images/logos/demo3-new-life-galilea.png'
+    },
+    9: {
+        nombre: 'Punto Soccer Canchas Sintéticas',
+        archivo: 'reservatuscanchas.png',
+        path: '/images/logos/reservatuscanchas.png'
     }
 };
 

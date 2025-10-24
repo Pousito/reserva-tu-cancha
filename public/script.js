@@ -1918,8 +1918,8 @@ function configurarEventListeners() {
             await cargarHorariosComplejo(complejoSeleccionado);
             console.log('🔄 Horarios cargados para:', complejoSeleccionado.nombre);
             
-            // Si es Complejo En Desarrollo, Fundación Gunnen, Espacio Deportivo Borde Río o Complejo Demo 1, automáticamente seleccionar fútbol y ocultar opciones de padel
-            if (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' || complejoSeleccionado.nombre === 'Complejo Demo 1') {
+            // Si es Complejo En Desarrollo, Fundación Gunnen, Espacio Deportivo Borde Río, Complejo Demo 1 o Punto Soccer, automáticamente seleccionar fútbol y ocultar opciones de padel
+            if (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' || complejoSeleccionado.nombre === 'Complejo Demo 1' || complejoSeleccionado.nombre.includes('Punto Soccer')) {
                 console.log(`⚽ ${complejoSeleccionado.nombre} detectado - Configurando automáticamente...`);
                 
                 // Seleccionar automáticamente fútbol
@@ -2046,10 +2046,10 @@ function configurarEventListeners() {
             console.log('🎯 RADIO BUTTON CAMBIADO:', this.value);
             console.log('🎯 Complejo seleccionado:', complejoSeleccionado);
             
-            // Solo permitir selección si no es Complejo En Desarrollo o si es Complejo En Desarrollo y se selecciona fútbol
-            if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Complejo Demo 1') && this.value !== 'futbol') {
+            // Solo permitir selección si no es Complejo En Desarrollo, Complejo Demo 1 o Punto Soccer, o si es uno de estos y se selecciona fútbol
+            if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Complejo Demo 1' || complejoSeleccionado.nombre.includes('Punto Soccer')) && this.value !== 'futbol') {
                 console.log('🚫 Padel no permitido para', complejoSeleccionado.nombre);
-                return; // No permitir selección de padel para Complejo En Desarrollo o Complejo Demo 1
+                return; // No permitir selección de padel para estos complejos
             }
             
             tipoCanchaSeleccionado = this.value;
@@ -3474,8 +3474,9 @@ async function renderizarCanchasConDisponibilidad() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Si es Complejo En Desarrollo, Fundación Gunnen, Espacio Deportivo Borde Río, Complejo Demo 1 o Complejo Demo 3, crear estructura especial horizontal
-    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' || complejoSeleccionado.nombre === 'Complejo Demo 1' || complejoSeleccionado.nombre === 'Complejo Demo 3')) {
+    // Si es Complejo En Desarrollo, Fundación Gunnen, Espacio Deportivo Borde Río, Complejo Demo 1, Complejo Demo 3 o Punto Soccer, crear estructura especial horizontal
+    console.log('🔍 DEBUG: Verificando renderizado especial para:', complejoSeleccionado?.nombre);
+    if (complejoSeleccionado && (complejoSeleccionado.nombre === 'Complejo En Desarrollo' || complejoSeleccionado.nombre === 'Fundación Gunnen' || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río' || complejoSeleccionado.nombre === 'Complejo Demo 1' || complejoSeleccionado.nombre === 'Complejo Demo 3' || complejoSeleccionado.nombre.includes('Punto Soccer'))) {
         console.log(`🎨 Renderizando ${complejoSeleccionado.nombre} con`, canchas.length, 'canchas');
         
         // Determinar si es techado o al aire libre
@@ -3484,6 +3485,7 @@ async function renderizarCanchasConDisponibilidad() {
                            complejoSeleccionado.nombre === 'Fundación Gunnen' ? 'DON VICTOR' : 
                            complejoSeleccionado.nombre === 'Complejo Demo 1' ? 'CALLE DEMO' :
                            complejoSeleccionado.nombre === 'Complejo Demo 3' ? 'AV. RICARDO VICUÑA' :
+                           complejoSeleccionado.nombre.includes('Punto Soccer') ? 'CAMINO CERRO COLORADO' :
                            'RUTA Q-575';
         
         // Crear contenedor (galpón para Complejo En Desarrollo, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
@@ -3614,8 +3616,120 @@ async function renderizarCanchasConDisponibilidad() {
             // Agregar el contenedor principal al DOM
             canchasHorizontales.appendChild(demo3Container);
             console.log('🎨 demo3Container con 2 layouts agregado exitosamente');
+        } else if (complejoSeleccionado.nombre && complejoSeleccionado.nombre.includes('Punto Soccer')) {
+            // Renderizado especial para Punto Soccer - Estilo Demo 3
+            console.log('🎨 Renderizando Punto Soccer estilo Demo 3...');
+            console.log('🎨 DEBUG: complejoSeleccionado.nombre =', complejoSeleccionado.nombre);
+            console.log('🎨 DEBUG: Comparación includes Punto Soccer:', complejoSeleccionado.nombre.includes('Punto Soccer'));
+
+            const puntoSoccerContainer = document.createElement('div');
+            puntoSoccerContainer.className = 'punto-soccer-container';
+
+            // LAYOUT IZQUIERDO: 2 Canchas verticales
+            const layoutCanchas = document.createElement('div');
+            layoutCanchas.className = 'punto-soccer-layout-canchas';
+
+            // LAYOUT DERECHO: Camarines (arriba) y Quincho (abajo)
+            const layoutServicios = document.createElement('div');
+            layoutServicios.className = 'punto-soccer-layout-servicios';
+
+            // Crear cuadro de Camarines
+            const camarinesBox = document.createElement('div');
+            camarinesBox.className = 'punto-soccer-camarines';
+            camarinesBox.innerHTML = `
+                <div class="servicio-box" style="background: white !important; width: 100px !important; height: 100px !important; border-radius: 15px !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; display: flex !important; align-items: center !important; justify-content: center !important; position: relative !important; border: 3px solid #ff9800 !important; margin-bottom: 10px !important;">
+                    <div class="servicio-letter" style="font-size: 3rem !important; font-weight: bold !important; color: #ff9800 !important; margin: 0 !important; padding: 0 !important;">C</div>
+                    <div class="servicio-info-icon" onclick="mostrarInfoCamarines()" style="position: absolute !important; bottom: -5px !important; right: -5px !important; background: #4caf50 !important; color: white !important; width: 30px !important; height: 30px !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important; font-size: 0.9rem !important;">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                </div>
+                <div class="servicio-label" style="font-weight: bold !important; color: #2e7d32 !important; font-size: 0.95rem !important; text-align: center !important; margin: 0 !important;">Camarines</div>
+            `;
+
+            // Crear cuadro de Quincho
+            const quinchoBox = document.createElement('div');
+            quinchoBox.className = 'punto-soccer-quincho';
+            quinchoBox.innerHTML = `
+                <div class="servicio-box" style="background: white !important; width: 100px !important; height: 100px !important; border-radius: 15px !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important; display: flex !important; align-items: center !important; justify-content: center !important; position: relative !important; border: 3px solid #e91e63 !important; margin-bottom: 10px !important;">
+                    <div class="servicio-letter" style="font-size: 3rem !important; font-weight: bold !important; color: #e91e63 !important; margin: 0 !important; padding: 0 !important;">Q</div>
+                    <div class="servicio-info-icon" onclick="mostrarInfoQuincho()" style="position: absolute !important; bottom: -5px !important; right: -5px !important; background: #4caf50 !important; color: white !important; width: 30px !important; height: 30px !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important; font-size: 0.9rem !important;">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                </div>
+                <div class="servicio-label" style="font-weight: bold !important; color: #2e7d32 !important; font-size: 0.95rem !important; text-align: center !important; margin: 0 !important;">Quincho</div>
+            `;
+
+            // Agregar camarines y quincho al layout servicios
+            layoutServicios.appendChild(camarinesBox);
+            layoutServicios.appendChild(quinchoBox);
+
+            // Agregar canchas al layout canchas
+            for (const cancha of canchasOrdenadas) {
+                const canchaCard = await crearCanchaCard(cancha, fecha, hora);
+
+                // Agregar indicador de techada si aplica
+                if (cancha.nombre && cancha.nombre.includes('Cancha 2')) {
+                    canchaCard.classList.add('punto-soccer-techada');
+
+                    // Agregar badge de TECHADA
+                    const badgeTechada = document.createElement('div');
+                    badgeTechada.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #2196f3; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3); z-index: 10;';
+                    badgeTechada.innerHTML = '<i class="fas fa-warehouse" style="margin-right: 5px;"></i>TECHADA';
+                    canchaCard.style.position = 'relative';
+                    canchaCard.insertBefore(badgeTechada, canchaCard.firstChild);
+                }
+
+                layoutCanchas.appendChild(canchaCard);
+            }
+
+            // Agregar layouts al contenedor principal
+            puntoSoccerContainer.appendChild(layoutCanchas);
+            puntoSoccerContainer.appendChild(layoutServicios);
+
+            // Agregar al contenedor horizontal
+            canchasHorizontales.appendChild(puntoSoccerContainer);
+
+            // Crear calle CAMINO CERRO COLORADO específica para Punto Soccer
+            const calleCerroColorado = document.createElement('div');
+            calleCerroColorado.className = 'calle-cerro-colorado-punto-soccer';
+            calleCerroColorado.innerHTML = '<span style="writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);">CAMINO CERRO COLORADO</span>';
+            calleCerroColorado.style.cssText = `
+                position: absolute;
+                right: -90px;
+                top: 0;
+                bottom: 0;
+                width: 70px;
+                background: linear-gradient(90deg, #555 0%, #777 50%, #555 100%);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 0.8rem;
+                text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+                letter-spacing: 2px;
+                border: 2px solid #999;
+                z-index: 1000;
+                pointer-events: none;
+            `;
+
+            // Agregar la calle al contenedor padre (galponContainer)
+            galponContainer.style.position = 'relative';
+            galponContainer.style.overflow = 'visible';
+            galponContainer.appendChild(calleCerroColorado);
+
+            console.log('🎨 Punto Soccer renderizado con 2 layouts (canchas + servicios)');
+            console.log('🛣️ Calle Cerro Colorado agregada');
+            console.log('🔍 DEBUG - Punto Soccer Container:', puntoSoccerContainer);
+            console.log('🔍 DEBUG - Layout Canchas:', layoutCanchas);
+            console.log('🔍 DEBUG - Layout Servicios:', layoutServicios);
+            console.log('🔍 DEBUG - Computed display:', window.getComputedStyle(puntoSoccerContainer).display);
+            console.log('🔍 DEBUG - Computed grid-template-columns:', window.getComputedStyle(puntoSoccerContainer).gridTemplateColumns);
         } else {
             // Renderizado normal para otros complejos
+            console.log('🎨 DEBUG: Usando renderizado normal para:', complejoSeleccionado?.nombre);
             for (const cancha of canchasOrdenadas) {
                 const canchaCard = await crearCanchaCard(cancha, fecha, hora);
                 canchasHorizontales.appendChild(canchaCard);
@@ -3787,7 +3901,10 @@ async function renderizarCanchasConDisponibilidad() {
         grid.appendChild(galponContainer);
 
         // Agregar la calle DESPUÉS del contenedor (fuera y abajo)
-        grid.appendChild(calle);
+        // EXCEPTO para Punto Soccer que usa ::after en CSS
+        if (!complejoSeleccionado.nombre || !complejoSeleccionado.nombre.includes('Punto Soccer')) {
+            grid.appendChild(calle);
+        }
     } else {
         // Para otros complejos, usar layout estándar
         for (const cancha of canchas) {
@@ -5419,6 +5536,121 @@ function mostrarIndicadorZoom() {
             }
         });
     });
-    
+
     observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// ============================================
+// FUNCIONES PUNTO SOCCER - Modales de Información
+// ============================================
+
+/**
+ * Muestra modal de información para Camarines
+ */
+function mostrarInfoCamarines() {
+    Swal.fire({
+        title: '<i class="fas fa-shower" style="color: #ff9800; margin-right: 10px;"></i>Camarines',
+        html: `
+            <div style="text-align: left; padding: 15px;">
+                <h5 style="color: #2e7d32; margin-bottom: 15px;">
+                    <i class="fas fa-check-circle" style="color: #4caf50; margin-right: 8px;"></i>
+                    Instalaciones Disponibles
+                </h5>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-tshirt" style="color: #ff9800; margin-right: 10px;"></i>
+                        Vestidores amplios y limpios
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-shower" style="color: #2196f3; margin-right: 10px;"></i>
+                        Duchas con agua caliente
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-lock" style="color: #9c27b0; margin-right: 10px;"></i>
+                        Casilleros con llave
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-toilet" style="color: #607d8b; margin-right: 10px;"></i>
+                        Baños y sanitarios
+                    </li>
+                    <li style="padding: 8px 0;">
+                        <i class="fas fa-users" style="color: #795548; margin-right: 10px;"></i>
+                        Capacidad para 20 personas
+                    </li>
+                </ul>
+                <p style="margin-top: 20px; padding: 12px; background: #e8f5e9; border-radius: 8px; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle" style="color: #4caf50; margin-right: 8px;"></i>
+                    <strong>Incluido</strong> en todas las reservas de canchas
+                </p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#4caf50',
+        width: '500px',
+        backdrop: true,
+        showCloseButton: true
+    });
+}
+
+/**
+ * Muestra modal de información para Quincho
+ */
+function mostrarInfoQuincho() {
+    Swal.fire({
+        title: '<i class="fas fa-utensils" style="color: #e91e63; margin-right: 10px;"></i>Quincho',
+        html: `
+            <div style="text-align: left; padding: 15px;">
+                <h5 style="color: #2e7d32; margin-bottom: 15px;">
+                    <i class="fas fa-check-circle" style="color: #4caf50; margin-right: 8px;"></i>
+                    Equipamiento Disponible
+                </h5>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-fire" style="color: #f44336; margin-right: 10px;"></i>
+                        Parrilla de carbón profesional
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-chair" style="color: #795548; margin-right: 10px;"></i>
+                        Mesas y sillas para 25 personas
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-umbrella" style="color: #2196f3; margin-right: 10px;"></i>
+                        Techado completo
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-sink" style="color: #00bcd4; margin-right: 10px;"></i>
+                        Lavaplatos y mesón
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-lightbulb" style="color: #ffc107; margin-right: 10px;"></i>
+                        Iluminación LED
+                    </li>
+                    <li style="padding: 8px 0;">
+                        <i class="fas fa-plug" style="color: #ff9800; margin-right: 10px;"></i>
+                        Enchufes disponibles
+                    </li>
+                </ul>
+                <div style="margin-top: 20px; padding: 12px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #ff9800;">
+                    <p style="margin: 0 0 8px 0; font-weight: 600; color: #e65100;">
+                        <i class="fas fa-dollar-sign" style="margin-right: 8px;"></i>
+                        Arriendo Separado
+                    </p>
+                    <p style="margin: 0; font-size: 0.9rem; color: #555;">
+                        Disponible por hora o jornada completa. Consulta tarifas especiales para eventos.
+                    </p>
+                </div>
+                <p style="margin-top: 15px; text-align: center; font-size: 0.85rem; color: #666;">
+                    <i class="fas fa-phone" style="color: #4caf50; margin-right: 5px;"></i>
+                    Contacta al administrador para reservar
+                </p>
+            </div>
+        `,
+        icon: null,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#e91e63',
+        width: '500px',
+        backdrop: true,
+        showCloseButton: true
+    });
 }

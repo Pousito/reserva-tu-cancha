@@ -1307,10 +1307,11 @@ async function exportToPDF() {
             } else {
                 // Mapeo por ID para otros complejos
                 const logosMap = {
-                    1: '/images/logos/borde-rio.png',  // Complejo En Desarrollo
-                    2: '/images/logos/borde-rio.png',  // Complejo Demo 1
+                    1: '/images/logos/reservatuscanchas.png',  // Complejo En Desarrollo
+                    2: '/images/logos/reservatuscanchas.png',  // Complejo Demo 1
                     7: '/images/logos/borde-rio.png',  // Espacio Deportivo Borde Río (producción)
-                    8: '/images/logos/demo3-new-life-galilea.png'  // Complejo Demo 3 (producción)
+                    8: '/images/logos/demo3-new-life-galilea.png',  // Complejo Demo 3 (producción)
+                    9: '/images/logos/reservatuscanchas.png'  // Punto Soccer Canchas Sintéticas
                 };
                 logoPath = logosMap[userData.complejo_id];
                 console.log(`🔍 Buscando logo para complejo ID: ${userData.complejo_id}, nombre: ${userData.complejo_nombre}`);
