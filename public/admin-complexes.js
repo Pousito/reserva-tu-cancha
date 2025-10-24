@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadCities();
     loadComplexes();
+    loadEstadisticas(); // Cargar estadísticas
     setupEventListeners();
 });
 
@@ -57,6 +58,76 @@ function populateCitySelect() {
         option.textContent = city.nombre;
         select.appendChild(option);
     });
+}
+
+// Cargar estadísticas
+async function loadEstadisticas() {
+    try {
+        console.log('📊 Cargando estadísticas...');
+        
+        // Limpiar cache del navegador si es necesario
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            for (const cacheName of cacheNames) {
+                await caches.delete(cacheName);
+            }
+        }
+        
+        // Construir URL con parámetros de cache-busting
+        const url = new URL(`${API_BASE}/admin/estadisticas`);
+        url.searchParams.append('_t', Date.now());
+        url.searchParams.append('_v', Math.random().toString(36).substr(2, 9));
+        
+        console.log('📊 URL estadísticas:', url.toString());
+        
+        const response = await AdminUtils.authenticatedFetch(url.toString(), {
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+        
+        if (response && response.ok) {
+            const data = await response.json();
+            console.log('✅ Estadísticas cargadas:', data);
+            
+            // Actualizar tarjetas de estadísticas
+            const totalReservasElement = document.getElementById('totalReservas');
+            const totalCanchasElement = document.getElementById('totalCanchas');
+            const totalComplejosElement = document.getElementById('totalComplejos');
+            const ingresosTotalesElement = document.getElementById('ingresosTotales');
+            
+            if (totalReservasElement) {
+                totalReservasElement.textContent = data.totalReservas || '0';
+            }
+            
+            if (totalCanchasElement) {
+                totalCanchasElement.textContent = data.totalCanchas || '0';
+            }
+            
+            if (totalComplejosElement) {
+                totalComplejosElement.textContent = data.totalComplejos || '0';
+            }
+            
+            if (ingresosTotalesElement) {
+                ingresosTotalesElement.textContent = `$${formatCurrencyChile(data.ingresosTotales) || '0'}`;
+            }
+            
+            console.log('✅ Estadísticas actualizadas en la interfaz');
+        } else {
+            console.error('❌ Error cargando estadísticas:', response?.status);
+        }
+    } catch (error) {
+        console.error('❌ Error cargando estadísticas:', error);
+    }
+}
+
+// Función para formatear moneda chilena
+function formatCurrencyChile(amount) {
+    if (!amount) return '0';
+    return new Intl.NumberFormat('es-CL').format(amount);
 }
 
 // Cargar complejos
