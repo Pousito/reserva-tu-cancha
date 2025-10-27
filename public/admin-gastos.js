@@ -962,19 +962,35 @@ function actualizarEstadisticasConDatos(datos) {
     const balance = totalIngresos - totalGastos;
     
     document.getElementById('totalIngresos').textContent = `$${totalIngresos.toLocaleString('es-CL')}`;
-    document.getElementById('totalGastos').textContent = `$${totalGastos.toLocaleString('es-CL')}`;
+    document.getElementById('totalEgresos').textContent = `$${totalGastos.toLocaleString('es-CL')}`;
     document.getElementById('balance').textContent = `$${balance.toLocaleString('es-CL')}`;
     
+    // Actualizar elementos de cambio
+    const ingresosChange = document.getElementById('changeIngresos');
+    const egresosChange = document.getElementById('changeEgresos');
     const balanceChange = document.getElementById('changeBalance');
-    if (balance > 0) {
-        balanceChange.className = 'stat-card-change positive';
-        balanceChange.innerHTML = '<i class="fas fa-arrow-up"></i> Balance positivo';
-    } else if (balance < 0) {
-        balanceChange.className = 'stat-card-change negative';
-        balanceChange.innerHTML = '<i class="fas fa-arrow-down"></i> Balance negativo';
-    } else {
-        balanceChange.className = 'stat-card-change';
-        balanceChange.innerHTML = 'Balance neutro';
+    
+    if (ingresosChange) {
+        ingresosChange.className = 'stat-card-change positive';
+        ingresosChange.innerHTML = '<i class="fas fa-arrow-up"></i> Ingresos actuales';
+    }
+    
+    if (egresosChange) {
+        egresosChange.className = 'stat-card-change negative';
+        egresosChange.innerHTML = '<i class="fas fa-arrow-down"></i> Egresos actuales';
+    }
+    
+    if (balanceChange) {
+        if (balance > 0) {
+            balanceChange.className = 'stat-card-change positive';
+            balanceChange.innerHTML = '<i class="fas fa-arrow-up"></i> Balance positivo';
+        } else if (balance < 0) {
+            balanceChange.className = 'stat-card-change negative';
+            balanceChange.innerHTML = '<i class="fas fa-arrow-down"></i> Balance negativo';
+        } else {
+            balanceChange.className = 'stat-card-change';
+            balanceChange.innerHTML = 'Balance neutro';
+        }
     }
 }
 
