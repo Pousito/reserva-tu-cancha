@@ -36,16 +36,16 @@ const createAdvancedRateLimit = (windowMs, max, message) => {
   });
 };
 
-// Rate limiters específicos
+// Rate limiters específicos - Ajustados para desarrollo y producción
 const authLimiter = createAdvancedRateLimit(
   15 * 60 * 1000, // 15 minutos
-  5, // 5 intentos
+  20, // 20 intentos (aumentado de 5)
   'Demasiados intentos de autenticación. Intenta de nuevo en 15 minutos.'
 );
 
 const apiLimiter = createAdvancedRateLimit(
   15 * 60 * 1000, // 15 minutos
-  100, // 100 requests por ventana
+  500, // 500 requests por ventana (aumentado de 100)
   'Demasiadas solicitudes a la API. Intenta de nuevo más tarde.'
 );
 
@@ -61,11 +61,11 @@ const paymentLimiter = createAdvancedRateLimit(
   'Demasiados intentos de pago. Intenta de nuevo en 5 minutos.'
 );
 
-// Slow down para prevenir ataques automatizados
+// Slow down para prevenir ataques automatizados - Ajustado para mejor experiencia de usuario
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  delayAfter: 50, // Permitir 50 requests por IP por ventana
-  delayMs: 500 // Agregar 500ms de delay después del límite
+  delayAfter: 200, // Permitir 200 requests por IP por ventana (aumentado de 50)
+  delayMs: 200 // Agregar 200ms de delay después del límite (reducido de 500ms)
 });
 
 // Middleware de seguridad principal
