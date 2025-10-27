@@ -957,13 +957,44 @@ function renderizarTablaConDatos(datos) {
 }
 
 function actualizarEstadisticasConDatos(datos) {
+    // Actualizado: 2025-01-27 15:30 - Corregido error totalGastos vs totalEgresos - CACHE BUST
+    console.log('🔧 DEBUG: actualizarEstadisticasConDatos ejecutándose...');
+    console.log('🚨 VERSIÓN CORREGIDA - NO DEBERÍA VER totalGastos EN EL ERROR');
+    
     const totalIngresos = datos.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
     const totalGastos = datos.filter(m => m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
     const balance = totalIngresos - totalGastos;
     
-    document.getElementById('totalIngresos').textContent = `$${totalIngresos.toLocaleString('es-CL')}`;
-    document.getElementById('totalEgresos').textContent = `$${totalGastos.toLocaleString('es-CL')}`;
-    document.getElementById('balance').textContent = `$${balance.toLocaleString('es-CL')}`;
+    console.log('🔧 DEBUG: Valores calculados:', { totalIngresos, totalGastos, balance });
+    
+    // Verificar que los elementos existan antes de actualizarlos
+    const totalIngresosEl = document.getElementById('totalIngresos');
+    const totalEgresosEl = document.getElementById('totalEgresos');
+    const balanceEl = document.getElementById('balance');
+    
+    console.log('🔧 DEBUG: Elementos encontrados:', { 
+        totalIngresos: !!totalIngresosEl, 
+        totalEgresos: !!totalEgresosEl, 
+        balance: !!balanceEl 
+    });
+    
+    if (totalIngresosEl) {
+        totalIngresosEl.textContent = `$${totalIngresos.toLocaleString('es-CL')}`;
+    } else {
+        console.error('❌ Elemento totalIngresos no encontrado');
+    }
+    
+    if (totalEgresosEl) {
+        totalEgresosEl.textContent = `$${totalGastos.toLocaleString('es-CL')}`;
+    } else {
+        console.error('❌ Elemento totalEgresos no encontrado');
+    }
+    
+    if (balanceEl) {
+        balanceEl.textContent = `$${balance.toLocaleString('es-CL')}`;
+    } else {
+        console.error('❌ Elemento balance no encontrado');
+    }
     
     // Actualizar elementos de cambio
     const ingresosChange = document.getElementById('changeIngresos');

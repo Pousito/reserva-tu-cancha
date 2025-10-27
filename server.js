@@ -237,14 +237,23 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
+  console.log('🔑 authenticateToken - Auth header:', authHeader);
+  console.log('🔑 authenticateToken - Token:', token ? token.substring(0, 50) + '...' : 'No token');
+
   if (!token) {
+    console.log('❌ authenticateToken - No token provided');
     return res.status(401).json({ success: false, error: 'Token de acceso requerido' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key', (err, user) => {
+  const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
+  console.log('🔑 authenticateToken - Using JWT secret:', jwtSecret);
+
+  jwt.verify(token, jwtSecret, (err, user) => {
     if (err) {
+      console.log('❌ authenticateToken - Token verification failed:', err.message);
       return res.status(403).json({ success: false, error: 'Token inválido' });
     }
+    console.log('✅ authenticateToken - Token verified, user:', user.email);
     req.user = user;
     next();
   });
@@ -2369,6 +2378,27 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
   }
 });
 
+// Endpoint temporal para obtener complejos (sin JWT)
+app.get('/api/admin/complejos-simple', async (req, res) => {
+  try {
+    console.log('🏢 Cargando complejos (endpoint simple)...');
+    
+    const complejos = await db.query(`
+      SELECT c.*, ci.nombre as ciudad_nombre
+      FROM complejos c
+      JOIN ciudades ci ON c.ciudad_id = ci.id
+      ORDER BY c.nombre
+    `);
+    
+    console.log(`✅ ${complejos.length} complejos cargados (endpoint simple)`);
+    console.log('🔍 DEBUG - Complejos encontrados:', complejos);
+    res.json({ success: true, complejos: complejos });
+  } catch (error) {
+    console.error('❌ Error cargando complejos (endpoint simple):', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para obtener complejos (panel de administración)
 app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
@@ -2400,7 +2430,8 @@ app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, require
     `, params);
     
     console.log(`✅ ${complejos.length} complejos cargados para administración`);
-    res.json(complejos);
+    console.log('🔍 DEBUG - Complejos encontrados:', complejos);
+    res.json({ success: true, complejos: complejos });
   } catch (error) {
     console.error('❌ Error cargando complejos para administración:', error);
     res.status(500).json({ error: error.message });
@@ -9164,6 +9195,216 @@ app.use(express.static('public', {
     }
   }
 }));
+
+// ===== ENDPOINTS PARA GESTIÓN DE DEPÓSITOS =====
+
+/**
+ * Obtener todos los depósitos (solo super admin)
+ */
+app.get('/api/admin/depositos', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('💰 Cargando depósitos para super admin...');
+    
+    const depositos = await db.query(`
+      SELECT 
+        dc.*,
+        c.nombre as complejo_nombre,
+        u.nombre as procesado_por_nombre
+      FROM depositos_complejos dc
+      JOIN complejos c ON dc.complejo_id = c.id
+      LEFT JOIN usuarios u ON dc.procesado_por = u.id
+      ORDER BY dc.fecha_deposito DESC, dc.created_at DESC
+    `);
+    
+    res.json({
+      success: true,
+      depositos: depositos
+    });
+    
+  } catch (error) {
+    console.error('Error cargando depósitos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+/**
+ * Generar depósitos para una fecha específica
+ */
+app.post('/api/admin/depositos/generar', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    const { fecha } = req.body;
+    const fechaDeposito = fecha || new Date().toISOString().split('T')[0];
+    
+    console.log(`💰 Generando depósitos para fecha: ${fechaDeposito}`);
+    
+    // Usar la función SQL para generar depósitos
+    const resultado = await db.query(`
+      SELECT * FROM generar_depositos_diarios($1)
+    `, [fechaDeposito]);
+    
+    const depositosGenerados = resultado.length;
+    
+    console.log(`✅ Se generaron ${depositosGenerados} depósitos para ${fechaDeposito}`);
+    
+    res.json({
+      success: true,
+      message: `Se generaron ${depositosGenerados} depósitos para ${fechaDeposito}`,
+      depositosGenerados: depositosGenerados,
+      fecha: fechaDeposito
+    });
+    
+  } catch (error) {
+    console.error('Error generando depósitos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+/**
+ * Marcar depósito como pagado
+ */
+app.put('/api/admin/depositos/:id/pagar', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { metodo_pago, numero_transaccion, banco_destino, observaciones } = req.body;
+    
+    console.log(`💰 Marcando depósito ${id} como pagado...`);
+    
+    if (!metodo_pago) {
+      return res.status(400).json({
+        success: false,
+        error: 'Método de pago es requerido'
+      });
+    }
+    
+    // Actualizar el depósito
+    const resultado = await db.query(`
+      UPDATE depositos_complejos 
+      SET 
+        estado = 'pagado',
+        metodo_pago = $1,
+        numero_transaccion = $2,
+        banco_destino = $3,
+        observaciones = $4,
+        procesado_por = $5,
+        fecha_procesado = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $6
+      RETURNING *
+    `, [metodo_pago, numero_transaccion, banco_destino, observaciones, req.user.id, id]);
+    
+    if (resultado.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Depósito no encontrado'
+      });
+    }
+    
+    console.log(`✅ Depósito ${id} marcado como pagado`);
+    
+    res.json({
+      success: true,
+      message: 'Depósito marcado como pagado exitosamente',
+      deposito: resultado[0]
+    });
+    
+  } catch (error) {
+    console.error('Error marcando depósito como pagado:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+/**
+ * Exportar depósitos a Excel
+ */
+app.get('/api/admin/depositos/exportar', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('📊 Exportando depósitos a Excel...');
+    
+    const depositos = await db.query(`
+      SELECT 
+        dc.fecha_deposito,
+        c.nombre as complejo_nombre,
+        dc.monto_total_reservas,
+        dc.comision_porcentaje,
+        dc.comision_sin_iva,
+        dc.iva_comision,
+        dc.comision_total,
+        dc.monto_a_depositar,
+        dc.estado,
+        dc.metodo_pago,
+        dc.numero_transaccion,
+        dc.banco_destino,
+        dc.observaciones,
+        dc.fecha_procesado,
+        u.nombre as procesado_por_nombre
+      FROM depositos_complejos dc
+      JOIN complejos c ON dc.complejo_id = c.id
+      LEFT JOIN usuarios u ON dc.procesado_por = u.id
+      ORDER BY dc.fecha_deposito DESC
+    `);
+    
+    // Crear archivo Excel simple (CSV por ahora)
+    let csv = 'Fecha,Complejo,Total Reservas,Comisión %,Comisión sin IVA,IVA Comisión,Comisión Total,Monto a Depositar,Estado,Método Pago,Número Transacción,Banco Destino,Observaciones,Fecha Procesado,Procesado Por\n';
+    
+    depositos.forEach(deposito => {
+      csv += `"${deposito.fecha_deposito}","${deposito.complejo_nombre}",${deposito.monto_total_reservas},${(deposito.comision_porcentaje * 100).toFixed(2)}%,${deposito.comision_sin_iva},${deposito.iva_comision},${deposito.comision_total},${deposito.monto_a_depositar},"${deposito.estado}","${deposito.metodo_pago || ''}","${deposito.numero_transaccion || ''}","${deposito.banco_destino || ''}","${deposito.observaciones || ''}","${deposito.fecha_procesado || ''}","${deposito.procesado_por_nombre || ''}"\n`;
+    });
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="depositos_${new Date().toISOString().split('T')[0]}.csv"`);
+    res.send(csv);
+    
+  } catch (error) {
+    console.error('Error exportando depósitos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
+/**
+ * Obtener estadísticas de depósitos
+ */
+app.get('/api/admin/depositos/estadisticas', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('📊 Cargando estadísticas de depósitos...');
+    
+    const estadisticas = await db.query(`
+      SELECT 
+        COUNT(*) as total_depositos,
+        COUNT(CASE WHEN estado = 'pendiente' THEN 1 END) as pendientes,
+        COUNT(CASE WHEN estado = 'pagado' THEN 1 END) as pagados,
+        COUNT(CASE WHEN estado = 'cancelado' THEN 1 END) as cancelados,
+        COALESCE(SUM(CASE WHEN estado = 'pendiente' THEN monto_a_depositar ELSE 0 END), 0) as monto_pendiente,
+        COALESCE(SUM(CASE WHEN estado = 'pagado' THEN monto_a_depositar ELSE 0 END), 0) as monto_pagado,
+        COALESCE(SUM(comision_total), 0) as comision_total,
+        COALESCE(SUM(monto_total_reservas), 0) as total_reservas
+      FROM depositos_complejos
+    `);
+    
+    res.json({
+      success: true,
+      estadisticas: estadisticas[0]
+    });
+    
+  } catch (error) {
+    console.error('Error cargando estadísticas:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
 
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio

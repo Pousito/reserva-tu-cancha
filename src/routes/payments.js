@@ -226,8 +226,10 @@ router.post('/confirm', async (req, res) => {
         console.log('🔍 DEBUG - datosCliente parseado:', datosCliente);
         console.log('🔍 DEBUG - porcentaje_pagado del cliente:', datosCliente.porcentaje_pagado);
 
-        // Calcular comisión para reserva web (3.5%) - Solo para registro, no se suma al precio
-        const comisionWeb = Math.round(datosCliente.precio_total * 0.035);
+        // Calcular comisión para reserva web (3.5% + IVA) - Solo para registro, no se suma al precio
+        const { calculateCommissionWithIVA } = require('../config/commissions');
+        const comisionData = calculateCommissionWithIVA(datosCliente.precio_total, 'directa');
+        const comisionWeb = comisionData.comisionTotal; // Comisión con IVA incluido
         
         // Crear la reserva real
         const reservaId = await db.run(`
