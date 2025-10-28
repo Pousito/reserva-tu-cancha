@@ -2439,6 +2439,38 @@ app.post('/api/admin/run-create-table-script', async (req, res) => {
   }
 });
 
+// Endpoint para crear trigger de generación automática de depósitos
+app.post('/api/admin/depositos/create-auto-trigger', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('🔧 Creando trigger para generación automática de depósitos...');
+    
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Leer el archivo SQL del trigger
+    const triggerSQL = fs.readFileSync(path.join(__dirname, 'scripts/sql/generar-depositos-automaticos.sql'), 'utf8');
+    
+    // Ejecutar el SQL del trigger
+    await db.query(triggerSQL);
+    
+    console.log('✅ Trigger de generación automática de depósitos creado exitosamente');
+    
+    res.json({
+      success: true,
+      message: 'Trigger de generación automática de depósitos creado exitosamente',
+      details: 'Ahora los depósitos se generarán automáticamente cuando se confirme una reserva'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando trigger de depósitos automáticos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Endpoint temporal para crear tabla depositos_complejos (solo para debugging)
 app.post('/api/admin/create-depositos-table', async (req, res) => {
   try {
@@ -9832,6 +9864,10 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
     console.log('✅ Función calcular_comision_con_iva creada');
 
     // Función 2: generar_depositos_diarios
+    // Primero eliminar la función si existe
+    await db.query(`DROP FUNCTION IF EXISTS generar_depositos_diarios(DATE)`);
+    console.log('🗑️  Función anterior eliminada (si existía)');
+
     await db.query(`
       CREATE OR REPLACE FUNCTION generar_depositos_diarios(fecha_deposito DATE DEFAULT CURRENT_DATE)
       RETURNS TABLE(
