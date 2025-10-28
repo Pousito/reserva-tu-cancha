@@ -9727,21 +9727,20 @@ app.post('/api/admin/depositos/generar-historicos', authenticateToken, requireRo
   try {
     console.log('🚀 Iniciando generación de depósitos históricos...');
 
-    // 1. Obtener todas las fechas únicas con reservas confirmadas y pagadas
+    // 1. Obtener todas las fechas únicas con reservas confirmadas
     const fechasConReservas = await db.query(`
       SELECT DISTINCT r.fecha
       FROM reservas r
       WHERE r.estado = 'confirmada'
-      AND r.estado_pago = 'pagado'
       ORDER BY r.fecha ASC
     `);
 
-    console.log(`📅 Encontradas ${fechasConReservas.length} fechas con reservas`);
+    console.log(`📅 Encontradas ${fechasConReservas.length} fechas con reservas confirmadas`);
 
     if (fechasConReservas.length === 0) {
       return res.json({
         success: true,
-        message: 'No hay reservas confirmadas y pagadas para procesar',
+        message: 'No hay reservas confirmadas para procesar',
         depositosGenerados: 0,
         fechasProcesadas: 0
       });
