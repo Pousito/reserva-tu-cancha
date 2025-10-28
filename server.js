@@ -9553,12 +9553,131 @@ app.post('/api/admin/depositos/generar', authenticateToken, requireRolePermissio
     
     console.log(`💰 Generando depósitos para fecha: ${fechaDeposito}`);
     
-    // Usar la función SQL para generar depósitos
-    const resultado = await db.query(`
-      SELECT * FROM generar_depositos_diarios($1)
+    // Obtener todas las reservas confirmadas para esta fecha
+    const reservas = await db.query(`
+      SELECT 
+        r.precio_total,
+        r.tipo_reserva,
+        r.comision_aplicada,
+        c.complejo_id,
+        co.nombre as complejo_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      WHERE r.fecha = $1
+      AND r.estado = 'confirmada'
     `, [fechaDeposito]);
     
-    const depositosGenerados = resultado.length;
+    if (reservas.length === 0) {
+      return res.json({
+        success: true,
+        message: `No hay reservas confirmadas para ${fechaDeposito}`,
+        depositosGenerados: 0,
+        fecha: fechaDeposito
+      });
+    }
+    
+    // Agrupar por complejo
+    const agrupadas = {};
+    reservas.forEach(r => {
+      if (!agrupadas[r.complejo_id]) {
+        agrupadas[r.complejo_id] = {
+          complejo_id: r.complejo_id,
+          complejo_nombre: r.complejo_nombre,
+          monto_total: 0,
+          comision_total: 0
+        };
+      }
+      agrupadas[r.complejo_id].monto_total += r.precio_total;
+      
+      // Usar comisión ya calculada o calcular nueva
+      if (r.comision_aplicada) {
+        agrupadas[r.complejo_id].comision_total += r.comision_aplicada;
+      } else {
+        const tipo = r.tipo_reserva || 'directa';
+        const porcentajeComision = tipo === 'administrativa' ? 0.0175 : 0.0350;
+        const comisionSinIva = Math.round(r.precio_total * porcentajeComision);
+        const ivaComision = Math.round(comisionSinIva * 0.19);
+        const comisionTotal = comisionSinIva + ivaComision;
+        agrupadas[r.complejo_id].comision_total += comisionTotal;
+      }
+    });
+    
+    let depositosGenerados = 0;
+    
+    // Crear o actualizar depósitos para cada complejo
+    for (const [complejoId, grupo] of Object.entries(agrupadas)) {
+      const montoADepositar = grupo.monto_total - grupo.comision_total;
+      const porcentajeComision = grupo.comision_total / grupo.monto_total;
+      const comisionSinIva = Math.round(grupo.monto_total * porcentajeComision * 0.84);
+      const ivaComision = grupo.comision_total - comisionSinIva;
+      
+      // Verificar si ya existe un depósito
+      const existeDeposito = await db.query(`
+        SELECT id FROM depositos_complejos 
+        WHERE complejo_id = $1 AND fecha_deposito = $2
+      `, [complejoId, fechaDeposito]);
+      
+      if (existeDeposito.length > 0) {
+        // Actualizar depósito existente
+        await db.query(`
+          UPDATE depositos_complejos 
+          SET 
+            monto_total_reservas = $3,
+            comision_porcentaje = $4,
+            comision_sin_iva = $5,
+            iva_comision = $6,
+            comision_total = $7,
+            monto_a_depositar = $8,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE complejo_id = $1 AND fecha_deposito = $2
+        `, [
+          complejoId, 
+          fechaDeposito,
+          grupo.monto_total,
+          porcentajeComision,
+          comisionSinIva,
+          ivaComision,
+          grupo.comision_total,
+          montoADepositar
+        ]);
+        
+        console.log(`   ✅ Depósito actualizado para ${grupo.complejo_nombre}: $${montoADepositar}`);
+      } else {
+        // Crear nuevo depósito
+        await db.query(`
+          INSERT INTO depositos_complejos (
+            complejo_id,
+            fecha_deposito,
+            monto_total_reservas,
+            comision_porcentaje,
+            comision_sin_iva,
+            iva_comision,
+            comision_total,
+            monto_a_depositar,
+            estado,
+            observaciones,
+            created_at,
+            updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `, [
+          complejoId,
+          fechaDeposito,
+          grupo.monto_total,
+          porcentajeComision,
+          comisionSinIva,
+          ivaComision,
+          grupo.comision_total,
+          montoADepositar,
+          'pendiente',
+          'Generado automáticamente'
+        ]);
+        
+        console.log(`   ✅ Depósito creado para ${grupo.complejo_nombre}: $${montoADepositar}`);
+      }
+      
+      depositosGenerados++;
+    }
     
     console.log(`✅ Se generaron ${depositosGenerados} depósitos para ${fechaDeposito}`);
     
@@ -9573,7 +9692,8 @@ app.post('/api/admin/depositos/generar', authenticateToken, requireRolePermissio
     console.error('Error generando depósitos:', error);
     res.status(500).json({
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
