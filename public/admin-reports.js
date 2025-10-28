@@ -238,11 +238,29 @@ async function aplicarPermisosPorRol() {
 // Cargar complejos
 async function loadComplexes() {
     try {
+        console.log('🔍 Cargando complejos en admin-reports... VERSIÓN 2.1');
         const response = await AdminUtils.authenticatedFetch('/admin/complejos');
         if (!response) return;
         
         if (response.ok) {
-            complexes = await response.json();
+            const data = await response.json();
+            console.log('✅ Complejos cargados en admin-reports:', data);
+            console.log('🔍 Tipo de datos:', typeof data);
+            console.log('🔍 Es array?', Array.isArray(data));
+            
+            // Verificar si es un array o un objeto con array
+            if (Array.isArray(data)) {
+                complexes = data;
+            } else if (data && Array.isArray(data.complejos)) {
+                complexes = data.complejos;
+            } else if (data && Array.isArray(data.data)) {
+                complexes = data.data;
+            } else {
+                console.error('❌ Formato de datos inesperado:', data);
+                complexes = [];
+            }
+            
+            console.log('🔍 Complejos finales:', complexes);
             populateComplexFilter();
         } else {
             console.error('Error cargando complejos:', response.statusText);
@@ -267,6 +285,13 @@ function populateComplexFilter() {
     }
     
     select.innerHTML = '<option value="">Todos los complejos</option>';
+    
+    // Verificar que complexes sea un array
+    if (!Array.isArray(complexes)) {
+        console.error('❌ complexes no es un array en populateComplexFilter:', complexes);
+        return;
+    }
+    
     complexes.forEach(complex => {
         const option = document.createElement('option');
         option.value = complex.id;

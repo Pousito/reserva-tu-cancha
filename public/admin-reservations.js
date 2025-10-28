@@ -304,10 +304,28 @@ async function cargarComplejos() {
         }
         
         const response = await AdminUtils.authenticatedFetch(`${API_BASE}/admin/complejos`);
+        console.log('🔍 Cargando complejos en admin-reservations... VERSIÓN 2.0');
         if (!response) return;
         
         if (response.ok) {
-            complejos = await response.json();
+            const data = await response.json();
+            console.log('✅ Complejos cargados en admin-reservations:', data);
+            console.log('🔍 Tipo de datos:', typeof data);
+            console.log('🔍 Es array?', Array.isArray(data));
+            
+            // Verificar si es un array o un objeto con array
+            if (Array.isArray(data)) {
+                complejos = data;
+            } else if (data && Array.isArray(data.complejos)) {
+                complejos = data.complejos;
+            } else if (data && Array.isArray(data.data)) {
+                complejos = data.data;
+            } else {
+                console.error('❌ Formato de datos inesperado:', data);
+                complejos = [];
+            }
+            
+            console.log('🔍 Complejos finales:', complejos);
             llenarSelectComplejos();
         } else {
             console.error('Error al cargar complejos');
@@ -324,6 +342,12 @@ function llenarSelectComplejos() {
     
     select.innerHTML = '<option value="">Todos los complejos</option>';
     selectCalendario.innerHTML = '<option value="">Todos los complejos</option>';
+    
+    // Verificar que complejos sea un array
+    if (!Array.isArray(complejos)) {
+        console.error('❌ complejos no es un array en llenarSelectComplejos:', complejos);
+        return;
+    }
     
     complejos.forEach(complejo => {
         const option = document.createElement('option');
@@ -2391,6 +2415,12 @@ function limpiarValidacionesModal() {
 async function cargarComplejosModal() {
     const select = document.getElementById('modalComplejo');
     select.innerHTML = '<option value="">Seleccionar complejo</option>';
+    
+    // Verificar que complejos sea un array
+    if (!Array.isArray(complejos)) {
+        console.error('❌ complejos no es un array en cargarComplejosModal:', complejos);
+        return;
+    }
     
     complejos.forEach(complejo => {
         const option = document.createElement('option');

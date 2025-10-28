@@ -56,7 +56,33 @@ class DatabaseManager {
         console.log('🔧 Usando DATABASE_URL');
       }
       
-      this.pgPool = new Pool(poolConfig);
+      // Configuración optimizada del pool de conexiones
+      const optimizedPoolConfig = {
+        ...poolConfig,
+        // Configuración del pool para mejor rendimiento
+        max: 20,                    // Máximo de conexiones en el pool
+        min: 2,                     // Mínimo de conexiones en el pool
+        idleTimeoutMillis: 30000,   // 30 segundos antes de cerrar conexiones inactivas
+        connectionTimeoutMillis: 2000, // 2 segundos timeout para nuevas conexiones
+        acquireTimeoutMillis: 60000,   // 60 segundos timeout para adquirir conexión
+        // Configuración específica para desarrollo
+        ...(process.env.NODE_ENV === 'development' && {
+          max: 10,                  // Menos conexiones en desarrollo
+          min: 1,
+          idleTimeoutMillis: 10000, // Menos tiempo en desarrollo
+        })
+      };
+      
+      this.pgPool = new Pool(optimizedPoolConfig);
+      
+      // Configurar eventos del pool para monitoreo
+      this.pgPool.on('connect', () => {
+        console.log('🔗 Nueva conexión establecida al pool');
+      });
+      
+      this.pgPool.on('error', (err) => {
+        console.error('❌ Error en el pool de conexiones:', err);
+      });
 
       // Probar conexión y configurar zona horaria
       const client = await this.pgPool.connect();

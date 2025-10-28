@@ -22,6 +22,7 @@ const {
 const { securityMiddleware } = require('./src/middleware/advanced-security');
 const securityHeaders = require('./src/middleware/security-headers');
 const { validateReservationInput, validatePaymentInput } = require('./src/utils/validation');
+const { cacheMiddleware, clearCache } = require('./src/middleware/cache-middleware');
 // const compression = require('compression'); // Temporalmente deshabilitado para deploy
 const { 
   requireRolePermission, 
@@ -122,7 +123,10 @@ app.use((req, res, next) => {
       res.header('Access-Control-Allow-Credentials', 'true');
       res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-      console.log('🔧 Headers CORS agregados para origin:', origin || 'sin origin');
+      // Solo loggear ocasionalmente en desarrollo para reducir spam
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
+        console.log('🔧 Headers CORS agregados para origin:', origin || 'sin origin');
+      }
     }
   }
   
@@ -2399,8 +2403,18 @@ app.get('/api/admin/complejos-simple', async (req, res) => {
   }
 });
 
+// Endpoint para limpiar caché (solo en desarrollo)
+app.post('/api/admin/clear-cache', authenticateToken, requireRolePermission(['super_admin']), (req, res) => {
+  if (process.env.NODE_ENV === 'development') {
+    clearCache();
+    res.json({ success: true, message: 'Cache limpiado exitosamente' });
+  } else {
+    res.status(403).json({ error: 'Solo disponible en desarrollo' });
+  }
+});
+
 // Endpoint para obtener complejos (panel de administración)
-app.get('/api/admin/complejos', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+app.get('/api/admin/complejos', cacheMiddleware(2 * 60 * 1000), authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🏢 Cargando complejos para administración...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);

@@ -196,6 +196,7 @@ async function loadComplexes() {
         }
         
         const token = localStorage.getItem('adminToken');
+        console.log('🔍 Cargando complejos en admin-courts... VERSIÓN 3.7');
         const response = await AdminUtils.authenticatedFetch('/admin/complejos', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -203,7 +204,24 @@ async function loadComplexes() {
         });
         
         if (response.ok) {
-            complexes = await response.json();
+            const data = await response.json();
+            console.log('✅ Complejos cargados en admin-courts:', data);
+            console.log('🔍 Tipo de datos:', typeof data);
+            console.log('🔍 Es array?', Array.isArray(data));
+            
+            // Verificar si es un array o un objeto con array
+            if (Array.isArray(data)) {
+                complexes = data;
+            } else if (data && Array.isArray(data.complejos)) {
+                complexes = data.complejos;
+            } else if (data && Array.isArray(data.data)) {
+                complexes = data.data;
+            } else {
+                console.error('❌ Formato de datos inesperado:', data);
+                complexes = [];
+            }
+            
+            console.log('🔍 Complejos finales:', complexes);
             populateComplexSelect();
         } else {
             console.error('Error cargando complejos:', response.statusText);
@@ -217,6 +235,13 @@ async function loadComplexes() {
 function populateComplexSelect() {
     const select = document.getElementById('courtComplex');
     select.innerHTML = '<option value="">Seleccionar complejo...</option>';
+    
+    // Verificar que complexes sea un array
+    if (!Array.isArray(complexes)) {
+        console.error('❌ complexes no es un array en populateComplexSelect:', complexes);
+        return;
+    }
+    
     complexes.forEach(complex => {
         const option = document.createElement('option');
         option.value = complex.id;
@@ -237,6 +262,12 @@ function populateComplexSelect() {
 function populateComplexFilter() {
     const filterSelect = document.getElementById('filterComplex');
     filterSelect.innerHTML = '<option value="">Todos los complejos</option>';
+    
+    // Verificar que complexes sea un array
+    if (!Array.isArray(complexes)) {
+        console.error('❌ complexes no es un array en populateComplexFilter:', complexes);
+        return;
+    }
     
     // Filtrar complejos según el rol del usuario
     let availableComplexes = complexes;
@@ -468,6 +499,12 @@ function getComplexName(complexId) {
     // Si el usuario es manager o owner y no tiene acceso a complejos, usar su complejo_nombre
     if (currentUser && (currentUser.rol === 'manager' || currentUser.rol === 'owner') && currentUser.complejo_nombre) {
         return currentUser.complejo_nombre;
+    }
+    
+    // Verificar que complexes sea un array
+    if (!Array.isArray(complexes)) {
+        console.error('❌ complexes no es un array en getComplexName:', complexes);
+        return 'Complejo no encontrado';
     }
     
     const complex = complexes.find(c => c.id === complexId);
