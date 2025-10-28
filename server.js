@@ -9861,41 +9861,41 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
               AND r.estado_pago = 'pagado'
           LOOP
               SELECT
-                  COALESCE(SUM(r.precio_total), 0),
+                  COALESCE(SUM(r2.precio_total), 0),
                   COUNT(*)
               INTO total_reservas, reservas_procesadas
-              FROM reservas r
-              JOIN canchas ca ON r.cancha_id = ca.id
-              WHERE ca.complejo_id = rec.complejo_id
-              AND r.fecha = fecha_deposito
-              AND r.estado = 'confirmada'
-              AND r.estado_pago = 'pagado';
+              FROM reservas r2
+              JOIN canchas ca2 ON r2.cancha_id = ca2.id
+              WHERE ca2.complejo_id = rec.complejo_id
+              AND r2.fecha = fecha_deposito
+              AND r2.estado = 'confirmada'
+              AND r2.estado_pago = 'pagado';
 
               IF total_reservas > 0 THEN
                   SELECT
                       SUM(
                           CASE
-                              WHEN r.tipo_reserva = 'administrativa' THEN
-                                  ROUND(r.precio_total * 0.0175)
+                              WHEN r3.tipo_reserva = 'administrativa' THEN
+                                  ROUND(r3.precio_total * 0.0175)
                               ELSE
-                                  ROUND(r.precio_total * 0.035)
+                                  ROUND(r3.precio_total * 0.035)
                           END
                       ),
                       SUM(
                           CASE
-                              WHEN r.tipo_reserva = 'administrativa' THEN
-                                  ROUND(r.precio_total * 0.0175 * 0.19)
+                              WHEN r3.tipo_reserva = 'administrativa' THEN
+                                  ROUND(r3.precio_total * 0.0175 * 0.19)
                               ELSE
-                                  ROUND(r.precio_total * 0.035 * 0.19)
+                                  ROUND(r3.precio_total * 0.035 * 0.19)
                           END
                       )
                   INTO comision_sin_iva, iva_comision
-                  FROM reservas r
-                  JOIN canchas ca ON r.cancha_id = ca.id
-                  WHERE ca.complejo_id = rec.complejo_id
-                  AND r.fecha = fecha_deposito
-                  AND r.estado = 'confirmada'
-                  AND r.estado_pago = 'pagado';
+                  FROM reservas r3
+                  JOIN canchas ca3 ON r3.cancha_id = ca3.id
+                  WHERE ca3.complejo_id = rec.complejo_id
+                  AND r3.fecha = fecha_deposito
+                  AND r3.estado = 'confirmada'
+                  AND r3.estado_pago = 'pagado';
 
                   comision_total := comision_sin_iva + iva_comision;
                   monto_deposito := total_reservas - comision_total;
