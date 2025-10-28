@@ -9786,6 +9786,105 @@ app.post('/api/admin/depositos/generar-historicos', authenticateToken, requireRo
   }
 });
 
+/**
+ * ENDPOINT TEMPORAL - Generar depósitos históricos SIN autenticación
+ * TODO: ELIMINAR DESPUÉS DE USAR
+ */
+app.post('/api/admin/depositos/generar-historicos-temp', async (req, res) => {
+  try {
+    console.log('🚀 [TEMP] Iniciando generación de depósitos históricos...');
+
+    // 1. Obtener todas las fechas únicas con reservas confirmadas y pagadas
+    const fechasConReservas = await db.query(`
+      SELECT DISTINCT r.fecha
+      FROM reservas r
+      WHERE r.estado = 'confirmada'
+      AND r.estado_pago = 'pagado'
+      ORDER BY r.fecha ASC
+    `);
+
+    console.log(`📅 Encontradas ${fechasConReservas.length} fechas con reservas`);
+
+    if (fechasConReservas.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No hay reservas confirmadas y pagadas para procesar',
+        depositosGenerados: 0,
+        fechasProcesadas: 0
+      });
+    }
+
+    // 2. Para cada fecha, generar depósitos
+    let depositosGenerados = 0;
+    let errores = 0;
+    const detalles = [];
+
+    for (const { fecha } of fechasConReservas) {
+      try {
+        console.log(`📊 Procesando fecha: ${fecha}`);
+
+        // Generar depósitos usando la función SQL
+        const resultado = await db.query(`
+          SELECT * FROM generar_depositos_diarios($1)
+        `, [fecha]);
+
+        if (resultado.length > 0) {
+          console.log(`   ✅ Generados ${resultado.length} depósitos para ${fecha}`);
+          depositosGenerados += resultado.length;
+
+          detalles.push({
+            fecha,
+            depositosGenerados: resultado.length,
+            complejos: resultado.map(d => ({
+              complejo_id: d.complejo_id,
+              monto_total: d.monto_total,
+              comision_total: d.comision_total,
+              monto_deposito: d.monto_deposito
+            }))
+          });
+        }
+      } catch (error) {
+        console.error(`   ❌ Error procesando fecha ${fecha}:`, error.message);
+        errores++;
+        detalles.push({
+          fecha,
+          error: error.message
+        });
+      }
+    }
+
+    // 3. Obtener totales finales
+    const totales = await db.query(`
+      SELECT
+        COUNT(*) as total_depositos,
+        SUM(monto_total_reservas) as total_reservas,
+        SUM(comision_total) as total_comisiones,
+        SUM(monto_a_depositar) as total_a_depositar
+      FROM depositos_complejos
+    `);
+
+    console.log(`✅ Proceso completado: ${depositosGenerados} depósitos generados, ${errores} errores`);
+
+    res.json({
+      success: true,
+      message: `Se procesaron ${fechasConReservas.length} fechas con ${depositosGenerados} depósitos generados`,
+      depositosGenerados,
+      fechasProcesadas: fechasConReservas.length,
+      errores,
+      totales: totales[0] || null,
+      detalles: detalles.slice(0, 20) // Limitar a 20 fechas en respuesta
+    });
+
+  } catch (error) {
+    console.error('❌ Error generando depósitos históricos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // ===== RUTA CATCH-ALL PARA SERVIR EL FRONTEND =====
 // Esta ruta es crítica para servir index.html cuando se accede a la raíz del sitio
 app.get('*', (req, res) => {
