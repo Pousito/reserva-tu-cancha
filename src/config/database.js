@@ -347,7 +347,7 @@ class DatabaseManager {
           observaciones TEXT,
 
           -- Auditoría
-          procesado_por INTEGER REFERENCES usuarios(id),
+          procesado_por INTEGER,
           fecha_procesado TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
