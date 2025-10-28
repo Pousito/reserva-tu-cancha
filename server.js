@@ -9893,7 +9893,6 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
               JOIN reservas r ON ca.id = r.cancha_id
               WHERE r.fecha = fecha_deposito
               AND r.estado = 'confirmada'
-              AND r.estado_pago = 'pagado'
           LOOP
               SELECT
                   COALESCE(SUM(r2.precio_total), 0),
@@ -9903,8 +9902,7 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
               JOIN canchas ca2 ON r2.cancha_id = ca2.id
               WHERE ca2.complejo_id = rec.complejo_id
               AND r2.fecha = fecha_deposito
-              AND r2.estado = 'confirmada'
-              AND r2.estado_pago = 'pagado';
+              AND r2.estado = 'confirmada';
 
               IF total_reservas > 0 THEN
                   SELECT
@@ -9929,8 +9927,7 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
                   JOIN canchas ca3 ON r3.cancha_id = ca3.id
                   WHERE ca3.complejo_id = rec.complejo_id
                   AND r3.fecha = fecha_deposito
-                  AND r3.estado = 'confirmada'
-                  AND r3.estado_pago = 'pagado';
+                  AND r3.estado = 'confirmada';
 
                   comision_total := comision_sin_iva + iva_comision;
                   monto_deposito := total_reservas - comision_total;
