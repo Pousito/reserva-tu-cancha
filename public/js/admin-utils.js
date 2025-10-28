@@ -161,6 +161,43 @@ function hideElementsByRole() {
             }
         }
     });
+
+    // Manejo de clases CSS para ocultar elementos por rol
+    if (user.rol === 'owner') {
+        // Owners no pueden ver gestión de depósitos
+        const ownerHiddenElements = document.querySelectorAll('.hide-for-owner');
+        console.log(`🔍 AdminUtils: Encontrados ${ownerHiddenElements.length} elementos para ocultar para owner`);
+        ownerHiddenElements.forEach(element => {
+            element.style.display = 'none';
+            element.style.visibility = 'hidden';
+        });
+        console.log('✅ AdminUtils: Elementos ocultados para owner');
+        
+    } else if (user.rol === 'manager') {
+        // Managers no pueden ver gestión de depósitos ni otras funciones administrativas
+        const managerHiddenElements = document.querySelectorAll('.hide-for-manager');
+        console.log(`🔍 AdminUtils: Encontrados ${managerHiddenElements.length} elementos para ocultar para manager`);
+        managerHiddenElements.forEach(element => {
+            element.style.display = 'none';
+            element.style.visibility = 'hidden';
+        });
+        console.log('✅ AdminUtils: Elementos ocultados para manager');
+        
+    } else if (user.rol === 'super_admin') {
+        // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
+        console.log('✅ AdminUtils: Super admin - acceso completo');
+        
+        const allHiddenElements = document.querySelectorAll('.hide-for-manager, .hide-for-owner');
+        console.log(`🔍 AdminUtils: Asegurando visibilidad de ${allHiddenElements.length} elementos para super admin`);
+        
+        allHiddenElements.forEach((element, index) => {
+            element.classList.remove('hide-for-manager');
+            element.classList.remove('hide-for-owner');
+            element.style.display = '';
+            element.style.visibility = '';
+            console.log(`✅ AdminUtils: Elemento ${index + 1} configurado como visible para super admin`);
+        });
+    }
 }
 
 /**

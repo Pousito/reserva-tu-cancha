@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Verificar autenticación
     await checkAuth();
     
+    // Aplicar permisos por rol
+    aplicarPermisosPorRol();
+    
     // Inicializar modal
     const modalElement = document.getElementById('movimientoModal');
     modal = new bootstrap.Modal(modalElement);
@@ -100,6 +103,49 @@ function getRoleDisplayName(role) {
         'manager': 'Administrador de Complejo'
     };
     return roleNames[role] || role;
+}
+
+// ============================================
+// APLICACIÓN DE PERMISOS POR ROL
+// ============================================
+
+function aplicarPermisosPorRol() {
+    console.log('🔐 Aplicando permisos para Control Financiero...');
+    
+    const user = userData;
+    if (!user) {
+        console.log('❌ No se pudo obtener el usuario para aplicar permisos');
+        return;
+    }
+    
+    const userRole = user.rol;
+    console.log('🔐 Aplicando permisos para rol:', userRole);
+    
+    if (userRole === 'owner') {
+        // Owners no pueden ver gestión de depósitos
+        const ownerHiddenElements = document.querySelectorAll('.hide-for-owner');
+        console.log(`🔍 Encontrados ${ownerHiddenElements.length} elementos para ocultar para owner`);
+        ownerHiddenElements.forEach(element => {
+            element.style.display = 'none';
+            element.style.visibility = 'hidden';
+        });
+        console.log('✅ Elementos ocultados para owner');
+        
+    } else if (userRole === 'super_admin') {
+        // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
+        console.log('✅ Super admin - acceso completo');
+        
+        const allHiddenElements = document.querySelectorAll('.hide-for-manager, .hide-for-owner');
+        console.log(`🔍 Asegurando visibilidad de ${allHiddenElements.length} elementos para super admin`);
+        
+        allHiddenElements.forEach((element, index) => {
+            element.classList.remove('hide-for-manager');
+            element.classList.remove('hide-for-owner');
+            element.style.display = '';
+            element.style.visibility = '';
+            console.log(`✅ Elemento ${index + 1} configurado como visible para super admin`);
+        });
+    }
 }
 
 function logout() {
