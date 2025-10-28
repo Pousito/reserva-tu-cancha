@@ -2413,11 +2413,10 @@ app.post('/api/admin/clear-cache', authenticateToken, requireRolePermission(['su
   }
 });
 
-// Endpoint de diagnóstico para depósitos (solo super admin)
-app.get('/api/admin/depositos/diagnostico', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+// Endpoint de diagnóstico para depósitos (sin autenticación para debugging)
+app.get('/api/admin/depositos/diagnostico', async (req, res) => {
   try {
     console.log('🔍 Ejecutando diagnóstico de depósitos...');
-    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
     console.log('🌍 Entorno:', process.env.NODE_ENV);
     
     const diagnosticos = [];
