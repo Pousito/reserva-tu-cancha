@@ -2413,8 +2413,76 @@ app.post('/api/admin/clear-cache', authenticateToken, requireRolePermission(['su
   }
 });
 
-// Endpoint de diagnóstico para depósitos (sin autenticación para debugging)
-app.get('/api/admin/depositos/diagnostico', async (req, res) => {
+// Endpoint temporal para crear tabla depositos_complejos (solo para debugging)
+app.post('/api/admin/create-depositos-table', async (req, res) => {
+  try {
+    console.log('🔧 Creando tabla depositos_complejos...');
+    
+    // Crear la tabla
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS depositos_complejos (
+        id SERIAL PRIMARY KEY,
+        complejo_id INTEGER NOT NULL,
+        fecha_deposito DATE NOT NULL,
+        monto_total_reservas INTEGER NOT NULL,
+        comision_porcentaje NUMERIC(5,2) NOT NULL,
+        comision_sin_iva INTEGER NOT NULL,
+        iva_comision INTEGER NOT NULL,
+        comision_total INTEGER NOT NULL,
+        monto_a_depositar INTEGER NOT NULL,
+        estado VARCHAR(50),
+        metodo_pago VARCHAR(50),
+        numero_transaccion VARCHAR(100),
+        banco_destino VARCHAR(100),
+        observaciones TEXT,
+        procesado_por INTEGER,
+        fecha_procesado TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        
+        FOREIGN KEY (complejo_id) REFERENCES complejos(id) ON DELETE CASCADE,
+        FOREIGN KEY (procesado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+      )
+    `);
+    
+    // Crear índices
+    await db.query('CREATE INDEX IF NOT EXISTS idx_depositos_complejos_complejo_id ON depositos_complejos(complejo_id)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_depositos_complejos_fecha ON depositos_complejos(fecha_deposito)');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_depositos_complejos_estado ON depositos_complejos(estado)');
+    
+    // Insertar datos de ejemplo
+    await db.query(`
+      INSERT INTO depositos_complejos (
+        complejo_id, fecha_deposito, monto_total_reservas, 
+        comision_porcentaje, comision_sin_iva, iva_comision, 
+        comision_total, monto_a_depositar, estado
+      ) VALUES 
+      (8, '2025-10-18', 15000, 3.50, 525, 100, 625, 14375, 'pendiente'),
+      (8, '2025-10-26', 16000, 1.75, 280, 53, 333, 15667, 'pendiente'),
+      (8, '2025-10-31', 15000, 3.50, 525, 100, 625, 14375, 'pendiente')
+      ON CONFLICT DO NOTHING
+    `);
+    
+    // Verificar creación
+    const count = await db.query('SELECT COUNT(*) as total FROM depositos_complejos');
+    
+    console.log(`✅ Tabla depositos_complejos creada exitosamente con ${count.rows[0].total} registros`);
+    
+    res.json({
+      success: true,
+      message: 'Tabla depositos_complejos creada exitosamente',
+      total_registros: count.rows[0].total
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando tabla:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error creando tabla',
+      details: error.message
+    });
+  }
+});
   try {
     console.log('🔍 Ejecutando diagnóstico de depósitos...');
     console.log('🌍 Entorno:', process.env.NODE_ENV);
