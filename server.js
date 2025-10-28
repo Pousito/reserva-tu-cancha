@@ -9218,6 +9218,26 @@ app.use(express.static('public', {
 app.get('/api/admin/depositos', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   try {
     console.log('💰 Cargando depósitos para super admin...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    
+    // Verificar que la tabla existe antes de hacer la consulta
+    const tableCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'depositos_complejos'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.error('❌ Tabla depositos_complejos no existe');
+      return res.status(500).json({
+        success: false,
+        error: 'Tabla de depósitos no encontrada'
+      });
+    }
+    
+    console.log('✅ Tabla depositos_complejos existe, ejecutando consulta...');
     
     const depositos = await db.query(`
       SELECT 
@@ -9230,16 +9250,20 @@ app.get('/api/admin/depositos', authenticateToken, requireRolePermission(['super
       ORDER BY dc.fecha_deposito DESC, dc.created_at DESC
     `);
     
+    console.log(`✅ ${depositos.length} depósitos cargados exitosamente`);
+    
     res.json({
       success: true,
       depositos: depositos
     });
     
   } catch (error) {
-    console.error('Error cargando depósitos:', error);
+    console.error('❌ Error cargando depósitos:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
