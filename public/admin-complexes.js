@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadCities();
     loadComplexes();
-    loadEstadisticas(); // Cargar estadísticas
+    // loadEstadisticas(); // Estadísticas removidas de la sección complejos
     setupEventListeners();
 });
 
@@ -133,7 +133,7 @@ function formatCurrencyChile(amount) {
 // Cargar complejos
 async function loadComplexes() {
     try {
-        console.log('🔍 Cargando complejos...');
+        console.log('🔍 Cargando complejos... VERSIÓN 1.9 - SIN ESTADÍSTICAS');
         const response = await AdminUtils.authenticatedFetch('/admin/complejos');
         console.log('📡 Respuesta recibida:', response);
         
@@ -143,8 +143,24 @@ async function loadComplexes() {
         }
         
         if (response.ok) {
-            complexes = await response.json();
-            console.log('✅ Complejos cargados:', complexes);
+            const data = await response.json();
+            console.log('✅ Complejos cargados:', data);
+            console.log('🔍 Tipo de datos:', typeof data);
+            console.log('🔍 Es array?', Array.isArray(data));
+            
+            // Verificar si es un array o un objeto con array
+            if (Array.isArray(data)) {
+                complexes = data;
+            } else if (data && Array.isArray(data.complejos)) {
+                complexes = data.complejos;
+            } else if (data && Array.isArray(data.data)) {
+                complexes = data.data;
+            } else {
+                console.error('❌ Formato de datos inesperado:', data);
+                complexes = [];
+            }
+            
+            console.log('🔍 Complejos finales:', complexes);
             displayComplexes(complexes);
         } else {
             console.error('❌ Error cargando complejos:', response.statusText);
@@ -168,7 +184,24 @@ async function loadComplexes() {
 
 // Mostrar complejos
 function displayComplexes(complexesToShow) {
+    console.log('🎯 displayComplexes ejecutándose - VERSIÓN 1.8');
+    console.log('🔍 complexesToShow recibido:', complexesToShow);
+    console.log('🔍 Tipo:', typeof complexesToShow);
+    console.log('🔍 Es array:', Array.isArray(complexesToShow));
+    
     const container = document.getElementById('complexesList');
+    
+    // Verificar que complexesToShow sea un array
+    if (!Array.isArray(complexesToShow)) {
+        console.error('❌ complexesToShow no es un array:', complexesToShow);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error: Los datos recibidos no son válidos
+            </div>
+        `;
+        return;
+    }
     
     if (complexesToShow.length === 0) {
         container.innerHTML = `
