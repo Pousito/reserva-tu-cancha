@@ -2491,13 +2491,13 @@ app.post('/api/admin/create-depositos-table', async (req, res) => {
     
     // Verificar creación
     const count = await db.query('SELECT COUNT(*) as total FROM depositos_complejos');
-    
-    console.log(`✅ Tabla depositos_complejos creada exitosamente con ${count.rows[0].total} registros`);
-    
+
+    console.log(`✅ Tabla depositos_complejos creada exitosamente con ${count[0].total} registros`);
+
     res.json({
       success: true,
       message: 'Tabla depositos_complejos creada exitosamente',
-      total_registros: count.rows[0].total
+      total_registros: count[0].total
     });
     
   } catch (error) {
@@ -2524,7 +2524,7 @@ app.get('/api/admin/depositos/diagnostico', async (req, res) => {
       diagnosticos.push({
         test: 'Conexión a base de datos',
         status: 'OK',
-        details: `Hora actual: ${connectionTest.rows[0].current_time}`
+        details: `Hora actual: ${connectionTest[0].current_time}`
       });
     } catch (error) {
       diagnosticos.push({
@@ -2533,20 +2533,20 @@ app.get('/api/admin/depositos/diagnostico', async (req, res) => {
         details: error.message
       });
     }
-    
+
     // 2. Verificar existencia de tabla
     try {
       const tableCheck = await db.query(`
         SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
+          SELECT FROM information_schema.tables
+          WHERE table_schema = 'public'
           AND table_name = 'depositos_complejos'
         );
       `);
       diagnosticos.push({
         test: 'Tabla depositos_complejos',
-        status: tableCheck.rows[0].exists ? 'OK' : 'ERROR',
-        details: tableCheck.rows[0].exists ? 'Tabla existe' : 'Tabla no encontrada'
+        status: tableCheck[0].exists ? 'OK' : 'ERROR',
+        details: tableCheck[0].exists ? 'Tabla existe' : 'Tabla no encontrada'
       });
     } catch (error) {
       diagnosticos.push({
@@ -2555,14 +2555,14 @@ app.get('/api/admin/depositos/diagnostico', async (req, res) => {
         details: error.message
       });
     }
-    
+
     // 3. Contar registros
     try {
       const countResult = await db.query('SELECT COUNT(*) as total FROM depositos_complejos');
       diagnosticos.push({
         test: 'Conteo de registros',
         status: 'OK',
-        details: `${countResult.rows[0].total} registros encontrados`
+        details: `${countResult[0].total} registros encontrados`
       });
     } catch (error) {
       diagnosticos.push({
@@ -2571,18 +2571,18 @@ app.get('/api/admin/depositos/diagnostico', async (req, res) => {
         details: error.message
       });
     }
-    
+
     // 4. Verificar JOIN con complejos
     try {
       const joinTest = await db.query(`
-        SELECT COUNT(*) as total 
+        SELECT COUNT(*) as total
         FROM depositos_complejos dc
         JOIN complejos c ON dc.complejo_id = c.id
       `);
       diagnosticos.push({
         test: 'JOIN con tabla complejos',
         status: 'OK',
-        details: `${joinTest.rows[0].total} registros con JOIN exitoso`
+        details: `${joinTest[0].total} registros con JOIN exitoso`
       });
     } catch (error) {
       diagnosticos.push({
@@ -2591,18 +2591,18 @@ app.get('/api/admin/depositos/diagnostico', async (req, res) => {
         details: error.message
       });
     }
-    
+
     // 5. Verificar JOIN con usuarios
     try {
       const userJoinTest = await db.query(`
-        SELECT COUNT(*) as total 
+        SELECT COUNT(*) as total
         FROM depositos_complejos dc
         LEFT JOIN usuarios u ON dc.procesado_por = u.id
       `);
       diagnosticos.push({
         test: 'LEFT JOIN con tabla usuarios',
         status: 'OK',
-        details: `${userJoinTest.rows[0].total} registros con LEFT JOIN exitoso`
+        details: `${userJoinTest[0].total} registros con LEFT JOIN exitoso`
       });
     } catch (error) {
       diagnosticos.push({
@@ -9472,7 +9472,7 @@ app.get('/api/admin/depositos', authenticateToken, requireRolePermission(['super
       );
     `);
     
-    if (!tableCheck.rows[0].exists) {
+    if (!tableCheck[0].exists) {
       console.error('❌ Tabla depositos_complejos no existe');
       return res.status(500).json({
         success: false,
