@@ -319,6 +319,83 @@ class DatabaseManager {
         console.log('✅ Columna codigo_reserva ya existe');
       }
 
+      // ============================================
+      // Crear tabla depositos_complejos
+      // ============================================
+      console.log('🔧 Verificando tabla depositos_complejos...');
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS depositos_complejos (
+          id SERIAL PRIMARY KEY,
+          complejo_id INTEGER NOT NULL REFERENCES complejos(id) ON DELETE CASCADE,
+          fecha_deposito DATE NOT NULL,
+
+          -- Montos calculados
+          monto_total_reservas INTEGER NOT NULL,
+          comision_porcentaje DECIMAL(5,4) NOT NULL,
+          comision_sin_iva INTEGER NOT NULL,
+          iva_comision INTEGER NOT NULL,
+          comision_total INTEGER NOT NULL,
+          monto_a_depositar INTEGER NOT NULL,
+
+          -- Control de estado
+          estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'pagado', 'cancelado')),
+
+          -- Detalles del pago
+          metodo_pago VARCHAR(50),
+          numero_transaccion VARCHAR(100),
+          banco_destino VARCHAR(100),
+          observaciones TEXT,
+
+          -- Auditoría
+          procesado_por INTEGER REFERENCES usuarios(id),
+          fecha_procesado TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+          -- Índice único para evitar duplicados
+          UNIQUE(complejo_id, fecha_deposito)
+        )
+      `);
+      console.log('✅ Tabla depositos_complejos verificada/creada');
+
+      // Crear índices para depositos_complejos
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_depositos_complejo ON depositos_complejos(complejo_id)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_depositos_fecha ON depositos_complejos(fecha_deposito)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_depositos_estado ON depositos_complejos(estado)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_depositos_fecha_estado ON depositos_complejos(fecha_deposito, estado)
+      `);
+      console.log('✅ Índices de depositos_complejos creados');
+
+      // Crear trigger para actualizar updated_at
+      await client.query(`
+        CREATE OR REPLACE FUNCTION update_depositos_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          NEW.updated_at = CURRENT_TIMESTAMP;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql
+      `);
+
+      await client.query(`
+        DROP TRIGGER IF EXISTS trigger_update_depositos_updated_at ON depositos_complejos
+      `);
+
+      await client.query(`
+        CREATE TRIGGER trigger_update_depositos_updated_at
+          BEFORE UPDATE ON depositos_complejos
+          FOR EACH ROW
+          EXECUTE FUNCTION update_depositos_updated_at()
+      `);
+      console.log('✅ Trigger de depositos_complejos creado');
+
       console.log('✅ Tablas PostgreSQL creadas/verificadas exitosamente');
       
     } catch (error) {
