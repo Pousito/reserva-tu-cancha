@@ -2413,6 +2413,153 @@ app.post('/api/admin/clear-cache', authenticateToken, requireRolePermission(['su
   }
 });
 
+// Endpoint de diagnóstico para depósitos (solo super admin)
+app.get('/api/admin/depositos/diagnostico', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('🔍 Ejecutando diagnóstico de depósitos...');
+    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    console.log('🌍 Entorno:', process.env.NODE_ENV);
+    
+    const diagnosticos = [];
+    
+    // 1. Verificar conexión a base de datos
+    try {
+      const connectionTest = await db.query('SELECT NOW() as current_time');
+      diagnosticos.push({
+        test: 'Conexión a base de datos',
+        status: 'OK',
+        details: `Hora actual: ${connectionTest.rows[0].current_time}`
+      });
+    } catch (error) {
+      diagnosticos.push({
+        test: 'Conexión a base de datos',
+        status: 'ERROR',
+        details: error.message
+      });
+    }
+    
+    // 2. Verificar existencia de tabla
+    try {
+      const tableCheck = await db.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'depositos_complejos'
+        );
+      `);
+      diagnosticos.push({
+        test: 'Tabla depositos_complejos',
+        status: tableCheck.rows[0].exists ? 'OK' : 'ERROR',
+        details: tableCheck.rows[0].exists ? 'Tabla existe' : 'Tabla no encontrada'
+      });
+    } catch (error) {
+      diagnosticos.push({
+        test: 'Verificación de tabla',
+        status: 'ERROR',
+        details: error.message
+      });
+    }
+    
+    // 3. Contar registros
+    try {
+      const countResult = await db.query('SELECT COUNT(*) as total FROM depositos_complejos');
+      diagnosticos.push({
+        test: 'Conteo de registros',
+        status: 'OK',
+        details: `${countResult.rows[0].total} registros encontrados`
+      });
+    } catch (error) {
+      diagnosticos.push({
+        test: 'Conteo de registros',
+        status: 'ERROR',
+        details: error.message
+      });
+    }
+    
+    // 4. Verificar JOIN con complejos
+    try {
+      const joinTest = await db.query(`
+        SELECT COUNT(*) as total 
+        FROM depositos_complejos dc
+        JOIN complejos c ON dc.complejo_id = c.id
+      `);
+      diagnosticos.push({
+        test: 'JOIN con tabla complejos',
+        status: 'OK',
+        details: `${joinTest.rows[0].total} registros con JOIN exitoso`
+      });
+    } catch (error) {
+      diagnosticos.push({
+        test: 'JOIN con tabla complejos',
+        status: 'ERROR',
+        details: error.message
+      });
+    }
+    
+    // 5. Verificar JOIN con usuarios
+    try {
+      const userJoinTest = await db.query(`
+        SELECT COUNT(*) as total 
+        FROM depositos_complejos dc
+        LEFT JOIN usuarios u ON dc.procesado_por = u.id
+      `);
+      diagnosticos.push({
+        test: 'LEFT JOIN con tabla usuarios',
+        status: 'OK',
+        details: `${userJoinTest.rows[0].total} registros con LEFT JOIN exitoso`
+      });
+    } catch (error) {
+      diagnosticos.push({
+        test: 'LEFT JOIN con tabla usuarios',
+        status: 'ERROR',
+        details: error.message
+      });
+    }
+    
+    // 6. Probar consulta completa
+    try {
+      const fullQueryTest = await db.query(`
+        SELECT 
+          dc.id,
+          dc.complejo_id,
+          c.nombre as complejo_nombre,
+          u.nombre as procesado_por_nombre
+        FROM depositos_complejos dc
+        JOIN complejos c ON dc.complejo_id = c.id
+        LEFT JOIN usuarios u ON dc.procesado_por = u.id
+        ORDER BY dc.fecha_deposito DESC
+        LIMIT 1
+      `);
+      diagnosticos.push({
+        test: 'Consulta completa',
+        status: 'OK',
+        details: fullQueryTest.length > 0 ? 'Consulta exitosa' : 'Sin resultados'
+      });
+    } catch (error) {
+      diagnosticos.push({
+        test: 'Consulta completa',
+        status: 'ERROR',
+        details: error.message
+      });
+    }
+    
+    res.json({
+      success: true,
+      diagnosticos: diagnosticos,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en diagnóstico:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error en diagnóstico',
+      details: error.message
+    });
+  }
+});
+
 // Endpoint para obtener complejos (panel de administración)
 app.get('/api/admin/complejos', cacheMiddleware(2 * 60 * 1000), authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
