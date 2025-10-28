@@ -9787,6 +9787,173 @@ app.post('/api/admin/depositos/generar-historicos', authenticateToken, requireRo
 });
 
 /**
+ * ENDPOINT TEMPORAL - Crear funciones SQL para depósitos
+ * TODO: ELIMINAR DESPUÉS DE USAR
+ */
+app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
+  try {
+    console.log('🔧 [TEMP] Creando funciones SQL para depósitos...');
+
+    // Función 1: calcular_comision_con_iva
+    await db.query(`
+      CREATE OR REPLACE FUNCTION calcular_comision_con_iva(
+          monto_reserva INTEGER,
+          tipo_reserva VARCHAR(20) DEFAULT 'directa'
+      ) RETURNS TABLE(
+          comision_sin_iva INTEGER,
+          iva_comision INTEGER,
+          comision_total INTEGER,
+          porcentaje_aplicado DECIMAL(5,4)
+      ) AS $$
+      DECLARE
+          porcentaje_base DECIMAL(5,4);
+          comision_base INTEGER;
+          iva_monto INTEGER;
+          comision_final INTEGER;
+      BEGIN
+          IF tipo_reserva = 'administrativa' THEN
+              porcentaje_base := 0.0175;
+          ELSE
+              porcentaje_base := 0.035;
+          END IF;
+
+          comision_base := ROUND(monto_reserva * porcentaje_base);
+          iva_monto := ROUND(comision_base * 0.19);
+          comision_final := comision_base + iva_monto;
+
+          RETURN QUERY SELECT
+              comision_base,
+              iva_monto,
+              comision_final,
+              porcentaje_base;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    console.log('✅ Función calcular_comision_con_iva creada');
+
+    // Función 2: generar_depositos_diarios
+    await db.query(`
+      CREATE OR REPLACE FUNCTION generar_depositos_diarios(fecha_deposito DATE DEFAULT CURRENT_DATE)
+      RETURNS TABLE(
+          complejo_id INTEGER,
+          monto_total INTEGER,
+          comision_total INTEGER,
+          monto_deposito INTEGER,
+          registros_procesados INTEGER
+      ) AS $$
+      DECLARE
+          rec RECORD;
+          total_reservas INTEGER;
+          comision_sin_iva INTEGER;
+          iva_comision INTEGER;
+          comision_total INTEGER;
+          monto_deposito INTEGER;
+          porcentaje_aplicado DECIMAL(5,4);
+          reservas_procesadas INTEGER;
+      BEGIN
+          FOR rec IN
+              SELECT DISTINCT c.id as complejo_id, c.nombre as complejo_nombre
+              FROM complejos c
+              JOIN canchas ca ON c.id = ca.complejo_id
+              JOIN reservas r ON ca.id = r.cancha_id
+              WHERE r.fecha = fecha_deposito
+              AND r.estado = 'confirmada'
+              AND r.estado_pago = 'pagado'
+          LOOP
+              SELECT
+                  COALESCE(SUM(r.precio_total), 0),
+                  COUNT(*)
+              INTO total_reservas, reservas_procesadas
+              FROM reservas r
+              JOIN canchas ca ON r.cancha_id = ca.id
+              WHERE ca.complejo_id = rec.complejo_id
+              AND r.fecha = fecha_deposito
+              AND r.estado = 'confirmada'
+              AND r.estado_pago = 'pagado';
+
+              IF total_reservas > 0 THEN
+                  SELECT
+                      SUM(
+                          CASE
+                              WHEN r.tipo_reserva = 'administrativa' THEN
+                                  ROUND(r.precio_total * 0.0175)
+                              ELSE
+                                  ROUND(r.precio_total * 0.035)
+                          END
+                      ),
+                      SUM(
+                          CASE
+                              WHEN r.tipo_reserva = 'administrativa' THEN
+                                  ROUND(r.precio_total * 0.0175 * 0.19)
+                              ELSE
+                                  ROUND(r.precio_total * 0.035 * 0.19)
+                          END
+                      )
+                  INTO comision_sin_iva, iva_comision
+                  FROM reservas r
+                  JOIN canchas ca ON r.cancha_id = ca.id
+                  WHERE ca.complejo_id = rec.complejo_id
+                  AND r.fecha = fecha_deposito
+                  AND r.estado = 'confirmada'
+                  AND r.estado_pago = 'pagado';
+
+                  comision_total := comision_sin_iva + iva_comision;
+                  monto_deposito := total_reservas - comision_total;
+
+                  porcentaje_aplicado := CASE
+                      WHEN total_reservas > 0 THEN
+                          ROUND((comision_sin_iva::DECIMAL / total_reservas), 4)
+                      ELSE 0
+                  END;
+
+                  INSERT INTO depositos_complejos (
+                      complejo_id, fecha_deposito, monto_total_reservas,
+                      comision_porcentaje, comision_sin_iva, iva_comision, comision_total,
+                      monto_a_depositar
+                  ) VALUES (
+                      rec.complejo_id, fecha_deposito, total_reservas,
+                      porcentaje_aplicado, comision_sin_iva, iva_comision, comision_total,
+                      monto_deposito
+                  )
+                  ON CONFLICT (complejo_id, fecha_deposito)
+                  DO UPDATE SET
+                      monto_total_reservas = EXCLUDED.monto_total_reservas,
+                      comision_porcentaje = EXCLUDED.comision_porcentaje,
+                      comision_sin_iva = EXCLUDED.comision_sin_iva,
+                      iva_comision = EXCLUDED.iva_comision,
+                      comision_total = EXCLUDED.comision_total,
+                      monto_a_depositar = EXCLUDED.monto_a_depositar,
+                      updated_at = CURRENT_TIMESTAMP;
+
+                  RETURN QUERY SELECT
+                      rec.complejo_id,
+                      total_reservas,
+                      comision_total,
+                      monto_deposito,
+                      reservas_procesadas;
+              END IF;
+          END LOOP;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    console.log('✅ Función generar_depositos_diarios creada');
+
+    res.json({
+      success: true,
+      message: 'Funciones SQL creadas exitosamente'
+    });
+
+  } catch (error) {
+    console.error('❌ Error creando funciones SQL:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error creando funciones SQL',
+      details: error.message
+    });
+  }
+});
+
+/**
  * ENDPOINT TEMPORAL - Generar depósitos históricos SIN autenticación
  * TODO: ELIMINAR DESPUÉS DE USAR
  */
