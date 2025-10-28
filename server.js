@@ -2483,6 +2483,9 @@ app.post('/api/admin/create-depositos-table', async (req, res) => {
     });
   }
 });
+
+// Endpoint de diagnóstico para depósitos (sin autenticación para debugging)
+app.get('/api/admin/depositos/diagnostico', async (req, res) => {
   try {
     console.log('🔍 Ejecutando diagnóstico de depósitos...');
     console.log('🌍 Entorno:', process.env.NODE_ENV);
