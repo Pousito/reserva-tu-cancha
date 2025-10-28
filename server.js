@@ -2413,6 +2413,32 @@ app.post('/api/admin/clear-cache', authenticateToken, requireRolePermission(['su
   }
 });
 
+// Endpoint para ejecutar script de creación de tabla directamente
+app.post('/api/admin/run-create-table-script', async (req, res) => {
+  try {
+    console.log('🔧 Ejecutando script de creación de tabla...');
+    
+    // Importar y ejecutar el script
+    const { createDepositosTable } = require('./scripts/create-depositos-table-direct');
+    
+    // Ejecutar el script
+    await createDepositosTable();
+    
+    res.json({
+      success: true,
+      message: 'Script ejecutado exitosamente'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error ejecutando script:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error ejecutando script',
+      details: error.message
+    });
+  }
+});
+
 // Endpoint temporal para crear tabla depositos_complejos (solo para debugging)
 app.post('/api/admin/create-depositos-table', async (req, res) => {
   try {
