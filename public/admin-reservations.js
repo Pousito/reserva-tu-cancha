@@ -206,6 +206,14 @@ function aplicarPermisosPorRol() {
             selectorComplejoCalendario.style.display = 'none';
         }
         
+        // Ocultar elementos específicos para owners (como gestión de depósitos)
+        const ownerHiddenElements = document.querySelectorAll('.hide-for-owner');
+        console.log(`🔍 Encontrados ${ownerHiddenElements.length} elementos para ocultar para owner`);
+        ownerHiddenElements.forEach(element => {
+            element.style.display = 'none';
+            element.style.visibility = 'hidden';
+        });
+        
         console.log('✅ Elementos ocultados para owner');
     } else if (userRole === 'super_admin') {
         // Super admins pueden ver todo - asegurar que todos los elementos estén visibles
