@@ -95,7 +95,7 @@ class Chatbot {
     }
 
     addWelcomeMessage() {
-        this.addMessage('bot', '¡Hola! 👋 Soy Carla, tu asistente personal.<br><br>📊 <b>Actualmente tenemos:</b><br>🏙️ 2 ciudades: Los Ángeles y Quilleco<br>🏟️ 3 complejos deportivos<br>⚽ 5 canchas de fútbol<br><br>¿En qué puedo ayudarte hoy?');
+        this.addMessage('bot', '¡Hola! 👋 Soy Carla, tu asistente personal.<br><br>📊 <b>Actualmente tenemos:</b><br>🏙️ 2 ciudades: Los Ángeles y Quilleco<br>🏟️ 4 complejos deportivos<br>⚽ 6 canchas de fútbol + 🏓 1 cancha de pádel<br><br>¿En qué puedo ayudarte hoy?');
     }
 
     toggleChatbot() {
@@ -167,10 +167,10 @@ class Chatbot {
 
     handleQuickAction(action) {
         const responses = {
-            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>- 2 canchas techadas: $5.000/hora<br><br>🏟️ <b>Fundación Gunnen (Los Ángeles)</b><br>- 2 canchas: $8.000/hora<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>- 1 cancha: $50/hora<br><br>💳 <i>Webpay Plus y códigos de descuento disponibles.</i>',
-            horarios: '🕐 <b>Horarios:</b><br><br>🏟️ <b>Complejo En Desarrollo & Gunnen (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta 30 días adelante.</i>',
-            reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Tenemos 3 complejos:</b><br>- Complejo En Desarrollo (Los Ángeles)<br>- Fundación Gunnen (Los Ángeles)<br>- Borde Río (Quilleco)<br><br><b>Pasos:</b><br>1. Selecciona ciudad y complejo<br>2. Elige fecha y horario<br>3. Completa datos<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación por email</i>',
-            contacto: '📞 <b>Contacto:</b><br><br>🏟️ <b>Complejo En Desarrollo</b><br>📱 +56987654321<br>📧 reservas@complejodesarrollo.cl<br><br>🏟️ <b>Gunnen</b><br>📱 +56972815810<br>📧 naxiin_320@hotmail.com<br><br>🏟️ <b>Borde Río</b><br>📱 +56999820929<br>📧 admin@borderio.cl'
+            precios: '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>Complejo Demo 1 (Los Ángeles)</b><br>- Información de canchas disponible en el sitio<br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>- 3 canchas fútbol: $12.000-$16.000/hora<br>- 1 cancha pádel: $15.000/hora<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>- 2 canchas fútbol: $50/hora<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>- 1 cancha fútbol: $20.000/hora<br><br>💳 <i>Webpay Plus y códigos de descuento disponibles.</i>',
+            horarios: '🕐 <b>Horarios:</b><br><br>🏟️ <b>Complejo Demo 1 (Los Ángeles)</b><br>Consulta horarios en el sitio web<br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta 30 días adelante.</i>',
+            reservar: '📅 <b>Cómo Reservar:</b><br><br><b>Tenemos 4 complejos:</b><br>- Complejo Demo 1 (Los Ángeles)<br>- Complejo Demo 3 (Los Ángeles)<br>- Complejo En Desarrollo (Los Ángeles)<br>- Espacio Deportivo Borde Río (Quilleco)<br><br><b>Pasos:</b><br>1. Selecciona ciudad y complejo<br>2. Elige fecha y horario<br>3. Completa datos<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación por email</i>',
+            contacto: '📞 <b>Contacto:</b><br><br>🏟️ <b>Complejo Demo 1 (Los Ángeles)</b><br>📱 +56972815810<br>📧 naxiin_320@hotmail.com<br>📍 Calle Don Victor 1310<br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>📱 +56912345678<br>📧 info@demo3.cl<br>📍 Av. Los Robles 2450<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>📱 +56987654321<br>📧 reservas@complejodesarrollo.cl<br>📍 Monte Perdido 1685<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>📱 +56999820929<br>📧 admin@borderio.cl<br>📍 Ruta Q-575, Quilleco'
         };
         
         this.addMessage('bot', responses[action]);
@@ -193,18 +193,18 @@ class Chatbot {
             'buenas noches': '¡Buenas noches! 🌙 Soy Carla, ¿necesitas alguna información sobre reservas?',
             
             // Precios
-            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>- 3 canchas fútbol: $12.000-$15.000/hora<br>- 1 cancha pádel: $16.000/hora<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>- 2 canchas fútbol: $50/hora<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>- 1 cancha fútbol: $20.000/hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
+            'precio': '💰 <b>Precios de Canchas:</b><br><br>🏟️ <b>Complejo Demo 1 (Los Ángeles)</b><br>- Información de canchas disponible en el sitio<br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>- 3 canchas fútbol: $12.000-$16.000/hora<br>- 1 cancha pádel: $15.000/hora<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>- 2 canchas fútbol: $50/hora<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>- 1 cancha fútbol: $20.000/hora<br><br>💳 <i>Aceptamos Webpay Plus y códigos de descuento.</i>',
             'cuanto cuesta': '💰 <b>Precios por hora:</b><br><br>🏟️ <b>Complejo Demo 3:</b> $12.000-$16.000<br>🏟️ <b>Complejo En Desarrollo:</b> $50<br>🏟️ <b>Borde Río:</b> $20.000<br><br>💡 <i>Todos los precios incluyen el uso completo de la cancha y promociones disponibles.</i>',
             'costos': '💰 <b>Costos de reserva:</b><br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles):</b> $12.000-$16.000/hora<br>🏟️ <b>Complejo En Desarrollo (Los Ángeles):</b> $50/hora<br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco):</b> $20.000/hora<br><br>💳 <i>Pagos seguros con Webpay Plus.</i>',
             
             // Horarios
             'horario': '🕐 <b>Horarios de Atención:</b><br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>L-V: 16:00-23:00 | S-D: 12:00-23:00<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>Todos los días: 10:00-23:00<br><br>📅 <i>Reservas hasta con 30 días de anticipación.</i>',
             'cuando abren': '🕐 <b>Horarios:</b><br><br>🏟️ <b>Complejo Demo 3:</b> L-V 16:00-23:00, S-D 12:00-23:00<br>🏟️ <b>Complejo En Desarrollo:</b> L-V 16:00-23:00, S-D 12:00-23:00<br>🏟️ <b>Borde Río:</b> Todos los días 10:00-23:00',
-            'disponibilidad': '📅 <b>Disponibilidad:</b><br><br><b>Reservas:</b> hasta 30 días adelante<br><br>🏟️ <b>3 complejos disponibles</b> en Los Ángeles y Quilleco<br><br>⚽ <b>6 canchas de fútbol</b> + 🏓 <b>1 cancha pádel</b><br><br>💡 <i>Consulta horarios en tiempo real en la página.</i>',
+            'disponibilidad': '📅 <b>Disponibilidad:</b><br><br><b>Reservas:</b> hasta 30 días adelante<br><br>🏟️ <b>4 complejos disponibles</b> en Los Ángeles y Quilleco<br><br>⚽ <b>6 canchas de fútbol</b> + 🏓 <b>1 cancha pádel</b><br><br>💡 <i>Consulta horarios en tiempo real en la página.</i>',
             
             // Reservas
             'reservar': '📅 <b>Cómo Reservar:</b><br><br><b>Paso 1:</b> Selecciona tu ciudad (Los Ángeles o Quilleco)<br><br><b>Paso 2:</b> Elige tu complejo favorito<br><br><b>Paso 3:</b> Selecciona tipo de cancha (Fútbol o Pádel)<br><br><b>Paso 4:</b> Elige fecha y horario disponible<br><br><b>Paso 5:</b> Completa tus datos personales<br><br><b>Paso 6:</b> Aplica código de descuento (opcional)<br><br><b>Paso 7:</b> Procede al pago con Webpay Plus<br><br>💡 <i>Recibirás confirmación por email con tu código de reserva.</i>',
-            'como reservo': '📅 <b>Proceso de Reserva:</b><br><br><b>Tenemos 3 complejos disponibles:</b><br>- Complejo Demo 3 (Los Ángeles) - Fútbol y Pádel<br>- Complejo En Desarrollo (Los Ángeles) - Fútbol<br>- Espacio Deportivo Borde Río (Quilleco) - Fútbol<br><br><b>Pasos:</b><br>1. Elige ciudad y complejo<br>2. Selecciona fecha y hora<br>3. Completa formulario<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación inmediata</i>',
+            'como reservo': '📅 <b>Proceso de Reserva:</b><br><br><b>Tenemos 4 complejos disponibles:</b><br>- Complejo Demo 1 (Los Ángeles)<br>- Complejo Demo 3 (Los Ángeles) - Fútbol y Pádel<br>- Complejo En Desarrollo (Los Ángeles) - Fútbol<br>- Espacio Deportivo Borde Río (Quilleco) - Fútbol<br><br><b>Pasos:</b><br>1. Elige ciudad y complejo<br>2. Selecciona fecha y hora<br>3. Completa formulario<br>4. Paga con Webpay Plus<br><br>✅ <i>Confirmación inmediata</i>',
             'hacer reserva': '📅 <b>Reserva Rápida:</b><br><br><b>Ciudades disponibles:</b><br>🏙️ Los Ángeles (2 complejos)<br>🏙️ Quilleco (1 complejo)<br><br><b>Total:</b> 3 complejos, 6 canchas fútbol + 1 pádel<br><br><b>Pasos:</b> Elige ciudad → Complejo → Fecha/Hora → Paga<br><br>✅ <i>Confirmación por email</i>',
             
             // Descuentos
@@ -213,7 +213,7 @@ class Chatbot {
             'promocion': '🎫 <b>Promociones Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% descuento<br><br><b>BIENVENIDA15:</b> 15% descuento<br><br><b>FIDELIDAD10:</b> 10% descuento<br><br>💡 <i>Válidos hasta agotar stock</i>',
             
             // Contacto
-            'contacto': '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>📱 +56912345678<br>📧 info@complejodemo3.cl<br>📍 Av. Los Robles 2450<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>📱 +56987654321<br>📧 reservas@complejodesarrollo.cl<br>📍 Monte Perdido 1685<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>📱 +56999820929<br>📧 admin@borderio.cl<br>📍 Ruta Q-575, Quilleco',
+            'contacto': '📞 <b>Información de Contacto:</b><br><br>🏟️ <b>Complejo Demo 1 (Los Ángeles)</b><br>📱 +56972815810<br>📧 naxiin_320@hotmail.com<br>📍 Calle Don Victor 1310<br><br>🏟️ <b>Complejo Demo 3 (Los Ángeles)</b><br>📱 +56912345678<br>📧 info@demo3.cl<br>📍 Av. Los Robles 2450<br><br>🏟️ <b>Complejo En Desarrollo (Los Ángeles)</b><br>📱 +56987654321<br>📧 reservas@complejodesarrollo.cl<br>📍 Monte Perdido 1685<br><br>🏟️ <b>Espacio Deportivo Borde Río (Quilleco)</b><br>📱 +56999820929<br>📧 admin@borderio.cl<br>📍 Ruta Q-575, Quilleco',
             'telefono': '📞 <b>Teléfonos:</b><br><br>🏟️ <b>Complejo Demo 3:</b> +56912345678<br>🏟️ <b>Complejo En Desarrollo:</b> +56987654321<br>🏟️ <b>Borde Río:</b> +56999820929<br><br>💡 <i>Llama al complejo directamente</i>',
             'email': '📧 <b>Emails:</b><br><br>🏟️ <b>Complejo Demo 3:</b> info@complejodemo3.cl<br>🏟️ <b>Complejo En Desarrollo:</b> reservas@complejodesarrollo.cl<br>🏟️ <b>Borde Río:</b> admin@borderio.cl<br><br>💡 <i>Respuesta en menos de 24 horas</i>',
             
@@ -227,7 +227,7 @@ class Chatbot {
             'webpay': '💳 <b>Webpay Plus:</b><br><br><b>Acepta:</b> todas las tarjetas<br><br><b>Pago:</b> seguro y confiable<br><br><b>Confirmación:</b> inmediata<br><br>✅ <i>Procesado por Transbank</i>',
             
             // Ubicación
-            'ubicacion': '📍 <b>Ubicaciones:</b><br><br>🏟️ <b>Complejo Demo 3</b><br>Av. Los Robles 2450, Los Ángeles<br><br>🏟️ <b>Complejo En Desarrollo</b><br>Monte Perdido 1685, Los Ángeles<br><br>🏟️ <b>Espacio Deportivo Borde Río</b><br>Ruta Q-575, Quilleco, Bio Bio<br><br>🗺️ <i>Fácil acceso en todos los complejos</i>',
+            'ubicacion': '📍 <b>Ubicaciones:</b><br><br>🏟️ <b>Complejo Demo 1</b><br>Calle Don Victor 1310, Los Ángeles<br><br>🏟️ <b>Complejo Demo 3</b><br>Av. Los Robles 2450, Los Ángeles<br><br>🏟️ <b>Complejo En Desarrollo</b><br>Monte Perdido 1685, Los Ángeles<br><br>🏟️ <b>Espacio Deportivo Borde Río</b><br>Ruta Q-575, Quilleco, Bio Bio<br><br>🗺️ <i>Fácil acceso en todos los complejos</i>',
             'direccion': '📍 <b>Direcciones:</b><br><br>🏟️ <b>Complejo Demo 3:</b> Av. Los Robles 2450, Los Ángeles<br>🏟️ <b>Complejo En Desarrollo:</b> Monte Perdido 1685, Los Ángeles<br>🏟️ <b>Borde Río:</b> Ruta Q-575, Quilleco<br><br>🚗 <i>Estacionamiento disponible</i>',
             
             // Deportes
@@ -235,7 +235,7 @@ class Chatbot {
             'futbol': '⚽ <b>Fútbol:</b><br><br><b>6 canchas disponibles:</b><br>- Complejo Demo 3: 3 canchas ($12.000-$15.000/h)<br>- Complejo En Desarrollo: 2 canchas ($50/h)<br>- Borde Río: 1 cancha ($20.000/h)<br><br><b>Ciudades:</b> Los Ángeles y Quilleco',
             
             // Complejo Demo 3 específico
-            'complejo demo 3': '🏟️ <b>Complejo Demo 3 (Los Ángeles):</b><br><br><b>Canchas:</b> 3 fútbol + 1 pádel<br><b>Precios:</b> $12.000-$16.000/hora<br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><b>Dirección:</b> Av. Los Robles 2450<br><b>Teléfono:</b> +56912345678<br><b>Email:</b> info@complejodemo3.cl',
+            'complejo demo 3': '🏟️ <b>Complejo Demo 3 (Los Ángeles):</b><br><br><b>Canchas:</b> 3 fútbol + 1 pádel<br><b>Precios:</b> $12.000-$16.000/hora<br><b>Horarios:</b> L-V 16:00-23:00, S-D 12:00-23:00<br><b>Dirección:</b> Av. Los Robles 2450<br><b>Teléfono:</b> +56912345678<br><b>Email:</b> info@demo3.cl',
             'demo 3': '🏟️ <b>Complejo Demo 3:</b><br><br><b>Ubicación:</b> Los Ángeles<br><b>Canchas:</b> 3 fútbol + 1 pádel<br><b>Precios:</b> $12.000-$16.000/h<br><b>Contacto:</b> +56912345678',
             
             // Complejo En Desarrollo específico
