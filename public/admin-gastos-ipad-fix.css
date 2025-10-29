@@ -1,0 +1,183 @@
+/* ============================================
+   FIXES ESPECÍFICOS PARA iPADS Y SAFARI iOS
+   ============================================ */
+
+/* Detectar dispositivos iOS/iPad */
+@supports (-webkit-touch-callout: none) {
+    /* Fondo simplificado para Safari iOS */
+    body {
+        background: #5b4a9f !important;
+        background-image: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b4a9f 100%) !important;
+        background-attachment: scroll !important; /* Cambiar de fixed a scroll para iOS */
+        -webkit-background-size: cover !important;
+        background-size: cover !important;
+    }
+    
+    /* Simplificar pseudo-elemento para iOS */
+    body::before {
+        background-image: none !important;
+        background: rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Sidebar simplificado para iOS */
+    .sidebar {
+        background: rgba(0, 0, 0, 0.3) !important;
+        backdrop-filter: none !important; /* Remover backdrop-filter en iOS */
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    .sidebar-header {
+        background: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    /* Contenedores principales simplificados */
+    .page-header,
+    .card,
+    .card-body,
+    #gestionCategorias {
+        background: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    /* Tablas simplificadas para iOS */
+    .table {
+        background: rgba(0, 0, 0, 0.2) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    .table thead {
+        background: rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .table tbody tr {
+        background: rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        transform: none !important; /* Remover transform en iOS */
+    }
+    
+    /* Botones simplificados para iOS */
+    .btn {
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        box-shadow: none !important;
+    }
+    
+    .btn:hover {
+        transform: none !important; /* Remover transform en iOS */
+    }
+    
+    /* Nav tabs simplificados */
+    .nav-tabs .nav-link {
+        background: rgba(0, 0, 0, 0.2) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    .nav-tabs .nav-link.active {
+        background: rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* Media queries específicas para iPads */
+@media only screen 
+and (min-device-width: 768px) 
+and (max-device-width: 1024px) 
+and (-webkit-min-device-pixel-ratio: 1) {
+    
+    /* Fondo más simple para iPads */
+    body {
+        background: #5b4a9f !important;
+        background-image: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b4a9f 100%) !important;
+        background-attachment: scroll !important;
+    }
+    
+    /* Remover efectos complejos en iPads */
+    .sidebar,
+    .page-header,
+    .card,
+    .card-body,
+    #gestionCategorias {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    /* Simplificar efectos hover en iPads */
+    .table tbody tr:hover,
+    .btn:hover,
+    .sidebar-menu a:hover {
+        transform: none !important;
+    }
+    
+    /* Asegurar que el texto sea legible */
+    .table tbody td,
+    .table thead th,
+    .sidebar-menu a,
+    .page-header h1,
+    .page-header p {
+        color: white !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* Mejorar contraste en iPads */
+    .card,
+    .card-body {
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    }
+}
+
+/* Media query específica para Safari en iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    /* Safari específico */
+    body {
+        background: #5b4a9f !important;
+        background-image: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b4a9f 100%) !important;
+    }
+    
+    /* Remover backdrop-filter en Safari */
+    * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    /* Usar backgrounds sólidos en lugar de transparentes */
+    .sidebar {
+        background: rgba(0, 0, 0, 0.4) !important;
+    }
+    
+    .page-header,
+    .card,
+    .card-body,
+    #gestionCategorias {
+        background: rgba(0, 0, 0, 0.4) !important;
+    }
+    
+    .table {
+        background: rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .table thead {
+        background: rgba(0, 0, 0, 0.5) !important;
+    }
+}
+
+/* Fallback para dispositivos que no soportan gradientes complejos */
+@media (prefers-reduced-motion: reduce) {
+    body {
+        background: #5b4a9f !important;
+    }
+    
+    * {
+        transition: none !important;
+        transform: none !important;
+    }
+}

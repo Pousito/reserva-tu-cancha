@@ -27,6 +27,9 @@
     <!-- Fix CSS para producción -->
     <link rel="stylesheet" href="admin-gastos-fix.css">
     
+    <!-- Fix CSS específico para iPads y Safari iOS -->
+    <link rel="stylesheet" href="admin-gastos-ipad-fix.css">
+    
     <style>
         :root {
             --primary-color: #2563eb;
@@ -51,6 +54,15 @@
             background-attachment: fixed !important;
             min-height: 100vh !important;
             position: relative !important;
+        }
+        
+        /* Fallback para Safari iOS */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                background: #5b4a9f !important;
+                background-image: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b4a9f 100%) !important;
+                background-attachment: scroll !important;
+            }
         }
         
         body::before {
