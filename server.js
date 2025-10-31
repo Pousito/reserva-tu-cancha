@@ -3177,6 +3177,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     // Reservas por complejo con ocupación real (solo confirmadas y pendientes)
     const reservasPorComplejo = await db.query(`
       SELECT
+        co.id as complejo_id,
         co.nombre as complejo,
         COUNT(*) as cantidad,
         COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN r.precio_total ELSE 0 END), 0) as ingresos,
@@ -3188,6 +3189,8 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
       GROUP BY co.id, co.nombre
       ORDER BY ingresos DESC
     `, params);
+    
+    console.log('📊 Complejos encontrados para ocupación:', reservasPorComplejo.map(c => ({ id: c.complejo_id, nombre: c.complejo, canchas: c.canchas_count })));
     
     // Calcular ocupación real para cada complejo
     const reservasPorComplejoConOcupacion = await Promise.all(reservasPorComplejo.map(async (complejo) => {
@@ -3222,25 +3225,78 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
         horasDisponibles += complejo.canchas_count * horasPorDia;
       }
       
-      // Calcular horas realmente ocupadas por reservas
-      const horasOcupadas = await db.get(`
-        SELECT SUM(
-          CASE 
-            WHEN r.hora_fin > r.hora_inicio THEN 
-              (CAST(SUBSTR(r.hora_fin::text, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_fin::text, 4, 2) AS INTEGER)) - 
-              (CAST(SUBSTR(r.hora_inicio::text, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(r.hora_inicio::text, 4, 2) AS INTEGER))
-            ELSE 0
-          END
-        ) / 60.0 as horas_totales
+      console.log(`🔍 Calculando ocupación para complejo ${complejo.complejo} (ID: ${complejo.complejo_id}):`, {
+        canchas: complejo.canchas_count,
+        dias: diasDiferencia,
+        horasDisponibles: horasDisponibles,
+        dateFrom: dateFrom,
+        dateTo: dateTo
+      });
+      
+      // Primero verificar cuántas reservas hay en el rango
+      const reservasCount = await db.get(`
+        SELECT COUNT(*) as count
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         JOIN complejos co ON c.complejo_id = co.id
-        WHERE r.fecha::date BETWEEN $1 AND $2
-        AND co.id = (SELECT id FROM complejos WHERE nombre = $3)
+        WHERE r.fecha::date BETWEEN $1::date AND $2::date
+        AND co.id = $3
         AND r.estado IN ('confirmada', 'pendiente')
-      `, [dateFrom, dateTo, complejo.complejo]);
+      `, [dateFrom, dateTo, complejo.complejo_id]);
+      
+      console.log(`📊 Reservas encontradas para complejo ${complejo.complejo}:`, reservasCount.count);
+      
+      // Obtener detalles de las reservas para debugging
+      const reservasDetalle = await db.query(`
+        SELECT r.id, r.fecha, r.hora_inicio, r.hora_fin, r.estado,
+               EXTRACT(EPOCH FROM (r.hora_fin - r.hora_inicio)) / 3600.0 as horas_duracion
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        JOIN complejos co ON c.complejo_id = co.id
+        WHERE r.fecha::date BETWEEN $1::date AND $2::date
+        AND co.id = $3
+        AND r.estado IN ('confirmada', 'pendiente')
+        ORDER BY r.fecha, r.hora_inicio
+      `, [dateFrom, dateTo, complejo.complejo_id]);
+      
+      console.log(`📋 Detalles de reservas para complejo ${complejo.complejo}:`, reservasDetalle.map(r => ({
+        id: r.id,
+        fecha: r.fecha,
+        hora_inicio: r.hora_inicio,
+        hora_fin: r.hora_fin,
+        estado: r.estado,
+        horas_duracion: r.horas_duracion
+      })));
+      
+      // Calcular horas realmente ocupadas por reservas usando funciones PostgreSQL más robustas
+      // Convertimos la diferencia de TIME a horas usando EXTRACT(EPOCH) que da segundos
+      const horasOcupadas = await db.get(`
+        SELECT COALESCE(
+          SUM(
+            CASE 
+              WHEN r.hora_fin > r.hora_inicio THEN
+                EXTRACT(EPOCH FROM (r.hora_fin - r.hora_inicio)) / 3600.0
+              ELSE 0
+            END
+          ),
+          0
+        ) as horas_totales
+        FROM reservas r
+        JOIN canchas c ON r.cancha_id = c.id
+        JOIN complejos co ON c.complejo_id = co.id
+        WHERE r.fecha::date BETWEEN $1::date AND $2::date
+        AND co.id = $3
+        AND r.estado IN ('confirmada', 'pendiente')
+      `, [dateFrom, dateTo, complejo.complejo_id]);
       
       const horasRealesOcupadas = parseFloat(horasOcupadas?.horas_totales || 0);
+      
+      console.log(`✅ Ocupación calculada para ${complejo.complejo}:`, {
+        horasDisponibles: horasDisponibles,
+        horasOcupadas: horasRealesOcupadas,
+        ocupacionPorcentaje: horasDisponibles > 0 ? ((horasRealesOcupadas / horasDisponibles) * 100).toFixed(1) : 0,
+        reservasEncontradas: reservasCount.count
+      });
       
       // Calcular ocupación real - horas ocupadas / horas disponibles
       const ocupacionReal = horasDisponibles > 0 ? (horasRealesOcupadas / horasDisponibles * 100) : 0;
@@ -3293,6 +3349,9 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
       ? (reservasPorComplejoConOcupacion.reduce((sum, complejo) => sum + parseFloat(complejo.ocupacion_real), 0) / reservasPorComplejoConOcupacion.length).toFixed(1)
       : 0;
 
+    console.log('🔍 DEBUG FINAL - reservasPorComplejoConOcupacion:', JSON.stringify(reservasPorComplejoConOcupacion, null, 2));
+    console.log('🔍 DEBUG FINAL - ocupacionPromedio calculada:', ocupacionPromedio);
+
     const reportData = {
       metrics: {
         totalReservas: parseInt(totalReservas.count),
@@ -3314,6 +3373,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     };
     
     console.log(`✅ Reportes generados exitosamente`);
+    console.log('🔍 DEBUG - reportData.charts.reservasPorComplejo:', JSON.stringify(reportData.charts.reservasPorComplejo, null, 2));
     res.json(reportData);
   } catch (error) {
     console.error('❌ Error generando reportes:', error);
@@ -9983,9 +10043,11 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
     console.log('✅ Función calcular_comision_con_iva creada');
 
     // Función 2: generar_depositos_diarios
-    // Primero eliminar la función si existe
-    await db.query(`DROP FUNCTION IF EXISTS generar_depositos_diarios(DATE)`);
-    console.log('🗑️  Función anterior eliminada (si existía)');
+    // Primero eliminar la función si existe (probar múltiples firmas)
+    await db.query(`DROP FUNCTION IF EXISTS generar_depositos_diarios(DATE) CASCADE`);
+    await db.query(`DROP FUNCTION IF EXISTS generar_depositos_diarios() CASCADE`);
+    await db.query(`DROP FUNCTION IF EXISTS generar_depositos_diarios CASCADE`);
+    console.log('🗑️  Funciones anteriores eliminadas (si existían)');
 
     await db.query(`
       CREATE OR REPLACE FUNCTION generar_depositos_diarios(fecha_deposito DATE DEFAULT CURRENT_DATE)
@@ -9998,13 +10060,13 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
       ) AS $$
       DECLARE
           rec RECORD;
-          total_reservas INTEGER;
-          comision_sin_iva INTEGER;
-          iva_comision INTEGER;
-          comision_total INTEGER;
-          monto_deposito INTEGER;
-          porcentaje_aplicado DECIMAL(5,4);
-          reservas_procesadas INTEGER;
+          v_total_reservas INTEGER;
+          v_comision_sin_iva INTEGER;
+          v_iva_comision INTEGER;
+          v_comision_total INTEGER;
+          v_monto_deposito INTEGER;
+          v_porcentaje_aplicado DECIMAL(5,4);
+          v_reservas_procesadas INTEGER;
       BEGIN
           FOR rec IN
               SELECT DISTINCT c.id as complejo_id, c.nombre as complejo_nombre
@@ -10017,14 +10079,14 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
               SELECT
                   COALESCE(SUM(r2.precio_total), 0),
                   COUNT(*)
-              INTO total_reservas, reservas_procesadas
+              INTO v_total_reservas, v_reservas_procesadas
               FROM reservas r2
               JOIN canchas ca2 ON r2.cancha_id = ca2.id
               WHERE ca2.complejo_id = rec.complejo_id
               AND r2.fecha = fecha_deposito
               AND r2.estado = 'confirmada';
 
-              IF total_reservas > 0 THEN
+              IF v_total_reservas > 0 THEN
                   SELECT
                       SUM(
                           CASE
@@ -10042,19 +10104,19 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
                                   ROUND(r3.precio_total * 0.035 * 0.19)
                           END
                       )
-                  INTO comision_sin_iva, iva_comision
+                  INTO v_comision_sin_iva, v_iva_comision
                   FROM reservas r3
                   JOIN canchas ca3 ON r3.cancha_id = ca3.id
                   WHERE ca3.complejo_id = rec.complejo_id
                   AND r3.fecha = fecha_deposito
                   AND r3.estado = 'confirmada';
 
-                  comision_total := comision_sin_iva + iva_comision;
-                  monto_deposito := total_reservas - comision_total;
+                  v_comision_total := v_comision_sin_iva + v_iva_comision;
+                  v_monto_deposito := v_total_reservas - v_comision_total;
 
-                  porcentaje_aplicado := CASE
-                      WHEN total_reservas > 0 THEN
-                          ROUND((comision_sin_iva::DECIMAL / total_reservas), 4)
+                  v_porcentaje_aplicado := CASE
+                      WHEN v_total_reservas > 0 THEN
+                          ROUND((v_comision_sin_iva::DECIMAL / v_total_reservas), 4)
                       ELSE 0
                   END;
 
@@ -10063,9 +10125,9 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
                       comision_porcentaje, comision_sin_iva, iva_comision, comision_total,
                       monto_a_depositar
                   ) VALUES (
-                      rec.complejo_id, fecha_deposito, total_reservas,
-                      porcentaje_aplicado, comision_sin_iva, iva_comision, comision_total,
-                      monto_deposito
+                      rec.complejo_id, fecha_deposito, v_total_reservas,
+                      v_porcentaje_aplicado, v_comision_sin_iva, v_iva_comision, v_comision_total,
+                      v_monto_deposito
                   )
                   ON CONFLICT (complejo_id, fecha_deposito)
                   DO UPDATE SET
@@ -10077,12 +10139,13 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
                       monto_a_depositar = EXCLUDED.monto_a_depositar,
                       updated_at = CURRENT_TIMESTAMP;
 
+                  -- Retornar los valores usando la sintaxis correcta
                   RETURN QUERY SELECT
-                      rec.complejo_id,
-                      total_reservas,
-                      comision_total,
-                      monto_deposito,
-                      reservas_procesadas;
+                      rec.complejo_id AS complejo_id_result,
+                      v_total_reservas AS monto_total_result,
+                      v_comision_total AS comision_total_result,
+                      v_monto_deposito AS monto_deposito_result,
+                      v_reservas_procesadas AS registros_procesados_result;
               END IF;
           END LOOP;
       END;
