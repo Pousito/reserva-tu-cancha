@@ -821,12 +821,13 @@ function poblarHorariosComplejo() {
     // Determinar horario según complejo
     let horaInicio = 12;
     let horaFin = 23;
-    
-    if (complejoId === 6) {
+
+    if (complejoId === 6 || complejoId === 7) {
         // Espacio Deportivo Borde Río: 10:00 - 00:00 (medianoche)
+        // ID 6 en desarrollo, ID 7 en producción
         horaInicio = 10;
         horaFin = 24;
-    } else if (complejoId === 7) {
+    } else if (complejoId === 8) {
         // Complejo Demo 3: 16:00 - 23:00
         horaInicio = 16;
         horaFin = 23;

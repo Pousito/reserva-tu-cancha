@@ -288,8 +288,8 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             console.log(`🔍 Generando horarios - user.complejo_id: ${user.complejo_id} (tipo: ${typeof user.complejo_id}), diaSemana: ${diaSemana}`);
             
             // Determinar horarios según el complejo (usar comparación estricta con conversión explícita)
-            // Borde Río es ID 6, Complejo Demo 3 es ID 8
-            if (parseInt(user.complejo_id) === 6) { // Espacio Deportivo Borde Río
+            // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
+            if (parseInt(user.complejo_id) === 6 || parseInt(user.complejo_id) === 7) { // Espacio Deportivo Borde Río
                 // Borde Río: 10:00 a 00:00 (medianoche) todos los días
                 horaInicio = 10;
                 horaFin = 24;
