@@ -10050,104 +10050,87 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
     console.log('🗑️  Funciones anteriores eliminadas (si existían)');
 
     await db.query(`
-      CREATE OR REPLACE FUNCTION generar_depositos_diarios(fecha_deposito DATE DEFAULT CURRENT_DATE)
+      CREATE OR REPLACE FUNCTION generar_depositos_diarios(p_fecha_deposito DATE DEFAULT CURRENT_DATE)
       RETURNS TABLE(
-          complejo_id INTEGER,
-          monto_total INTEGER,
-          comision_total INTEGER,
-          monto_deposito INTEGER,
-          registros_procesados INTEGER
+          out_complejo_id INTEGER,
+          out_monto_total INTEGER,
+          out_comision_total INTEGER,
+          out_monto_deposito INTEGER,
+          out_registros_procesados INTEGER
       ) AS $$
-      DECLARE
-          rec RECORD;
-          v_total_reservas INTEGER;
-          v_comision_sin_iva INTEGER;
-          v_iva_comision INTEGER;
-          v_comision_total INTEGER;
-          v_monto_deposito INTEGER;
-          v_porcentaje_aplicado DECIMAL(5,4);
-          v_reservas_procesadas INTEGER;
       BEGIN
-          FOR rec IN
-              SELECT DISTINCT c.id as complejo_id, c.nombre as complejo_nombre
+          -- Insertar/actualizar depósitos y retornar resultados en una sola operación
+          RETURN QUERY
+          WITH complejos_con_reservas AS (
+              SELECT DISTINCT
+                  c.id as cid,
+                  c.nombre
               FROM complejos c
-              JOIN canchas ca ON c.id = ca.complejo_id
-              JOIN reservas r ON ca.id = r.cancha_id
-              WHERE r.fecha = fecha_deposito
+              INNER JOIN canchas ca ON c.id = ca.complejo_id
+              INNER JOIN reservas r ON ca.id = r.cancha_id
+              WHERE r.fecha = p_fecha_deposito
               AND r.estado = 'confirmada'
-          LOOP
+          ),
+          calculos AS (
               SELECT
-                  COALESCE(SUM(r2.precio_total), 0),
-                  COUNT(*)
-              INTO v_total_reservas, v_reservas_procesadas
-              FROM reservas r2
-              JOIN canchas ca2 ON r2.cancha_id = ca2.id
-              WHERE ca2.complejo_id = rec.complejo_id
-              AND r2.fecha = fecha_deposito
-              AND r2.estado = 'confirmada';
-
-              IF v_total_reservas > 0 THEN
-                  SELECT
-                      SUM(
-                          CASE
-                              WHEN r3.tipo_reserva = 'administrativa' THEN
-                                  ROUND(r3.precio_total * 0.0175)
-                              ELSE
-                                  ROUND(r3.precio_total * 0.035)
-                          END
-                      ),
-                      SUM(
-                          CASE
-                              WHEN r3.tipo_reserva = 'administrativa' THEN
-                                  ROUND(r3.precio_total * 0.0175 * 0.19)
-                              ELSE
-                                  ROUND(r3.precio_total * 0.035 * 0.19)
-                          END
-                      )
-                  INTO v_comision_sin_iva, v_iva_comision
-                  FROM reservas r3
-                  JOIN canchas ca3 ON r3.cancha_id = ca3.id
-                  WHERE ca3.complejo_id = rec.complejo_id
-                  AND r3.fecha = fecha_deposito
-                  AND r3.estado = 'confirmada';
-
-                  v_comision_total := v_comision_sin_iva + v_iva_comision;
-                  v_monto_deposito := v_total_reservas - v_comision_total;
-
-                  v_porcentaje_aplicado := CASE
-                      WHEN v_total_reservas > 0 THEN
-                          ROUND((v_comision_sin_iva::DECIMAL / v_total_reservas), 4)
-                      ELSE 0
-                  END;
-
-                  INSERT INTO depositos_complejos (
-                      complejo_id, fecha_deposito, monto_total_reservas,
-                      comision_porcentaje, comision_sin_iva, iva_comision, comision_total,
-                      monto_a_depositar
-                  ) VALUES (
-                      rec.complejo_id, fecha_deposito, v_total_reservas,
-                      v_porcentaje_aplicado, v_comision_sin_iva, v_iva_comision, v_comision_total,
-                      v_monto_deposito
-                  )
-                  ON CONFLICT (complejo_id, fecha_deposito)
-                  DO UPDATE SET
-                      monto_total_reservas = EXCLUDED.monto_total_reservas,
-                      comision_porcentaje = EXCLUDED.comision_porcentaje,
-                      comision_sin_iva = EXCLUDED.comision_sin_iva,
-                      iva_comision = EXCLUDED.iva_comision,
-                      comision_total = EXCLUDED.comision_total,
-                      monto_a_depositar = EXCLUDED.monto_a_depositar,
-                      updated_at = CURRENT_TIMESTAMP;
-
-                  -- Retornar los valores (sin aliases, orden debe coincidir con RETURNS TABLE)
-                  RETURN QUERY SELECT
-                      rec.complejo_id,
-                      v_total_reservas,
-                      v_comision_total,
-                      v_monto_deposito,
-                      v_reservas_procesadas;
-              END IF;
-          END LOOP;
+                  ccr.cid,
+                  COALESCE(SUM(r.precio_total), 0)::INTEGER as total_reservas,
+                  COUNT(*)::INTEGER as num_reservas,
+                  COALESCE(SUM(
+                      CASE
+                          WHEN r.tipo_reserva = 'administrativa' THEN ROUND(r.precio_total * 0.0175)
+                          ELSE ROUND(r.precio_total * 0.035)
+                      END
+                  ), 0)::INTEGER as comision_sin_iva,
+                  COALESCE(SUM(
+                      CASE
+                          WHEN r.tipo_reserva = 'administrativa' THEN ROUND(r.precio_total * 0.0175 * 0.19)
+                          ELSE ROUND(r.precio_total * 0.035 * 0.19)
+                      END
+                  ), 0)::INTEGER as iva_comision
+              FROM complejos_con_reservas ccr
+              INNER JOIN canchas c ON ccr.cid = c.complejo_id
+              INNER JOIN reservas r ON c.id = r.cancha_id
+              WHERE r.fecha = p_fecha_deposito
+              AND r.estado = 'confirmada'
+              GROUP BY ccr.cid
+          ),
+          inserciones AS (
+              INSERT INTO depositos_complejos (
+                  complejo_id, fecha_deposito, monto_total_reservas,
+                  comision_porcentaje, comision_sin_iva, iva_comision, comision_total,
+                  monto_a_depositar
+              )
+              SELECT
+                  calc.cid,
+                  p_fecha_deposito,
+                  calc.total_reservas,
+                  CASE WHEN calc.total_reservas > 0 THEN
+                      ROUND((calc.comision_sin_iva::DECIMAL / calc.total_reservas), 4)
+                  ELSE 0 END,
+                  calc.comision_sin_iva,
+                  calc.iva_comision,
+                  calc.comision_sin_iva + calc.iva_comision,
+                  calc.total_reservas - (calc.comision_sin_iva + calc.iva_comision)
+              FROM calculos calc
+              WHERE calc.total_reservas > 0
+              ON CONFLICT (complejo_id, fecha_deposito)
+              DO UPDATE SET
+                  monto_total_reservas = EXCLUDED.monto_total_reservas,
+                  comision_porcentaje = EXCLUDED.comision_porcentaje,
+                  comision_sin_iva = EXCLUDED.comision_sin_iva,
+                  iva_comision = EXCLUDED.iva_comision,
+                  comision_total = EXCLUDED.comision_total,
+                  monto_a_depositar = EXCLUDED.monto_a_depositar,
+                  updated_at = CURRENT_TIMESTAMP
+              RETURNING
+                  complejo_id,
+                  monto_total_reservas,
+                  comision_total,
+                  monto_a_depositar,
+                  0::INTEGER as registros
+          )
+          SELECT * FROM inserciones;
       END;
       $$ LANGUAGE plpgsql;
     `);
