@@ -823,9 +823,9 @@ function poblarHorariosComplejo() {
     let horaFin = 23;
     
     if (complejoId === 6) {
-        // Espacio Deportivo Borde Río: 10:00 - 23:00
+        // Espacio Deportivo Borde Río: 10:00 - 00:00 (medianoche)
         horaInicio = 10;
-        horaFin = 23;
+        horaFin = 24;
     } else if (complejoId === 7) {
         // Complejo Demo 3: 16:00 - 23:00
         horaInicio = 16;

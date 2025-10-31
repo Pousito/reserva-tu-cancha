@@ -953,16 +953,101 @@ async function preRellenarDesdeURLMejorado() {
                                         // Mostrar paso 3
                                         mostrarPaso(3);
                                         
+                                        // Esperar un momento antes de disparar el evento change
+                                        await new Promise(resolve => setTimeout(resolve, 200));
+                                        
                                         // Disparar evento change para activar la lógica del paso 4
                                         futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
                                         console.log('✅ Complejo En Desarrollo configurado - solo fútbol con estilos centrados');
+                                        
+                                        // 5. Ejecutar automáticamente "Ver Disponibilidad" directamente llamando a la función
+                                        // Usar setTimeout para asegurar que se ejecute después de que el evento change se procese
+                                        setTimeout(async () => {
+                                            console.log('🔍 INICIANDO ejecución automática de "Ver Disponibilidad" desde URL...');
+                                            console.log('🔍 complejoSeleccionado:', complejoSeleccionado?.nombre);
+                                            console.log('🔍 tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
+                                            
+                                            if (complejoSeleccionado && tipoCanchaSeleccionado) {
+                                                try {
+                                                    // Llamar directamente a mostrarSeccionDisponibilidad
+                                                    if (typeof mostrarSeccionDisponibilidad === 'function') {
+                                                        console.log('✅ Llamando a mostrarSeccionDisponibilidad...');
+                                                        await mostrarSeccionDisponibilidad();
+                                                        console.log('✅ mostrarSeccionDisponibilidad completado');
+                                                        
+                                                        // También cargar horarios básicos
+                                                        if (typeof cargarHorariosBasicos === 'function') {
+                                                            console.log('✅ Llamando a cargarHorariosBasicos...');
+                                                            await cargarHorariosBasicos();
+                                                            console.log('✅ cargarHorariosBasicos completado');
+                                                        }
+                                                        
+                                                        console.log('✅ "Ver Disponibilidad" ejecutado automáticamente desde URL');
+                                                    } else {
+                                                        console.error('❌ mostrarSeccionDisponibilidad no está disponible');
+                                                    }
+                                                } catch (error) {
+                                                    console.error('❌ Error ejecutando "Ver Disponibilidad":', error);
+                                                    console.error('❌ Stack:', error.stack);
+                                                }
+                                            } else {
+                                                console.log('⚠️ No se puede ejecutar "Ver Disponibilidad" - faltan datos');
+                                                console.log('⚠️ complejoSeleccionado:', !!complejoSeleccionado);
+                                                console.log('⚠️ tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
+                                            }
+                                        }, 1200); // Esperar 1.2 segundos para que el evento change se procese completamente
                                     }
                                 } else {
-                                    // Para otros complejos, mostrar paso 3 sin preseleccionar
-                                    mostrarPaso(3);
+                                    // Para otros complejos que vienen de URL, preseleccionar fútbol automáticamente
+                                    console.log(`⚽ Complejo desde URL detectado: ${complejoEncontrado.nombre}, seleccionando fútbol automáticamente`);
+                                    const futbolRadio = document.getElementById('futbol');
+                                    if (futbolRadio) {
+                                        futbolRadio.checked = true;
+                                        tipoCanchaSeleccionado = 'futbol';
+
+                                        // Mostrar paso 3
+                                        mostrarPaso(3);
+
+                                        // Esperar un momento antes de disparar el evento change
+                                        await new Promise(resolve => setTimeout(resolve, 200));
+
+                                        // Disparar evento change para activar la lógica del paso 4
+                                        futbolRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                                        console.log('✅ Fútbol seleccionado automáticamente desde URL');
+
+                                        // Esperar a que el evento change se procese y el paso 4 se muestre
+                                        await new Promise(resolve => setTimeout(resolve, 500));
+
+                                        // Ejecutar automáticamente "Ver Disponibilidad" directamente llamando a la función
+                                        const ejecutarVerDisponibilidadOtros = async () => {
+                                            console.log('🔍 Ejecutando automáticamente "Ver Disponibilidad" desde URL (otros complejos)...');
+                                            console.log('🔍 complejoSeleccionado:', complejoSeleccionado?.nombre);
+                                            console.log('🔍 tipoCanchaSeleccionado:', tipoCanchaSeleccionado);
+                                            
+                                            if (complejoSeleccionado && tipoCanchaSeleccionado) {
+                                                try {
+                                                    if (typeof mostrarSeccionDisponibilidad === 'function') {
+                                                        console.log('✅ Llamando a mostrarSeccionDisponibilidad...');
+                                                        await mostrarSeccionDisponibilidad();
+                                                        
+                                                        if (typeof cargarHorariosBasicos === 'function') {
+                                                            console.log('✅ Llamando a cargarHorariosBasicos...');
+                                                            await cargarHorariosBasicos();
+                                                        }
+                                                        
+                                                        console.log('✅ "Ver Disponibilidad" ejecutado automáticamente desde URL');
+                                                    }
+                                                } catch (error) {
+                                                    console.error('❌ Error ejecutando "Ver Disponibilidad":', error);
+                                                }
+                                            }
+                                        };
+                                        
+                                        setTimeout(ejecutarVerDisponibilidadOtros, 800);
+                                    }
                                 }
                                 
-                                // 6. Scroll automático a la sección de disponibilidad
+                                // 6. Scroll automático a la sección de disponibilidad (movido después del click automático)
                                 setTimeout(() => {
                                     const disponibilidadSection = document.getElementById('disponibilidad');
                                     if (disponibilidadSection) {
@@ -972,7 +1057,7 @@ async function preRellenarDesdeURLMejorado() {
                                         });
                                         console.log('📜 Scroll automático a disponibilidad');
                                     }
-                                }, 500);
+                                }, 2000);
                                 
                             } else {
                                 console.error('❌ Elemento complejoSelect no encontrado');
@@ -3086,9 +3171,9 @@ async function cargarHorariosComplejo(complejo) {
             horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
         }
     } else if (complejo.nombre === 'Espacio Deportivo Borde Río') {
-        // Espacio Deportivo Borde Río: 10:00-23:00 todos los días
-        console.log('Espacio Deportivo Borde Río - Horarios: 10:00-23:00 todos los días');
-        horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+        // Espacio Deportivo Borde Río: 10:00-00:00 (medianoche) todos los días
+        console.log('Espacio Deportivo Borde Río - Horarios: 10:00-00:00 todos los días');
+        horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'];
     } else if (complejo.nombre === 'Complejo Demo 1') {
         // Complejo Demo 1: 10:00-22:00 todos los días
         console.log('Complejo Demo 1 - Horarios: 10:00-22:00 todos los días');

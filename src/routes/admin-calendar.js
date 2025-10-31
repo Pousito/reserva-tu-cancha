@@ -290,10 +290,10 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             // Determinar horarios según el complejo (usar comparación estricta con conversión explícita)
             // Borde Río es ID 6, Complejo Demo 3 es ID 8
             if (parseInt(user.complejo_id) === 6) { // Espacio Deportivo Borde Río
-                // Borde Río: 10:00 a 23:00 todos los días
+                // Borde Río: 10:00 a 00:00 (medianoche) todos los días
                 horaInicio = 10;
-                horaFin = 23;
-                console.log(`✅ Borde Río detectado (ID: ${user.complejo_id}) - Horarios: ${horaInicio}:00 - ${horaFin}:00`);
+                horaFin = 24;
+                console.log(`✅ Borde Río detectado (ID: ${user.complejo_id}) - Horarios: ${horaInicio}:00 - 00:00`);
             } else if (parseInt(user.complejo_id) === 8) { // Complejo Demo 3
                 // Complejo Demo 3: 16:00 a 23:00 todos los días
                 horaInicio = 16;
