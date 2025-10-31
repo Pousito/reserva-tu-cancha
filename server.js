@@ -10139,13 +10139,13 @@ app.post('/api/admin/depositos/crear-funciones-sql-temp', async (req, res) => {
                       monto_a_depositar = EXCLUDED.monto_a_depositar,
                       updated_at = CURRENT_TIMESTAMP;
 
-                  -- Retornar los valores usando la sintaxis correcta
+                  -- Retornar los valores (sin aliases, orden debe coincidir con RETURNS TABLE)
                   RETURN QUERY SELECT
-                      rec.complejo_id AS complejo_id_result,
-                      v_total_reservas AS monto_total_result,
-                      v_comision_total AS comision_total_result,
-                      v_monto_deposito AS monto_deposito_result,
-                      v_reservas_procesadas AS registros_procesados_result;
+                      rec.complejo_id,
+                      v_total_reservas,
+                      v_comision_total,
+                      v_monto_deposito,
+                      v_reservas_procesadas;
               END IF;
           END LOOP;
       END;
