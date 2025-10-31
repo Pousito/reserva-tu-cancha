@@ -3118,9 +3118,15 @@ async function cargarHorariosComplejo(complejo) {
     horaSelect.innerHTML = '<option value="">Selecciona una hora...</option>';
     
     let horarios = [];
-    
+
     // Definir horarios según el complejo
-    if (complejo.nombre === 'Complejo En Desarrollo') {
+    // IMPORTANTE: Borde Río debe estar PRIMERO para tener prioridad sobre "Complejo En Desarrollo"
+    if (complejo.nombre === 'Espacio Deportivo Borde Río' || complejo.id === 6 || complejo.id === 7) {
+        // Espacio Deportivo Borde Río: 10:00-00:00 (medianoche) todos los días
+        // Detectar por nombre o por ID (6 en desarrollo, 7 en producción)
+        console.log(`🏟️ Espacio Deportivo Borde Río detectado (ID: ${complejo.id}, Nombre: ${complejo.nombre}) - Horarios: 10:00-00:00 todos los días`);
+        horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'];
+    } else if (complejo.nombre === 'Complejo En Desarrollo') {
         // Complejo En Desarrollo: 16:00-23:00 entre semana, 12:00-23:00 fines de semana
         // Verificar la fecha actual para cargar los horarios correctos
         const fecha = document.getElementById('fechaSelect').value;
@@ -3129,9 +3135,9 @@ async function cargarHorariosComplejo(complejo) {
             const [año, mes, dia] = fecha.split('-').map(Number);
             const fechaObj = new Date(año, mes - 1, dia);
             const diaSemana = fechaObj.getDay(); // 0 = domingo, 6 = sábado
-            
+
             console.log('Complejo En Desarrollo - Fecha:', fecha, 'Día de semana:', diaSemana, 'Día nombre:', ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][diaSemana]);
-            
+
             if (diaSemana === 0 || diaSemana === 6) {
                 // Fines de semana: 12:00-23:00
                 console.log('Cargando horarios de fin de semana (12:00-23:00)');
@@ -3170,10 +3176,6 @@ async function cargarHorariosComplejo(complejo) {
             console.log('No hay fecha seleccionada, usando horarios de lunes a viernes por defecto');
             horarios = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
         }
-    } else if (complejo.nombre === 'Espacio Deportivo Borde Río') {
-        // Espacio Deportivo Borde Río: 10:00-00:00 (medianoche) todos los días
-        console.log('Espacio Deportivo Borde Río - Horarios: 10:00-00:00 todos los días');
-        horarios = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'];
     } else if (complejo.nombre === 'Complejo Demo 1') {
         // Complejo Demo 1: 10:00-22:00 todos los días
         console.log('Complejo Demo 1 - Horarios: 10:00-22:00 todos los días');
