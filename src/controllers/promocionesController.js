@@ -6,15 +6,16 @@ function setDatabase(databaseInstance) {
 }
 
 /**
- * Validar que la fecha de inicio de una promoción tenga al menos 7 días de anticipación
+ * Validar que la fecha de inicio de una promoción sea válida
  * Para promociones recurrentes, la validación es que comience la siguiente semana
+ * NOTA: Sin restricción de días de anticipación - efecto inmediato permitido
  */
 function validarAnticipacionMinima(tipoFecha, fechaEspecifica, fechaInicio) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    
+
     const minimoAnticipacion = new Date(hoy);
-    minimoAnticipacion.setDate(minimoAnticipacion.getDate() + 7);
+    minimoAnticipacion.setDate(minimoAnticipacion.getDate() + 0); // Sin anticipación requerida
     
     if (tipoFecha === 'recurrente_semanal') {
         // Para recurrentes, debe comenzar al menos la próxima semana (lunes siguiente)
@@ -39,7 +40,7 @@ function validarAnticipacionMinima(tipoFecha, fechaEspecifica, fechaInicio) {
     if (fechaAValidar < minimoAnticipacion) {
         return {
             valido: false,
-            mensaje: `La promoción debe tener al menos 7 días de anticipación. La fecha más temprana permitida es: ${minimoAnticipacion.toLocaleDateString('es-CL')}`,
+            mensaje: `La fecha seleccionada ya pasó. La fecha más temprana permitida es: ${minimoAnticipacion.toLocaleDateString('es-CL')}`,
             fechaMinimaPermitida: minimoAnticipacion
         };
     }
