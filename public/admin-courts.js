@@ -998,7 +998,13 @@ function formatPromocionFechas(promo) {
         else if (finStr.includes('T')) finStr = finStr.split('T')[0];
         return `Del ${inicioStr} al ${finStr}`;
     } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
-        const dias = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
+        let dias;
+        try {
+            dias = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
+        } catch (e) {
+            console.error('Error parseando dias_semana:', promo.dias_semana, e);
+            dias = [];
+        }
         return `Recurrente: ${dias.join(', ')}`;
     }
     return 'Fechas no especificadas';
