@@ -2056,6 +2056,33 @@ app.get('/api/admin/kpis', authenticateToken, requireComplexAccess, async (req, 
 app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('📅 Cargando reservas de hoy...');
+    console.log('👤 Usuario:', req.user?.email || req.admin?.email, 'Rol:', req.user?.rol || req.admin?.rol);
+    
+    const userRole = req.user?.rol || req.admin?.rol;
+    let complexFilter = req.complexFilter; // Del middleware requireComplexAccess
+    
+    // Fallback: intentar obtener de user/admin si complexFilter no está disponible
+    if (!complexFilter && (userRole === 'owner' || userRole === 'manager')) {
+      complexFilter = req.user?.complejo_id || req.admin?.complejo_id;
+    }
+    
+    console.log('📅 getReservasHoy (server.js) - Rol:', userRole, 'Complejo ID:', complexFilter);
+    
+    // Construir query base
+    let whereClause = 'WHERE r.fecha::date = CURRENT_DATE AND r.estado != \'cancelada\'';
+    const params = [];
+    
+    // Filtrar por complejo solo si el usuario es owner/manager y tiene complejo asignado
+    if ((userRole === 'owner' || userRole === 'manager') && complexFilter) {
+      whereClause += ' AND co.id = $1';
+      params.push(complexFilter);
+      console.log('✅ Filtro aplicado - Solo mostrando reservas del complejo:', complexFilter);
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      console.error('⚠️ ADVERTENCIA: Owner/Manager sin complejo_id asignado. No se aplicará filtro de complejo.');
+    }
+    
+    console.log('📋 Query WHERE clause:', whereClause);
+    console.log('📋 Query params:', params);
     
     const reservasHoy = await db.query(`
       SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
@@ -2063,17 +2090,20 @@ app.get('/api/admin/reservas-hoy', authenticateToken, requireComplexAccess, asyn
              TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
              r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
              r.estado, r.estado_pago, r.created_at, r.fecha_creacion,
-             c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+             c.nombre as cancha_nombre, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
-      WHERE r.fecha::date = CURRENT_DATE
-      AND r.estado != 'cancelada'
+      ${whereClause}
       ORDER BY r.hora_inicio
-    `);
+    `, params);
     
     console.log(`✅ ${reservasHoy.length} reservas de hoy cargadas`);
+    if (reservasHoy.length > 0) {
+      console.log('📋 Complejos en las reservas:', [...new Set(reservasHoy.map(r => r.complejo_nombre))]);
+      console.log('📋 IDs de complejos en las reservas:', [...new Set(reservasHoy.map(r => r.complejo_id))]);
+    }
     
     // Ocultar precios a los managers
     if (req.userPermissions && !req.userPermissions.canViewFinancials) {
