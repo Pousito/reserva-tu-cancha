@@ -24,7 +24,21 @@ function fechaCoincideConPromocion(fecha, promocion) {
         case 'recurrente_semanal':
             const diasSemanaEs = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
             const diaSemana = diasSemanaEs[fechaDate.getDay()];
-            return promocion.dias_semana && promocion.dias_semana.includes(diaSemana);
+            
+            // Parsear dias_semana correctamente (puede venir como array de PostgreSQL o como string JSON)
+            let diasSemana = [];
+            try {
+                if (Array.isArray(promocion.dias_semana)) {
+                    diasSemana = promocion.dias_semana;
+                } else if (typeof promocion.dias_semana === 'string') {
+                    diasSemana = JSON.parse(promocion.dias_semana || '[]');
+                }
+            } catch (e) {
+                console.error('Error parseando dias_semana en fechaCoincideConPromocion:', promocion.dias_semana, e);
+                diasSemana = [];
+            }
+            
+            return diasSemana.length > 0 && diasSemana.includes(diaSemana);
             
         default:
             return false;
@@ -89,6 +103,11 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
             console.log(`  - Promoción: ${promocion.nombre} (ID: ${promocion.id})`);
             console.log(`    Tipo fecha: ${promocion.tipo_fecha}, Tipo horario: ${promocion.tipo_horario}`);
             
+            // Log adicional para dias_semana
+            if (promocion.tipo_fecha === 'recurrente_semanal') {
+                console.log(`    dias_semana (tipo: ${typeof promocion.dias_semana}):`, promocion.dias_semana);
+            }
+            
             // Verificar si la fecha coincide
             const fechaCoincide = fechaCoincideConPromocion(fecha, promocion);
             console.log(`    Fecha coincide: ${fechaCoincide}`);
@@ -97,14 +116,22 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
                 continue;
             }
             
-            // Si se proporciona hora, verificar que también coincida
-            if (hora) {
+            // Verificar si el horario coincide (si la promoción tiene restricción de horario)
+            // IMPORTANTE: Si la promoción tiene horario específico o de rango, requiere hora
+            if (promocion.tipo_horario === 'especifico' || promocion.tipo_horario === 'rango') {
+                if (!hora) {
+                    console.log(`    ⚠️ Promoción requiere hora pero no se proporcionó - omitiendo`);
+                    continue;
+                }
+                
                 const horaCoincide = horaCoincideConPromocion(hora, promocion);
                 console.log(`    Hora coincide: ${horaCoincide}`);
                 
                 if (!horaCoincide) {
                     continue;
                 }
+            } else {
+                console.log(`    ℹ️ Promoción sin restricción de horario - aplicando`);
             }
             
             // Si llegamos aquí, la promoción aplica
