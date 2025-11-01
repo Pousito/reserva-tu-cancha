@@ -280,6 +280,7 @@ module.exports = {
     obtenerPrecioConPromocion,
     obtenerPromocionesActivas,
     fechaCoincideConPromocion,
-    horaCoincideConPromocion
+    horaCoincideConPromocion,
+    setDatabase
 };
 
