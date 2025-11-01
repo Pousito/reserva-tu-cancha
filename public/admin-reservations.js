@@ -1147,6 +1147,15 @@ async function cargarCalendario() {
             console.log('🏟️ Canchas disponibles:', canchas);
             console.log('🕐 Horarios recibidos del backend:', data.horarios);
             
+            // Debug detallado de horarios
+            if (data.horarios && data.horarios.length > 0) {
+                console.log('🕐 DEBUG - Primer día de horarios:', data.horarios[0]);
+                if (data.horarios[0].horarios) {
+                    console.log('🕐 DEBUG - Horarios del primer día:', data.horarios[0].horarios);
+                    console.log('🕐 DEBUG - Horas totales:', data.horarios[0].horarios.map(h => `${h.hora} (${h.label})`).join(', '));
+                }
+            }
+            
             // Debug específico para 12/09/2025
             if (calendarioData['2025-09-12']) {
                 console.log('🔍 Datos específicos para 12/09/2025:', calendarioData['2025-09-12']);
@@ -1657,8 +1666,18 @@ function renderizarCalendario(data = null) {
         }
     }
     
-    // Convertir a array y ordenar
-    const horasOrdenadas = Array.from(todasLasHoras).sort();
+    // Convertir a array y ordenar numéricamente (00:00 debe ir después de 23:00)
+    const horasOrdenadas = Array.from(todasLasHoras).sort((a, b) => {
+        // Convertir "00:00" a 24 para que vaya después de "23:00"
+        let horaA = parseInt(a.split(':')[0]);
+        let horaB = parseInt(b.split(':')[0]);
+        
+        // Si es "00:00", tratarlo como 24 para ordenamiento correcto
+        if (horaA === 0 && a === '00:00') horaA = 24;
+        if (horaB === 0 && b === '00:00') horaB = 24;
+        
+        return horaA - horaB;
+    });
     
     // Filas de horas
     horasOrdenadas.forEach(hora => {
@@ -1683,12 +1702,18 @@ function renderizarCalendario(data = null) {
             
             // Determinar si la hora está disponible según el complejo y día de la semana
             let horaDisponible = false;
-            const horaNum = parseInt(hora.split(':')[0]);
+            // Convertir hora string (ej: "10:00", "00:00") a número
+            // "00:00" debe tratarse como 24 (medianoche del día siguiente)
+            let horaNum = parseInt(hora.split(':')[0]);
+            if (horaNum === 0 && hora === '00:00') {
+                horaNum = 24; // 00:00 = medianoche = hora 24
+            }
             
             // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
             if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
                 // Borde Río: 10:00 a 00:00 (medianoche) todos los días
-                horaDisponible = horaNum >= 10 && horaNum <= 24;
+                // horaNum puede ser 10-24, donde 24 = 00:00 (medianoche)
+                horaDisponible = horaNum >= 10 && (horaNum <= 23 || hora === '00:00');
             } else if (complejoId == 8) { // Complejo Demo 3
                 // Complejo Demo 3: 16:00 a 23:00 todos los días
                 horaDisponible = horaNum >= 16 && horaNum <= 23;
