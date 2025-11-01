@@ -4462,20 +4462,39 @@ function mostrarModalReserva() {
     }
     
     // precio_actual puede ser promocional si hay promoción, sino usar precio_hora
+    // IMPORTANTE: Si tiene_promocion es true, precio_actual ya debería venir del backend con el precio promocional
     let precioActual = parseFloat(canchaSeleccionada?.precio_actual);
-    if (!precioActual || precioActual === 0 || isNaN(precioActual)) {
+    const tienePromocionFlag = canchaSeleccionada?.tiene_promocion === true || canchaSeleccionada?.tiene_promocion === 'true';
+    
+    // Solo corregir precio_actual si NO hay promoción o si es inválido
+    // Si hay promoción, NO sobrescribir el precio_actual que viene del backend
+    if ((!precioActual || precioActual === 0 || isNaN(precioActual)) && !tienePromocionFlag) {
         precioActual = precioHoraNormal;
         // Actualizar en el objeto para uso futuro
         if (canchaSeleccionada) {
             canchaSeleccionada.precio_actual = precioActual;
         }
-        console.log('🔧 Corrigiendo precio_actual en mostrarModalReserva:', precioActual);
+        console.log('🔧 Corrigiendo precio_actual en mostrarModalReserva (sin promoción):', precioActual);
+    } else if (tienePromocionFlag && (!precioActual || precioActual === 0 || isNaN(precioActual))) {
+        // Si tiene promoción pero precio_actual no está establecido, usar precio_hora como fallback
+        precioActual = precioHoraNormal;
+        console.warn('⚠️ Tiene promoción pero precio_actual no está establecido, usando precio_hora como fallback');
+    } else {
+        console.log('✅ precio_actual correctamente establecido:', precioActual, 'tiene_promocion:', tienePromocionFlag);
     }
     
     // Verificar promoción
     const tienePromocion = canchaSeleccionada?.tiene_promocion === true || canchaSeleccionada?.tiene_promocion === 'true';
     // Verificar si hay promoción: precio_actual debe ser menor que precio_original Y tener flag de promoción
+    // IMPORTANTE: Para mostrar promoción, necesitamos:
+    // 1. tener el flag tiene_promocion = true
+    // 2. precio_actual debe ser diferente y menor que precio_original
+    // 3. ambos precios deben ser válidos (> 0)
     const precioMenor = precioActual < precioOriginal && precioActual > 0 && precioOriginal > 0;
+    // También verificar que tenga promocion_info si existe
+    const tienePromocionInfo = canchaSeleccionada?.promocion_info && 
+                                (canchaSeleccionada.promocion_info.porcentaje_descuento || 
+                                 canchaSeleccionada.promocion_info.nombre);
     
     console.log('💰 DEBUG mostrarModalReserva - Verificación de promoción:', {
         precio_actual: precioActual,
@@ -4484,14 +4503,15 @@ function mostrarModalReserva() {
         tiene_promocion_flag: canchaSeleccionada?.tiene_promocion,
         tiene_promocion_bool: tienePromocion,
         precio_menor: precioMenor,
+        tiene_promocion_info: !!tienePromocionInfo,
         promocion_info: canchaSeleccionada?.promocion_info,
         mostrar_promocion: tienePromocion && precioMenor,
         cancha_completa: canchaSeleccionada
     });
     
     // Determinar si mostrar precio promocional
-    // Solo mostrar promoción si tiene flag Y precio actual es menor que original
-    const mostrarPromocion = tienePromocion && precioMenor;
+    // Mostrar promoción si: tiene flag Y (precio actual es menor que original O tiene promocion_info)
+    const mostrarPromocion = tienePromocion && (precioMenor || tienePromocionInfo);
     // Siempre usar precioActual (que puede ser promocional si hay promoción)
     const precioAMostrar = precioActual;
     
