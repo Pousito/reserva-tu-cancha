@@ -69,15 +69,19 @@ async function getCanchasByComplejoAndTipo(req, res) {
     
     // Si se proporciona fecha, agregar información de promociones
     if (fecha) {
+      console.log(`🔍 Calculando precios promocionales para ${rows.length} canchas, fecha: ${fecha}, hora: ${hora || 'no proporcionada'}`);
       const promocionesHelper = require('../utils/promociones-helper');
       
       const canchasConPromociones = await Promise.all(
         rows.map(async (cancha) => {
+          console.log(`  🔍 Verificando promociones para cancha ${cancha.id} (${cancha.nombre})`);
           const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
             cancha.id,
             fecha,
             hora
           );
+          
+          console.log(`  💰 Cancha ${cancha.id}: Precio normal: ${cancha.precio_hora}, Precio actual: ${precioInfo.precio}, Tiene promoción: ${precioInfo.tienePromocion}`);
           
           return {
             ...cancha,
@@ -93,7 +97,8 @@ async function getCanchasByComplejoAndTipo(req, res) {
         })
       );
       
-      console.log('✅ Precios promocionales calculados');
+      const canchasConPromocion = canchasConPromociones.filter(c => c.tiene_promocion);
+      console.log(`✅ Precios promocionales calculados: ${canchasConPromocion.length} de ${canchasConPromociones.length} canchas tienen promoción`);
       res.json(canchasConPromociones);
     } else {
       // Sin fecha, retornar canchas normales
