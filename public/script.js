@@ -4360,12 +4360,30 @@ function mostrarModalReserva() {
     // Limpiar completamente el formulario antes de mostrar el modal
     limpiarFormularioReserva();
     
+    console.log('🎨 DEBUG mostrarModalReserva - canchaSeleccionada:', {
+        id: canchaSeleccionada?.id,
+        nombre: canchaSeleccionada?.nombre,
+        precio_actual: canchaSeleccionada?.precio_actual,
+        precio_hora: canchaSeleccionada?.precio_hora,
+        precio_original: canchaSeleccionada?.precio_original,
+        tiene_promocion: canchaSeleccionada?.tiene_promocion,
+        precio_usado: canchaSeleccionada?.precio_actual || canchaSeleccionada?.precio_hora
+    });
+    
     const modal = new bootstrap.Modal(document.getElementById('reservaModal'));
     
     // Actualizar resumen
     const resumen = document.getElementById('resumenReserva');
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
+    
+    // Calcular precio a mostrar (usar precio_actual si existe, sino precio_hora)
+    const precioAMostrar = canchaSeleccionada?.precio_actual || canchaSeleccionada?.precio_hora;
+    console.log('💰 DEBUG mostrarModalReserva - Precio a mostrar:', precioAMostrar, {
+        tiene_precio_actual: !!canchaSeleccionada?.precio_actual,
+        precio_actual: canchaSeleccionada?.precio_actual,
+        precio_hora: canchaSeleccionada?.precio_hora
+    });
     
          resumen.innerHTML = `
          <div class="row">
@@ -4390,7 +4408,7 @@ function mostrarModalReserva() {
          </div>
          <div class="row">
              <div class="col-6"><strong>Precio:</strong></div>
-             <div class="col-6" id="precioOriginal">$${formatCurrencyChile(canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora)}</div>
+             <div class="col-6" id="precioOriginal">$${formatCurrencyChile(precioAMostrar)}</div>
          </div>
      `;
     
