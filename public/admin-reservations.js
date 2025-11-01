@@ -1153,6 +1153,7 @@ async function cargarCalendario() {
                 if (data.horarios[0].horarios) {
                     console.log('🕐 DEBUG - Horarios del primer día:', data.horarios[0].horarios);
                     console.log('🕐 DEBUG - Horas totales:', data.horarios[0].horarios.map(h => `${h.hora} (${h.label})`).join(', '));
+                    console.log('🕐 DEBUG - Horarios totales del primer día:', JSON.stringify(data.horarios[0].horarios, null, 2));
                 }
             }
             
