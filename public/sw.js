@@ -3,9 +3,9 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v1';
-const STATIC_CACHE = 'static-v1';
-const DYNAMIC_CACHE = 'dynamic-v1';
+const CACHE_NAME = 'reserva-tu-cancha-v2';
+const STATIC_CACHE = 'static-v2';
+const DYNAMIC_CACHE = 'dynamic-v2';
 
 // Assets estáticos para cachear
 const STATIC_ASSETS = [
@@ -96,8 +96,15 @@ async function handleRequest(request) {
     if (isHTMLRequest(request)) {
       return await networkFirst(request, DYNAMIC_CACHE);
     }
-    
-    // Estrategia Stale While Revalidate para APIs
+
+    // NO cachear peticiones críticas del calendario y admin
+    if (url.pathname.includes('/calendar/') ||
+        url.pathname.includes('/admin/estadisticas') ||
+        url.pathname.includes('/admin/reservas')) {
+      return await fetch(request);
+    }
+
+    // Estrategia Stale While Revalidate para otras APIs
     if (isAPIRequest(url.pathname)) {
       return await staleWhileRevalidate(request, DYNAMIC_CACHE);
     }
