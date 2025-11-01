@@ -4405,9 +4405,17 @@ async function seleccionarCancha(cancha) {
     }
     
     // Asegurar que precio_actual esté establecido
+    // IMPORTANTE: Si tiene promoción, NO sobrescribir el precio_actual que viene del backend
+    const tienePromocionPreAsignar = cancha.tiene_promocion === true || cancha.tiene_promocion === 'true';
     if (!cancha.precio_actual || cancha.precio_actual === 0 || isNaN(parseFloat(cancha.precio_actual))) {
+        if (tienePromocionPreAsignar) {
+            // Si tiene promoción pero precio_actual no está, algo está mal
+            console.warn('⚠️ ADVERTENCIA: Cancha tiene promoción pero precio_actual no está establecido. Usando precio_hora como fallback.');
+        }
         cancha.precio_actual = precioHoraNormal;
-        console.log('🔧 Estableciendo precio_actual antes de asignar:', cancha.precio_actual);
+        console.log('🔧 Estableciendo precio_actual antes de asignar:', cancha.precio_actual, 'tiene_promocion:', tienePromocionPreAsignar);
+    } else if (tienePromocionPreAsignar) {
+        console.log('✅ precio_actual establecido correctamente con promoción:', cancha.precio_actual);
     }
     
     canchaSeleccionada = cancha;
@@ -4419,7 +4427,12 @@ async function seleccionarCancha(cancha) {
         precio_original: canchaSeleccionada.precio_original,
         tiene_promocion: canchaSeleccionada.tiene_promocion,
         promocion_info: canchaSeleccionada.promocion_info,
-        mostrar_promocion: canchaSeleccionada.tiene_promocion && parseFloat(canchaSeleccionada.precio_actual) < parseFloat(canchaSeleccionada.precio_original)
+        mostrar_promocion: canchaSeleccionada.tiene_promocion && parseFloat(canchaSeleccionada.precio_actual) < parseFloat(canchaSeleccionada.precio_original),
+        comparacion_precios: {
+            actual: parseFloat(canchaSeleccionada.precio_actual),
+            original: parseFloat(canchaSeleccionada.precio_original),
+            es_menor: parseFloat(canchaSeleccionada.precio_actual) < parseFloat(canchaSeleccionada.precio_original)
+        }
     });
     mostrarModalReserva();
 }
