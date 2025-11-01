@@ -3,9 +3,9 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v2';
-const STATIC_CACHE = 'static-v2';
-const DYNAMIC_CACHE = 'dynamic-v2';
+const CACHE_NAME = 'reserva-tu-cancha-v4';
+const STATIC_CACHE = 'static-v4';
+const DYNAMIC_CACHE = 'dynamic-v4';
 
 // Assets estáticos para cachear
 const STATIC_ASSETS = [
@@ -85,16 +85,12 @@ self.addEventListener('fetch', (event) => {
 
 async function handleRequest(request) {
   const url = new URL(request.url);
-  
+
   try {
-    // Estrategia Cache First para assets estáticos
-    if (isStaticAsset(url.pathname)) {
-      return await cacheFirst(request, STATIC_CACHE);
-    }
-    
-    // Estrategia Network First para páginas HTML
-    if (isHTMLRequest(request)) {
-      return await networkFirst(request, DYNAMIC_CACHE);
+    // NO cachear archivos JavaScript del panel de admin (siempre ir a la red)
+    if (url.pathname.includes('admin-') && url.pathname.endsWith('.js')) {
+      console.log('🔄 Cargando archivo admin JS desde la red:', url.pathname);
+      return await fetch(request);
     }
 
     // NO cachear peticiones críticas del calendario y admin
@@ -102,6 +98,16 @@ async function handleRequest(request) {
         url.pathname.includes('/admin/estadisticas') ||
         url.pathname.includes('/admin/reservas')) {
       return await fetch(request);
+    }
+
+    // Estrategia Cache First para assets estáticos
+    if (isStaticAsset(url.pathname)) {
+      return await cacheFirst(request, STATIC_CACHE);
+    }
+
+    // Estrategia Network First para páginas HTML
+    if (isHTMLRequest(request)) {
+      return await networkFirst(request, DYNAMIC_CACHE);
     }
 
     // Estrategia Stale While Revalidate para otras APIs
