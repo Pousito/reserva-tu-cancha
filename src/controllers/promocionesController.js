@@ -381,6 +381,32 @@ async function togglePromocion(req, res) {
     }
 }
 
+/**
+ * Endpoint de debugging: Obtener TODAS las promociones activas de todas las canchas
+ */
+async function getAllPromocionesActivas(req, res) {
+    try {
+        const promociones = await db.all(
+            `SELECT p.*, c.nombre as cancha_nombre, c.id as cancha_id, c.complejo_id, co.nombre as complejo_nombre
+             FROM promociones_canchas p
+             JOIN canchas c ON p.cancha_id = c.id
+             JOIN complejos co ON c.complejo_id = co.id
+             WHERE p.activo = true
+             ORDER BY c.complejo_id, c.id, p.creado_en DESC`
+        );
+        
+        console.log(`🔍 DEBUG: Total de promociones activas encontradas: ${promociones.length}`);
+        
+        res.json({
+            total: promociones.length,
+            promociones: promociones
+        });
+    } catch (error) {
+        console.error('Error obteniendo todas las promociones:', error);
+        res.status(500).json({ error: 'Error al obtener promociones' });
+    }
+}
+
 module.exports = {
     setDatabase,
     getPromocionesCancha,
@@ -388,6 +414,7 @@ module.exports = {
     createPromocion,
     updatePromocion,
     deletePromocion,
-    togglePromocion
+    togglePromocion,
+    getAllPromocionesActivas
 };
 
