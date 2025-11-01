@@ -1285,7 +1285,20 @@ async function editPromocion(promocionId) {
             document.getElementById('fechaInicio').value = promo.fecha_inicio;
             document.getElementById('fechaFin').value = promo.fecha_fin;
         } else if (promo.tipo_fecha === 'recurrente_semanal') {
-            promo.dias_semana.forEach(dia => {
+            // Parsear dias_semana correctamente
+            let diasSemana = [];
+            try {
+                if (Array.isArray(promo.dias_semana)) {
+                    diasSemana = promo.dias_semana;
+                } else if (typeof promo.dias_semana === 'string') {
+                    diasSemana = JSON.parse(promo.dias_semana || '[]');
+                }
+            } catch (e) {
+                console.error('Error parseando dias_semana:', promo.dias_semana, e);
+                diasSemana = [];
+            }
+            
+            diasSemana.forEach(dia => {
                 const checkbox = document.getElementById(`dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`);
                 if (checkbox) checkbox.checked = true;
             });
