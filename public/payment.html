@@ -396,40 +396,6 @@
             color: #856404;
         }
 
-        .dev-tools {
-            margin-top: 2rem;
-            padding: 2rem;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 15px;
-            border: 2px dashed #6c757d;
-        }
-
-        .dev-tools h4 {
-            color: #6c757d;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        .dev-tools p {
-            color: #6c757d;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            line-height: 1.5;
-        }
-
-        .dev-tools .btn {
-            font-size: 0.9rem;
-            padding: 0.75rem 1.5rem;
-        }
-
-        .dev-tools .btn[style*="background: #28a745"] {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
-        }
-
-        .dev-tools .btn[style*="background: #dc3545"] {
-            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%) !important;
-        }
-
         /* Responsive Design */
         @media (max-width: 768px) {
             body {
@@ -467,15 +433,6 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
-            }
-
-            .dev-tools {
-                padding: 1.5rem;
-            }
-
-            .dev-tools div[style*="display: flex"] {
-                flex-direction: column !important;
-                gap: 1rem !important;
             }
         }
 
@@ -572,22 +529,6 @@
                 <button class="btn btn-primary" id="payButton" onclick="processPayment()">
                     💳 Pagar Ahora
                 </button>
-            </div>
-
-            <!-- Botones de simulación para desarrollo -->
-            <div class="dev-tools">
-                <h4>🛠️ Herramientas de Desarrollo</h4>
-                <p>
-                    En modo desarrollo, puedes simular diferentes resultados de pago:
-                </p>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button class="btn" style="background: #28a745; color: white;" onclick="simulateSuccessfulPayment()">
-                        ✅ Simular Pago Exitoso
-                    </button>
-                    <button class="btn" style="background: #dc3545; color: white;" onclick="simulateCancelledPayment()">
-                        ❌ Simular Pago Cancelado
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -1014,92 +955,6 @@
             } catch (error) {
                 console.error('Error confirmando pago:', error);
                 showError('Error confirmando pago: ' + error.message);
-                showLoading(false);
-            }
-        }
-
-        // Funciones de simulación para desarrollo
-        async function simulateSuccessfulPayment() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const reservationCode = urlParams.get('code');
-            
-            if (!reservationCode) {
-                alert('Error: No se encontró código de reserva');
-                return;
-            }
-
-            try {
-                showLoading(true);
-                
-                const response = await fetch('/api/simulate-payment-success', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        reservationCode: reservationCode
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Mostrar mensaje de éxito temporal
-                    showSuccess('✅ Pago simulado exitosamente! Redirigiendo...');
-                    
-                    // Redirigir directamente a la página de confirmación de pago
-                    setTimeout(() => {
-                        window.location.href = '/payment-success.html?code=' + result.codigo_reserva;
-                    }, 1500);
-                } else {
-                    alert('❌ Error: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Error simulando pago:', error);
-                alert('❌ Error simulando pago: ' + error.message);
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function simulateCancelledPayment() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const reservationCode = urlParams.get('code');
-            
-            if (!reservationCode) {
-                alert('Error: No se encontró código de reserva');
-                return;
-            }
-
-            try {
-                showLoading(true);
-                
-                const response = await fetch('/api/simulate-payment-cancelled', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        reservationCode: reservationCode
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('❌ Pago cancelado exitosamente!\n\n' +
-                          '🗑️ Bloqueo temporal eliminado\n' +
-                          '🆔 Código: ' + result.codigo_reserva);
-                    
-                    // Redirigir a la página principal
-                    window.location.href = '/';
-                } else {
-                    alert('❌ Error: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Error simulando cancelación:', error);
-                alert('❌ Error simulando cancelación: ' + error.message);
-            } finally {
                 showLoading(false);
             }
         }
