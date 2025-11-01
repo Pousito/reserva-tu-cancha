@@ -165,10 +165,17 @@ async function getReservasRecientes(req, res) {
  */
 async function getReservasHoy(req, res) {
   try {
+    // Usar complexFilter del middleware requireComplexAccess si está disponible
+    // Si no, intentar obtener del user/admin directamente
     const userRole = req.admin?.rol || req.user?.rol;
-    const complexFilter = req.admin?.complejo_id || req.user?.complejo_id;
+    let complexFilter = req.complexFilter; // Del middleware requireComplexAccess
     
-    console.log('📅 Obteniendo reservas de hoy - Rol:', userRole, 'Complejo:', complexFilter);
+    // Fallback: intentar obtener de user/admin si complexFilter no está disponible
+    if (!complexFilter && (userRole === 'owner' || userRole === 'manager')) {
+      complexFilter = req.admin?.complejo_id || req.user?.complejo_id;
+    }
+    
+    console.log('📅 getReservasHoy - Rol:', userRole, 'Complejo ID:', complexFilter);
     
     let query = `
       SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente, 
@@ -187,17 +194,25 @@ async function getReservasHoy(req, res) {
     
     const params = [];
     
-    if (userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') {
+    // Filtrar por complejo solo si el usuario es owner/manager y tiene complejo asignado
+    if ((userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') && complexFilter) {
       query += ' AND co.id = $1';
       params.push(complexFilter);
+      console.log('✅ Filtro aplicado - Solo mostrando reservas del complejo:', complexFilter);
+    } else if (userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') {
+      console.error('⚠️ ADVERTENCIA: Owner/Manager sin complejo_id asignado. No se aplicará filtro de complejo.');
     }
     
     query += ' ORDER BY r.hora_inicio';
+    
+    console.log('📋 Query final:', query);
+    console.log('📋 Parámetros:', params);
     
     const rows = await db.query(query, params);
     
     console.log('✅ Reservas de hoy encontradas:', rows.length);
     if (rows.length > 0) {
+      console.log('📋 Complejos en las reservas:', [...new Set(rows.map(r => r.complejo_nombre))]);
       console.log('🔍 Primera reserva:', {
         codigo: rows[0].codigo_reserva,
         cancha: rows[0].cancha_nombre,
