@@ -204,7 +204,7 @@ async function loadComplexes() {
         }
         
         const token = localStorage.getItem('adminToken');
-        console.log('🔍 Cargando complejos en admin-courts... VERSIÓN 3.8');
+        console.log('🔍 Cargando complejos en admin-courts... VERSIÓN 3.12');
         const response = await AdminUtils.authenticatedFetch('/admin/complejos', {
             headers: {
                 'Authorization': `Bearer ${token}`
