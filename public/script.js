@@ -4734,6 +4734,13 @@ async function confirmarReserva() {
         monto_pagado: descuentoAplicado ? Math.round(descuentoAplicado.monto_final * (porcentajePagado / 100)) : precioAPagar // Lo que realmente paga
     };
     
+    console.log('📤 DEBUG - formData que se enviará al backend:', {
+        ...formData,
+        canchaSeleccionada_completa: canchaSeleccionada
+    });
+    console.log('📤 DEBUG - precio_total en formData:', formData.precio_total);
+    console.log('📤 DEBUG - monto_pagado en formData:', formData.monto_pagado);
+    
     // Mostrar indicador de procesamiento
     const btnConfirmar = document.getElementById('confirmarReserva');
     const originalText = btnConfirmar.innerHTML;
