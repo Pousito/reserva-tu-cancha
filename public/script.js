@@ -4395,6 +4395,21 @@ async function seleccionarCancha(cancha) {
     }
     
     // IMPORTANTE: Asignar cancha a canchaSeleccionada ANTES de mostrar el modal
+    // Asegurar que todos los campos estén correctamente establecidos antes de asignar
+    const precioHoraNormal = parseFloat(cancha.precio_hora) || 0;
+    
+    // Asegurar que precio_original esté establecido (debe ser siempre precio_hora)
+    if (!cancha.precio_original || cancha.precio_original === 0 || isNaN(parseFloat(cancha.precio_original))) {
+        cancha.precio_original = precioHoraNormal;
+        console.log('🔧 Estableciendo precio_original antes de asignar:', cancha.precio_original);
+    }
+    
+    // Asegurar que precio_actual esté establecido
+    if (!cancha.precio_actual || cancha.precio_actual === 0 || isNaN(parseFloat(cancha.precio_actual))) {
+        cancha.precio_actual = precioHoraNormal;
+        console.log('🔧 Estableciendo precio_actual antes de asignar:', cancha.precio_actual);
+    }
+    
     canchaSeleccionada = cancha;
     console.log('🔍 DEBUG seleccionarCancha - canchaSeleccionada final:', {
         id: canchaSeleccionada.id,
@@ -4402,7 +4417,9 @@ async function seleccionarCancha(cancha) {
         precio_actual: canchaSeleccionada.precio_actual,
         precio_hora: canchaSeleccionada.precio_hora,
         precio_original: canchaSeleccionada.precio_original,
-        tiene_promocion: canchaSeleccionada.tiene_promocion
+        tiene_promocion: canchaSeleccionada.tiene_promocion,
+        promocion_info: canchaSeleccionada.promocion_info,
+        mostrar_promocion: canchaSeleccionada.tiene_promocion && parseFloat(canchaSeleccionada.precio_actual) < parseFloat(canchaSeleccionada.precio_original)
     });
     mostrarModalReserva();
 }
