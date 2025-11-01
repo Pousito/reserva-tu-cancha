@@ -1848,10 +1848,17 @@ app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, requ
 app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     console.log('📝 Cargando reservas recientes...');
-    console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
+    console.log('👤 Usuario:', req.user?.email || req.admin?.email, 'Rol:', req.user?.rol || req.admin?.rol);
     
-    const userRole = req.user.rol;
-    const complexFilter = req.complexFilter;
+    const userRole = req.user?.rol || req.admin?.rol;
+    let complexFilter = req.complexFilter; // Del middleware requireComplexAccess
+    
+    // Fallback: intentar obtener de user/admin si complexFilter no está disponible
+    if (!complexFilter && (userRole === 'owner' || userRole === 'manager')) {
+      complexFilter = req.user?.complejo_id || req.admin?.complejo_id;
+    }
+    
+    console.log('📋 getReservasRecientes (server.js) - Rol:', userRole, 'Complejo ID:', complexFilter);
     
     // Construir filtros según el rol
     let whereClause = '';
@@ -1860,11 +1867,19 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     if (userRole === 'super_admin') {
       // Super admin ve todo
       whereClause = 'WHERE r.estado != \'cancelada\'';
-    } else if (userRole === 'owner' || userRole === 'manager') {
+    } else if ((userRole === 'owner' || userRole === 'manager') && complexFilter) {
       // Dueños y administradores solo ven su complejo
       whereClause = 'WHERE c.complejo_id = $1 AND r.estado != \'cancelada\'';
       params = [complexFilter];
+      console.log('✅ Filtro aplicado - Solo mostrando reservas del complejo:', complexFilter);
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      console.error('⚠️ ADVERTENCIA: Owner/Manager sin complejo_id asignado. No se aplicará filtro de complejo.');
+      // No aplicar filtro pero seguir
+      whereClause = 'WHERE r.estado != \'cancelada\'';
     }
+    
+    console.log('📋 Query WHERE clause:', whereClause);
+    console.log('📋 Query params:', params);
     
     const reservas = await db.query(`
       SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
@@ -1872,7 +1887,7 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
              TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
              r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
              r.estado, r.estado_pago, r.created_at, r.fecha_creacion,
-             c.nombre as cancha_nombre, co.nombre as complejo_nombre, ci.nombre as ciudad_nombre
+             c.nombre as cancha_nombre, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -1883,6 +1898,10 @@ app.get('/api/admin/reservas-recientes', authenticateToken, requireComplexAccess
     `, params);
     
     console.log(`✅ ${reservas.length} reservas recientes cargadas`);
+    if (reservas.length > 0) {
+      console.log('📋 Complejos en las reservas:', [...new Set(reservas.map(r => r.complejo_nombre))]);
+      console.log('📋 IDs de complejos en las reservas:', [...new Set(reservas.map(r => r.complejo_id))]);
+    }
     
     // Ocultar precios a los managers
     if (req.userPermissions && !req.userPermissions.canViewFinancials) {
