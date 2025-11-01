@@ -3069,7 +3069,18 @@ async function cargarCanchas(complejoId, tipo, renderizarVisual = true) {
         }
         
         canchas = await response.json();
-        console.log('🏟️ Canchas recibidas:', canchas);
+        console.log('🏟️ Canchas recibidas - Detalle completo:', JSON.stringify(canchas, null, 2));
+        if (canchas.length > 0) {
+            console.log('🏟️ Primera cancha recibida:', {
+                id: canchas[0].id,
+                nombre: canchas[0].nombre,
+                precio_actual: canchas[0].precio_actual,
+                precio_hora: canchas[0].precio_hora,
+                precio_original: canchas[0].precio_original,
+                tiene_promocion: canchas[0].tiene_promocion,
+                promocion_info: canchas[0].promocion_info
+            });
+        }
         
         // Log promociones encontradas
         const canchasConPromocion = canchas.filter(c => c.tiene_promocion);
