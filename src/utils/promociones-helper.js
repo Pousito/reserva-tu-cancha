@@ -262,7 +262,8 @@ async function obtenerPromocionesActivas(complejoId = null) {
         
         query += ' ORDER BY c.nombre, p.creado_en DESC';
         
-        const promociones = await db.query(query, params);
+        const database = getDatabase();
+        const promociones = await database.query(query, params);
         
         return promociones.map(p => ({
             ...p,
