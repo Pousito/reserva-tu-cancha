@@ -4404,23 +4404,30 @@ function mostrarModalReserva() {
     const hora = document.getElementById('horaSelect').value;
     
     // Calcular precio a mostrar y verificar si hay promoción
-    const precioActual = parseFloat(canchaSeleccionada?.precio_actual) || parseFloat(canchaSeleccionada?.precio_hora) || 0;
-    const precioOriginal = parseFloat(canchaSeleccionada?.precio_original) || parseFloat(canchaSeleccionada?.precio_hora) || precioActual;
+    // IMPORTANTE: precio_original debe ser siempre precio_hora (el precio normal de la cancha)
+    const precioHoraNormal = parseFloat(canchaSeleccionada?.precio_hora) || 0;
+    const precioActual = parseFloat(canchaSeleccionada?.precio_actual) || precioHoraNormal;
+    // precio_original del backend debe ser siempre precio_hora, pero si no está, usar precio_hora
+    const precioOriginal = parseFloat(canchaSeleccionada?.precio_original) || precioHoraNormal;
     const tienePromocion = canchaSeleccionada?.tiene_promocion === true || canchaSeleccionada?.tiene_promocion === 'true';
-    const precioMenor = precioActual < precioOriginal;
+    // Verificar si hay promoción: precio_actual debe ser menor que precio_original Y tener flag de promoción
+    const precioMenor = precioActual < precioOriginal && precioActual > 0;
     
     console.log('💰 DEBUG mostrarModalReserva - Verificación de promoción:', {
         precio_actual: precioActual,
         precio_original: precioOriginal,
-        precio_hora: parseFloat(canchaSeleccionada?.precio_hora),
+        precio_hora: precioHoraNormal,
         tiene_promocion_flag: canchaSeleccionada?.tiene_promocion,
         tiene_promocion_bool: tienePromocion,
         precio_menor: precioMenor,
-        promocion_info: canchaSeleccionada?.promocion_info
+        promocion_info: canchaSeleccionada?.promocion_info,
+        mostrar_promocion: tienePromocion && precioMenor
     });
     
     // Determinar si mostrar precio promocional
+    // Solo mostrar promoción si tiene flag Y precio actual es menor que original
     const mostrarPromocion = tienePromocion && precioMenor;
+    // Siempre usar precioActual (que puede ser promocional si hay promoción)
     const precioAMostrar = precioActual;
     
          resumen.innerHTML = `
