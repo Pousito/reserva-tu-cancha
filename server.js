@@ -3892,8 +3892,32 @@ async function verificarPromocionActiva(canchaId, fecha, hora) {
         fechaValida = fechaReserva >= inicio && fechaReserva <= fin;
         console.log(`   📅 Validación de rango: ${fechaValida}`);
       } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
-        const diasPromo = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
-        fechaValida = diasPromo.includes(diaSemana);
+        // Parsear dias_semana correctamente (puede venir como array de PostgreSQL o como string)
+        let diasPromo = [];
+        try {
+          if (Array.isArray(promo.dias_semana)) {
+            diasPromo = promo.dias_semana;
+          } else if (typeof promo.dias_semana === 'string') {
+            // PostgreSQL devuelve arrays TEXT[] como: {"lunes","martes"} que NO es JSON válido
+            if (promo.dias_semana.startsWith('{') && promo.dias_semana.endsWith('}')) {
+              const contenido = promo.dias_semana.slice(1, -1);
+              if (contenido.trim()) {
+                diasPromo = contenido
+                  .split(',')
+                  .map(dia => dia.trim().replace(/^["']|["']$/g, ''))
+                  .filter(dia => dia.length > 0);
+              }
+            } else {
+              // Intentar parsear como JSON válido
+              diasPromo = JSON.parse(promo.dias_semana || '[]');
+            }
+          }
+        } catch (e) {
+          console.error('   ❌ Error parseando dias_semana en verificarPromocionActiva:', promo.dias_semana, e);
+          diasPromo = [];
+        }
+        
+        fechaValida = diasPromo.length > 0 && diasPromo.includes(diaSemana);
         console.log(`   📅 Validación semanal - Días: ${diasPromo}, Día actual: ${diaSemana}, Válido: ${fechaValida}`);
       }
       
