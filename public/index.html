@@ -544,13 +544,11 @@
                             const newWorker = registration.installing;
                             newWorker.addEventListener('statechange', () => {
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // Nueva versión disponible - forzar recarga
-                                    console.log('🔄 Nueva versión del Service Worker disponible, recargando...');
-                                    window.location.reload();
-                                    return;
-                                    if (confirm('Nueva versión disponible. ¿Recargar para actualizar?')) {
+                                    // Nueva versión disponible - forzar recarga automática
+                                    console.log('🔄 Nueva versión del Service Worker disponible, recargando automáticamente...');
+                                    setTimeout(() => {
                                         window.location.reload();
-                                    }
+                                    }, 1000);
                                 }
                             });
                         });
