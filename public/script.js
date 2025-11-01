@@ -4428,11 +4428,25 @@ function mostrarModalReserva() {
          </div>
          <div class="row">
              <div class="col-6"><strong>Precio:</strong></div>
-             <div class="col-6" id="precioOriginal">$${formatCurrencyChile(precioAMostrar)}</div>
+             <div class="col-6" id="precioOriginal">
+             ${canchaSeleccionada?.tiene_promocion && canchaSeleccionada?.precio_actual < canchaSeleccionada?.precio_original 
+                ? `
+                <div>
+                    <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(canchaSeleccionada.precio_original)}</span>
+                    <span class="text-success fw-bold ms-2">$${formatCurrencyChile(canchaSeleccionada.precio_actual)}</span>
+                    <span class="badge bg-success ms-1">${canchaSeleccionada.promocion_info?.porcentaje_descuento || ''}% OFF</span>
+                </div>
+                `
+                : `<span>$${formatCurrencyChile(precioAMostrar)}</span>`
+             }
+             </div>
          </div>
      `;
     
     modal.show();
+    
+    // Actualizar el resumen de precio inmediatamente para asegurar que use el precio correcto
+    actualizarResumenPrecio();
     
     // Limpiar descuento aplicado después de mostrar el modal
     setTimeout(() => {
