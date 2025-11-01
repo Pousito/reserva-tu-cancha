@@ -1324,10 +1324,34 @@ async function editPromocion(promocionId) {
         } else if (promo.tipo_fecha === 'recurrente_semanal') {
             // Parsear dias_semana correctamente usando la función auxiliar
             const diasSemana = parsearDiasSemana(promo.dias_semana);
+            console.log('🔍 DEBUG editPromocion - dias_semana parseado:', diasSemana);
             
             diasSemana.forEach(dia => {
-                const checkbox = document.getElementById(`dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`);
-                if (checkbox) checkbox.checked = true;
+                // Normalizar el nombre del día (remover acentos para los IDs)
+                const diaNormalizado = dia.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const checkboxId = `dia${diaNormalizado.charAt(0).toUpperCase() + diaNormalizado.slice(1)}`;
+                console.log('🔍 DEBUG editPromocion - Buscando checkbox:', {
+                    diaOriginal: dia,
+                    diaNormalizado: diaNormalizado,
+                    checkboxId: checkboxId
+                });
+                
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    console.log('✅ Checkbox marcado:', checkboxId);
+                } else {
+                    console.warn('⚠️ Checkbox no encontrado:', checkboxId);
+                    // Intentar con el ID original (con acentos)
+                    const checkboxIdOriginal = `dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`;
+                    const checkboxOriginal = document.getElementById(checkboxIdOriginal);
+                    if (checkboxOriginal) {
+                        checkboxOriginal.checked = true;
+                        console.log('✅ Checkbox marcado con ID original:', checkboxIdOriginal);
+                    } else {
+                        console.error('❌ Checkbox no encontrado ni con ID normalizado ni con ID original');
+                    }
+                }
             });
         }
         
