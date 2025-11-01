@@ -4123,32 +4123,52 @@ app.get('/api/canchas/:complejoId', async (req, res) => {
     
     // Si se proporciona fecha y hora, verificar promociones activas
     if (fecha && hora) {
-      const promocionesHelper = require('./src/utils/promociones-helper');
-      
-      for (const cancha of canchas) {
-        const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
-          cancha.id,
-          fecha,
-          hora
-        );
+      try {
+        const promocionesHelper = require('./src/utils/promociones-helper');
         
-        // IMPORTANTE: precio_original siempre debe ser precio_hora
-        const precioOriginal = parseFloat(cancha.precio_hora) || 0;
-        const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
-        
-        cancha.precio_original = precioOriginal;
-        cancha.precio_actual = precioActual;
-        cancha.tiene_promocion = precioInfo.tienePromocion === true;
-        
-        if (cancha.tiene_promocion) {
-          cancha.promocion_info = {
-            nombre: precioInfo.promocionNombre,
-            descuento: precioInfo.descuento,
-            porcentaje_descuento: precioInfo.porcentajeDescuento
-          };
-        } else {
-          cancha.promocion_info = null;
+        for (const cancha of canchas) {
+          try {
+            const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
+              cancha.id,
+              fecha,
+              hora
+            );
+            
+            // IMPORTANTE: precio_original siempre debe ser precio_hora
+            const precioOriginal = parseFloat(cancha.precio_hora) || 0;
+            const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
+            
+            cancha.precio_original = precioOriginal;
+            cancha.precio_actual = precioActual;
+            cancha.tiene_promocion = precioInfo.tienePromocion === true;
+            
+            if (cancha.tiene_promocion) {
+              cancha.promocion_info = {
+                nombre: precioInfo.promocionNombre,
+                descuento: precioInfo.descuento,
+                porcentaje_descuento: precioInfo.porcentajeDescuento
+              };
+            } else {
+              cancha.promocion_info = null;
+            }
+          } catch (canchaError) {
+            console.error(`⚠️ Error verificando promoción para cancha ${cancha.id}:`, canchaError.message);
+            // Continuar con precio normal si hay error
+            cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+            cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+            cancha.tiene_promocion = false;
+            cancha.promocion_info = null;
+          }
         }
+      } catch (error) {
+        console.error('⚠️ Error verificando promociones:', error.message);
+        // Si hay error, asegurar que todas las canchas tengan precio_original establecido
+        canchas.forEach(cancha => {
+          cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+          cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+          cancha.tiene_promocion = false;
+          cancha.promocion_info = null;
+        });
       }
     }
     
@@ -4185,32 +4205,52 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
     
     // Si se proporciona fecha y hora, verificar promociones activas
     if (fecha && hora) {
-      const promocionesHelper = require('./src/utils/promociones-helper');
-      
-      for (const cancha of canchas) {
-        const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
-          cancha.id,
-          fecha,
-          hora
-        );
+      try {
+        const promocionesHelper = require('./src/utils/promociones-helper');
         
-        // IMPORTANTE: precio_original siempre debe ser precio_hora
-        const precioOriginal = parseFloat(cancha.precio_hora) || 0;
-        const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
-        
-        cancha.precio_original = precioOriginal;
-        cancha.precio_actual = precioActual;
-        cancha.tiene_promocion = precioInfo.tienePromocion === true;
-        
-        if (cancha.tiene_promocion) {
-          cancha.promocion_info = {
-            nombre: precioInfo.promocionNombre,
-            descuento: precioInfo.descuento,
-            porcentaje_descuento: precioInfo.porcentajeDescuento
-          };
-        } else {
-          cancha.promocion_info = null;
+        for (const cancha of canchas) {
+          try {
+            const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
+              cancha.id,
+              fecha,
+              hora
+            );
+            
+            // IMPORTANTE: precio_original siempre debe ser precio_hora
+            const precioOriginal = parseFloat(cancha.precio_hora) || 0;
+            const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
+            
+            cancha.precio_original = precioOriginal;
+            cancha.precio_actual = precioActual;
+            cancha.tiene_promocion = precioInfo.tienePromocion === true;
+            
+            if (cancha.tiene_promocion) {
+              cancha.promocion_info = {
+                nombre: precioInfo.promocionNombre,
+                descuento: precioInfo.descuento,
+                porcentaje_descuento: precioInfo.porcentajeDescuento
+              };
+            } else {
+              cancha.promocion_info = null;
+            }
+          } catch (canchaError) {
+            console.error(`⚠️ Error verificando promoción para cancha ${cancha.id}:`, canchaError.message);
+            // Continuar con precio normal si hay error
+            cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+            cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+            cancha.tiene_promocion = false;
+            cancha.promocion_info = null;
+          }
         }
+      } catch (error) {
+        console.error('⚠️ Error verificando promociones:', error.message);
+        // Si hay error, asegurar que todas las canchas tengan precio_original establecido
+        canchas.forEach(cancha => {
+          cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+          cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+          cancha.tiene_promocion = false;
+          cancha.promocion_info = null;
+        });
       }
     }
     
