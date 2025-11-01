@@ -1392,9 +1392,10 @@ function renderizarCalendarioOffline(data) {
     });
     html += '</div>';
     
-    // Slots de tiempo (solo mostrar horarios relevantes: 8:00 a 22:00)
+    // Slots de tiempo (mostrar horarios relevantes: 8:00 a 24:00/00:00)
     const horarios = data.horarios[0]?.horarios || [];
-    const horariosRelevantes = horarios.filter(h => h.hora >= 8 && h.hora <= 22);
+    // Incluir horas hasta 24 (que se muestra como 00:00) para complejos como Borde Río
+    const horariosRelevantes = horarios.filter(h => h.hora >= 8 && h.hora <= 24);
     
     horariosRelevantes.forEach(horario => {
         html += '<div class="calendar-time-slot">';
