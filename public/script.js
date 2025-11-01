@@ -4403,13 +4403,25 @@ function mostrarModalReserva() {
     const fecha = document.getElementById('fechaSelect').value;
     const hora = document.getElementById('horaSelect').value;
     
-    // Calcular precio a mostrar (usar precio_actual si existe, sino precio_hora)
-    const precioAMostrar = canchaSeleccionada?.precio_actual || canchaSeleccionada?.precio_hora;
-    console.log('💰 DEBUG mostrarModalReserva - Precio a mostrar:', precioAMostrar, {
-        tiene_precio_actual: !!canchaSeleccionada?.precio_actual,
-        precio_actual: canchaSeleccionada?.precio_actual,
-        precio_hora: canchaSeleccionada?.precio_hora
+    // Calcular precio a mostrar y verificar si hay promoción
+    const precioActual = parseFloat(canchaSeleccionada?.precio_actual) || parseFloat(canchaSeleccionada?.precio_hora) || 0;
+    const precioOriginal = parseFloat(canchaSeleccionada?.precio_original) || parseFloat(canchaSeleccionada?.precio_hora) || precioActual;
+    const tienePromocion = canchaSeleccionada?.tiene_promocion === true || canchaSeleccionada?.tiene_promocion === 'true';
+    const precioMenor = precioActual < precioOriginal;
+    
+    console.log('💰 DEBUG mostrarModalReserva - Verificación de promoción:', {
+        precio_actual: precioActual,
+        precio_original: precioOriginal,
+        precio_hora: parseFloat(canchaSeleccionada?.precio_hora),
+        tiene_promocion_flag: canchaSeleccionada?.tiene_promocion,
+        tiene_promocion_bool: tienePromocion,
+        precio_menor: precioMenor,
+        promocion_info: canchaSeleccionada?.promocion_info
     });
+    
+    // Determinar si mostrar precio promocional
+    const mostrarPromocion = tienePromocion && precioMenor;
+    const precioAMostrar = precioActual;
     
          resumen.innerHTML = `
          <div class="row">
@@ -4435,11 +4447,11 @@ function mostrarModalReserva() {
          <div class="row">
              <div class="col-6"><strong>Precio:</strong></div>
              <div class="col-6" id="precioOriginal">
-             ${canchaSeleccionada?.tiene_promocion && canchaSeleccionada?.precio_actual < canchaSeleccionada?.precio_original 
+             ${mostrarPromocion
                 ? `
                 <div>
-                    <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(canchaSeleccionada.precio_original)}</span>
-                    <span class="text-success fw-bold ms-2">$${formatCurrencyChile(canchaSeleccionada.precio_actual)}</span>
+                    <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(precioOriginal)}</span>
+                    <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioActual)}</span>
                     <span class="badge bg-success ms-1">${canchaSeleccionada.promocion_info?.porcentaje_descuento || ''}% OFF</span>
                 </div>
                 `
@@ -4481,7 +4493,21 @@ function actualizarResumenPrecio() {
     // Actualizar el precio en el resumen
     const precioElement = document.getElementById('precioOriginal');
     if (precioElement) {
-        if (canchaSeleccionada.tiene_promocion && canchaSeleccionada.precio_actual < canchaSeleccionada.precio_original) {
+        // Verificar promoción de manera más robusta
+        const tienePromocionBool = canchaSeleccionada.tiene_promocion === true || canchaSeleccionada.tiene_promocion === 'true';
+        const precioActualNum = parseFloat(precioBase) || 0;
+        const precioOriginalNum = parseFloat(precioOriginal) || precioActualNum;
+        const tienePromocionValida = tienePromocionBool && precioActualNum < precioOriginalNum;
+        
+        console.log('💰 DEBUG actualizarResumenPrecio - Verificación:', {
+            tiene_promocion: canchaSeleccionada.tiene_promocion,
+            tiene_promocion_bool: tienePromocionBool,
+            precio_actual_num: precioActualNum,
+            precio_original_num: precioOriginalNum,
+            tiene_promocion_valida: tienePromocionValida
+        });
+        
+        if (tienePromocionValida) {
             // Mostrar precio con promoción
             if (pagarMitad) {
                 precioElement.innerHTML = `

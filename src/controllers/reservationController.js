@@ -83,11 +83,15 @@ async function getCanchasByComplejoAndTipo(req, res) {
           
           console.log(`  💰 Cancha ${cancha.id}: Precio normal: ${cancha.precio_hora}, Precio actual: ${precioInfo.precio}, Tiene promoción: ${precioInfo.tienePromocion}`);
           
+          // Asegurar que precio_original siempre sea el precio normal de la cancha
+          const precioOriginal = parseFloat(cancha.precio_hora) || 0;
+          const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
+          
           return {
             ...cancha,
-            precio_actual: precioInfo.precio,
-            precio_original: cancha.precio_hora,
-            tiene_promocion: precioInfo.tienePromocion,
+            precio_actual: precioActual,
+            precio_original: precioOriginal, // Siempre usar precio_hora como precio original
+            tiene_promocion: precioInfo.tienePromocion === true,
             promocion_info: precioInfo.tienePromocion ? {
               nombre: precioInfo.promocionNombre,
               descuento: precioInfo.descuento,
