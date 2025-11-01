@@ -4630,9 +4630,18 @@ async function confirmarReserva() {
     }
     
     // Calcular precio según si paga 50% o 100%
+    // Usar precio_actual (promocional) si existe, sino usar precio_hora (original)
+    const precioBaseCancha = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
+    console.log('💰 DEBUG - Precio de cancha:', {
+        precio_actual: canchaSeleccionada.precio_actual,
+        precio_hora: canchaSeleccionada.precio_hora,
+        tiene_promocion: canchaSeleccionada.tiene_promocion,
+        precio_usado: precioBaseCancha
+    });
+    
     const pagarMitad = document.getElementById('pagarMitad').checked;
     const porcentajePagado = pagarMitad ? 50 : 100;
-    const precioTotalCancha = canchaSeleccionada.precio_hora; // Precio TOTAL de la cancha (siempre 100%)
+    const precioTotalCancha = precioBaseCancha; // Precio TOTAL de la cancha (promocional si aplica)
     const precioAPagar = pagarMitad ? Math.round(precioTotalCancha / 2) : precioTotalCancha; // Lo que paga el cliente
     
     console.log('🔍 DEBUG - Variables antes de formData:');
