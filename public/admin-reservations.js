@@ -1665,6 +1665,7 @@ function renderizarCalendario(data = null) {
         });
         console.log('🕐 DEBUG renderizarCalendario - Total horas únicas:', todasLasHoras.size);
         console.log('🕐 DEBUG renderizarCalendario - Horas:', Array.from(todasLasHoras));
+        console.log('🕐 DEBUG renderizarCalendario - Horas Array completo:', Array.from(todasLasHoras));
     } else {
         console.log('⚠️ DEBUG renderizarCalendario - No hay horarios del backend, usando fallback');
     }
@@ -1702,6 +1703,7 @@ function renderizarCalendario(data = null) {
     // Determinar si tenemos horarios del backend
     const tieneHorariosBackend = data && data.horarios && data.horarios.length > 0;
     console.log('🔍 DEBUG renderizarCalendario - Tiene horarios del backend?', tieneHorariosBackend);
+    console.log('🔍 DEBUG renderizarCalendario - Horas ordenadas que se van a renderizar:', horasOrdenadas);
     
     // Filas de horas
     horasOrdenadas.forEach(hora => {
