@@ -2280,13 +2280,33 @@ function configurarEventListeners() {
         if (complejoSeleccionado && tipoCanchaSeleccionado) {
             console.log('📅 Fecha seleccionada, cargando canchas automáticamente...');
             setTimeout(async () => {
-                await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, false); // No renderizar visualmente en Fase 4
+                // Cargar canchas con fecha para obtener precios promocionales (incluso sin hora)
+                await cargarCanchas(complejoSeleccionado.id, tipoCanchaSeleccionado, true); // Renderizar visualmente para mostrar precios
                 // Verificar disponibilidad inmediatamente después de cargar canchas
                 console.log('🕐 Verificando disponibilidad inmediatamente después de seleccionar fecha...');
                 await actualizarHorariosConDisponibilidad();
             }, 200);
         } else if (canchas.length > 0) {
-            // Si ya hay canchas cargadas, actualizar su disponibilidad
+            // Si ya hay canchas cargadas, recargar con fecha y hora para actualizar precios
+            const fecha = this.value;
+            const hora = document.getElementById('horaSelect')?.value;
+            if (fecha) {
+                try {
+                    let url;
+                    if (complejoSeleccionado && complejoSeleccionado.nombre === 'Complejo Demo 3') {
+                        url = `${API_BASE}/canchas/${complejoSeleccionado.id}?fecha=${fecha}`;
+                        if (hora) url += `&hora=${hora}`;
+                    } else {
+                        url = `${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}?fecha=${fecha}`;
+                        if (hora) url += `&hora=${hora}`;
+                    }
+                    const response = await fetch(url);
+                    canchas = await response.json();
+                    console.log('🔄 Canchas actualizadas con precios promocionales:', canchas);
+                } catch (error) {
+                    console.error('Error actualizando canchas con promociones:', error);
+                }
+            }
             await renderizarCanchasConDisponibilidad();
         }
         
@@ -2346,17 +2366,32 @@ function configurarEventListeners() {
                         // Para otros complejos, usar filtro por tipo
                         url = `${API_BASE}/canchas/${complejoSeleccionado.id}/${tipoCanchaSeleccionado}?fecha=${fecha}&hora=${horaSeleccionada}`;
                     }
+                    console.log('🔄 Recargando canchas con URL:', url);
                     const response = await fetch(url);
                     canchas = await response.json();
                     console.log('🎯 Canchas recargadas con precios promocionales:', canchas);
+                    
+                    // Log de promociones encontradas
+                    const canchasConPromocion = canchas.filter(c => c.tiene_promocion);
+                    if (canchasConPromocion.length > 0) {
+                        console.log('🎉 Promociones aplicadas:', canchasConPromocion.map(c => ({
+                            cancha: c.nombre,
+                            precioOriginal: c.precio_original,
+                            precioPromocional: c.precio_actual,
+                            tienePromocion: c.tiene_promocion
+                        })));
+                    } else {
+                        console.log('⚠️ No se encontraron promociones para estas canchas en', fecha, horaSeleccionada);
+                    }
+                    
+                    // Renderizar canchas visualmente con precios actualizados
+                    await renderizarCanchasConDisponibilidad();
                 } catch (error) {
                     console.error('Error recargando canchas con promociones:', error);
                 }
             }
-        }
-        
-        // Renderizar canchas visualmente
-        if (canchas.length > 0) {
+        } else if (canchas.length > 0) {
+            // Si no hay hora pero hay canchas, renderizar las existentes
             await renderizarCanchasConDisponibilidad();
         } else if (complejoSeleccionado && tipoCanchaSeleccionado && this.value) {
             // Si no hay canchas, cargarlas y renderizar visualmente
