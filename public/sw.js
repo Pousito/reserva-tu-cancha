@@ -3,18 +3,16 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v6';
-const STATIC_CACHE = 'static-v6';
-const DYNAMIC_CACHE = 'dynamic-v6';
+const CACHE_NAME = 'reserva-tu-cancha-v7';
+const STATIC_CACHE = 'static-v7';
+const DYNAMIC_CACHE = 'dynamic-v7';
 
-// Assets estáticos para cachear
+// Assets estáticos para cachear (SIN script.js - se carga siempre desde red)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
-  '/script.js',
   '/assets/css/styles.css',
-  '/assets/js/payment.js',
   '/js/chart.min.js',
   '/js/notification-system.js',
   '/js/time-utils.js',
@@ -87,9 +85,11 @@ async function handleRequest(request) {
   const url = new URL(request.url);
 
   try {
-    // NO cachear archivos JavaScript del panel de admin (siempre ir a la red)
-    if (url.pathname.includes('admin-') && url.pathname.endsWith('.js')) {
-      console.log('🔄 Cargando archivo admin JS desde la red:', url.pathname);
+    // NO cachear archivos JavaScript críticos (siempre ir a la red para tener última versión)
+    if (url.pathname === '/script.js' ||
+        url.pathname === '/assets/js/payment.js' ||
+        (url.pathname.includes('admin-') && url.pathname.endsWith('.js'))) {
+      console.log('🔄 Cargando archivo JS crítico desde la red:', url.pathname);
       return await fetch(request);
     }
 
