@@ -4125,6 +4125,7 @@ app.get('/api/canchas/:complejoId', async (req, res) => {
     if (fecha && hora) {
       try {
         const promocionesHelper = require('./src/utils/promociones-helper');
+        promocionesHelper.setDatabase(db); // Establecer la instancia de la base de datos
         
         for (const cancha of canchas) {
           try {
@@ -4207,6 +4208,7 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
     if (fecha && hora) {
       try {
         const promocionesHelper = require('./src/utils/promociones-helper');
+        promocionesHelper.setDatabase(db); // Establecer la instancia de la base de datos
         
         for (const cancha of canchas) {
           try {

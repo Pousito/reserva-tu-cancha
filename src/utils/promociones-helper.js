@@ -3,7 +3,27 @@
  * y retornar el precio correspondiente
  */
 
-const db = require('../config/database');
+const DatabaseManager = require('../config/database');
+let db = null;
+
+/**
+ * Establecer la instancia de la base de datos
+ */
+function setDatabase(databaseInstance) {
+  db = databaseInstance;
+}
+
+/**
+ * Obtener la instancia de la base de datos
+ */
+function getDatabase() {
+  if (!db) {
+    // Si no hay instancia establecida, crear una nueva (para compatibilidad)
+    console.warn('⚠️ promociones-helper: No hay instancia de base de datos establecida, creando una nueva');
+    db = new DatabaseManager();
+  }
+  return db;
+}
 
 /**
  * Verifica si una fecha específica coincide con una promoción
@@ -85,8 +105,9 @@ function horaCoincideConPromocion(hora, promocion) {
  */
 async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
     try {
+        const database = getDatabase();
         // Obtener precio normal de la cancha
-        const cancha = await db.get('SELECT precio_hora FROM canchas WHERE id = $1', [canchaId]);
+        const cancha = await database.get('SELECT precio_hora FROM canchas WHERE id = $1', [canchaId]);
         
         if (!cancha) {
             throw new Error('Cancha no encontrada');
@@ -103,7 +124,7 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
         }
         
         // Buscar promociones activas para esta cancha
-        const promociones = await db.query(
+        const promociones = await database.query(
             'SELECT * FROM promociones_canchas WHERE cancha_id = $1 AND activo = true',
             [canchaId]
         );
@@ -209,7 +230,8 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
     } catch (error) {
         console.error('Error calculando precio con promoción:', error);
         // En caso de error, retornar precio normal para no bloquear la reserva
-        const cancha = await db.get('SELECT precio_hora FROM canchas WHERE id = $1', [canchaId]);
+        const database = getDatabase();
+        const cancha = await database.get('SELECT precio_hora FROM canchas WHERE id = $1', [canchaId]);
         return {
             precio: cancha ? parseFloat(cancha.precio_hora) : 0,
             tienePromocion: false,
