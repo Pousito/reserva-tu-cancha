@@ -1473,10 +1473,11 @@ function generarHorariosBasicos() {
     let horaFin = 23;
     
     // Configuración específica por complejo
-    if (complejoId == 6) { // Espacio Deportivo Borde Río
-        // Borde Río: 10:00 a 23:00 todos los días
+    // Borde Río es ID 6 (desarrollo) o ID 7 (producción)
+    if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+        // Borde Río: 10:00 a 00:00 (medianoche) todos los días
         horaInicio = 10;
-        horaFin = 23;
+        horaFin = 24; // 24 = 00:00 (medianoche)
     } else if (complejoId == 8) { // Complejo Demo 3
         // Complejo Demo 3: 16:00 a 23:00 todos los días
         horaInicio = 16;
@@ -1486,9 +1487,11 @@ function generarHorariosBasicos() {
     for (let i = 0; i < 7; i++) {
         const horariosDia = [];
         for (let hora = horaInicio; hora <= horaFin; hora++) {
+            // Si la hora es 24, mostrar como 00:00 (medianoche)
+            const horaDisplay = hora === 24 ? 0 : hora;
             horariosDia.push({
                 hora: hora,
-                label: `${hora.toString().padStart(2, '0')}:00`
+                label: `${horaDisplay.toString().padStart(2, '0')}:00`
             });
         }
         horarios.push({
@@ -1818,11 +1821,11 @@ function generarHoras(fecha = null) {
     let horaFin = 23;
     
     // Configuración de horarios por complejo
-    // Borde Río es ID 6, Complejo Demo 3 es ID 7
-    if (complejoId == 6) { // Espacio Deportivo Borde Río
-        // Borde Río: 10:00 a 23:00 todos los días
+    // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
+    if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+        // Borde Río: 10:00 a 00:00 (medianoche) todos los días
         horaInicio = 10;
-        horaFin = 23;
+        horaFin = 24; // 24 = 00:00 (medianoche)
     } else if (fecha) {
         const fechaObj = new Date(fecha);
         const diaSemana = fechaObj.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
@@ -1838,7 +1841,9 @@ function generarHoras(fecha = null) {
     
     // Generar solo horas completas (sin minutos)
     for (let h = horaInicio; h <= horaFin; h++) {
-        const hora = `${h.toString().padStart(2, '0')}:00`;
+        // Si la hora es 24, mostrar como 00:00 (medianoche)
+        const hDisplay = h === 24 ? 0 : h;
+        const hora = `${hDisplay.toString().padStart(2, '0')}:00`;
         horas.push(hora);
     }
     

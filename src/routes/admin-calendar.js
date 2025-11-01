@@ -310,9 +310,11 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             }
             
             for (let hora = horaInicio; hora <= horaFin; hora++) {
+                // Si la hora es 24, mostrar como 00:00 (medianoche)
+                const horaDisplay = hora === 24 ? 0 : hora;
                 horariosDia.push({
                     hora: hora,
-                    label: `${hora.toString().padStart(2, '0')}:00`
+                    label: `${horaDisplay.toString().padStart(2, '0')}:00`
                 });
             }
             
