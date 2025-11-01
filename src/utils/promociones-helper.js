@@ -25,13 +25,25 @@ function fechaCoincideConPromocion(fecha, promocion) {
             const diasSemanaEs = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
             const diaSemana = diasSemanaEs[fechaDate.getDay()];
             
-            // Parsear dias_semana correctamente (puede venir como array de PostgreSQL o como string JSON)
+            // Parsear dias_semana correctamente (puede venir como array de PostgreSQL o como string)
             let diasSemana = [];
             try {
                 if (Array.isArray(promocion.dias_semana)) {
                     diasSemana = promocion.dias_semana;
                 } else if (typeof promocion.dias_semana === 'string') {
-                    diasSemana = JSON.parse(promocion.dias_semana || '[]');
+                    // PostgreSQL devuelve arrays TEXT[] como: {"lunes","martes"} que NO es JSON válido
+                    if (promocion.dias_semana.startsWith('{') && promocion.dias_semana.endsWith('}')) {
+                        const contenido = promocion.dias_semana.slice(1, -1);
+                        if (contenido.trim()) {
+                            diasSemana = contenido
+                                .split(',')
+                                .map(dia => dia.trim().replace(/^["']|["']$/g, ''))
+                                .filter(dia => dia.length > 0);
+                        }
+                    } else {
+                        // Intentar parsear como JSON válido
+                        diasSemana = JSON.parse(promocion.dias_semana || '[]');
+                    }
                 }
             } catch (e) {
                 console.error('Error parseando dias_semana en fechaCoincideConPromocion:', promocion.dias_semana, e);

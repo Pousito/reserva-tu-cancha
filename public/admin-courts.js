@@ -977,6 +977,49 @@ async function loadPromociones() {
 }
 
 /**
+ * Parsear dias_semana desde formato PostgreSQL TEXT[] o JSON
+ * PostgreSQL devuelve arrays como: {"lunes","martes"} que NO es JSON válido
+ */
+function parsearDiasSemana(dias_semana) {
+    if (Array.isArray(dias_semana)) {
+        return dias_semana;
+    }
+    
+    if (typeof dias_semana !== 'string') {
+        return [];
+    }
+    
+    // Intentar parsear como formato PostgreSQL TEXT[]: {"lunes","martes"}
+    if (dias_semana.startsWith('{') && dias_semana.endsWith('}')) {
+        try {
+            // Remover llaves externas y dividir por comas
+            const contenido = dias_semana.slice(1, -1);
+            if (!contenido.trim()) {
+                return [];
+            }
+            
+            // Dividir por comas y limpiar comillas
+            const dias = contenido
+                .split(',')
+                .map(dia => dia.trim().replace(/^["']|["']$/g, ''))
+                .filter(dia => dia.length > 0);
+            
+            return dias;
+        } catch (e) {
+            console.error('Error parseando formato PostgreSQL:', dias_semana, e);
+        }
+    }
+    
+    // Intentar parsear como JSON válido
+    try {
+        return JSON.parse(dias_semana || '[]');
+    } catch (e) {
+        console.error('Error parseando dias_semana como JSON:', dias_semana, e);
+        return [];
+    }
+}
+
+/**
  * Formatear información de fechas para mostrar
  */
 function formatPromocionFechas(promo) {
@@ -998,13 +1041,7 @@ function formatPromocionFechas(promo) {
         else if (finStr.includes('T')) finStr = finStr.split('T')[0];
         return `Del ${inicioStr} al ${finStr}`;
     } else if (promo.tipo_fecha === 'recurrente_semanal' && promo.dias_semana) {
-        let dias;
-        try {
-            dias = Array.isArray(promo.dias_semana) ? promo.dias_semana : JSON.parse(promo.dias_semana || '[]');
-        } catch (e) {
-            console.error('Error parseando dias_semana:', promo.dias_semana, e);
-            dias = [];
-        }
+        const dias = parsearDiasSemana(promo.dias_semana);
         return `Recurrente: ${dias.join(', ')}`;
     }
     return 'Fechas no especificadas';
@@ -1285,18 +1322,8 @@ async function editPromocion(promocionId) {
             document.getElementById('fechaInicio').value = promo.fecha_inicio;
             document.getElementById('fechaFin').value = promo.fecha_fin;
         } else if (promo.tipo_fecha === 'recurrente_semanal') {
-            // Parsear dias_semana correctamente
-            let diasSemana = [];
-            try {
-                if (Array.isArray(promo.dias_semana)) {
-                    diasSemana = promo.dias_semana;
-                } else if (typeof promo.dias_semana === 'string') {
-                    diasSemana = JSON.parse(promo.dias_semana || '[]');
-                }
-            } catch (e) {
-                console.error('Error parseando dias_semana:', promo.dias_semana, e);
-                diasSemana = [];
-            }
+            // Parsear dias_semana correctamente usando la función auxiliar
+            const diasSemana = parsearDiasSemana(promo.dias_semana);
             
             diasSemana.forEach(dia => {
                 const checkbox = document.getElementById(`dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`);
