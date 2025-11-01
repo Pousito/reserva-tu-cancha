@@ -298,12 +298,15 @@ class Chatbot {
 }
 
 // Inicializar chatbot cuando se carga la página
+// TEMPORALMENTE DESHABILITADO - Información desactualizada
+// TODO: Actualizar información del bot antes de habilitar
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🤖 Inicializando chatbot...');
-    try {
-        new Chatbot();
-        console.log('✅ Chatbot inicializado correctamente');
-    } catch (error) {
-        console.error('❌ Error inicializando chatbot:', error);
-    }
+    // console.log('🤖 Inicializando chatbot...');
+    // try {
+    //     new Chatbot();
+    //     console.log('✅ Chatbot inicializado correctamente');
+    // } catch (error) {
+    //     console.error('❌ Error inicializando chatbot:', error);
+    // }
+    console.log('🤖 Chatbot temporalmente deshabilitado - información desactualizada');
 });
