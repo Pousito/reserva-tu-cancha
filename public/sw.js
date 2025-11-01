@@ -3,9 +3,9 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v5';
-const STATIC_CACHE = 'static-v5';
-const DYNAMIC_CACHE = 'dynamic-v5';
+const CACHE_NAME = 'reserva-tu-cancha-v6';
+const STATIC_CACHE = 'static-v6';
+const DYNAMIC_CACHE = 'dynamic-v6';
 
 // Assets estáticos para cachear
 const STATIC_ASSETS = [
@@ -93,10 +93,11 @@ async function handleRequest(request) {
       return await fetch(request);
     }
 
-    // NO cachear peticiones críticas del calendario y admin
+    // NO cachear peticiones críticas del calendario, admin y canchas con precios dinámicos
     if (url.pathname.includes('/calendar/') ||
         url.pathname.includes('/admin/estadisticas') ||
-        url.pathname.includes('/admin/reservas')) {
+        url.pathname.includes('/admin/reservas') ||
+        url.pathname.includes('/api/canchas')) {
       return await fetch(request);
     }
 

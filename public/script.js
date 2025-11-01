@@ -4331,8 +4331,14 @@ async function seleccionarCancha(cancha) {
             }
             
             console.log('🔄 URL para recargar cancha:', url);
-            const response = await fetch(url);
-            
+            const response = await fetch(url, {
+                cache: 'no-cache',  // Forzar bypass de caché para obtener precios promocionales actualizados
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
