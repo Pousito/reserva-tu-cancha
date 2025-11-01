@@ -30,5 +30,8 @@ router.delete('/:id', promocionesController.deletePromocion);
 // Activar/Desactivar una promoción
 router.patch('/:id/toggle', promocionesController.togglePromocion);
 
+// Endpoint de debugging: Obtener TODAS las promociones activas
+router.get('/debug/todas', promocionesController.getAllPromocionesActivas);
+
 module.exports = { router, setDatabase };
 

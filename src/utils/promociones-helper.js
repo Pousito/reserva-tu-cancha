@@ -110,6 +110,46 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
         
         console.log(`🔍 Verificando ${promociones.length} promociones para cancha ${canchaId}, fecha: ${fecha}, hora: ${hora}`);
         
+        // Log detallado de todas las promociones encontradas
+        if (promociones.length > 0) {
+            console.log(`📋 Promociones encontradas para cancha ${canchaId}:`);
+            promociones.forEach((promo, index) => {
+                console.log(`  ${index + 1}. ID: ${promo.id}, Nombre: ${promo.nombre || 'Sin nombre'}`);
+                console.log(`     Tipo fecha: ${promo.tipo_fecha}, Tipo horario: ${promo.tipo_horario}`);
+                console.log(`     Precio promocional: ${promo.precio_promocional}`);
+                if (promo.tipo_fecha === 'recurrente_semanal') {
+                    console.log(`     dias_semana: ${promo.dias_semana} (tipo: ${typeof promo.dias_semana})`);
+                }
+                if (promo.tipo_fecha === 'especifico') {
+                    console.log(`     fecha_especifica: ${promo.fecha_especifica}`);
+                }
+                if (promo.tipo_fecha === 'rango') {
+                    console.log(`     fecha_inicio: ${promo.fecha_inicio}, fecha_fin: ${promo.fecha_fin}`);
+                }
+                if (promo.tipo_horario === 'especifico') {
+                    console.log(`     hora_especifica: ${promo.hora_especifica}`);
+                }
+                if (promo.tipo_horario === 'rango') {
+                    console.log(`     hora_inicio: ${promo.hora_inicio}, hora_fin: ${promo.hora_fin}`);
+                }
+            });
+        } else {
+            console.log(`⚠️ No se encontraron promociones activas para cancha ${canchaId}`);
+            
+            // Buscar TODAS las promociones (incluso inactivas) para debugging
+            const todasPromociones = await db.query(
+                'SELECT * FROM promociones_canchas WHERE cancha_id = $1',
+                [canchaId]
+            );
+            console.log(`🔍 Total de promociones (activas + inactivas) para cancha ${canchaId}: ${todasPromociones.length}`);
+            if (todasPromociones.length > 0) {
+                console.log(`📋 Todas las promociones (activas + inactivas):`);
+                todasPromociones.forEach((promo, index) => {
+                    console.log(`  ${index + 1}. ID: ${promo.id}, Nombre: ${promo.nombre || 'Sin nombre'}, Activa: ${promo.activo}`);
+                });
+            }
+        }
+        
         // Verificar cada promoción
         for (const promocion of promociones) {
             console.log(`  - Promoción: ${promocion.nombre} (ID: ${promocion.id})`);
