@@ -82,19 +82,33 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
             [canchaId]
         );
         
+        console.log(`🔍 Verificando ${promociones.length} promociones para cancha ${canchaId}, fecha: ${fecha}, hora: ${hora}`);
+        
         // Verificar cada promoción
         for (const promocion of promociones) {
+            console.log(`  - Promoción: ${promocion.nombre} (ID: ${promocion.id})`);
+            console.log(`    Tipo fecha: ${promocion.tipo_fecha}, Tipo horario: ${promocion.tipo_horario}`);
+            
             // Verificar si la fecha coincide
-            if (!fechaCoincideConPromocion(fecha, promocion)) {
+            const fechaCoincide = fechaCoincideConPromocion(fecha, promocion);
+            console.log(`    Fecha coincide: ${fechaCoincide}`);
+            
+            if (!fechaCoincide) {
                 continue;
             }
             
             // Si se proporciona hora, verificar que también coincida
-            if (hora && !horaCoincideConPromocion(hora, promocion)) {
-                continue;
+            if (hora) {
+                const horaCoincide = horaCoincideConPromocion(hora, promocion);
+                console.log(`    Hora coincide: ${horaCoincide}`);
+                
+                if (!horaCoincide) {
+                    continue;
+                }
             }
             
             // Si llegamos aquí, la promoción aplica
+            console.log(`✅ Promoción aplicada: ${promocion.nombre} - Precio: ${promocion.precio_promocional}`);
             return {
                 precio: parseFloat(promocion.precio_promocional),
                 tienePromocion: true,
@@ -107,6 +121,7 @@ async function obtenerPrecioConPromocion(canchaId, fecha, hora = null) {
         }
         
         // No hay promoción aplicable
+        console.log(`❌ No se encontró promoción aplicable. Precio normal: ${precioNormal}`);
         return {
             precio: precioNormal,
             tienePromocion: false
