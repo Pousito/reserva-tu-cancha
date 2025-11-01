@@ -1648,22 +1648,39 @@ function renderizarCalendario(data = null) {
     // Obtener todas las horas únicas de todos los días
     const todasLasHoras = new Set();
     if (data && data.horarios) {
-        data.horarios.forEach(dia => {
-            dia.horarios.forEach(horario => {
-                todasLasHoras.add(horario.label);
-            });
+        console.log('🕐 DEBUG renderizarCalendario - Usando horarios del backend');
+        console.log('🕐 DEBUG renderizarCalendario - Total días:', data.horarios.length);
+        data.horarios.forEach((dia, diaIndex) => {
+            console.log(`🕐 DEBUG renderizarCalendario - Día ${diaIndex}:`, dia);
+            if (dia.horarios) {
+                console.log(`🕐 DEBUG renderizarCalendario - Horarios del día ${diaIndex}:`, dia.horarios);
+                dia.horarios.forEach(horario => {
+                    console.log(`🕐 DEBUG renderizarCalendario - Agregando horario:`, horario.label, '(hora:', horario.hora, ')');
+                    todasLasHoras.add(horario.label);
+                });
+            }
         });
+        console.log('🕐 DEBUG renderizarCalendario - Total horas únicas:', todasLasHoras.size);
+        console.log('🕐 DEBUG renderizarCalendario - Horas:', Array.from(todasLasHoras));
+    } else {
+        console.log('⚠️ DEBUG renderizarCalendario - No hay horarios del backend, usando fallback');
     }
     
     // Si no hay horarios del backend, generar horarios por defecto
     if (todasLasHoras.size === 0) {
+        console.log('⚠️ DEBUG renderizarCalendario - No hay horarios del backend, generando por defecto');
         // Generar horarios para todos los días de la semana
         for (let i = 0; i < 7; i++) {
             const fecha = new Date(semanaActual);
             fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
             const horas = generarHoras(formatearFecha(fecha));
+            console.log(`🕐 DEBUG renderizarCalendario - Horas generadas para día ${i}:`, horas);
             horas.forEach(hora => todasLasHoras.add(hora));
         }
+        console.log('🕐 DEBUG renderizarCalendario - Total horas después de generar por defecto:', todasLasHoras.size);
+        console.log('🕐 DEBUG renderizarCalendario - Horas:', Array.from(todasLasHoras));
+    } else {
+        console.log('✅ DEBUG renderizarCalendario - Usando horarios del backend (total:', todasLasHoras.size, 'horas)');
     }
     
     // Convertir a array y ordenar numéricamente (00:00 debe ir después de 23:00)
@@ -1678,6 +1695,10 @@ function renderizarCalendario(data = null) {
         
         return horaA - horaB;
     });
+    
+    // Determinar si tenemos horarios del backend
+    const tieneHorariosBackend = data && data.horarios && data.horarios.length > 0;
+    console.log('🔍 DEBUG renderizarCalendario - Tiene horarios del backend?', tieneHorariosBackend);
     
     // Filas de horas
     horasOrdenadas.forEach(hora => {
@@ -1709,18 +1730,39 @@ function renderizarCalendario(data = null) {
                 horaNum = 24; // 00:00 = medianoche = hora 24
             }
             
-            // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
-            if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
-                // Borde Río: 10:00 a 00:00 (medianoche) todos los días
-                // horaNum puede ser 10-24, donde 24 = 00:00 (medianoche)
-                horaDisponible = horaNum >= 10 && (horaNum <= 23 || hora === '00:00');
-            } else if (complejoId == 8) { // Complejo Demo 3
-                // Complejo Demo 3: 16:00 a 23:00 todos los días
-                horaDisponible = horaNum >= 16 && horaNum <= 23;
-            } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
-                horaDisponible = horaNum >= 16 && horaNum <= 23;
-            } else { // Sábado y Domingo: 12:00 a 23:00
-                horaDisponible = horaNum >= 12 && horaNum <= 23;
+            // Si tenemos horarios del backend, confiar en ellos y mostrar TODOS los slots
+            if (tieneHorariosBackend) {
+                // Verificar si esta hora está en los horarios del backend para este día
+                const diaHorarios = data.horarios[i];
+                if (diaHorarios && diaHorarios.horarios) {
+                    const horaEnBackend = diaHorarios.horarios.find(h => h.label === hora);
+                    horaDisponible = !!horaEnBackend;
+                    if (!horaEnBackend) {
+                        console.log(`⚠️ DEBUG renderizarCalendario - Hora ${hora} NO encontrada en backend para día ${i}`);
+                    }
+                } else {
+                    // Si no hay horarios específicos para este día, usar lógica por defecto
+                    horaDisponible = true; // Mostrar todos los slots si hay horarios del backend
+                }
+            } else {
+                // Si no hay horarios del backend, usar lógica del frontend
+                // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
+                if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+                    // Borde Río: 10:00 a 00:00 (medianoche) todos los días
+                    // horaNum puede ser 10-24, donde 24 = 00:00 (medianoche)
+                    horaDisponible = horaNum >= 10 && (horaNum <= 23 || hora === '00:00');
+                    // Debug adicional para Borde Río
+                    if (!horaDisponible && (horaNum >= 10 || hora === '00:00')) {
+                        console.log(`⚠️ DEBUG renderizarCalendario - Hora ${hora} (horaNum: ${horaNum}) NO disponible para Borde Río (ID: ${complejoId})`);
+                    }
+                } else if (complejoId == 8) { // Complejo Demo 3
+                    // Complejo Demo 3: 16:00 a 23:00 todos los días
+                    horaDisponible = horaNum >= 16 && horaNum <= 23;
+                } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
+                    horaDisponible = horaNum >= 16 && horaNum <= 23;
+                } else { // Sábado y Domingo: 12:00 a 23:00
+                    horaDisponible = horaNum >= 12 && horaNum <= 23;
+                }
             }
             
             // Verificar si este slot es del pasado
