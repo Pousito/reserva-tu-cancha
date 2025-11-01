@@ -1484,11 +1484,13 @@ function generarHorariosBasicos() {
     
     // Configuración específica por complejo
     // Borde Río es ID 6 (desarrollo) o ID 7 (producción)
-    if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+    console.log(`🔍 generarHorariosBasicos - complejoId: ${complejoId}, tipo: ${typeof complejoId}, parseInt: ${parseInt(complejoId)}`);
+    if (parseInt(complejoId) === 6 || parseInt(complejoId) === 7) { // Espacio Deportivo Borde Río
         // Borde Río: 10:00 a 00:00 (medianoche) todos los días
         horaInicio = 10;
         horaFin = 24; // 24 = 00:00 (medianoche)
-    } else if (complejoId == 8) { // Complejo Demo 3
+        console.log(`✅ generarHorariosBasicos - Borde Río detectado, horarios: ${horaInicio}:00 - 00:00`);
+    } else if (parseInt(complejoId) === 8) { // Complejo Demo 3
         // Complejo Demo 3: 16:00 a 23:00 todos los días
         horaInicio = 16;
         horaFin = 23;
@@ -1747,15 +1749,18 @@ function renderizarCalendario(data = null) {
             } else {
                 // Si no hay horarios del backend, usar lógica del frontend
                 // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
-                if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+                // Debug del complejo_id
+                console.log(`🔍 DEBUG renderizarCalendario - complejoId: ${complejoId}, tipo: ${typeof complejoId}, parseInt: ${parseInt(complejoId)}`);
+                if (parseInt(complejoId) === 6 || parseInt(complejoId) === 7) { // Espacio Deportivo Borde Río
                     // Borde Río: 10:00 a 00:00 (medianoche) todos los días
                     // horaNum puede ser 10-24, donde 24 = 00:00 (medianoche)
                     horaDisponible = horaNum >= 10 && (horaNum <= 23 || hora === '00:00');
+                    console.log(`✅ Borde Río detectado - Hora ${hora} (horaNum: ${horaNum}) - Disponible: ${horaDisponible}`);
                     // Debug adicional para Borde Río
                     if (!horaDisponible && (horaNum >= 10 || hora === '00:00')) {
                         console.log(`⚠️ DEBUG renderizarCalendario - Hora ${hora} (horaNum: ${horaNum}) NO disponible para Borde Río (ID: ${complejoId})`);
                     }
-                } else if (complejoId == 8) { // Complejo Demo 3
+                } else if (parseInt(complejoId) === 8) { // Complejo Demo 3
                     // Complejo Demo 3: 16:00 a 23:00 todos los días
                     horaDisponible = horaNum >= 16 && horaNum <= 23;
                 } else if (diaSemana >= 1 && diaSemana <= 5) { // Lunes a Viernes: 16:00 a 23:00
@@ -1890,10 +1895,12 @@ function generarHoras(fecha = null) {
     
     // Configuración de horarios por complejo
     // Borde Río es ID 6 (desarrollo) o ID 7 (producción), Complejo Demo 3 es ID 8
-    if (complejoId == 6 || complejoId == 7) { // Espacio Deportivo Borde Río
+    console.log(`🔍 generarHoras - complejoId: ${complejoId}, tipo: ${typeof complejoId}, parseInt: ${parseInt(complejoId)}`);
+    if (parseInt(complejoId) === 6 || parseInt(complejoId) === 7) { // Espacio Deportivo Borde Río
         // Borde Río: 10:00 a 00:00 (medianoche) todos los días
         horaInicio = 10;
         horaFin = 24; // 24 = 00:00 (medianoche)
+        console.log(`✅ generarHoras - Borde Río detectado, horarios: ${horaInicio}:00 - 00:00`);
     } else if (fecha) {
         const fechaObj = new Date(fecha);
         const diaSemana = fechaObj.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado

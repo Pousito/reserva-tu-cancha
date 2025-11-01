@@ -3121,7 +3121,8 @@ async function cargarHorariosComplejo(complejo) {
 
     // Definir horarios según el complejo
     // IMPORTANTE: Borde Río debe estar PRIMERO para tener prioridad sobre "Complejo En Desarrollo"
-    if (complejo.nombre === 'Espacio Deportivo Borde Río' || complejo.id === 6 || complejo.id === 7) {
+    const complejoIdNum = parseInt(complejo.id);
+    if (complejo.nombre === 'Espacio Deportivo Borde Río' || complejoIdNum === 6 || complejoIdNum === 7) {
         // Espacio Deportivo Borde Río: 10:00-00:00 (medianoche) todos los días
         // Detectar por nombre o por ID (6 en desarrollo, 7 en producción)
         console.log(`🏟️ Espacio Deportivo Borde Río detectado (ID: ${complejo.id}, Nombre: ${complejo.nombre}) - Horarios: 10:00-00:00 todos los días`);
