@@ -1209,11 +1209,27 @@ async function savePromocion(e) {
         // Recopilar días seleccionados
         const dias = [];
         ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'].forEach(dia => {
-            const checkbox = document.getElementById(`dia${dia.charAt(0).toUpperCase() + dia.slice(1)}`);
+            // Normalizar el nombre del día (remover acentos) para buscar el ID del checkbox
+            const diaNormalizado = dia.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const checkboxId = `dia${diaNormalizado.charAt(0).toUpperCase() + diaNormalizado.slice(1)}`;
+            const checkbox = document.getElementById(checkboxId);
+            
+            console.log('🔍 DEBUG savePromocion - Verificando checkbox:', {
+                diaOriginal: dia,
+                diaNormalizado: diaNormalizado,
+                checkboxId: checkboxId,
+                encontrado: !!checkbox,
+                checked: checkbox?.checked
+            });
+            
             if (checkbox && checkbox.checked) {
+                // Guardar el nombre original del día (con acento) para consistencia con la base de datos
                 dias.push(dia);
+                console.log('✅ Día agregado a la lista:', dia);
             }
         });
+        
+        console.log('📋 DEBUG savePromocion - Días seleccionados finales:', dias);
         
         if (dias.length === 0) {
             showNotification('Por favor, selecciona al menos un día de la semana', 'error');
