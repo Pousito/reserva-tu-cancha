@@ -4484,14 +4484,19 @@ function actualizarResumenPrecio() {
     if (!canchaSeleccionada) return;
     
     const pagarMitad = document.getElementById('pagarMitad').checked;
-    // Usar precio_actual (promocional) si existe, sino usar precio_hora (original)
-    const precioBase = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
-    const precioOriginal = canchaSeleccionada.precio_original || canchaSeleccionada.precio_hora;
+    
+    // IMPORTANTE: precio_original debe ser siempre precio_hora (el precio normal de la cancha)
+    const precioHoraNormal = parseFloat(canchaSeleccionada.precio_hora) || 0;
+    // precio_actual puede ser promocional si hay promoción, sino usar precio_hora
+    const precioBase = parseFloat(canchaSeleccionada.precio_actual) || precioHoraNormal;
+    // precio_original del backend debe ser siempre precio_hora
+    const precioOriginal = parseFloat(canchaSeleccionada.precio_original) || precioHoraNormal;
     const precioAPagar = pagarMitad ? Math.round(precioBase / 2) : precioBase;
     
     console.log('💰 DEBUG actualizarResumenPrecio - Precios:', {
         precioBase: precioBase,
         precioOriginal: precioOriginal,
+        precioHoraNormal: precioHoraNormal,
         precioAPagar: precioAPagar,
         tiene_promocion: canchaSeleccionada.tiene_promocion,
         pagarMitad: pagarMitad
@@ -4502,9 +4507,10 @@ function actualizarResumenPrecio() {
     if (precioElement) {
         // Verificar promoción de manera más robusta
         const tienePromocionBool = canchaSeleccionada.tiene_promocion === true || canchaSeleccionada.tiene_promocion === 'true';
-        const precioActualNum = parseFloat(precioBase) || 0;
-        const precioOriginalNum = parseFloat(precioOriginal) || precioActualNum;
-        const tienePromocionValida = tienePromocionBool && precioActualNum < precioOriginalNum;
+        const precioActualNum = precioBase;
+        const precioOriginalNum = precioOriginal;
+        // Verificar si hay promoción: precio_actual debe ser menor que precio_original Y tener flag de promoción
+        const tienePromocionValida = tienePromocionBool && precioActualNum < precioOriginalNum && precioActualNum > 0;
         
         console.log('💰 DEBUG actualizarResumenPrecio - Verificación:', {
             tiene_promocion: canchaSeleccionada.tiene_promocion,
