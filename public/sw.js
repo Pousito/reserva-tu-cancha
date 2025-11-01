@@ -3,9 +3,9 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v7';
-const STATIC_CACHE = 'static-v7';
-const DYNAMIC_CACHE = 'dynamic-v7';
+const CACHE_NAME = 'reserva-tu-cancha-v8';
+const STATIC_CACHE = 'static-v8';
+const DYNAMIC_CACHE = 'dynamic-v8';
 
 // Assets estáticos para cachear (SIN script.js - se carga siempre desde red)
 const STATIC_ASSETS = [
@@ -87,10 +87,17 @@ async function handleRequest(request) {
   try {
     // NO cachear archivos JavaScript críticos (siempre ir a la red para tener última versión)
     if (url.pathname === '/script.js' ||
+        url.pathname === '/js/url-config.js' ||
+        url.pathname === '/js/time-utils.js' ||
+        url.pathname === '/payment.js' ||
+        url.pathname === '/chatbot.js' ||
         url.pathname === '/assets/js/payment.js' ||
         (url.pathname.includes('admin-') && url.pathname.endsWith('.js'))) {
       console.log('🔄 Cargando archivo JS crítico desde la red:', url.pathname);
-      return await fetch(request);
+      // Agregar timestamp para forzar recarga sin caché
+      const urlWithTimestamp = new URL(request.url);
+      urlWithTimestamp.searchParams.set('_t', Date.now());
+      return await fetch(urlWithTimestamp);
     }
 
     // NO cachear peticiones críticas del calendario, admin y canchas con precios dinámicos

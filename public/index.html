@@ -537,11 +537,17 @@
                         console.log('✅ Service Worker registrado:', registration.scope);
                         
                         // Verificar actualizaciones
+                        // Forzar actualización del Service Worker
+                        registration.update();
+                        
                         registration.addEventListener('updatefound', () => {
                             const newWorker = registration.installing;
                             newWorker.addEventListener('statechange', () => {
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // Nueva versión disponible
+                                    // Nueva versión disponible - forzar recarga
+                                    console.log('🔄 Nueva versión del Service Worker disponible, recargando...');
+                                    window.location.reload();
+                                    return;
                                     if (confirm('Nueva versión disponible. ¿Recargar para actualizar?')) {
                                         window.location.reload();
                                     }
