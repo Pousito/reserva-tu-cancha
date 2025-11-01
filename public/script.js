@@ -4312,7 +4312,8 @@ async function seleccionarCancha(cancha) {
             fecha: fecha,
             hora: hora,
             precio_actual_actual: cancha.precio_actual,
-            precio_hora_actual: cancha.precio_hora
+            precio_hora_actual: cancha.precio_hora,
+            tiene_promocion_actual: cancha.tiene_promocion
         });
         const complejoId = complejoSeleccionado?.id;
         const tipoCancha = tipoCanchaSeleccionado;
@@ -4346,7 +4347,7 @@ async function seleccionarCancha(cancha) {
             const canchasActualizadas = await response.json();
             const canchaActualizada = canchasActualizadas.find(c => c.id === cancha.id);
             
-                if (canchaActualizada) {
+            if (canchaActualizada) {
                 console.log('✅ Cancha recargada con precio promocional:', {
                     id: canchaActualizada.id,
                     precio_actual: canchaActualizada.precio_actual,
@@ -4355,17 +4356,42 @@ async function seleccionarCancha(cancha) {
                     tiene_promocion: canchaActualizada.tiene_promocion,
                     promocion_info: canchaActualizada.promocion_info
                 });
-                cancha = canchaActualizada; // Usar la cancha actualizada con precio promocional
+                
+                // IMPORTANTE: Asegurar que todos los campos estén correctamente establecidos
+                // Si el backend no devolvió precio_original, establecerlo como precio_hora
+                if (!canchaActualizada.precio_original && canchaActualizada.precio_hora) {
+                    canchaActualizada.precio_original = parseFloat(canchaActualizada.precio_hora);
+                    console.log('🔧 Corrigiendo precio_original:', canchaActualizada.precio_original);
+                }
+                
+                // Asegurar que precio_actual esté establecido correctamente
+                if (!canchaActualizada.precio_actual && canchaActualizada.precio_hora) {
+                    canchaActualizada.precio_actual = parseFloat(canchaActualizada.precio_hora);
+                    console.log('🔧 Corrigiendo precio_actual:', canchaActualizada.precio_actual);
+                }
+                
+                // Usar la cancha actualizada con precio promocional
+                cancha = canchaActualizada;
             } else {
                 console.warn('⚠️ No se encontró la cancha recargada en la respuesta:', {
                     cancha_id_buscado: cancha.id,
                     canchas_recibidas: canchasActualizadas.map(c => ({ id: c.id, nombre: c.nombre }))
                 });
+                
+                // Si no se encontró la cancha actualizada, asegurar que tenga precio_original
+                if (!cancha.precio_original && cancha.precio_hora) {
+                    cancha.precio_original = parseFloat(cancha.precio_hora);
+                    console.log('🔧 Aplicando precio_original a cancha original:', cancha.precio_original);
+                }
             }
         }
     } catch (error) {
         console.error('⚠️ Error recargando cancha con precio promocional:', error);
-        // Continuar con la cancha original si hay error
+        // Si hay error, asegurar que la cancha tenga precio_original establecido
+        if (!cancha.precio_original && cancha.precio_hora) {
+            cancha.precio_original = parseFloat(cancha.precio_hora);
+            console.log('🔧 Aplicando precio_original después de error:', cancha.precio_original);
+        }
     }
     
     // IMPORTANTE: Asignar cancha a canchaSeleccionada ANTES de mostrar el modal
@@ -4406,12 +4432,33 @@ function mostrarModalReserva() {
     // Calcular precio a mostrar y verificar si hay promoción
     // IMPORTANTE: precio_original debe ser siempre precio_hora (el precio normal de la cancha)
     const precioHoraNormal = parseFloat(canchaSeleccionada?.precio_hora) || 0;
-    const precioActual = parseFloat(canchaSeleccionada?.precio_actual) || precioHoraNormal;
-    // precio_original del backend debe ser siempre precio_hora, pero si no está, usar precio_hora
-    const precioOriginal = parseFloat(canchaSeleccionada?.precio_original) || precioHoraNormal;
+    
+    // Asegurar que precio_original esté establecido (debe ser siempre precio_hora)
+    let precioOriginal = parseFloat(canchaSeleccionada?.precio_original);
+    if (!precioOriginal || precioOriginal === 0 || isNaN(precioOriginal)) {
+        precioOriginal = precioHoraNormal;
+        // Actualizar en el objeto para uso futuro
+        if (canchaSeleccionada) {
+            canchaSeleccionada.precio_original = precioOriginal;
+        }
+        console.log('🔧 Corrigiendo precio_original en mostrarModalReserva:', precioOriginal);
+    }
+    
+    // precio_actual puede ser promocional si hay promoción, sino usar precio_hora
+    let precioActual = parseFloat(canchaSeleccionada?.precio_actual);
+    if (!precioActual || precioActual === 0 || isNaN(precioActual)) {
+        precioActual = precioHoraNormal;
+        // Actualizar en el objeto para uso futuro
+        if (canchaSeleccionada) {
+            canchaSeleccionada.precio_actual = precioActual;
+        }
+        console.log('🔧 Corrigiendo precio_actual en mostrarModalReserva:', precioActual);
+    }
+    
+    // Verificar promoción
     const tienePromocion = canchaSeleccionada?.tiene_promocion === true || canchaSeleccionada?.tiene_promocion === 'true';
     // Verificar si hay promoción: precio_actual debe ser menor que precio_original Y tener flag de promoción
-    const precioMenor = precioActual < precioOriginal && precioActual > 0;
+    const precioMenor = precioActual < precioOriginal && precioActual > 0 && precioOriginal > 0;
     
     console.log('💰 DEBUG mostrarModalReserva - Verificación de promoción:', {
         precio_actual: precioActual,
@@ -4421,7 +4468,8 @@ function mostrarModalReserva() {
         tiene_promocion_bool: tienePromocion,
         precio_menor: precioMenor,
         promocion_info: canchaSeleccionada?.promocion_info,
-        mostrar_promocion: tienePromocion && precioMenor
+        mostrar_promocion: tienePromocion && precioMenor,
+        cancha_completa: canchaSeleccionada
     });
     
     // Determinar si mostrar precio promocional
@@ -4487,10 +4535,25 @@ function actualizarResumenPrecio() {
     
     // IMPORTANTE: precio_original debe ser siempre precio_hora (el precio normal de la cancha)
     const precioHoraNormal = parseFloat(canchaSeleccionada.precio_hora) || 0;
+    
+    // Asegurar que precio_original esté establecido (debe ser siempre precio_hora)
+    let precioOriginal = parseFloat(canchaSeleccionada.precio_original);
+    if (!precioOriginal || precioOriginal === 0 || isNaN(precioOriginal)) {
+        precioOriginal = precioHoraNormal;
+        // Actualizar en el objeto para uso futuro
+        canchaSeleccionada.precio_original = precioOriginal;
+        console.log('🔧 Corrigiendo precio_original en actualizarResumenPrecio:', precioOriginal);
+    }
+    
     // precio_actual puede ser promocional si hay promoción, sino usar precio_hora
-    const precioBase = parseFloat(canchaSeleccionada.precio_actual) || precioHoraNormal;
-    // precio_original del backend debe ser siempre precio_hora
-    const precioOriginal = parseFloat(canchaSeleccionada.precio_original) || precioHoraNormal;
+    let precioBase = parseFloat(canchaSeleccionada.precio_actual);
+    if (!precioBase || precioBase === 0 || isNaN(precioBase)) {
+        precioBase = precioHoraNormal;
+        // Actualizar en el objeto para uso futuro
+        canchaSeleccionada.precio_actual = precioBase;
+        console.log('🔧 Corrigiendo precio_actual en actualizarResumenPrecio:', precioBase);
+    }
+    
     const precioAPagar = pagarMitad ? Math.round(precioBase / 2) : precioBase;
     
     console.log('💰 DEBUG actualizarResumenPrecio - Precios:', {
@@ -4822,17 +4885,31 @@ async function confirmarReserva() {
     }
     
     // Calcular precio según si paga 50% o 100%
+    // IMPORTANTE: precio_original debe ser siempre precio_hora (el precio normal de la cancha)
+    const precioHoraNormal = parseFloat(canchaSeleccionada.precio_hora) || 0;
+    
+    // Asegurar que precio_original esté establecido
+    if (!canchaSeleccionada.precio_original || canchaSeleccionada.precio_original === 0 || isNaN(parseFloat(canchaSeleccionada.precio_original))) {
+        canchaSeleccionada.precio_original = precioHoraNormal;
+        console.log('🔧 Corrigiendo precio_original en confirmarReserva:', canchaSeleccionada.precio_original);
+    }
+    
     // PRIORIDAD: precio_actual (promocional) > precio_hora (original)
-    const precioBaseCancha = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
+    let precioBaseCancha = parseFloat(canchaSeleccionada.precio_actual);
+    if (!precioBaseCancha || precioBaseCancha === 0 || isNaN(precioBaseCancha)) {
+        precioBaseCancha = precioHoraNormal;
+        console.log('🔧 Corrigiendo precio_actual en confirmarReserva:', precioBaseCancha);
+    }
+    
     console.log('💰 DEBUG - Precio de cancha ANTES de calcular:', {
         cancha_id: canchaSeleccionada.id,
         cancha_nombre: canchaSeleccionada.nombre,
         precio_actual: canchaSeleccionada.precio_actual,
         precio_hora: canchaSeleccionada.precio_hora,
         precio_original: canchaSeleccionada.precio_original,
+        precio_base_usado: precioBaseCancha,
         tiene_promocion: canchaSeleccionada.tiene_promocion,
-        promocion_info: canchaSeleccionada.promocion_info,
-        precio_usado: precioBaseCancha
+        promocion_info: canchaSeleccionada.promocion_info
     });
     
     const pagarMitad = document.getElementById('pagarMitad').checked;
