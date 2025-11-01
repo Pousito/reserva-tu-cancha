@@ -4294,6 +4294,39 @@ async function seleccionarCancha(cancha) {
         return;
     }
     
+    // Recargar la cancha con precio promocional si no tiene precio_actual
+    if (!cancha.precio_actual && cancha.precio_hora) {
+        try {
+            console.log('🔄 Recargando cancha con precio promocional para fecha y hora seleccionada...');
+            const complejoId = complejoSeleccionado?.id;
+            const tipoCancha = tipoCanchaSeleccionado;
+            
+            let url;
+            if (complejoSeleccionado?.nombre === 'Complejo Demo 3') {
+                url = `${API_BASE}/canchas/${complejoId}?fecha=${fecha}&hora=${hora}`;
+            } else {
+                url = `${API_BASE}/canchas/${complejoId}/${tipoCancha}?fecha=${fecha}&hora=${hora}`;
+            }
+            
+            const response = await fetch(url);
+            const canchasActualizadas = await response.json();
+            const canchaActualizada = canchasActualizadas.find(c => c.id === cancha.id);
+            
+            if (canchaActualizada) {
+                console.log('✅ Cancha recargada con precio promocional:', {
+                    id: canchaActualizada.id,
+                    precio_actual: canchaActualizada.precio_actual,
+                    precio_hora: canchaActualizada.precio_hora,
+                    tiene_promocion: canchaActualizada.tiene_promocion
+                });
+                cancha = canchaActualizada; // Usar la cancha actualizada con precio promocional
+            }
+        } catch (error) {
+            console.error('⚠️ Error recargando cancha con precio promocional:', error);
+            // Continuar con la cancha original si hay error
+        }
+    }
+    
     canchaSeleccionada = cancha;
     mostrarModalReserva();
 }
@@ -4333,7 +4366,7 @@ function mostrarModalReserva() {
          </div>
          <div class="row">
              <div class="col-6"><strong>Precio:</strong></div>
-             <div class="col-6" id="precioOriginal">$${formatCurrencyChile(canchaSeleccionada.precio_hora)}</div>
+             <div class="col-6" id="precioOriginal">$${formatCurrencyChile(canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora)}</div>
          </div>
      `;
     
@@ -4350,7 +4383,8 @@ function actualizarResumenPrecio() {
     if (!canchaSeleccionada) return;
     
     const pagarMitad = document.getElementById('pagarMitad').checked;
-    const precioOriginal = canchaSeleccionada.precio_hora;
+    // Usar precio_actual (promocional) si existe, sino usar precio_hora (original)
+    const precioOriginal = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
     const precioAPagar = pagarMitad ? Math.round(precioOriginal / 2) : precioOriginal;
     
     // Actualizar el precio en el resumen
