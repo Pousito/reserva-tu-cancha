@@ -4114,21 +4114,40 @@ app.get('/api/canchas/:complejoId', async (req, res) => {
       [complejoId]
     );
     
+    // IMPORTANTE: Siempre establecer precio_original como precio_hora
+    canchas.forEach(cancha => {
+      cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+      cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+      cancha.tiene_promocion = false;
+    });
+    
     // Si se proporciona fecha y hora, verificar promociones activas
     if (fecha && hora) {
+      const promocionesHelper = require('./src/utils/promociones-helper');
+      
       for (const cancha of canchas) {
-        const promocionActiva = await verificarPromocionActiva(cancha.id, fecha, hora);
-        if (promocionActiva) {
-          cancha.tiene_promocion = true;
-          cancha.precio_original = cancha.precio_hora;
-          cancha.precio_actual = promocionActiva.precio_promocional;
+        const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
+          cancha.id,
+          fecha,
+          hora
+        );
+        
+        // IMPORTANTE: precio_original siempre debe ser precio_hora
+        const precioOriginal = parseFloat(cancha.precio_hora) || 0;
+        const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
+        
+        cancha.precio_original = precioOriginal;
+        cancha.precio_actual = precioActual;
+        cancha.tiene_promocion = precioInfo.tienePromocion === true;
+        
+        if (cancha.tiene_promocion) {
           cancha.promocion_info = {
-            nombre: promocionActiva.nombre,
-            porcentaje_descuento: Math.round(((cancha.precio_hora - promocionActiva.precio_promocional) / cancha.precio_hora) * 100)
+            nombre: precioInfo.promocionNombre,
+            descuento: precioInfo.descuento,
+            porcentaje_descuento: precioInfo.porcentajeDescuento
           };
         } else {
-          cancha.tiene_promocion = false;
-          cancha.precio_actual = cancha.precio_hora;
+          cancha.promocion_info = null;
         }
       }
     }
@@ -4145,26 +4164,52 @@ app.get('/api/canchas/:complejoId/:tipo', async (req, res) => {
     const { complejoId, tipo } = req.params;
     const { fecha, hora } = req.query; // Opcional: para calcular precio específico
     
-    const canchas = await db.all(
-      'SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2 ORDER BY nombre',
-      [complejoId, tipo]
-    );
+    // Usar búsqueda flexible para "futbol" (incluye "baby futbol", "futbol 7", etc.)
+    let query, params;
+    if (tipo.toLowerCase() === 'futbol') {
+      query = 'SELECT * FROM canchas WHERE complejo_id = $1 AND LOWER(tipo) LIKE $2 ORDER BY nombre';
+      params = [complejoId, '%futbol%'];
+    } else {
+      query = 'SELECT * FROM canchas WHERE complejo_id = $1 AND tipo = $2 ORDER BY nombre';
+      params = [complejoId, tipo];
+    }
+    
+    const canchas = await db.all(query, params);
+    
+    // IMPORTANTE: Siempre establecer precio_original como precio_hora
+    canchas.forEach(cancha => {
+      cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+      cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+      cancha.tiene_promocion = false;
+    });
     
     // Si se proporciona fecha y hora, verificar promociones activas
     if (fecha && hora) {
+      const promocionesHelper = require('./src/utils/promociones-helper');
+      
       for (const cancha of canchas) {
-        const promocionActiva = await verificarPromocionActiva(cancha.id, fecha, hora);
-        if (promocionActiva) {
-          cancha.tiene_promocion = true;
-          cancha.precio_original = cancha.precio_hora;
-          cancha.precio_actual = promocionActiva.precio_promocional;
+        const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
+          cancha.id,
+          fecha,
+          hora
+        );
+        
+        // IMPORTANTE: precio_original siempre debe ser precio_hora
+        const precioOriginal = parseFloat(cancha.precio_hora) || 0;
+        const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
+        
+        cancha.precio_original = precioOriginal;
+        cancha.precio_actual = precioActual;
+        cancha.tiene_promocion = precioInfo.tienePromocion === true;
+        
+        if (cancha.tiene_promocion) {
           cancha.promocion_info = {
-            nombre: promocionActiva.nombre,
-            porcentaje_descuento: Math.round(((cancha.precio_hora - promocionActiva.precio_promocional) / cancha.precio_hora) * 100)
+            nombre: precioInfo.promocionNombre,
+            descuento: precioInfo.descuento,
+            porcentaje_descuento: precioInfo.porcentajeDescuento
           };
         } else {
-          cancha.tiene_promocion = false;
-          cancha.precio_actual = cancha.precio_hora;
+          cancha.promocion_info = null;
         }
       }
     }
