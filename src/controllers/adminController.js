@@ -102,8 +102,17 @@ async function getEstadisticas(req, res) {
  */
 async function getReservasRecientes(req, res) {
   try {
+    // Usar complexFilter del middleware requireComplexAccess si está disponible
+    // Si no, intentar obtener del user/admin directamente
     const userRole = req.admin?.rol || req.user?.rol;
-    const complexFilter = req.admin?.complejo_id || req.user?.complejo_id;
+    let complexFilter = req.complexFilter; // Del middleware requireComplexAccess
+    
+    // Fallback: intentar obtener de user/admin si complexFilter no está disponible
+    if (!complexFilter && (userRole === 'owner' || userRole === 'manager')) {
+      complexFilter = req.admin?.complejo_id || req.user?.complejo_id;
+    }
+    
+    console.log('📋 getReservasRecientes - Rol:', userRole, 'Complejo ID:', complexFilter);
     
     let query = `
       SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
@@ -117,18 +126,32 @@ async function getReservasRecientes(req, res) {
       FROM reservas r
       JOIN canchas can ON r.cancha_id = can.id
       JOIN complejos co ON can.complejo_id = co.id
+      WHERE 1=1
     `;
     
     const params = [];
     
-    if (userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') {
-      query += ' WHERE co.id = $1';
+    // Filtrar por complejo solo si el usuario es owner/manager y tiene complejo asignado
+    if ((userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') && complexFilter) {
+      query += ' AND co.id = $1';
       params.push(complexFilter);
+      console.log('✅ Filtro aplicado - Solo mostrando reservas del complejo:', complexFilter);
+    } else if (userRole === 'complex_owner' || userRole === 'owner' || userRole === 'manager') {
+      console.error('⚠️ ADVERTENCIA: Owner/Manager sin complejo_id asignado. No se aplicará filtro de complejo.');
     }
     
     query += ' ORDER BY r.created_at DESC LIMIT 5';
     
+    console.log('📋 Query final:', query);
+    console.log('📋 Parámetros:', params);
+    
     const rows = await db.query(query, params);
+    
+    console.log('✅ Reservas recientes encontradas:', rows.length);
+    if (rows.length > 0) {
+      console.log('📋 Complejos en las reservas:', [...new Set(rows.map(r => r.complejo_nombre))]);
+    }
+    
     res.json(rows);
     
   } catch (error) {

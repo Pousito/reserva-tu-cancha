@@ -19,18 +19,9 @@ function authenticateAdmin(req, res, next) {
       
       console.log('🔍 Verificando usuario con ID:', userId);
       
-      // Buscar el usuario en la base de datos para obtener su información
-      db.get("SELECT id, email, nombre, rol FROM usuarios WHERE id = ? AND activo = 1", [userId], (err, usuario) => {
-        if (err) {
-          console.error('❌ Error verificando usuario:', err);
-          return res.status(500).json({ 
-            error: 'Error de conexión', 
-            details: err.message,
-            token: token.substring(0, 20) + '...',
-            userId: userId
-          });
-        }
-        
+      // Buscar el usuario en la base de datos para obtener su información (incluyendo complejo_id)
+      db.get("SELECT id, email, nombre, rol, complejo_id FROM usuarios WHERE id = $1 AND activo = true", [userId])
+      .then(usuario => {
         if (!usuario) {
           console.log('❌ Usuario no encontrado o inactivo para ID:', userId);
           return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
@@ -38,15 +29,30 @@ function authenticateAdmin(req, res, next) {
         
         console.log('✅ Usuario encontrado:', usuario);
         
-        // Establecer la información del admin en req.admin
-        req.admin = {
+        // Establecer la información del admin en req.admin y req.user (para compatibilidad)
+        const userData = {
           id: usuario.id,
           email: usuario.email,
           nombre: usuario.nombre,
-          rol: usuario.rol
+          rol: usuario.rol,
+          complejo_id: usuario.complejo_id || null
         };
         
+        req.admin = userData;
+        req.user = userData; // Establecer también req.user para compatibilidad con requireComplexAccess
+        
+        console.log('✅ Usuario autenticado - Rol:', userData.rol, 'Complejo ID:', userData.complejo_id);
+        
         next();
+      })
+      .catch(err => {
+        console.error('❌ Error verificando usuario:', err);
+        return res.status(500).json({ 
+          error: 'Error de conexión', 
+          details: err.message,
+          token: token.substring(0, 20) + '...',
+          userId: userId
+        });
       });
       return;
     }
