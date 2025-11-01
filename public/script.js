@@ -4808,6 +4808,22 @@ async function confirmarReserva() {
     console.log('🔍 precioAPagar:', precioAPagar);
     console.log('🔍 porcentajePagado:', porcentajePagado);
     
+    // IMPORTANTE: Asegurar que precio_total use el precio promocional si existe
+    const precioTotalFinal = descuentoAplicado ? descuentoAplicado.monto_final : precioTotalCancha;
+    const montoPagadoFinal = descuentoAplicado ? Math.round(descuentoAplicado.monto_final * (porcentajePagado / 100)) : precioAPagar;
+    
+    console.log('💰 DEBUG - Precio FINAL antes de enviar al backend:', {
+        precioBaseCancha: precioBaseCancha,
+        precioTotalCancha: precioTotalCancha,
+        precioTotalFinal: precioTotalFinal,
+        precioAPagar: precioAPagar,
+        montoPagadoFinal: montoPagadoFinal,
+        tiene_promocion: canchaSeleccionada.tiene_promocion,
+        precio_actual: canchaSeleccionada.precio_actual,
+        precio_hora: canchaSeleccionada.precio_hora,
+        descuentoAplicado: !!descuentoAplicado
+    });
+    
     const formData = {
         cancha_id: canchaSeleccionada.id,
         fecha: document.getElementById('fechaSelect').value,
@@ -4817,10 +4833,10 @@ async function confirmarReserva() {
         rut_cliente: document.getElementById('rutCliente').value,
         email_cliente: document.getElementById('emailCliente').value,
         telefono_cliente: document.getElementById('telefonoCliente').value,
-        precio_total: descuentoAplicado ? descuentoAplicado.monto_final : precioTotalCancha, // SIEMPRE el precio total
+        precio_total: precioTotalFinal, // SIEMPRE el precio total (promocional si aplica)
         codigo_descuento: descuentoAplicado ? descuentoAplicado.codigo : null,
         porcentaje_pagado: porcentajePagado,
-        monto_pagado: descuentoAplicado ? Math.round(descuentoAplicado.monto_final * (porcentajePagado / 100)) : precioAPagar // Lo que realmente paga
+        monto_pagado: montoPagadoFinal // Lo que realmente paga
     };
     
     console.log('📤 DEBUG - formData que se enviará al backend:', {
