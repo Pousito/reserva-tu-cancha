@@ -4294,13 +4294,24 @@ async function seleccionarCancha(cancha) {
         return;
     }
     
-    // Recargar la cancha con precio promocional si no tiene precio_actual
-    if (!cancha.precio_actual && cancha.precio_hora) {
-        try {
-            console.log('🔄 Recargando cancha con precio promocional para fecha y hora seleccionada...');
-            const complejoId = complejoSeleccionado?.id;
-            const tipoCancha = tipoCanchaSeleccionado;
-            
+    // SIEMPRE recargar la cancha con precio promocional para asegurar precio correcto
+    try {
+        console.log('🔄 Recargando cancha con precio promocional para fecha y hora seleccionada...', {
+            cancha_id: cancha.id,
+            fecha: fecha,
+            hora: hora,
+            precio_actual_actual: cancha.precio_actual,
+            precio_hora_actual: cancha.precio_hora
+        });
+        const complejoId = complejoSeleccionado?.id;
+        const tipoCancha = tipoCanchaSeleccionado;
+        
+        if (!complejoId || !tipoCancha) {
+            console.error('⚠️ No se puede recargar cancha: falta complejoId o tipoCancha', {
+                complejoId: complejoId,
+                tipoCancha: tipoCancha
+            });
+        } else {
             let url;
             if (complejoSeleccionado?.nombre === 'Complejo Demo 3') {
                 url = `${API_BASE}/canchas/${complejoId}?fecha=${fecha}&hora=${hora}`;
@@ -4308,7 +4319,13 @@ async function seleccionarCancha(cancha) {
                 url = `${API_BASE}/canchas/${complejoId}/${tipoCancha}?fecha=${fecha}&hora=${hora}`;
             }
             
+            console.log('🔄 URL para recargar cancha:', url);
             const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const canchasActualizadas = await response.json();
             const canchaActualizada = canchasActualizadas.find(c => c.id === cancha.id);
             
@@ -4317,14 +4334,21 @@ async function seleccionarCancha(cancha) {
                     id: canchaActualizada.id,
                     precio_actual: canchaActualizada.precio_actual,
                     precio_hora: canchaActualizada.precio_hora,
-                    tiene_promocion: canchaActualizada.tiene_promocion
+                    precio_original: canchaActualizada.precio_original,
+                    tiene_promocion: canchaActualizada.tiene_promocion,
+                    promocion_info: canchaActualizada.promocion_info
                 });
                 cancha = canchaActualizada; // Usar la cancha actualizada con precio promocional
+            } else {
+                console.warn('⚠️ No se encontró la cancha recargada en la respuesta:', {
+                    cancha_id_buscado: cancha.id,
+                    canchas_recibidas: canchasActualizadas.map(c => ({ id: c.id, nombre: c.nombre }))
+                });
             }
-        } catch (error) {
-            console.error('⚠️ Error recargando cancha con precio promocional:', error);
-            // Continuar con la cancha original si hay error
         }
+    } catch (error) {
+        console.error('⚠️ Error recargando cancha con precio promocional:', error);
+        // Continuar con la cancha original si hay error
     }
     
     canchaSeleccionada = cancha;
@@ -4664,12 +4688,16 @@ async function confirmarReserva() {
     }
     
     // Calcular precio según si paga 50% o 100%
-    // Usar precio_actual (promocional) si existe, sino usar precio_hora (original)
+    // PRIORIDAD: precio_actual (promocional) > precio_hora (original)
     const precioBaseCancha = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
-    console.log('💰 DEBUG - Precio de cancha:', {
+    console.log('💰 DEBUG - Precio de cancha ANTES de calcular:', {
+        cancha_id: canchaSeleccionada.id,
+        cancha_nombre: canchaSeleccionada.nombre,
         precio_actual: canchaSeleccionada.precio_actual,
         precio_hora: canchaSeleccionada.precio_hora,
+        precio_original: canchaSeleccionada.precio_original,
         tiene_promocion: canchaSeleccionada.tiene_promocion,
+        promocion_info: canchaSeleccionada.promocion_info,
         precio_usado: precioBaseCancha
     });
     
@@ -4677,6 +4705,13 @@ async function confirmarReserva() {
     const porcentajePagado = pagarMitad ? 50 : 100;
     const precioTotalCancha = precioBaseCancha; // Precio TOTAL de la cancha (promocional si aplica)
     const precioAPagar = pagarMitad ? Math.round(precioTotalCancha / 2) : precioTotalCancha; // Lo que paga el cliente
+    
+    console.log('💰 DEBUG - Precio DESPUÉS de calcular:', {
+        precioTotalCancha: precioTotalCancha,
+        precioAPagar: precioAPagar,
+        porcentajePagado: porcentajePagado,
+        pagarMitad: pagarMitad
+    });
     
     console.log('🔍 DEBUG - Variables antes de formData:');
     console.log('🔍 descuentoAplicado:', descuentoAplicado);
