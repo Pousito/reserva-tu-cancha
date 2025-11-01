@@ -2371,6 +2371,19 @@ function configurarEventListeners() {
                     canchas = await response.json();
                     console.log('🎯 Canchas recargadas con precios promocionales:', canchas);
                     
+                    // Log detallado de cada cancha recibida
+                    canchas.forEach((cancha, index) => {
+                        console.log(`  Cancha ${index + 1}:`, {
+                            id: cancha.id,
+                            nombre: cancha.nombre,
+                            precio_hora: cancha.precio_hora,
+                            precio_actual: cancha.precio_actual,
+                            precio_original: cancha.precio_original,
+                            tiene_promocion: cancha.tiene_promocion,
+                            promocion_info: cancha.promocion_info
+                        });
+                    });
+                    
                     // Log de promociones encontradas
                     const canchasConPromocion = canchas.filter(c => c.tiene_promocion);
                     if (canchasConPromocion.length > 0) {
@@ -2378,10 +2391,17 @@ function configurarEventListeners() {
                             cancha: c.nombre,
                             precioOriginal: c.precio_original,
                             precioPromocional: c.precio_actual,
-                            tienePromocion: c.tiene_promocion
+                            tienePromocion: c.tiene_promocion,
+                            promocion: c.promocion_info
                         })));
                     } else {
                         console.log('⚠️ No se encontraron promociones para estas canchas en', fecha, horaSeleccionada);
+                        console.log('⚠️ Detalle de canchas:', canchas.map(c => ({
+                            nombre: c.nombre,
+                            precio_hora: c.precio_hora,
+                            precio_actual: c.precio_actual,
+                            tiene_promocion: c.tiene_promocion
+                        })));
                     }
                     
                     // Renderizar canchas visualmente con precios actualizados
