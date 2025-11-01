@@ -4340,7 +4340,7 @@ async function seleccionarCancha(cancha) {
             const canchasActualizadas = await response.json();
             const canchaActualizada = canchasActualizadas.find(c => c.id === cancha.id);
             
-            if (canchaActualizada) {
+                if (canchaActualizada) {
                 console.log('✅ Cancha recargada con precio promocional:', {
                     id: canchaActualizada.id,
                     precio_actual: canchaActualizada.precio_actual,
@@ -4362,7 +4362,16 @@ async function seleccionarCancha(cancha) {
         // Continuar con la cancha original si hay error
     }
     
+    // IMPORTANTE: Asignar cancha a canchaSeleccionada ANTES de mostrar el modal
     canchaSeleccionada = cancha;
+    console.log('🔍 DEBUG seleccionarCancha - canchaSeleccionada final:', {
+        id: canchaSeleccionada.id,
+        nombre: canchaSeleccionada.nombre,
+        precio_actual: canchaSeleccionada.precio_actual,
+        precio_hora: canchaSeleccionada.precio_hora,
+        precio_original: canchaSeleccionada.precio_original,
+        tiene_promocion: canchaSeleccionada.tiene_promocion
+    });
     mostrarModalReserva();
 }
 
@@ -4437,24 +4446,61 @@ function actualizarResumenPrecio() {
     
     const pagarMitad = document.getElementById('pagarMitad').checked;
     // Usar precio_actual (promocional) si existe, sino usar precio_hora (original)
-    const precioOriginal = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
-    const precioAPagar = pagarMitad ? Math.round(precioOriginal / 2) : precioOriginal;
+    const precioBase = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
+    const precioOriginal = canchaSeleccionada.precio_original || canchaSeleccionada.precio_hora;
+    const precioAPagar = pagarMitad ? Math.round(precioBase / 2) : precioBase;
+    
+    console.log('💰 DEBUG actualizarResumenPrecio - Precios:', {
+        precioBase: precioBase,
+        precioOriginal: precioOriginal,
+        precioAPagar: precioAPagar,
+        tiene_promocion: canchaSeleccionada.tiene_promocion,
+        pagarMitad: pagarMitad
+    });
     
     // Actualizar el precio en el resumen
     const precioElement = document.getElementById('precioOriginal');
     if (precioElement) {
-        if (pagarMitad) {
-            precioElement.innerHTML = `
-                <div>
-                    <span style="text-decoration: line-through; color: #999;">$${formatCurrencyChile(precioOriginal)}</span>
-                    <br>
-                    <strong class="text-primary">$${formatCurrencyChile(precioAPagar)} (50%)</strong>
-                    <br>
-                    <small class="text-muted">Resto en el complejo</small>
-                </div>
-            `;
+        if (canchaSeleccionada.tiene_promocion && canchaSeleccionada.precio_actual < canchaSeleccionada.precio_original) {
+            // Mostrar precio con promoción
+            if (pagarMitad) {
+                precioElement.innerHTML = `
+                    <div>
+                        <div>
+                            <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(precioOriginal)}</span>
+                            <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioBase)}</span>
+                            <span class="badge bg-success ms-1">${canchaSeleccionada.promocion_info?.porcentaje_descuento || ''}% OFF</span>
+                        </div>
+                        <div class="mt-1">
+                            <strong class="text-primary">$${formatCurrencyChile(precioAPagar)} (50%)</strong>
+                            <small class="text-muted ms-1">Resto en el complejo</small>
+                        </div>
+                    </div>
+                `;
+            } else {
+                precioElement.innerHTML = `
+                    <div>
+                        <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(precioOriginal)}</span>
+                        <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioBase)}</span>
+                        <span class="badge bg-success ms-1">${canchaSeleccionada.promocion_info?.porcentaje_descuento || ''}% OFF</span>
+                    </div>
+                `;
+            }
         } else {
-            precioElement.textContent = `$${formatCurrencyChile(precioOriginal)}`;
+            // Precio normal sin promoción
+            if (pagarMitad) {
+                precioElement.innerHTML = `
+                    <div>
+                        <span style="text-decoration: line-through; color: #999;">$${formatCurrencyChile(precioBase)}</span>
+                        <br>
+                        <strong class="text-primary">$${formatCurrencyChile(precioAPagar)} (50%)</strong>
+                        <br>
+                        <small class="text-muted">Resto en el complejo</small>
+                    </div>
+                `;
+            } else {
+                precioElement.textContent = `$${formatCurrencyChile(precioBase)}`;
+            }
         }
     }
     
