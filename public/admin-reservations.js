@@ -619,7 +619,7 @@ function mostrarReservas(reservasAMostrar) {
     tbody.innerHTML = html;
 }
 
-function verDetalles(codigoReserva) {
+async function verDetalles(codigoReserva) {
     const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
     if (!reserva) return;
     
@@ -628,6 +628,23 @@ function verDetalles(codigoReserva) {
         Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
     const metodoPago = reserva.metodo_pago || 'No especificado';
     const estadoPago = reserva.estado_pago || 'pendiente';
+    
+    // Cargar historial de abonos
+    let historialAbonos = [];
+    try {
+        const token = AdminUtils.getAuthToken();
+        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/historial-abonos`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            historialAbonos = data.historial || [];
+        }
+    } catch (error) {
+        console.error('Error cargando historial de abonos:', error);
+    }
     
     // Mapear valores de método de pago a nombres legibles
     const metodoPagoNames = {
@@ -682,20 +699,55 @@ function verDetalles(codigoReserva) {
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Monto Abonado:</strong> <span id="detalleMontoAbonado">$${formatCurrencyChile(montoAbonado)}</span></p>
-                                <p><strong>Método de Pago:</strong> <span id="detalleMetodoPago">${metodoPagoNombre}</span></p>
+                                <p><strong>Monto Abonado Total:</strong> <span id="detalleMontoAbonado">$${formatCurrencyChile(montoAbonado)}</span></p>
+                                <p><strong>Método de Pago Actual:</strong> <span id="detalleMetodoPago">${metodoPagoNombre}</span></p>
                             </div>
                             <div class="col-md-6">
                                 <p><strong>Estado de Pago:</strong> 
                                     <span class="badge badge-status badge-${estadoPago}">${estadoPagoNombre}</span>
                                 </p>
                                 <p><strong>Porcentaje Pagado:</strong> ${reserva.porcentaje_pagado || 0}%</p>
+                                <p><strong>Restante por Pagar:</strong> 
+                                    <span class="text-danger fw-bold">$${formatCurrencyChile(Math.max(0, (reserva.precio_total || 0) - montoAbonado))}</span>
+                                </p>
                             </div>
                         </div>
                         <hr>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editarPagoReserva('${codigoReserva}')">
-                            <i class="fas fa-edit me-2"></i>Editar Monto y Método de Pago
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-success" onclick="agregarAbonoReserva('${codigoReserva}')">
+                                <i class="fas fa-plus me-2"></i>Agregar Abono
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="marcarPagoCompleto('${codigoReserva}')" ${montoAbonado >= (reserva.precio_total || 0) ? 'disabled' : ''}>
+                                <i class="fas fa-check-circle me-2"></i>Marcar como Pagado Completo
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editarPagoReserva('${codigoReserva}')">
+                                <i class="fas fa-edit me-2"></i>Editar Pago
+                            </button>
+                        </div>
+                        ${historialAbonos.length > 0 ? `
+                        <hr>
+                        <h6><i class="fas fa-history me-2"></i>Historial de Abonos</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${historialAbonos.map(abono => `
+                                        <tr>
+                                            <td>${new Date(abono.fecha_abono).toLocaleString('es-CL')}</td>
+                                            <td><strong>$${formatCurrencyChile(abono.monto_abonado)}</strong></td>
+                                            <td><span class="badge bg-secondary">${abono.metodo_pago || 'N/A'}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -840,6 +892,284 @@ function editarPagoReserva(codigoReserva) {
     document.getElementById('modalEditarPago').addEventListener('hidden.bs.modal', function() {
         this.remove();
     });
+}
+
+/**
+ * Agregar abono adicional a una reserva
+ */
+function agregarAbonoReserva(codigoReserva) {
+    const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
+    if (!reserva) {
+        mostrarNotificacion('Reserva no encontrada', 'danger');
+        return;
+    }
+    
+    const montoAbonadoActual = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+        Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
+    const precioTotal = reserva.precio_total || 0;
+    const restante = Math.max(0, precioTotal - montoAbonadoActual);
+    
+    // Crear modal para agregar abono
+    const modalHTML = `
+        <div class="modal fade" id="modalAgregarAbono" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-plus-circle me-2"></i>Agregar Abono - Reserva ${codigoReserva}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Precio Total:</strong> $${formatCurrencyChile(precioTotal)}<br>
+                            <strong>Monto Abonado Actual:</strong> $${formatCurrencyChile(montoAbonadoActual)}<br>
+                            <strong>Restante por Pagar:</strong> <span class="text-danger fw-bold">$${formatCurrencyChile(restante)}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nuevoAbonoMonto" class="form-label">Monto del Abono *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="nuevoAbonoMonto" 
+                                       placeholder="0" min="1" max="${restante}" step="1000" required>
+                            </div>
+                            <div class="form-text">Máximo a abonar: $${formatCurrencyChile(restante)}</div>
+                            <div class="invalid-feedback d-none" id="nuevoAbonoMontoError">
+                                El monto no puede ser mayor al restante por pagar.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nuevoAbonoMetodo" class="form-label">Método de Pago *</label>
+                            <select class="form-select" id="nuevoAbonoMetodo" required>
+                                <option value="">Seleccionar método de pago</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="transferencia">Transferencia Bancaria</option>
+                                <option value="webpay">Webpay Plus</option>
+                                <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                                <option value="otros">Otros</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nuevoAbonoNotas" class="form-label">Notas (opcional)</label>
+                            <textarea class="form-control" id="nuevoAbonoNotas" rows="2" placeholder="Notas adicionales sobre este abono..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="guardarNuevoAbono('${codigoReserva}')">
+                            <i class="fas fa-save me-2"></i>Agregar Abono
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior si existe
+    const modalAnterior = document.getElementById('modalAgregarAbono');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
+    
+    // Agregar modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar validación en tiempo real
+    const montoInput = document.getElementById('nuevoAbonoMonto');
+    montoInput.addEventListener('input', function() {
+        const monto = parseFloat(this.value) || 0;
+        if (monto > restante) {
+            this.classList.add('is-invalid');
+            document.getElementById('nuevoAbonoMontoError').classList.remove('d-none');
+        } else {
+            this.classList.remove('is-invalid');
+            document.getElementById('nuevoAbonoMontoError').classList.add('d-none');
+        }
+    });
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalAgregarAbono'));
+    modal.show();
+    
+    // Limpiar modal cuando se cierre
+    document.getElementById('modalAgregarAbono').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar nuevo abono
+ */
+async function guardarNuevoAbono(codigoReserva) {
+    const montoInput = document.getElementById('nuevoAbonoMonto');
+    const metodoSelect = document.getElementById('nuevoAbonoMetodo');
+    const notasInput = document.getElementById('nuevoAbonoNotas');
+    
+    if (!montoInput || !metodoSelect) return;
+    
+    const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
+    if (!reserva) {
+        mostrarNotificacion('Reserva no encontrada', 'danger');
+        return;
+    }
+    
+    const nuevoAbono = parseFloat(montoInput.value) || 0;
+    const metodoPago = metodoSelect.value;
+    const notas = notasInput?.value?.trim() || null;
+    const precioTotal = reserva.precio_total || 0;
+    const montoAbonadoActual = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+        Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
+    const restante = Math.max(0, precioTotal - montoAbonadoActual);
+    
+    // Validar
+    if (!metodoPago) {
+        mostrarNotificacion('Por favor selecciona un método de pago', 'danger');
+        metodoSelect.focus();
+        return;
+    }
+    
+    if (nuevoAbono <= 0) {
+        mostrarNotificacion('El monto del abono debe ser mayor a 0', 'danger');
+        montoInput.focus();
+        return;
+    }
+    
+    if (nuevoAbono > restante) {
+        mostrarNotificacion(`El monto del abono no puede ser mayor al restante ($${formatCurrencyChile(restante)})`, 'danger');
+        montoInput.focus();
+        return;
+    }
+    
+    try {
+        const token = AdminUtils.getAuthToken();
+        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/agregar-abono`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                monto_abonado: nuevoAbono,
+                metodo_pago: metodoPago,
+                notas: notas
+            })
+        });
+        
+        const resultado = await response.json();
+        
+        if (response.ok) {
+            mostrarNotificacion(`Abono de $${formatCurrencyChile(nuevoAbono)} agregado exitosamente`, 'success');
+            
+            // Cerrar modal de agregar abono
+            const modalAgregar = bootstrap.Modal.getInstance(document.getElementById('modalAgregarAbono'));
+            if (modalAgregar) {
+                modalAgregar.hide();
+            }
+            
+            // Cerrar y actualizar modal de detalles
+            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
+            if (modalDetalles) {
+                modalDetalles.hide();
+            }
+            
+            // Recargar reservas
+            await cargarReservas();
+            
+            // Recargar calendario si estamos en vista calendario
+            if (vistaActual === 'calendario') {
+                await cargarCalendario();
+            }
+            
+            // Reabrir detalles con datos actualizados
+            setTimeout(() => {
+                verDetalles(codigoReserva);
+            }, 500);
+            
+        } else {
+            mostrarNotificacion(resultado.error || 'Error al agregar el abono', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error de conexión al agregar el abono', 'danger');
+    }
+}
+
+/**
+ * Marcar pago como completo (establece monto abonado al precio total)
+ */
+async function marcarPagoCompleto(codigoReserva) {
+    const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
+    if (!reserva) {
+        mostrarNotificacion('Reserva no encontrada', 'danger');
+        return;
+    }
+    
+    const precioTotal = reserva.precio_total || 0;
+    const montoAbonadoActual = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+        Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
+    const restante = precioTotal - montoAbonadoActual;
+    
+    if (restante <= 0) {
+        mostrarNotificacion('Esta reserva ya está completamente pagada', 'info');
+        return;
+    }
+    
+    // Confirmar acción
+    if (!confirm(`¿Marcar el pago restante de $${formatCurrencyChile(restante)} como completado?`)) {
+        return;
+    }
+    
+    try {
+        const token = AdminUtils.getAuthToken();
+        
+        // Usar el método de agregar abono con el monto restante
+        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/agregar-abono`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                monto_abonado: restante,
+                metodo_pago: reserva.metodo_pago || 'efectivo',
+                notas: 'Marcado como pago completo por el administrador'
+            })
+        });
+        
+        const resultado = await response.json();
+        
+        if (response.ok) {
+            mostrarNotificacion(`Pago completado exitosamente. Se agregó un abono de $${formatCurrencyChile(restante)}`, 'success');
+            
+            // Cerrar modal de detalles si está abierto
+            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
+            if (modalDetalles) {
+                modalDetalles.hide();
+            }
+            
+            // Recargar reservas
+            await cargarReservas();
+            
+            // Recargar calendario si estamos en vista calendario
+            if (vistaActual === 'calendario') {
+                await cargarCalendario();
+            }
+            
+            // Reabrir detalles con datos actualizados
+            setTimeout(() => {
+                verDetalles(codigoReserva);
+            }, 500);
+            
+        } else {
+            mostrarNotificacion(resultado.error || 'Error al marcar el pago como completo', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error de conexión al marcar el pago como completo', 'danger');
+    }
 }
 
 /**
@@ -1711,12 +2041,17 @@ function renderizarCalendarioOffline(data) {
                     const canchaInfo = reserva.cancha || 'Cancha N/A';
                     const estado = reserva.estado || 'confirmada';
                     const precio = reserva.precio || 0;
+                    const codigoReserva = reserva.codigo || reserva.codigo_reserva || '';
                     
                     html += `
-                        <div class="reservation-item" title="${canchaInfo} - $${precio} - ${estado}">
+                        <div class="reservation-item" 
+                             onclick="verDetalles('${codigoReserva}')" 
+                             style="cursor: pointer;" 
+                             title="Click para ver detalles - ${canchaInfo} - $${precio} - ${estado}">
                             <div class="fw-bold">${clienteNombre}</div>
                             <small class="text-muted">${canchaInfo}</small>
                             ${precio > 0 ? `<small class="d-block text-success">$${precio}</small>` : ''}
+                            ${codigoReserva ? `<small class="d-block text-muted"><code>${codigoReserva}</code></small>` : ''}
                         </div>
                     `;
                 });
@@ -2580,7 +2915,7 @@ function mostrarInfoReservas(fecha, hora, event) {
         });
         
         modalHtml += `
-            <div class="reservation-detail mb-3">
+            <div class="reservation-detail mb-3 p-3 border rounded">
                 <div class="row">
                     <div class="col-md-6">
                         <strong>Código:</strong> <code>${codigo}</code><br>
@@ -2592,6 +2927,13 @@ function mostrarInfoReservas(fecha, hora, event) {
                     <div class="col-md-6">
                         <strong>Precio:</strong> $${formatCurrencyChile(precio)}<br>
                         <strong>Tipo:</strong> ${tipoMostrar}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalles('${codigo}')">
+                            <i class="fas fa-eye me-2"></i>Ver Detalles y Abonos
+                        </button>
                     </div>
                 </div>
             </div>

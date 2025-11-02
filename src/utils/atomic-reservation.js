@@ -197,6 +197,33 @@ class AtomicReservationManager {
             const nuevaReserva = insertResult.rows[0];
             console.log('✅ Reserva creada con ID:', nuevaReserva.id);
 
+            // PASO 5.5: Si hay monto abonado inicial, guardarlo en el historial
+            if (monto_abonado > 0 && metodo_pago) {
+                try {
+                    const insertHistorialQuery = `
+                        INSERT INTO historial_abonos_reservas (
+                            reserva_id, codigo_reserva, monto_abonado, metodo_pago, notas, usuario_id
+                        ) VALUES ($1, $2, $3, $4, $5, $6)
+                        RETURNING *
+                    `;
+                    
+                    const historialParams = [
+                        nuevaReserva.id,
+                        codigo_reserva,
+                        monto_abonado,
+                        metodo_pago,
+                        'Abono inicial al crear la reserva',
+                        admin_id
+                    ];
+                    
+                    const historialResult = await client.query(insertHistorialQuery, historialParams);
+                    console.log('✅ Abono inicial guardado en historial:', historialResult.rows[0]);
+                } catch (historialError) {
+                    console.error('⚠️ Error guardando abono inicial en historial:', historialError);
+                    // No fallar la reserva si falla el historial, solo registrar el error
+                }
+            }
+
             // PASO 6: Eliminar bloqueo temporal si existe
             if (bloqueo_id) {
                 console.log('🗑️ Eliminando bloqueo temporal:', bloqueo_id);

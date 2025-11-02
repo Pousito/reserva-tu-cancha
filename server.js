@@ -3129,6 +3129,196 @@ app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requi
 
 // Endpoint para cancelar una reserva (panel de administración)
 // Endpoint para actualizar monto abonado y método de pago de una reserva
+// Endpoint para obtener historial de abonos de una reserva
+app.get('/api/admin/reservas/:codigoReserva/historial-abonos', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    const user = req.user;
+    
+    console.log('📋 Obteniendo historial de abonos para reserva:', codigoReserva);
+    
+    // Buscar la reserva para verificar acceso
+    let query = `
+      SELECT r.id, r.codigo_reserva, c.complejo_id
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE r.codigo_reserva = $1
+    `;
+    const params = [codigoReserva];
+    
+    // Filtrar por complejo si es owner/manager
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      query += ` AND c.complejo_id = $2`;
+      params.push(user.complejo_id);
+    }
+    
+    const reservaResult = await db.query(query, params);
+    
+    if (!reservaResult || reservaResult.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada o sin acceso' });
+    }
+    
+    const reserva = reservaResult[0];
+    
+    // Obtener historial de abonos
+    const historialQuery = `
+      SELECT id, reserva_id, codigo_reserva, monto_abonado, metodo_pago, 
+             fecha_abono, notas, usuario_id, created_at
+      FROM historial_abonos_reservas
+      WHERE reserva_id = $1 OR codigo_reserva = $2
+      ORDER BY fecha_abono DESC, created_at DESC
+    `;
+    
+    const historialResult = await db.query(historialQuery, [reserva.id, codigoReserva]);
+    
+    console.log(`✅ Historial de abonos obtenido: ${historialResult.length} abonos`);
+    
+    res.json({
+      success: true,
+      historial: historialResult || []
+    });
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo historial de abonos:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Endpoint para agregar un abono adicional a una reserva
+app.post('/api/admin/reservas/:codigoReserva/agregar-abono', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    const { monto_abonado, metodo_pago, notas } = req.body;
+    const user = req.user;
+    
+    console.log('💰 Agregando abono a reserva:', {
+      codigoReserva,
+      monto_abonado,
+      metodo_pago,
+      notas,
+      user: user.email
+    });
+    
+    // Validar campos requeridos
+    if (!monto_abonado || !metodo_pago) {
+      return res.status(400).json({ error: 'Faltan campos requeridos: monto_abonado, metodo_pago' });
+    }
+    
+    if (monto_abonado <= 0) {
+      return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
+    }
+    
+    // Buscar la reserva
+    let query = `
+      SELECT r.*, c.complejo_id
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE r.codigo_reserva = $1
+    `;
+    const params = [codigoReserva];
+    
+    // Filtrar por complejo si es owner/manager
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      query += ` AND c.complejo_id = $2`;
+      params.push(user.complejo_id);
+    }
+    
+    const reservaResult = await db.query(query, params);
+    
+    if (!reservaResult || reservaResult.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada o sin acceso' });
+    }
+    
+    const reserva = reservaResult[0];
+    
+    // Calcular nuevo monto abonado total
+    const montoAbonadoActual = reserva.monto_abonado || 0;
+    const nuevoMontoAbonado = montoAbonadoActual + monto_abonado;
+    
+    // Validar que no exceda el precio total
+    if (nuevoMontoAbonado > reserva.precio_total) {
+      return res.status(400).json({ 
+        error: `El monto total abonado no puede ser mayor al precio total ($${reserva.precio_total}). Restante: $${reserva.precio_total - montoAbonadoActual}` 
+      });
+    }
+    
+    // Iniciar transacción
+    const client = await db.pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // 1. Insertar en historial de abonos
+      const insertHistorialQuery = `
+        INSERT INTO historial_abonos_reservas (
+          reserva_id, codigo_reserva, monto_abonado, metodo_pago, notas, usuario_id
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `;
+      
+      const historialResult = await client.query(insertHistorialQuery, [
+        reserva.id,
+        codigoReserva,
+        monto_abonado,
+        metodo_pago,
+        notas || null,
+        user.id
+      ]);
+      
+      console.log('✅ Abono agregado al historial:', historialResult.rows[0]);
+      
+      // 2. Actualizar reserva con nuevo monto abonado
+      const porcentajePagado = reserva.precio_total > 0 ? Math.round((nuevoMontoAbonado / reserva.precio_total) * 100) : 0;
+      
+      // Determinar estado de pago
+      let estadoPago = reserva.estado_pago || 'pendiente';
+      if (nuevoMontoAbonado >= reserva.precio_total) {
+        estadoPago = 'pagado';
+      } else if (nuevoMontoAbonado > 0) {
+        estadoPago = 'por_pagar';
+      }
+      
+      const updateReservaQuery = `
+        UPDATE reservas
+        SET monto_abonado = $1,
+            porcentaje_pagado = $2,
+            estado_pago = $3,
+            metodo_pago = $4
+        WHERE codigo_reserva = $5
+        RETURNING *
+      `;
+      
+      const updateResult = await client.query(updateReservaQuery, [
+        nuevoMontoAbonado,
+        porcentajePagado,
+        estadoPago,
+        metodo_pago, // Actualizar método de pago al último usado
+        codigoReserva
+      ]);
+      
+      await client.query('COMMIT');
+      
+      console.log('✅ Reserva actualizada exitosamente:', updateResult.rows[0]);
+      
+      res.json({
+        success: true,
+        mensaje: 'Abono agregado exitosamente',
+        abono: historialResult.rows[0],
+        reserva: updateResult.rows[0]
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error agregando abono:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 app.put('/api/admin/reservas/:codigoReserva/pago', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
     const { codigoReserva } = req.params;
