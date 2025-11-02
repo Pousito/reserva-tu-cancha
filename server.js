@@ -2337,6 +2337,20 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
       console.error('⚠️ ADVERTENCIA: Owner/Manager sin complejo_id asignado. No se aplicará filtro de complejo.');
     }
     
+    // DEBUG: Log de la query que se va a ejecutar
+    console.log('🔍 DEBUG - Query SQL:', `
+      SELECT r.*, c.nombre as cancha_nombre, 
+             CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
+             co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos co ON c.complejo_id = co.id
+      JOIN ciudades ci ON co.ciudad_id = ci.id
+      ${whereClause}
+      ORDER BY COALESCE(r.fecha_creacion, r.created_at, r.fecha) DESC
+    `);
+    console.log('🔍 DEBUG - Parámetros:', params);
+    
     const reservas = await db.query(`
       SELECT r.*, c.nombre as cancha_nombre, 
              CASE WHEN c.tipo = 'futbol' THEN 'Fútbol' ELSE c.tipo END as tipo,
@@ -2351,12 +2365,14 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
     
-    // DEBUG: Verificar complejos en las reservas cargadas
+    // DEBUG: Verificar complejos en las reservas cargadas y mostrar primeros códigos
     if (reservas && reservas.length > 0) {
         const complejosUnicos = [...new Set(reservas.map(r => `${r.complejo_id}-${r.complejo_nombre}`))];
         console.log('🔍 DEBUG SERVER - Complejos en reservas cargadas:', complejosUnicos);
+        console.log('🔍 DEBUG SERVER - Códigos de reserva encontrados:', reservas.slice(0, 5).map(r => r.codigo_reserva));
         console.log('🔍 DEBUG SERVER - Primera reserva:', {
             codigo: reservas[0].codigo_reserva,
+            cancha_id: reservas[0].cancha_id,
             complejo_id: reservas[0].complejo_id,
             complejo_nombre: reservas[0].complejo_nombre,
             cancha: reservas[0].cancha_nombre
