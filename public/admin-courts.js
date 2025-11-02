@@ -470,11 +470,36 @@ function displayCourts(courtsToShow) {
                     </p>
                 </div>
                 <div class="col-md-4 text-end">
-                    ${currentUser && currentUser.rol !== 'manager' ? `
+                    ${currentUser && (currentUser.rol === 'owner' || currentUser.rol === 'manager') ? `
                     <div class="btn-group-vertical" role="group">
                         <button class="btn btn-outline-primary btn-sm mb-2" onclick="openPromocionesModal(${court.id}, '${court.nombre.replace(/'/g, "\\'")}', ${court.precio_hora})">
                             <i class="fas fa-percent me-1"></i>
                             Promociones
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm mb-2" onclick="openBloqueosModal(${court.id}, '${court.nombre.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-ban me-1"></i>
+                            Bloqueos
+                        </button>
+                        ${currentUser.rol === 'owner' ? `
+                        <button class="btn btn-outline-warning btn-sm mb-2" onclick="editCourt(${court.id})">
+                            <i class="fas fa-edit me-1"></i>
+                            Editar
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteCourt(${court.id})">
+                            <i class="fas fa-trash me-1"></i>
+                            Eliminar
+                        </button>
+                        ` : ''}
+                    </div>
+                    ` : currentUser && currentUser.rol === 'super_admin' ? `
+                    <div class="btn-group-vertical" role="group">
+                        <button class="btn btn-outline-primary btn-sm mb-2" onclick="openPromocionesModal(${court.id}, '${court.nombre.replace(/'/g, "\\'")}', ${court.precio_hora})">
+                            <i class="fas fa-percent me-1"></i>
+                            Promociones
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm mb-2" onclick="openBloqueosModal(${court.id}, '${court.nombre.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-ban me-1"></i>
+                            Bloqueos
                         </button>
                         <button class="btn btn-outline-warning btn-sm mb-2" onclick="editCourt(${court.id})">
                             <i class="fas fa-edit me-1"></i>
@@ -1451,6 +1476,612 @@ async function togglePromocionActiva(promocionId, nuevoEstado) {
         }
     } catch (error) {
         console.error('Error cambiando estado de promoción:', error);
+        showNotification('Error de conexión al cambiar estado', 'error');
+    }
+}
+
+// ============================================
+// SISTEMA DE BLOQUEOS DE CANCHAS
+// ============================================
+
+let currentCanchaBloqueo = null;
+let currentCanchaBloqueoNombre = '';
+let currentBloqueoEdit = null;
+
+/**
+ * Abrir modal de gestión de bloqueos para una cancha
+ */
+async function openBloqueosModal(canchaId, canchaNombre) {
+    currentCanchaBloqueo = canchaId;
+    currentCanchaBloqueoNombre = canchaNombre;
+    currentBloqueoEdit = null;
+    
+    // Verificar que los elementos existan
+    const modalElement = document.getElementById('bloqueosModal');
+    const subtitleElement = document.getElementById('bloqueosModalSubtitle');
+    const listContainer = document.getElementById('bloqueosListContainer');
+    const formContainer = document.getElementById('bloqueoFormContainer');
+    
+    if (!modalElement || !subtitleElement || !listContainer || !formContainer) {
+        console.error('❌ Elementos del modal de bloqueos no encontrados. Recarga la página.');
+        showNotification('Error: Elementos del modal no encontrados. Por favor, recarga la página.', 'error');
+        return;
+    }
+    
+    // Actualizar título del modal
+    subtitleElement.textContent = `Cancha: ${canchaNombre}`;
+    
+    // Poblar selectores de hora con horarios del complejo
+    poblarHorariosBloqueos();
+    
+    // Configurar eventos de formulario
+    configurarBloqueoFormEvents();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // Ocultar formulario y mostrar lista
+    formContainer.style.display = 'none';
+    listContainer.style.display = 'block';
+    
+    // Cargar bloqueos
+    await loadBloqueos();
+}
+
+/**
+ * Poblar selectores de hora para bloqueos
+ */
+function poblarHorariosBloqueos() {
+    // Obtener usuario para saber el complejo
+    const user = AdminUtils.getCurrentUser();
+    const complejoId = user?.complejo_id;
+    
+    // Determinar horario según complejo
+    let horaInicio = 12;
+    let horaFin = 23;
+
+    if (complejoId === 6 || complejoId === 7) {
+        horaInicio = 10;
+        horaFin = 24;
+    } else if (complejoId === 8) {
+        horaInicio = 16;
+        horaFin = 23;
+    }
+    
+    // Poblar todos los selectores de hora
+    const selectors = ['bloqueoHoraEspecifica', 'bloqueoHoraInicio', 'bloqueoHoraFin'];
+    selectors.forEach(selectorId => {
+        const selector = document.getElementById(selectorId);
+        if (selector) {
+            selector.innerHTML = '<option value="">Selecciona una hora...</option>';
+            
+            for (let hora = horaInicio; hora <= horaFin; hora++) {
+                const horaStr = hora === 24 ? '00:00' : `${String(hora).padStart(2, '0')}:00`;
+                const option = document.createElement('option');
+                option.value = horaStr;
+                option.textContent = horaStr;
+                selector.appendChild(option);
+            }
+        }
+    });
+}
+
+/**
+ * Configurar eventos del formulario de bloqueos
+ */
+function configurarBloqueoFormEvents() {
+    // Event listeners para tipo de fecha
+    const tipoFechaRadios = document.querySelectorAll('input[name="bloqueoTipoFecha"]');
+    tipoFechaRadios.forEach(radio => {
+        radio.addEventListener('change', updateBloqueoFechaFields);
+    });
+    
+    // Event listeners para tipo de horario
+    const tipoHorarioRadios = document.querySelectorAll('input[name="bloqueoTipoHorario"]');
+    tipoHorarioRadios.forEach(radio => {
+        radio.addEventListener('change', updateBloqueoHorarioFields);
+    });
+    
+    // Event listener para el formulario
+    const form = document.getElementById('bloqueoForm');
+    if (form && !form.dataset.eventsConfigured) {
+        form.addEventListener('submit', handleBloqueoFormSubmit);
+        form.dataset.eventsConfigured = 'true';
+    }
+}
+
+/**
+ * Actualizar campos de fecha según el tipo seleccionado
+ */
+function updateBloqueoFechaFields() {
+    const tipoFecha = document.querySelector('input[name="bloqueoTipoFecha"]:checked')?.value;
+    
+    // Ocultar todos los contenedores
+    document.getElementById('bloqueoFechaEspecificoContainer').style.display = 'none';
+    document.getElementById('bloqueoFechaRangoContainer').style.display = 'none';
+    document.getElementById('bloqueoFechaRecurrenteContainer').style.display = 'none';
+    
+    // Mostrar el contenedor correspondiente
+    if (tipoFecha === 'especifico') {
+        document.getElementById('bloqueoFechaEspecificoContainer').style.display = 'block';
+        document.getElementById('bloqueoFechaEspecifica').required = true;
+        document.getElementById('bloqueoFechaInicio').required = false;
+        document.getElementById('bloqueoFechaFin').required = false;
+    } else if (tipoFecha === 'rango') {
+        document.getElementById('bloqueoFechaRangoContainer').style.display = 'block';
+        document.getElementById('bloqueoFechaEspecifica').required = false;
+        document.getElementById('bloqueoFechaInicio').required = true;
+        document.getElementById('bloqueoFechaFin').required = true;
+    } else if (tipoFecha === 'recurrente_semanal') {
+        document.getElementById('bloqueoFechaRecurrenteContainer').style.display = 'block';
+        document.getElementById('bloqueoFechaEspecifica').required = false;
+        document.getElementById('bloqueoFechaInicio').required = false;
+        document.getElementById('bloqueoFechaFin').required = false;
+    }
+}
+
+/**
+ * Actualizar campos de horario según el tipo seleccionado
+ */
+function updateBloqueoHorarioFields() {
+    const tipoHorario = document.querySelector('input[name="bloqueoTipoHorario"]:checked')?.value;
+    
+    // Ocultar todos los contenedores
+    document.getElementById('bloqueoHorarioEspecificoContainer').style.display = 'none';
+    document.getElementById('bloqueoHorarioRangoContainer').style.display = 'none';
+    
+    // Mostrar el contenedor correspondiente
+    if (tipoHorario === 'especifico') {
+        document.getElementById('bloqueoHorarioEspecificoContainer').style.display = 'block';
+        document.getElementById('bloqueoHoraEspecifica').required = true;
+        document.getElementById('bloqueoHoraInicio').required = false;
+        document.getElementById('bloqueoHoraFin').required = false;
+    } else if (tipoHorario === 'rango') {
+        document.getElementById('bloqueoHorarioRangoContainer').style.display = 'block';
+        document.getElementById('bloqueoHoraEspecifica').required = false;
+        document.getElementById('bloqueoHoraInicio').required = true;
+        document.getElementById('bloqueoHoraFin').required = true;
+    } else if (tipoHorario === 'todo_el_dia') {
+        // Todo el día - no requiere campos de horario
+        document.getElementById('bloqueoHoraEspecifica').required = false;
+        document.getElementById('bloqueoHoraInicio').required = false;
+        document.getElementById('bloqueoHoraFin').required = false;
+    }
+}
+
+/**
+ * Cargar bloqueos de la cancha
+ */
+async function loadBloqueos() {
+    try {
+        const listContainer = document.getElementById('bloqueosListContainer');
+        listContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><p>Cargando bloqueos...</p></div>';
+        
+        const response = await AdminUtils.authenticatedFetch(`/bloqueos-canchas?cancha_id=${currentCanchaBloqueo}`);
+        
+        if (!response) {
+            throw new Error('No se recibió respuesta del servidor');
+        }
+        
+        if (response.ok) {
+            const data = await response.json();
+            const bloqueos = data.bloqueos || [];
+            displayBloqueos(bloqueos);
+        } else {
+            throw new Error('Error al cargar bloqueos');
+        }
+    } catch (error) {
+        console.error('Error cargando bloqueos:', error);
+        const listContainer = document.getElementById('bloqueosListContainer');
+        listContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error al cargar bloqueos. Por favor, recarga la página.
+            </div>
+        `;
+    }
+}
+
+/**
+ * Mostrar lista de bloqueos
+ */
+function displayBloqueos(bloqueos) {
+    const listContainer = document.getElementById('bloqueosListContainer');
+    
+    if (bloqueos.length === 0) {
+        listContainer.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay bloqueos configurados para esta cancha.
+            </div>
+            <button class="btn btn-primary" onclick="showNewBloqueoForm()">
+                <i class="fas fa-plus me-2"></i>Nuevo Bloqueo
+            </button>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Bloqueos Configurados (${bloqueos.length})</h6>
+            <button class="btn btn-primary btn-sm" onclick="showNewBloqueoForm()">
+                <i class="fas fa-plus me-1"></i>Nuevo Bloqueo
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Motivo</th>
+                        <th>Fecha/Horario</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    bloqueos.forEach(bloqueo => {
+        const fechaTexto = formatBloqueoFecha(bloqueo);
+        const horarioTexto = formatBloqueoHorario(bloqueo);
+        const estadoBadge = bloqueo.activo 
+            ? '<span class="badge bg-danger">Activo</span>'
+            : '<span class="badge bg-secondary">Inactivo</span>';
+        
+        html += `
+            <tr>
+                <td><strong>${bloqueo.motivo}</strong></td>
+                <td>
+                    <div>${fechaTexto}</div>
+                    <small class="text-muted">${horarioTexto}</small>
+                </td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editBloqueo(${bloqueo.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning me-1" onclick="toggleBloqueoActivo(${bloqueo.id}, ${!bloqueo.activo})" title="${bloqueo.activo ? 'Desactivar' : 'Activar'}">
+                        <i class="fas fa-${bloqueo.activo ? 'pause' : 'play'}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteBloqueo(${bloqueo.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    listContainer.innerHTML = html;
+}
+
+/**
+ * Formatear fecha del bloqueo para mostrar
+ */
+function formatBloqueoFecha(bloqueo) {
+    if (bloqueo.tipo_fecha === 'especifico') {
+        return `Día: ${formatearFecha(bloqueo.fecha_especifica)}`;
+    } else if (bloqueo.tipo_fecha === 'rango') {
+        return `${formatearFecha(bloqueo.fecha_inicio)} - ${formatearFecha(bloqueo.fecha_fin)}`;
+    } else if (bloqueo.tipo_fecha === 'recurrente_semanal') {
+        const dias = bloqueo.dias_semana || [];
+        return `Recurrente: ${dias.map(d => capitalize(d)).join(', ')}`;
+    }
+    return 'Sin fecha';
+}
+
+/**
+ * Formatear horario del bloqueo para mostrar
+ */
+function formatBloqueoHorario(bloqueo) {
+    if (bloqueo.tipo_horario === 'todo_el_dia') {
+        return 'Todo el día';
+    } else if (bloqueo.tipo_horario === 'especifico') {
+        return `Hora: ${bloqueo.hora_especifica}`;
+    } else if (bloqueo.tipo_horario === 'rango') {
+        return `${bloqueo.hora_inicio} - ${bloqueo.hora_fin}`;
+    }
+    return 'Sin horario';
+}
+
+/**
+ * Capitalizar primera letra
+ */
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Formatear fecha
+ */
+function formatearFecha(fecha) {
+    if (!fecha) return 'Sin fecha';
+    
+    try {
+        let fechaLimpia = fecha;
+        
+        // Si viene en formato ISO (2025-12-31T03:00:00.000Z), extraer solo la parte de fecha
+        if (typeof fecha === 'string' && fecha.includes('T')) {
+            fechaLimpia = fecha.split('T')[0];
+        }
+        
+        // Validar formato YYYY-MM-DD
+        const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!fechaRegex.test(fechaLimpia)) {
+            console.warn('⚠️ formatearFecha: formato de fecha inválido', { fecha, fechaLimpia });
+            return fechaLimpia || fecha;
+        }
+        
+        // Crear fecha local desde componentes para evitar problemas de zona horaria
+        const [año, mes, dia] = fechaLimpia.split('-').map(Number);
+        
+        if (isNaN(año) || isNaN(mes) || isNaN(dia)) {
+            console.warn('⚠️ formatearFecha: valores de fecha inválidos', { año, mes, dia, fecha, fechaLimpia });
+            return fechaLimpia || fecha;
+        }
+        
+        const date = new Date(año, mes - 1, dia);
+        
+        // Validar que la fecha creada sea válida
+        if (isNaN(date.getTime())) {
+            console.warn('⚠️ formatearFecha: fecha creada es inválida', { año, mes, dia, fecha, fechaLimpia });
+            return fechaLimpia || fecha;
+        }
+        
+        return date.toLocaleDateString('es-CL', { 
+            weekday: 'short', 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    } catch (error) {
+        console.error('❌ Error formateando fecha:', error, { fecha });
+        return fecha || 'Sin fecha';
+    }
+}
+
+/**
+ * Mostrar formulario para nuevo bloqueo
+ */
+function showNewBloqueoForm() {
+    currentBloqueoEdit = null;
+    const formContainer = document.getElementById('bloqueoFormContainer');
+    const listContainer = document.getElementById('bloqueosListContainer');
+    const formTitle = document.getElementById('bloqueoFormTitle');
+    
+    formTitle.innerHTML = '<i class="fas fa-plus-circle me-2"></i>Nuevo Bloqueo';
+    document.getElementById('bloqueoForm').reset();
+    document.getElementById('bloqueoId').value = '';
+    document.getElementById('bloqueoCanchaId').value = currentCanchaBloqueo;
+    document.getElementById('bloqueoActivo').checked = true;
+    
+    // Resetear a valores por defecto
+    document.getElementById('bloqueoTipoFechaEspecifico').checked = true;
+    document.getElementById('bloqueoTipoHorarioEspecifico').checked = true;
+    updateBloqueoFechaFields();
+    updateBloqueoHorarioFields();
+    
+    formContainer.style.display = 'block';
+    listContainer.style.display = 'none';
+}
+
+/**
+ * Cancelar formulario de bloqueo
+ */
+function cancelBloqueoForm() {
+    const formContainer = document.getElementById('bloqueoFormContainer');
+    const listContainer = document.getElementById('bloqueosListContainer');
+    
+    formContainer.style.display = 'none';
+    listContainer.style.display = 'block';
+    loadBloqueos();
+}
+
+/**
+ * Manejar submit del formulario de bloqueo
+ */
+async function handleBloqueoFormSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const tipoFecha = document.querySelector('input[name="bloqueoTipoFecha"]:checked').value;
+    const tipoHorario = document.querySelector('input[name="bloqueoTipoHorario"]:checked').value;
+    
+    // Recopilar datos según el tipo
+    const bloqueoData = {
+        cancha_id: parseInt(document.getElementById('bloqueoCanchaId').value),
+        motivo: document.getElementById('bloqueoMotivo').value,
+        descripcion: document.getElementById('bloqueoDescripcion').value,
+        tipo_fecha: tipoFecha,
+        tipo_horario: tipoHorario,
+        activo: document.getElementById('bloqueoActivo').checked
+    };
+    
+    // Agregar campos de fecha según tipo
+    if (tipoFecha === 'especifico') {
+        bloqueoData.fecha_especifica = document.getElementById('bloqueoFechaEspecifica').value;
+    } else if (tipoFecha === 'rango') {
+        bloqueoData.fecha_inicio = document.getElementById('bloqueoFechaInicio').value;
+        bloqueoData.fecha_fin = document.getElementById('bloqueoFechaFin').value;
+    } else if (tipoFecha === 'recurrente_semanal') {
+        const diasSeleccionados = [];
+        const diasIds = ['bloqueoDiaLunes', 'bloqueoDiaMartes', 'bloqueoDiaMiercoles', 'bloqueoDiaJueves', 'bloqueoDiaViernes', 'bloqueoDiaSabado', 'bloqueoDiaDomingo'];
+        diasIds.forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox && checkbox.checked) {
+                diasSeleccionados.push(checkbox.value);
+            }
+        });
+        bloqueoData.dias_semana = diasSeleccionados;
+    }
+    
+    // Agregar campos de horario según tipo
+    if (tipoHorario === 'especifico') {
+        bloqueoData.hora_especifica = document.getElementById('bloqueoHoraEspecifica').value;
+    } else if (tipoHorario === 'rango') {
+        bloqueoData.hora_inicio = document.getElementById('bloqueoHoraInicio').value;
+        bloqueoData.hora_fin = document.getElementById('bloqueoHoraFin').value;
+    }
+    
+    const bloqueoId = document.getElementById('bloqueoId').value;
+    const isEdit = !!bloqueoId;
+    
+    try {
+        const url = isEdit ? `/bloqueos-canchas/${bloqueoId}` : '/bloqueos-canchas';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const response = await AdminUtils.authenticatedFetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bloqueoData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Bloqueo ${isEdit ? 'actualizado' : 'creado'} exitosamente`, 'success');
+            cancelBloqueoForm();
+        } else {
+            showNotification(result.error || `Error al ${isEdit ? 'actualizar' : 'crear'} bloqueo`, 'error');
+        }
+    } catch (error) {
+        console.error('Error guardando bloqueo:', error);
+        showNotification('Error de conexión', 'error');
+    }
+}
+
+/**
+ * Editar bloqueo
+ */
+async function editBloqueo(bloqueoId) {
+    try {
+        const response = await AdminUtils.authenticatedFetch(`/bloqueos-canchas/${bloqueoId}`);
+        
+        if (!response || !response.ok) {
+            throw new Error('Error al cargar bloqueo');
+        }
+        
+        const bloqueo = await response.json();
+        currentBloqueoEdit = bloqueo;
+        
+        const formContainer = document.getElementById('bloqueoFormContainer');
+        const listContainer = document.getElementById('bloqueosListContainer');
+        const formTitle = document.getElementById('bloqueoFormTitle');
+        
+        formTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Bloqueo';
+        
+        // Llenar formulario
+        document.getElementById('bloqueoId').value = bloqueo.id;
+        document.getElementById('bloqueoCanchaId').value = bloqueo.cancha_id;
+        document.getElementById('bloqueoMotivo').value = bloqueo.motivo;
+        document.getElementById('bloqueoDescripcion').value = bloqueo.descripcion || '';
+        document.getElementById('bloqueoActivo').checked = bloqueo.activo;
+        
+        // Configurar tipo de fecha
+        document.querySelector(`input[name="bloqueoTipoFecha"][value="${bloqueo.tipo_fecha}"]`).checked = true;
+        if (bloqueo.tipo_fecha === 'especifico') {
+            document.getElementById('bloqueoFechaEspecifica').value = bloqueo.fecha_especifica;
+        } else if (bloqueo.tipo_fecha === 'rango') {
+            document.getElementById('bloqueoFechaInicio').value = bloqueo.fecha_inicio;
+            document.getElementById('bloqueoFechaFin').value = bloqueo.fecha_fin;
+        } else if (bloqueo.tipo_fecha === 'recurrente_semanal') {
+            const mapeoDias = {
+                'lunes': 'bloqueoDiaLunes',
+                'martes': 'bloqueoDiaMartes',
+                'miércoles': 'bloqueoDiaMiercoles',
+                'miercoles': 'bloqueoDiaMiercoles',
+                'jueves': 'bloqueoDiaJueves',
+                'viernes': 'bloqueoDiaViernes',
+                'sábado': 'bloqueoDiaSabado',
+                'sabado': 'bloqueoDiaSabado',
+                'domingo': 'bloqueoDiaDomingo'
+            };
+            (bloqueo.dias_semana || []).forEach(dia => {
+                const id = mapeoDias[dia.toLowerCase()];
+                const checkbox = id ? document.getElementById(id) : null;
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        
+        // Configurar tipo de horario
+        document.querySelector(`input[name="bloqueoTipoHorario"][value="${bloqueo.tipo_horario}"]`).checked = true;
+        if (bloqueo.tipo_horario === 'especifico') {
+            document.getElementById('bloqueoHoraEspecifica').value = bloqueo.hora_especifica;
+        } else if (bloqueo.tipo_horario === 'rango') {
+            document.getElementById('bloqueoHoraInicio').value = bloqueo.hora_inicio;
+            document.getElementById('bloqueoHoraFin').value = bloqueo.hora_fin;
+        }
+        
+        updateBloqueoFechaFields();
+        updateBloqueoHorarioFields();
+        
+        formContainer.style.display = 'block';
+        listContainer.style.display = 'none';
+    } catch (error) {
+        console.error('Error editando bloqueo:', error);
+        showNotification('Error al cargar bloqueo', 'error');
+    }
+}
+
+/**
+ * Eliminar bloqueo
+ */
+async function deleteBloqueo(bloqueoId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este bloqueo?')) {
+        return;
+    }
+    
+    try {
+        const response = await AdminUtils.authenticatedFetch(`/bloqueos-canchas/${bloqueoId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Bloqueo eliminado exitosamente', 'success');
+            await loadBloqueos();
+        } else {
+            showNotification(result.error || 'Error al eliminar bloqueo', 'error');
+        }
+    } catch (error) {
+        console.error('Error eliminando bloqueo:', error);
+        showNotification('Error de conexión al eliminar bloqueo', 'error');
+    }
+}
+
+/**
+ * Activar/Desactivar un bloqueo
+ */
+async function toggleBloqueoActivo(bloqueoId, nuevoEstado) {
+    try {
+        const response = await AdminUtils.authenticatedFetch(`/bloqueos-canchas/${bloqueoId}/toggle`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activo: nuevoEstado })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(`Bloqueo ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`, 'success');
+            await loadBloqueos();
+        } else {
+            showNotification(result.error || 'Error al cambiar estado de bloqueo', 'error');
+        }
+    } catch (error) {
+        console.error('Error cambiando estado de bloqueo:', error);
         showNotification('Error de conexión al cambiar estado', 'error');
     }
 }

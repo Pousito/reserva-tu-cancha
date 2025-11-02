@@ -879,6 +879,15 @@ app.use('/api/promociones', (req, res, next) => {
 });
 app.use('/api/promociones', promocionesRoutes);
 
+// ===== RUTAS DE BLOQUEOS DE CANCHAS =====
+const { router: bloqueosRoutes, setDatabase: setBloqueosDatabase } = require('./src/routes/bloqueos');
+setBloqueosDatabase(db); // Pasar la instancia de la base de datos
+app.use('/api/bloqueos-canchas', (req, res, next) => {
+    console.log(`🚫 Petición a /api/bloqueos-canchas - Método: ${req.method}, Path: ${req.path}`);
+    next();
+});
+app.use('/api/bloqueos-canchas', bloqueosRoutes);
+
 // Ruta de prueba para simular retorno de Transbank en desarrollo
 app.get('/test-payment-return', (req, res) => {
     const { token_ws, TBK_TOKEN } = req.query;
@@ -1716,9 +1725,31 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       }
     });
     
-    // Obtener bloqueos temporales para todas las canchas del complejo
-    const canchaIds = Object.keys(resultado).map(id => parseInt(id));
-    if (canchaIds.length > 0) {
+      // Primero, obtener todas las canchas del complejo para asegurarnos de que estén en el resultado
+      // db.query() devuelve directamente un array (result.rows)
+      const todasLasCanchas = await db.query(`
+        SELECT id, nombre, tipo FROM canchas WHERE complejo_id = $1
+      `, [complejoId]);
+      
+      const todasLasCanchasData = Array.isArray(todasLasCanchas) ? todasLasCanchas : (todasLasCanchas?.rows || []);
+      
+      // Asegurar que todas las canchas estén en el resultado
+      todasLasCanchasData.forEach(cancha => {
+        const canchaId = cancha.id || cancha.cancha_id;
+        if (!resultado[canchaId]) {
+          resultado[canchaId] = {
+            cancha_id: canchaId,
+            cancha_nombre: cancha.nombre || cancha.cancha_nombre,
+            cancha_tipo: cancha.tipo || cancha.cancha_tipo,
+            reservas: [],
+            bloqueos: []
+          };
+        }
+      });
+      
+      // Obtener bloqueos temporales para todas las canchas del complejo
+      const canchaIds = Object.keys(resultado).map(id => parseInt(id));
+      if (canchaIds.length > 0) {
       const bloqueos = await db.query(`
         SELECT cancha_id, hora_inicio, hora_fin, session_id, expira_en
         FROM bloqueos_temporales 
@@ -1727,17 +1758,190 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
         AND expira_en > $${canchaIds.length + 2}
       `, [...canchaIds, fecha, new Date().toISOString()]);
       
-      // Agregar bloqueos a cada cancha
-      bloqueos.forEach(bloqueo => {
+      // Agregar bloqueos temporales a cada cancha
+      // db.query() devuelve directamente un array
+      const bloqueosData = Array.isArray(bloqueos) ? bloqueos : (bloqueos?.rows || []);
+      bloqueosData.forEach(bloqueo => {
         if (resultado[bloqueo.cancha_id]) {
           resultado[bloqueo.cancha_id].bloqueos.push({
             hora_inicio: bloqueo.hora_inicio,
             hora_fin: bloqueo.hora_fin,
             session_id: bloqueo.session_id,
-            expira_en: bloqueo.expira_en
+            expira_en: bloqueo.expira_en,
+            tipo: 'temporal'
           });
         }
       });
+      
+      // Obtener bloqueos permanentes activos para todas las canchas del complejo
+      console.log(`🔍 Buscando bloqueos permanentes para canchas: [${canchaIds.join(', ')}] en fecha: ${fecha}`);
+      let bloqueosPermanentes = [];
+      if (canchaIds.length > 0) {
+        // Construir la consulta con placeholders correctos para PostgreSQL
+        const placeholders = canchaIds.map((_, i) => `$${i + 1}`).join(',');
+        bloqueosPermanentes = await db.query(`
+          SELECT * FROM bloqueos_canchas
+          WHERE cancha_id IN (${placeholders})
+          AND activo = true
+        `, canchaIds);
+        console.log(`🔍 Consulta ejecutada, bloqueos obtenidos: ${Array.isArray(bloqueosPermanentes) ? bloqueosPermanentes.length : 'error'}`);
+      }
+      
+      // Helper para normalizar fecha a string YYYY-MM-DD
+      function normalizarFecha(fechaObj) {
+        if (!fechaObj) return null;
+        if (typeof fechaObj === 'string') {
+          // Si viene como "2025-12-31T03:00:00.000Z", extraer solo la parte de fecha
+          return fechaObj.split('T')[0];
+        }
+        if (fechaObj instanceof Date) {
+          const year = fechaObj.getFullYear();
+          const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+          const day = String(fechaObj.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        if (fechaObj.toISOString) {
+          return fechaObj.toISOString().split('T')[0];
+        }
+        return fechaObj;
+      }
+      
+      // Helper para calcular hora fin de bloqueo específico (asume 1 hora de duración)
+      function calcularHoraFinPermanente(horaInicio) {
+        const [hora, minuto] = horaInicio.split(':').map(Number);
+        const siguienteHora = (hora + 1) % 24;
+        return `${String(siguienteHora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
+      }
+      
+      // Filtrar bloqueos permanentes que aplican para esta fecha específica
+      // db.query() ya devuelve result.rows directamente, así que bloqueosPermanentes es un array
+      const fechaObj = new Date(fecha + 'T00:00:00');
+      const diaSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaObj.getDay()];
+      const bloqueosPermanentesData = Array.isArray(bloqueosPermanentes) ? bloqueosPermanentes : (bloqueosPermanentes?.rows || []);
+      
+      console.log(`🔍 Bloqueos permanentes encontrados en BD: ${bloqueosPermanentesData.length} para ${canchaIds.length} canchas`);
+      if (bloqueosPermanentesData.length > 0) {
+        console.log(`🔍 IDs de bloqueos encontrados:`, bloqueosPermanentesData.map(b => b.id));
+        bloqueosPermanentesData.forEach(b => {
+          console.log(`  - Bloqueo ${b.id}: cancha_id=${b.cancha_id}, tipo_fecha=${b.tipo_fecha}, tipo_horario=${b.tipo_horario}, fecha_especifica=${b.fecha_especifica} (tipo: ${typeof b.fecha_especifica}), activo=${b.activo}`);
+          if (b.fecha_especifica) {
+            const fechaNormalizada = normalizarFecha(b.fecha_especifica);
+            console.log(`    📅 Fecha normalizada: ${fechaNormalizada}, Fecha consultada: ${fecha}, Coinciden: ${fechaNormalizada === fecha}`);
+          }
+        });
+      } else {
+        console.log(`⚠️ No se encontraron bloqueos permanentes activos para las canchas [${canchaIds.join(', ')}]`);
+      }
+      
+      console.log(`🔍 Procesando ${bloqueosPermanentesData.length} bloqueos permanentes encontrados...`);
+      for (const bloqueo of bloqueosPermanentesData) {
+        let aplica = false;
+        
+        console.log(`🔍 Evaluando bloqueo ${bloqueo.id} para cancha ${bloqueo.cancha_id} - tipo_fecha: ${bloqueo.tipo_fecha}, tipo_horario: ${bloqueo.tipo_horario}, fecha_especifica: ${bloqueo.fecha_especifica}`);
+        
+        if (bloqueo.tipo_fecha === 'especifico' && bloqueo.fecha_especifica) {
+          const fechaBloqueo = normalizarFecha(bloqueo.fecha_especifica);
+          console.log(`  📅 Fecha bloqueo: ${fechaBloqueo}, Fecha consultada: ${fecha}`);
+          aplica = fechaBloqueo === fecha;
+          console.log(`  ✅ Aplica: ${aplica}`);
+        } else if (bloqueo.tipo_fecha === 'rango' && bloqueo.fecha_inicio && bloqueo.fecha_fin) {
+          const fechaInicio = normalizarFecha(bloqueo.fecha_inicio);
+          const fechaFin = normalizarFecha(bloqueo.fecha_fin);
+          console.log(`  📅 Rango: ${fechaInicio} - ${fechaFin}, Fecha consultada: ${fecha}`);
+          aplica = fecha >= fechaInicio && fecha <= fechaFin;
+          console.log(`  ✅ Aplica: ${aplica}`);
+        } else if (bloqueo.tipo_fecha === 'recurrente_semanal' && bloqueo.dias_semana) {
+          let dias = [];
+          try {
+            if (Array.isArray(bloqueo.dias_semana)) {
+              dias = bloqueo.dias_semana;
+            } else if (typeof bloqueo.dias_semana === 'string') {
+              const contenido = bloqueo.dias_semana.trim();
+              if (contenido.startsWith('{') && contenido.endsWith('}')) {
+                dias = contenido.slice(1, -1).split(',').map(d => d.trim().replace(/^["']|["']$/g, '')).filter(d => d.length > 0);
+              } else {
+                dias = JSON.parse(bloqueo.dias_semana || '[]');
+              }
+            }
+          } catch (e) {
+            console.error('Error parseando dias_semana:', e);
+          }
+          console.log(`  📅 Días semana: ${dias.join(', ')}, Día consultado: ${diaSemana}`);
+          aplica = dias.includes(diaSemana);
+          console.log(`  ✅ Aplica: ${aplica}`);
+        }
+        
+        if (aplica) {
+          console.log(`  ✅✅✅ Bloqueo ${bloqueo.id} APLICA para cancha ${bloqueo.cancha_id} en fecha ${fecha}`);
+          // Asegurarse de que la cancha exista en resultado (puede no tener reservas ni bloqueos temporales)
+          if (!resultado[bloqueo.cancha_id]) {
+            // Buscar la cancha para agregarla
+            // db.get() devuelve directamente el objeto o null
+            const canchaInfo = await db.get(
+              'SELECT id, nombre, tipo FROM canchas WHERE id = $1',
+              [bloqueo.cancha_id]
+            );
+            if (canchaInfo) {
+              resultado[bloqueo.cancha_id] = {
+                cancha_id: canchaInfo.id,
+                cancha_nombre: canchaInfo.nombre,
+                cancha_tipo: canchaInfo.tipo,
+                reservas: [],
+                bloqueos: []
+              };
+              console.log(`  ✅ Cancha ${bloqueo.cancha_id} agregada al resultado`);
+            } else {
+              console.log(`  ⚠️ No se encontró información de cancha ${bloqueo.cancha_id}`);
+            }
+          }
+          
+          if (resultado[bloqueo.cancha_id]) {
+            console.log(`  🔧 Agregando bloqueo permanente a resultado para cancha ${bloqueo.cancha_id}`);
+            // Convertir bloqueo permanente a formato de bloqueo para el frontend
+            // Si es "todo_el_dia", crear un bloqueo que cubra todas las horas
+            if (bloqueo.tipo_horario === 'todo_el_dia') {
+              if (!resultado[bloqueo.cancha_id].bloqueos_permanentes) {
+                resultado[bloqueo.cancha_id].bloqueos_permanentes = [];
+                console.log(`  🔧 Array bloqueos_permanentes creado para cancha ${bloqueo.cancha_id}`);
+              }
+              resultado[bloqueo.cancha_id].bloqueos_permanentes.push({
+                motivo: bloqueo.motivo,
+                descripcion: bloqueo.descripcion,
+                tipo: 'permanente',
+                tipo_horario: 'todo_el_dia',
+                hora_inicio: '00:00',
+                hora_fin: '23:59'
+              });
+              console.log(`  ✅ Bloqueo permanente agregado (todo el día) a cancha ${bloqueo.cancha_id}. Total bloqueos: ${resultado[bloqueo.cancha_id].bloqueos_permanentes.length}`);
+            } else if (bloqueo.tipo_horario === 'especifico' && bloqueo.hora_especifica) {
+              resultado[bloqueo.cancha_id].bloqueos_permanentes = resultado[bloqueo.cancha_id].bloqueos_permanentes || [];
+              const horaStr = typeof bloqueo.hora_especifica === 'string' ? bloqueo.hora_especifica.substring(0, 5) : bloqueo.hora_especifica;
+              resultado[bloqueo.cancha_id].bloqueos_permanentes.push({
+                motivo: bloqueo.motivo,
+                descripcion: bloqueo.descripcion,
+                tipo: 'permanente',
+                tipo_horario: 'especifico',
+                hora_inicio: horaStr,
+                hora_fin: calcularHoraFinPermanente(horaStr)
+              });
+              console.log(`  ✅ Bloqueo permanente agregado (específico: ${horaStr}) a cancha ${bloqueo.cancha_id}`);
+            } else if (bloqueo.tipo_horario === 'rango' && bloqueo.hora_inicio && bloqueo.hora_fin) {
+              resultado[bloqueo.cancha_id].bloqueos_permanentes = resultado[bloqueo.cancha_id].bloqueos_permanentes || [];
+              const horaInicioStr = typeof bloqueo.hora_inicio === 'string' ? bloqueo.hora_inicio.substring(0, 5) : bloqueo.hora_inicio;
+              const horaFinStr = typeof bloqueo.hora_fin === 'string' ? bloqueo.hora_fin.substring(0, 5) : bloqueo.hora_fin;
+              resultado[bloqueo.cancha_id].bloqueos_permanentes.push({
+                motivo: bloqueo.motivo,
+                descripcion: bloqueo.descripcion,
+                tipo: 'permanente',
+                tipo_horario: 'rango',
+                hora_inicio: horaInicioStr,
+                hora_fin: horaFinStr
+              });
+              console.log(`  ✅ Bloqueo permanente agregado (rango: ${horaInicioStr}-${horaFinStr}) a cancha ${bloqueo.cancha_id}`);
+            }
+          }
+        }
+      }
       
       // Limpiar bloqueos expirados
       await db.run(
@@ -1746,7 +1950,18 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       );
     }
     
+    // Log final detallado de lo que se está devolviendo
     console.log(`✅ Disponibilidad completa obtenida para ${Object.keys(resultado).length} canchas en ${fecha}`);
+    Object.keys(resultado).forEach(canchaId => {
+        const canchaData = resultado[canchaId];
+        const numBloqueosPerm = canchaData.bloqueos_permanentes ? canchaData.bloqueos_permanentes.length : 0;
+        const numReservas = canchaData.reservas ? canchaData.reservas.length : 0;
+        const numBloqueosTemp = canchaData.bloqueos ? canchaData.bloqueos.length : 0;
+        console.log(`  📊 Cancha ${canchaId} (${canchaData.cancha_nombre}): ${numReservas} reservas, ${numBloqueosTemp} bloqueos temp, ${numBloqueosPerm} bloqueos permanentes`);
+        if (numBloqueosPerm > 0) {
+            console.log(`    🚫 Bloqueos permanentes:`, JSON.stringify(canchaData.bloqueos_permanentes, null, 2));
+        }
+    });
     
     // Agregar headers para evitar cache del navegador
     res.set({
@@ -1755,9 +1970,117 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       'Expires': '0'
     });
     
+    // Log final para debug: verificar estructura completa antes de enviar
+    const resultadoJson = JSON.stringify(resultado);
+    console.log(`📤 Enviando respuesta JSON (primeros 1000 chars):`, resultadoJson.substring(0, 1000));
+    console.log(`📤 Tamaño total respuesta: ${resultadoJson.length} caracteres`);
+    
     res.json(resultado);
   } catch (error) {
     console.error('❌ Error verificando disponibilidad completa:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint temporal de debug para verificar bloqueos
+app.get('/api/debug/bloqueos/:canchaId/:fecha', async (req, res) => {
+  try {
+    const { canchaId, fecha } = req.params;
+    console.log(`🔍 DEBUG: Verificando bloqueos para cancha ${canchaId} en fecha ${fecha}`);
+    
+    // Obtener todos los bloqueos activos de la cancha
+    // db.query() devuelve directamente un array
+    const bloqueos = await db.query(`
+      SELECT * FROM bloqueos_canchas
+      WHERE cancha_id = $1 AND activo = true
+      ORDER BY creado_en DESC
+    `, [canchaId]);
+    
+    const bloqueosData = Array.isArray(bloqueos) ? bloqueos : (bloqueos?.rows || []);
+    console.log(`🔍 DEBUG: ${bloqueosData.length} bloqueos encontrados en BD`);
+    
+    // Procesar cada bloqueo
+    const bloqueosAplicables = [];
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const diaSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaObj.getDay()];
+    
+    function normalizarFecha(fechaObj) {
+      if (!fechaObj) return null;
+      if (typeof fechaObj === 'string') {
+        return fechaObj.split('T')[0];
+      }
+      if (fechaObj instanceof Date) {
+        const year = fechaObj.getFullYear();
+        const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      if (fechaObj.toISOString) {
+        return fechaObj.toISOString().split('T')[0];
+      }
+      return fechaObj;
+    }
+    
+    bloqueosData.forEach(bloqueo => {
+      let aplica = false;
+      let razon = '';
+      
+      console.log(`🔍 DEBUG: Evaluando bloqueo ${bloqueo.id}: tipo_fecha=${bloqueo.tipo_fecha}, tipo_horario=${bloqueo.tipo_horario}`);
+      
+      if (bloqueo.tipo_fecha === 'especifico' && bloqueo.fecha_especifica) {
+        const fechaBloqueo = normalizarFecha(bloqueo.fecha_especifica);
+        console.log(`  📅 fecha_especifica en BD: ${bloqueo.fecha_especifica} (tipo: ${typeof bloqueo.fecha_especifica})`);
+        console.log(`  📅 fecha_especifica normalizada: ${fechaBloqueo}`);
+        console.log(`  📅 fecha consultada: ${fecha}`);
+        aplica = fechaBloqueo === fecha;
+        razon = aplica ? `Fecha específica coincide (${fechaBloqueo})` : `Fecha específica NO coincide (${fechaBloqueo} vs ${fecha})`;
+      } else if (bloqueo.tipo_fecha === 'rango' && bloqueo.fecha_inicio && bloqueo.fecha_fin) {
+        const fechaInicio = normalizarFecha(bloqueo.fecha_inicio);
+        const fechaFin = normalizarFecha(bloqueo.fecha_fin);
+        aplica = fecha >= fechaInicio && fecha <= fechaFin;
+        razon = aplica ? `Fecha está en rango (${fechaInicio} - ${fechaFin})` : `Fecha NO está en rango (${fechaInicio} - ${fechaFin})`;
+      } else if (bloqueo.tipo_fecha === 'recurrente_semanal' && bloqueo.dias_semana) {
+        let dias = [];
+        try {
+          if (Array.isArray(bloqueo.dias_semana)) {
+            dias = bloqueo.dias_semana;
+          } else if (typeof bloqueo.dias_semana === 'string') {
+            const contenido = bloqueo.dias_semana.trim();
+            if (contenido.startsWith('{') && contenido.endsWith('}')) {
+              dias = contenido.slice(1, -1).split(',').map(d => d.trim().replace(/^["']|["']$/g, '')).filter(d => d.length > 0);
+            } else {
+              dias = JSON.parse(bloqueo.dias_semana || '[]');
+            }
+          }
+        } catch (e) {
+          console.error('Error parseando dias_semana:', e);
+        }
+        aplica = dias.includes(diaSemana);
+        razon = aplica ? `Día de semana coincide (${diaSemana} en ${dias.join(', ')})` : `Día de semana NO coincide (${diaSemana} no está en ${dias.join(', ')})`;
+      }
+      
+      console.log(`  ✅ Aplica: ${aplica} - ${razon}`);
+      
+      if (aplica) {
+        bloqueosAplicables.push({
+          ...bloqueo,
+          razon,
+          aplica
+        });
+      }
+    });
+    
+    res.json({
+      canchaId: parseInt(canchaId),
+      fecha,
+      diaSemana,
+      bloqueosEnBD: bloqueosData.length,
+      bloqueosAplicables: bloqueosAplicables.length,
+      bloqueos: bloqueosData,
+      bloqueosAplicables: bloqueosAplicables
+    });
+  } catch (error) {
+    console.error('❌ Error en debug bloqueos:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -6428,6 +6751,36 @@ async function verificarDisponibilidadCancha(canchaId, fecha, horaInicio, horaFi
       }
     }
     
+    // Verificar bloqueos permanentes
+    const bloqueosHelper = require('./src/utils/bloqueos-helper');
+    bloqueosHelper.setDatabase(db);
+    
+    // Verificar cada hora en el rango
+    const horaInicioNum = parseInt(horaInicio.split(':')[0]);
+    const horaFinNum = parseInt(horaFin.split(':')[0]);
+    
+    for (let hora = horaInicioNum; hora < horaFinNum; hora++) {
+        const horaStr = `${String(hora).padStart(2, '0')}:00`;
+        const bloqueo = await bloqueosHelper.verificarBloqueoActivo(canchaId, fecha, horaStr);
+        
+        if (bloqueo) {
+            console.log('❌ Bloqueo permanente encontrado:', bloqueo.motivo);
+            return {
+                disponible: false,
+                conflicto: {
+                    tipo: 'bloqueo_permanente',
+                    motivo: bloqueo.motivo,
+                    descripcion: bloqueo.descripcion
+                },
+                bloqueos: bloqueos.map(bloqueo => ({
+                    hora_inicio: bloqueo.hora_inicio,
+                    hora_fin: bloqueo.hora_fin,
+                    session_id: bloqueo.session_id
+                }))
+            };
+        }
+    }
+    
     return { 
       disponible: true,
       bloqueos: bloqueos.map(bloqueo => ({
@@ -6589,18 +6942,119 @@ app.get('/api/disponibilidad/:cancha_id/:fecha', async (req, res) => {
     const { cancha_id, fecha } = req.params;
     
     // Obtener reservas existentes
-    const reservas = await db.query(`
+    // db.query() devuelve directamente un array
+    const reservasQuery = await db.query(`
       SELECT hora_inicio, hora_fin, estado 
       FROM reservas 
       WHERE cancha_id = $1 AND fecha = $2 AND estado != 'cancelada'
     `, [cancha_id, fecha]);
+    const reservas = Array.isArray(reservasQuery) ? reservasQuery : (reservasQuery?.rows || []);
     
     // Obtener bloqueos temporales activos
-    const bloqueos = await db.query(`
+    const bloqueosQuery = await db.query(`
       SELECT hora_inicio, hora_fin, session_id, expira_en
       FROM bloqueos_temporales 
       WHERE cancha_id = $1 AND fecha = $2 AND expira_en > $3
     `, [cancha_id, fecha, new Date().toISOString()]);
+    const bloqueos = Array.isArray(bloqueosQuery) ? bloqueosQuery : (bloqueosQuery?.rows || []);
+    
+    // Obtener bloqueos permanentes activos para esta fecha
+    const bloqueosHelper = require('./src/utils/bloqueos-helper');
+    bloqueosHelper.setDatabase(db);
+    
+    // Helper para normalizar fecha a string YYYY-MM-DD
+    function normalizarFecha(fechaObj) {
+      if (!fechaObj) return null;
+      if (typeof fechaObj === 'string') {
+        return fechaObj.split('T')[0];
+      }
+      if (fechaObj instanceof Date) {
+        const year = fechaObj.getFullYear();
+        const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      if (fechaObj.toISOString) {
+        return fechaObj.toISOString().split('T')[0];
+      }
+      return fechaObj;
+    }
+    
+    // Helper para calcular hora fin de bloqueo específico (asume 1 hora de duración)
+    function calcularHoraFinPermanente(horaInicio) {
+      const [hora, minuto] = horaInicio.split(':').map(Number);
+      const siguienteHora = (hora + 1) % 24;
+      return `${String(siguienteHora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`;
+    }
+    
+    // Obtener todos los bloqueos permanentes de la cancha
+    // db.query() devuelve directamente un array
+    const bloqueosPermanentes = await db.query(`
+      SELECT * FROM bloqueos_canchas
+      WHERE cancha_id = $1 AND activo = true
+    `, [cancha_id]);
+    
+    const bloqueosPermanentesData = Array.isArray(bloqueosPermanentes) ? bloqueosPermanentes : (bloqueosPermanentes?.rows || []);
+    
+    // Filtrar bloqueos que aplican para esta fecha específica
+    const bloqueosAplicables = [];
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    const diaSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][fechaObj.getDay()];
+    
+    console.log(`🔍 Endpoint /api/disponibilidad/${cancha_id}/${fecha} - Encontrados ${bloqueosPermanentesData.length} bloqueos permanentes en BD`);
+    
+    for (const bloqueo of bloqueosPermanentesData) {
+        let aplica = false;
+        
+        console.log(`🔍 Evaluando bloqueo ${bloqueo.id} para cancha ${cancha_id} - tipo_fecha: ${bloqueo.tipo_fecha}, fecha_especifica: ${bloqueo.fecha_especifica}`);
+        
+        if (bloqueo.tipo_fecha === 'especifico' && bloqueo.fecha_especifica) {
+            const fechaBloqueo = normalizarFecha(bloqueo.fecha_especifica);
+            aplica = fechaBloqueo === fecha;
+            console.log(`  📅 Fecha bloqueo normalizada: ${fechaBloqueo}, Fecha consultada: ${fecha}, Aplica: ${aplica}`);
+        } else if (bloqueo.tipo_fecha === 'rango' && bloqueo.fecha_inicio && bloqueo.fecha_fin) {
+            const fechaInicio = normalizarFecha(bloqueo.fecha_inicio);
+            const fechaFin = normalizarFecha(bloqueo.fecha_fin);
+            aplica = fecha >= fechaInicio && fecha <= fechaFin;
+            console.log(`  📅 Rango: ${fechaInicio} - ${fechaFin}, Fecha consultada: ${fecha}, Aplica: ${aplica}`);
+        } else if (bloqueo.tipo_fecha === 'recurrente_semanal' && bloqueo.dias_semana) {
+            let dias = [];
+            try {
+                if (Array.isArray(bloqueo.dias_semana)) {
+                    dias = bloqueo.dias_semana;
+                } else if (typeof bloqueo.dias_semana === 'string') {
+                    const contenido = bloqueo.dias_semana.trim();
+                    if (contenido.startsWith('{') && contenido.endsWith('}')) {
+                        dias = contenido.slice(1, -1).split(',').map(d => d.trim().replace(/^["']|["']$/g, '')).filter(d => d.length > 0);
+                    } else {
+                        dias = JSON.parse(bloqueo.dias_semana || '[]');
+                    }
+                }
+            } catch (e) {
+                console.error('Error parseando dias_semana:', e);
+            }
+            aplica = dias.includes(diaSemana);
+            console.log(`  📅 Días semana: ${dias.join(', ')}, Día consultado: ${diaSemana}, Aplica: ${aplica}`);
+        }
+        
+        if (aplica) {
+            console.log(`  ✅ Bloqueo ${bloqueo.id} aplica para fecha ${fecha}`);
+            // Convertir bloqueo permanente a formato compatible con el frontend
+            const bloqueoFormateado = {
+                motivo: bloqueo.motivo,
+                descripcion: bloqueo.descripcion,
+                tipo: 'permanente',
+                tipo_horario: bloqueo.tipo_horario,
+                hora_inicio: bloqueo.tipo_horario === 'todo_el_dia' ? '00:00' : 
+                            (bloqueo.tipo_horario === 'especifico' ? (typeof bloqueo.hora_especifica === 'string' ? bloqueo.hora_especifica.substring(0, 5) : bloqueo.hora_especifica) : bloqueo.hora_inicio),
+                hora_fin: bloqueo.tipo_horario === 'todo_el_dia' ? '23:59' :
+                         (bloqueo.tipo_horario === 'especifico' ? calcularHoraFinPermanente(bloqueo.hora_especifica) : bloqueo.hora_fin)
+            };
+            bloqueosAplicables.push(bloqueoFormateado);
+        }
+    }
+    
+    console.log(`✅ Endpoint /api/disponibilidad/${cancha_id}/${fecha} - ${bloqueosAplicables.length} bloqueos permanentes aplican para esta fecha`);
     
     // Limpiar bloqueos expirados
     await db.run(
@@ -6618,6 +7072,7 @@ app.get('/api/disponibilidad/:cancha_id/:fecha', async (req, res) => {
     res.json({
       reservas: reservas,
       bloqueos: bloqueos,
+      bloqueos_permanentes: bloqueosAplicables,
       timestamp: new Date().toISOString()
     });
     

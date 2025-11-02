@@ -1576,6 +1576,29 @@ async function verificarTodasCanchasOcupadas(fecha, hora) {
 const cacheDisponibilidad = new Map();
 const CACHE_DURATION = 30000; // 30 segundos
 
+// Función para limpiar cache de disponibilidad
+function limpiarCacheDisponibilidad(complejoId, fecha) {
+    if (fecha) {
+        const cacheKey = `${complejoId}_${fecha}`;
+        cacheDisponibilidad.delete(cacheKey);
+        console.log(`🗑️ Cache limpiado para: ${cacheKey}`);
+    } else if (complejoId) {
+        // Limpiar todo el cache de un complejo
+        const keysToDelete = [];
+        for (const key of cacheDisponibilidad.keys()) {
+            if (key.startsWith(`${complejoId}_`)) {
+                keysToDelete.push(key);
+            }
+        }
+        keysToDelete.forEach(key => cacheDisponibilidad.delete(key));
+        console.log(`🗑️ Cache limpiado para complejo ${complejoId}: ${keysToDelete.length} entradas`);
+    } else {
+        // Limpiar todo el cache
+        cacheDisponibilidad.clear();
+        console.log(`🗑️ Todo el cache de disponibilidad limpiado`);
+    }
+}
+
 // NUEVA FUNCIÓN OPTIMIZADA: Verificar disponibilidad completa de un complejo
 async function verificarDisponibilidadCompleta(complejoId, fecha) {
     const cacheKey = `${complejoId}_${fecha}`;
@@ -1622,6 +1645,16 @@ async function verificarDisponibilidadCompleta(complejoId, fecha) {
         const disponibilidad = await response.json();
         console.log('✅ Disponibilidad completa obtenida:', Object.keys(disponibilidad).length, 'canchas');
         console.log('🔍 Datos de disponibilidad:', JSON.stringify(disponibilidad, null, 2));
+        
+        // Log específico para bloqueos permanentes
+        Object.keys(disponibilidad).forEach(canchaId => {
+            const canchaData = disponibilidad[canchaId];
+            if (canchaData.bloqueos_permanentes && canchaData.bloqueos_permanentes.length > 0) {
+                console.log(`🚫 Cancha ${canchaId} tiene ${canchaData.bloqueos_permanentes.length} bloqueo(s) permanente(s):`, canchaData.bloqueos_permanentes);
+            } else {
+                console.log(`ℹ️ Cancha ${canchaId} NO tiene bloqueos permanentes`);
+            }
+        });
         
         // Guardar en cache
         cacheDisponibilidad.set(cacheKey, {
@@ -1704,6 +1737,43 @@ function verificarDisponibilidadCanchaOptimizada(canchaId, hora, disponibilidadD
             });
             return false;
         }
+    }
+    
+    // Verificar bloqueos permanentes
+    if (canchaData.bloqueos_permanentes && canchaData.bloqueos_permanentes.length > 0) {
+        console.log(`🔍 Verificando ${canchaData.bloqueos_permanentes.length} bloqueo(s) permanente(s) para cancha ${canchaId}, hora ${hora}`);
+        for (const bloqueo of canchaData.bloqueos_permanentes) {
+            console.log(`  🔍 Bloqueo:`, bloqueo);
+            let aplicaHorario = false;
+            
+            if (bloqueo.tipo_horario === 'todo_el_dia') {
+                // Todo el día bloqueado
+                aplicaHorario = true;
+                console.log(`    ✅ Bloqueo de todo el día aplica`);
+            } else if (bloqueo.tipo_horario === 'especifico' && bloqueo.hora_inicio) {
+                // Verificar si la hora solicitada coincide con la hora bloqueada
+                const horaBloqueo = bloqueo.hora_inicio.substring(0, 5);
+                aplicaHorario = horaInicio.substring(0, 5) === horaBloqueo;
+                console.log(`    🔍 Comparando hora bloqueo (${horaBloqueo}) con hora solicitada (${horaInicio.substring(0, 5)}): ${aplicaHorario}`);
+            } else if (bloqueo.tipo_horario === 'rango' && bloqueo.hora_inicio && bloqueo.hora_fin) {
+                // Verificar si hay superposición con el rango bloqueado
+                aplicaHorario = haySuperposicionHorarios(horaInicio, horaFin, bloqueo.hora_inicio, bloqueo.hora_fin);
+                console.log(`    🔍 Verificando superposición con rango ${bloqueo.hora_inicio}-${bloqueo.hora_fin}: ${aplicaHorario}`);
+            }
+            
+            if (aplicaHorario) {
+                console.log('🔴 Cancha ocupada - Bloqueo permanente:', {
+                    motivo: bloqueo.motivo,
+                    bloqueo: `${bloqueo.hora_inicio}-${bloqueo.hora_fin}`,
+                    solicitada: `${horaInicio}-${horaFin}`,
+                    canchaId: canchaId,
+                    tipo_horario: bloqueo.tipo_horario
+                });
+                return false;
+            }
+        }
+    } else {
+        console.log(`ℹ️ Cancha ${canchaId} NO tiene bloqueos permanentes en canchaData`);
     }
     
     return true;
@@ -2242,6 +2312,11 @@ function configurarEventListeners() {
 
     // Filtros de fecha y hora
     document.getElementById('fechaSelect').addEventListener('change', async function() {
+        // Limpiar cache de disponibilidad cuando cambia la fecha para forzar nueva consulta
+        const nuevaFecha = this.value;
+        if (complejoSeleccionado && nuevaFecha) {
+            limpiarCacheDisponibilidad(complejoSeleccionado.id, nuevaFecha);
+        }
         // Asegurar que la fecha se muestre correctamente en móvil con el nuevo diseño
         if (this.value) {
             this.classList.add('fecha-seleccionada');
@@ -4543,7 +4618,7 @@ function mostrarModalReserva() {
          </div>
          <div class="row">
              <div class="col-6"><strong>Fecha:</strong></div>
-             <div class="col-6">${formatearFecha(fecha)}</div>
+             <div class="col-6">${formatearFecha(ajustarFechaParaMedianoche(fecha, hora))}</div>
          </div>
          <div class="row">
              <div class="col-6"><strong>Hora:</strong></div>
@@ -5186,7 +5261,7 @@ function mostrarResultadoReserva(reserva) {
     const complejo = reserva.complejo_nombre || reserva.nombre_complejo || 'No especificado';
     const cancha = reserva.cancha_nombre || reserva.nombre_cancha || 'No especificada';
     const tipo = reserva.tipo === 'futbol' ? 'Fútbol' : (reserva.tipo || 'No especificado');
-    const fecha = formatearFecha(reserva.fecha);
+    const fecha = formatearFecha(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio));
     const hora = formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin);
     const estado = reserva.estado || 'No especificado';
     const precio = reserva.precio_total ? formatCurrencyChile(reserva.precio_total) : 'No especificado';
@@ -5272,47 +5347,78 @@ function calcularHoraFin(horaInicio) {
     return horaFin.toTimeString().slice(0, 5);
 }
 
- function formatearFecha(fecha) {
+/**
+ * Ajustar fecha para medianoche (00:00)
+ * Cuando la hora es 00:00, la reserva es realmente para el día siguiente
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @param {string} hora - Hora en formato HH:MM
+ * @returns {string} Fecha ajustada en formato YYYY-MM-DD
+ */
+function ajustarFechaParaMedianoche(fecha, hora) {
+    if (!fecha || !hora) return fecha;
+
+    // Si la hora es 00:00 (medianoche), es el día siguiente
+    if (hora === '00:00') {
+        try {
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            const fechaObj = new Date(año, mes - 1, dia);
+            // Sumar un día
+            fechaObj.setDate(fechaObj.getDate() + 1);
+            // Retornar en formato YYYY-MM-DD
+            const añoAjustado = fechaObj.getFullYear();
+            const mesAjustado = String(fechaObj.getMonth() + 1).padStart(2, '0');
+            const diaAjustado = String(fechaObj.getDate()).padStart(2, '0');
+            return `${añoAjustado}-${mesAjustado}-${diaAjustado}`;
+        } catch (error) {
+            console.error('Error ajustando fecha para medianoche:', error);
+            return fecha;
+        }
+    }
+
+    return fecha;
+}
+
+function formatearFecha(fecha) {
      if (!fecha) {
          return 'No especificada';
      }
-     
+
      try {
          // Extraer solo la parte de la fecha si viene en formato ISO
          let fechaString = fecha;
          if (fecha.includes('T')) {
              fechaString = fecha.split('T')[0]; // Tomar solo la parte YYYY-MM-DD
          }
-         
+
          // Evitar problema de zona horaria creando la fecha con componentes específicos
          const [año, mes, dia] = fechaString.split('-').map(Number);
-         
+
          // Validar que los componentes sean válidos
          if (isNaN(año) || isNaN(mes) || isNaN(dia)) {
              console.error('Componentes de fecha inválidos:', { año, mes, dia, fechaOriginal: fecha });
              return 'Fecha inválida';
          }
-         
+
          const fechaObj = new Date(año, mes - 1, dia); // mes - 1 porque Date usa 0-11 para meses
-         
+
          // Verificar que la fecha sea válida
          if (fechaObj.getFullYear() !== año || fechaObj.getMonth() !== (mes - 1) || fechaObj.getDate() !== dia) {
              console.error('Fecha construida inválida:', { fechaOriginal: fecha, fechaString, año, mes, dia });
              return 'Fecha inválida';
          }
-         
+
          const opciones = {
              weekday: 'long',
              year: 'numeric',
              month: 'long',
              day: 'numeric'
          };
-         
+
          let fechaFormateada = fechaObj.toLocaleDateString('es-CL', opciones);
-         
+
          // Capitalizar la primera letra del día de la semana
          fechaFormateada = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
-         
+
          return fechaFormateada;
      } catch (error) {
          console.error('Error formateando fecha:', error, 'Fecha original:', fecha);

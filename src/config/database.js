@@ -299,6 +299,65 @@ class DatabaseManager {
         console.log('⚠️ Migración creado_por:', migrationError.message);
       }
 
+      // Tabla de bloqueos permanentes para canchas
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS bloqueos_canchas (
+          id SERIAL PRIMARY KEY,
+          cancha_id INTEGER NOT NULL REFERENCES canchas(id) ON DELETE CASCADE,
+          motivo VARCHAR(255) NOT NULL,
+          descripcion TEXT,
+          tipo_fecha VARCHAR(30) NOT NULL CHECK (tipo_fecha IN ('especifico', 'rango', 'recurrente_semanal')),
+          fecha_especifica DATE,
+          fecha_inicio DATE,
+          fecha_fin DATE,
+          dias_semana TEXT[],
+          tipo_horario VARCHAR(30) NOT NULL CHECK (tipo_horario IN ('especifico', 'rango', 'todo_el_dia')),
+          hora_especifica TIME,
+          hora_inicio TIME,
+          hora_fin TIME,
+          activo BOOLEAN DEFAULT true,
+          creado_por INTEGER REFERENCES usuarios(id),
+          creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT validar_fecha_especifica CHECK (
+            (tipo_fecha = 'especifico' AND fecha_especifica IS NOT NULL) OR tipo_fecha != 'especifico'
+          ),
+          CONSTRAINT validar_rango_fechas CHECK (
+            (tipo_fecha = 'rango' AND fecha_inicio IS NOT NULL AND fecha_fin IS NOT NULL AND fecha_inicio <= fecha_fin) 
+            OR tipo_fecha != 'rango'
+          ),
+          CONSTRAINT validar_dias_semana CHECK (
+            (tipo_fecha = 'recurrente_semanal' AND dias_semana IS NOT NULL AND array_length(dias_semana, 1) > 0) 
+            OR tipo_fecha != 'recurrente_semanal'
+          ),
+          CONSTRAINT validar_hora_especifica CHECK (
+            (tipo_horario = 'especifico' AND hora_especifica IS NOT NULL) OR tipo_horario != 'especifico'
+          ),
+          CONSTRAINT validar_rango_horarios CHECK (
+            (tipo_horario = 'rango' AND hora_inicio IS NOT NULL AND hora_fin IS NOT NULL) 
+            OR tipo_horario != 'rango'
+          )
+        )
+      `);
+      console.log('✅ Tabla bloqueos_canchas verificada/creada');
+
+      // Índices para bloqueos_canchas
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_bloqueos_cancha_id ON bloqueos_canchas(cancha_id)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_bloqueos_activo ON bloqueos_canchas(activo)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_bloqueos_tipo_fecha ON bloqueos_canchas(tipo_fecha)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_bloqueos_fecha_especifica ON bloqueos_canchas(fecha_especifica) WHERE fecha_especifica IS NOT NULL
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_bloqueos_rango_fechas ON bloqueos_canchas(fecha_inicio, fecha_fin) WHERE fecha_inicio IS NOT NULL
+      `);
+
       // Verificar y agregar columna codigo_reserva si no existe
       console.log('🔧 Verificando columna codigo_reserva en bloqueos_temporales...');
       const checkColumn = await client.query(`

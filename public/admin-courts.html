@@ -821,6 +821,250 @@
         </div>
     </div>
 
+    <!-- Modal de Bloqueos -->
+    <div class="modal fade" id="bloqueosModal" tabindex="-1" aria-labelledby="bloqueosModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title" id="bloqueosModalLabel">
+                        <i class="fas fa-ban me-2"></i>Gestión de Bloqueos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="mb-3" id="bloqueosModalSubtitle">Cancha: -</h6>
+
+                    <!-- Lista de bloqueos -->
+                    <div id="bloqueosListContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Cargando bloqueos...</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulario para crear/editar bloqueo -->
+                    <div id="bloqueoFormContainer" style="display: none;">
+                        <div class="card border-secondary">
+                            <div class="card-header bg-secondary text-white">
+                                <h6 class="mb-0" id="bloqueoFormTitle">
+                                    <i class="fas fa-plus-circle me-2"></i>Nuevo Bloqueo
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="bloqueoForm">
+                                    <input type="hidden" id="bloqueoId">
+                                    <input type="hidden" id="bloqueoCanchaId">
+
+                                    <!-- Motivo -->
+                                    <div class="mb-3">
+                                        <label for="bloqueoMotivo" class="form-label">Motivo del Bloqueo <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="bloqueoMotivo" required>
+                                            <option value="">Selecciona un motivo...</option>
+                                            <option value="Feriado">Feriado</option>
+                                            <option value="Campeonato">Campeonato</option>
+                                            <option value="Mantenimiento">Mantenimiento</option>
+                                            <option value="Evento Especial">Evento Especial</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                        <small class="text-muted">Selecciona el motivo del bloqueo</small>
+                                    </div>
+
+                                    <!-- Tipo de Fecha -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Tipo de Aplicación de Fechas</label>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="bloqueoTipoFecha" 
+                                                           id="bloqueoTipoFechaEspecifico" value="especifico" checked>
+                                                    <label class="form-check-label" for="bloqueoTipoFechaEspecifico">
+                                                        <i class="fas fa-calendar-day me-1"></i>Día Específico
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="bloqueoTipoFecha" 
+                                                           id="bloqueoTipoFechaRango" value="rango">
+                                                    <label class="form-check-label" for="bloqueoTipoFechaRango">
+                                                        <i class="fas fa-calendar-week me-1"></i>Rango de Fechas
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="bloqueoTipoFecha" 
+                                                           id="bloqueoTipoFechaRecurrente" value="recurrente_semanal">
+                                                    <label class="form-check-label" for="bloqueoTipoFechaRecurrente">
+                                                        <i class="fas fa-sync me-1"></i>Recurrente Semanal
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos de fecha (condicionales) -->
+                                    <div id="bloqueoFechaEspecificoContainer" class="mb-3">
+                                        <label for="bloqueoFechaEspecifica" class="form-label">Fecha Específica</label>
+                                        <input type="date" class="form-control" id="bloqueoFechaEspecifica">
+                                    </div>
+
+                                    <div id="bloqueoFechaRangoContainer" class="mb-3" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="bloqueoFechaInicio" class="form-label">Fecha Inicio</label>
+                                                <input type="date" class="form-control" id="bloqueoFechaInicio">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="bloqueoFechaFin" class="form-label">Fecha Fin</label>
+                                                <input type="date" class="form-control" id="bloqueoFechaFin">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="bloqueoFechaRecurrenteContainer" class="mb-3" style="display: none;">
+                                        <label class="form-label">Días de la Semana</label>
+                                        <div class="row">
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaLunes" value="lunes">
+                                                    <label class="form-check-label" for="bloqueoDiaLunes">Lunes</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaMartes" value="martes">
+                                                    <label class="form-check-label" for="bloqueoDiaMartes">Martes</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaMiercoles" value="miércoles">
+                                                    <label class="form-check-label" for="bloqueoDiaMiercoles">Miércoles</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaJueves" value="jueves">
+                                                    <label class="form-check-label" for="bloqueoDiaJueves">Jueves</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaViernes" value="viernes">
+                                                    <label class="form-check-label" for="bloqueoDiaViernes">Viernes</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaSabado" value="sábado">
+                                                    <label class="form-check-label" for="bloqueoDiaSabado">Sábado</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="bloqueoDiaDomingo" value="domingo">
+                                                    <label class="form-check-label" for="bloqueoDiaDomingo">Domingo</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tipo de Horario -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Tipo de Aplicación de Horarios</label>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="bloqueoTipoHorario" 
+                                                           id="bloqueoTipoHorarioEspecifico" value="especifico" checked>
+                                                    <label class="form-check-label" for="bloqueoTipoHorarioEspecifico">
+                                                        <i class="fas fa-clock me-1"></i>Horario Específico
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="bloqueoTipoHorario" 
+                                                           id="bloqueoTipoHorarioRango" value="rango">
+                                                    <label class="form-check-label" for="bloqueoTipoHorarioRango">
+                                                        <i class="fas fa-clock me-1"></i>Rango de Horarios
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="bloqueoTipoHorario" 
+                                                           id="bloqueoTipoHorarioTodoDia" value="todo_el_dia">
+                                                    <label class="form-check-label" for="bloqueoTipoHorarioTodoDia">
+                                                        <i class="fas fa-sun me-1"></i>Todo el Día
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos de horario (condicionales) -->
+                                    <div id="bloqueoHorarioEspecificoContainer" class="mb-3">
+                                        <label for="bloqueoHoraEspecifica" class="form-label">Hora Específica</label>
+                                        <select class="form-select" id="bloqueoHoraEspecifica">
+                                            <option value="">Selecciona una hora...</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="bloqueoHorarioRangoContainer" class="mb-3" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="bloqueoHoraInicio" class="form-label">Hora Inicio</label>
+                                                <select class="form-select" id="bloqueoHoraInicio">
+                                                    <option value="">Selecciona hora inicio...</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="bloqueoHoraFin" class="form-label">Hora Fin</label>
+                                                <select class="form-select" id="bloqueoHoraFin">
+                                                    <option value="">Selecciona hora fin...</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Descripción -->
+                                    <div class="mb-3">
+                                        <label for="bloqueoDescripcion" class="form-label">Descripción (Opcional)</label>
+                                        <textarea class="form-control" id="bloqueoDescripcion" rows="2" 
+                                                  placeholder="Descripción adicional del bloqueo"></textarea>
+                                    </div>
+
+                                    <!-- Estado -->
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="bloqueoActivo" checked>
+                                            <label class="form-check-label" for="bloqueoActivo">
+                                                Bloqueo Activo
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Desactiva el bloqueo para pausarlo sin eliminarlo</small>
+                                    </div>
+
+                                    <!-- Botones -->
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-secondary" onclick="cancelBloqueoForm()">
+                                            <i class="fas fa-times me-1"></i>Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save me-1"></i>Guardar Bloqueo
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/url-config.js?v=1.0"></script>
     <script src="js/admin-utils.js?v=1.0"></script>

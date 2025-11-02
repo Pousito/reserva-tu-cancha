@@ -4,6 +4,7 @@ let reservasFiltradas = [];
 let complejos = [];
 let busquedaActual = '';
 let filtrosActivos = {};
+let bloqueosPermanentesCache = {}; // Cache de bloqueos permanentes por cancha y fecha
 
 // Función para formatear moneda chilena (punto como separador de miles)
 function formatCurrencyChile(amount) {
@@ -41,7 +42,31 @@ if (typeof formatearHora === 'undefined') {
  * @returns {string} Fecha ajustada en formato YYYY-MM-DD
  */
 function ajustarFechaParaMedianoche(fecha, hora) {
-    if (!fecha || !hora) return fecha;
+    // Validar que fecha y hora existan y sean válidos
+    if (!fecha || !hora) {
+        console.warn('⚠️ ajustarFechaParaMedianoche: fecha o hora no proporcionada', { fecha, hora });
+        return fecha || null;
+    }
+
+    // Validar que fecha sea un string válido
+    if (typeof fecha !== 'string') {
+        console.warn('⚠️ ajustarFechaParaMedianoche: fecha no es string', { fecha, tipo: typeof fecha });
+        return fecha;
+    }
+
+    // Convertir fecha ISO (2025-11-10T03:00:00.000Z) a formato YYYY-MM-DD
+    let fechaLimpia = fecha;
+    if (fecha.includes('T')) {
+        // Es una fecha ISO, extraer solo la parte de fecha
+        fechaLimpia = fecha.split('T')[0];
+    }
+
+    // Verificar formato YYYY-MM-DD después de la limpieza
+    const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!fechaRegex.test(fechaLimpia)) {
+        console.warn('⚠️ ajustarFechaParaMedianoche: fecha no tiene formato válido después de limpieza', { fecha, fechaLimpia });
+        return fechaLimpia || fecha;
+    }
 
     // Extraer solo HH:MM si viene HH:MM:SS
     const horaLimpia = hora.includes(':') && hora.split(':').length === 3 ?
@@ -50,22 +75,44 @@ function ajustarFechaParaMedianoche(fecha, hora) {
     // Si la hora es 00:00 (medianoche), es el día siguiente
     if (horaLimpia === '00:00') {
         try {
-            const [año, mes, dia] = fecha.split('-').map(Number);
+            const partes = fechaLimpia.split('-');
+            if (partes.length !== 3) {
+                console.warn('⚠️ ajustarFechaParaMedianoche: fecha no tiene formato YYYY-MM-DD', { fecha, fechaLimpia });
+                return fechaLimpia || fecha;
+            }
+
+            const [año, mes, dia] = partes.map(Number);
+            
+            // Validar que los números sean válidos
+            if (isNaN(año) || isNaN(mes) || isNaN(dia)) {
+                console.warn('⚠️ ajustarFechaParaMedianoche: valores de fecha inválidos', { año, mes, dia, fecha, fechaLimpia });
+                return fechaLimpia || fecha;
+            }
+
             const fechaObj = new Date(año, mes - 1, dia);
+            
+            // Validar que la fecha creada sea válida
+            if (isNaN(fechaObj.getTime())) {
+                console.warn('⚠️ ajustarFechaParaMedianoche: fecha creada es inválida', { año, mes, dia, fecha, fechaLimpia });
+                return fechaLimpia || fecha;
+            }
+
             // Sumar un día
             fechaObj.setDate(fechaObj.getDate() + 1);
+            
             // Retornar en formato YYYY-MM-DD
             const añoAjustado = fechaObj.getFullYear();
             const mesAjustado = String(fechaObj.getMonth() + 1).padStart(2, '0');
             const diaAjustado = String(fechaObj.getDate()).padStart(2, '0');
+            
             return `${añoAjustado}-${mesAjustado}-${diaAjustado}`;
         } catch (error) {
-            console.error('Error ajustando fecha para medianoche en admin:', error);
-            return fecha;
+            console.error('❌ Error ajustando fecha para medianoche en admin:', error, { fecha, fechaLimpia, hora });
+            return fechaLimpia || fecha;
         }
     }
 
-    return fecha;
+    return fechaLimpia || fecha;
 }
 
 // Variables para el calendario
@@ -593,10 +640,17 @@ function mostrarReservas(reservasAMostrar) {
             <td>${reserva.fecha ? (() => {
                 try {
                     const fechaAjustada = ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio);
+                    if (!fechaAjustada) {
+                        return 'Sin fecha';
+                    }
                     return formatearFecha(fechaAjustada);
                 } catch (error) {
-                    console.error('Error formateando fecha en tabla:', error, reserva.fecha, reserva.hora_inicio);
-                    return 'Error fecha';
+                    console.error('Error formateando fecha en tabla:', error, { 
+                        fecha: reserva.fecha, 
+                        hora_inicio: reserva.hora_inicio,
+                        codigo: reserva.codigo_reserva
+                    });
+                    return reserva.fecha || 'Sin fecha';
                 }
             })() : 'Sin fecha'}</td>
             <td>
@@ -1412,8 +1466,24 @@ function formatearFecha(fecha) {
                     throw new Error('Fecha inválida');
                 }
             } else {
-                // Fecha simple (YYYY-MM-DD) - crear fecha local
-                const [año, mes, dia] = fecha.split('-').map(Number);
+                // Fecha simple (YYYY-MM-DD) - validar formato primero
+                const fechaRegex = /^\d{4}-\d{2}-\d{2}$/;
+                if (!fechaRegex.test(fecha)) {
+                    throw new Error(`Formato de fecha inválido: ${fecha}`);
+                }
+                
+                const partes = fecha.split('-');
+                if (partes.length !== 3) {
+                    throw new Error(`Fecha no tiene formato YYYY-MM-DD: ${fecha}`);
+                }
+
+                const [año, mes, dia] = partes.map(Number);
+                
+                // Validar que los números sean válidos
+                if (isNaN(año) || isNaN(mes) || isNaN(dia)) {
+                    throw new Error(`Valores de fecha inválidos: ${fecha}`);
+                }
+
                 fechaObj = new Date(año, mes - 1, dia);
             }
         } else {
@@ -1433,7 +1503,11 @@ function formatearFecha(fecha) {
             day: 'numeric'
         });
     } catch (error) {
-        console.error('Error formateando fecha:', error, 'Fecha original:', fecha);
+        console.error('❌ Error formateando fecha:', error, 'Fecha original:', fecha);
+        // Intentar mostrar algo útil aunque sea la fecha cruda
+        if (typeof fecha === 'string' && fecha.match(/^\d{4}-\d{2}-\d{2}/)) {
+            return fecha;
+        }
         return 'Fecha inválida';
     }
 }
@@ -1805,6 +1879,41 @@ async function cargarCalendario() {
             const data = await response.json();
             calendarioData = data.calendario || {};
             canchas = data.canchas || [];
+            
+            // Cargar bloqueos permanentes para todas las fechas y canchas de la semana
+            bloqueosPermanentesCache = {};
+            if (canchas && canchas.length > 0) {
+                // Generar todas las fechas de la semana
+                const fechaObj = new Date(fechaInicio);
+                const fechas = [];
+                while (fechaObj <= new Date(fechaFin)) {
+                    fechas.push(`${fechaObj.getFullYear()}-${String(fechaObj.getMonth() + 1).padStart(2, '0')}-${String(fechaObj.getDate()).padStart(2, '0')}`);
+                    fechaObj.setDate(fechaObj.getDate() + 1);
+                }
+                
+                // Cargar bloqueos para cada cancha y fecha
+                for (const cancha of canchas) {
+                    for (const fecha of fechas) {
+                        try {
+                            const dispResponse = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}?t=${Date.now()}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${AdminUtils.getAuthToken()}`
+                                }
+                            });
+                            if (dispResponse.ok) {
+                                const dispData = await dispResponse.json();
+                                if (dispData.bloqueos_permanentes && dispData.bloqueos_permanentes.length > 0) {
+                                    const cacheKey = `${cancha.id}_${fecha}`;
+                                    bloqueosPermanentesCache[cacheKey] = dispData.bloqueos_permanentes;
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error cargando bloqueos permanentes para cancha ${cancha.id}, fecha ${fecha}:`, error);
+                        }
+                    }
+                }
+                console.log(`✅ Bloqueos permanentes cargados para ${Object.keys(bloqueosPermanentesCache).length} combinaciones cancha/fecha`);
+            }
             
             // Debug: Mostrar datos del calendario
             console.log('📅 Datos del calendario recibidos:', calendarioData);
@@ -2474,6 +2583,40 @@ function renderizarCalendario(data = null) {
                     }
                 }
                 
+                // Verificar bloqueos permanentes para todas las canchas en este horario
+                let canchasConBloqueoPermanente = 0;
+                if (canchas && canchas.length > 0) {
+                    // Verificar bloqueos permanentes desde el cache
+                    for (const cancha of canchas) {
+                        const cacheKey = `${cancha.id}_${fechaStr}`;
+                        const bloqueosCancha = bloqueosPermanentesCache[cacheKey] || [];
+                        
+                        if (bloqueosCancha.length > 0) {
+                            const horaInicio = hora;
+                            let horaFinNum = parseInt(hora.split(':')[0]) + 1;
+                            if (horaFinNum === 24) horaFinNum = 0;
+                            const horaFin = `${String(horaFinNum).padStart(2, '0')}:00`;
+                            
+                            for (const bloqueo of bloqueosCancha) {
+                                let aplica = false;
+                                if (bloqueo.tipo_horario === 'todo_el_dia') {
+                                    aplica = true;
+                                } else if (bloqueo.tipo_horario === 'especifico' && bloqueo.hora_inicio) {
+                                    aplica = horaInicio.substring(0, 5) === bloqueo.hora_inicio.substring(0, 5);
+                                } else if (bloqueo.tipo_horario === 'rango' && bloqueo.hora_inicio && bloqueo.hora_fin) {
+                                    // Verificar superposición de horarios usando la función existente
+                                    aplica = haySuperposicionHorariosAdmin(horaInicio, horaFin, bloqueo.hora_inicio, bloqueo.hora_fin);
+                                }
+                                
+                                if (aplica) {
+                                    canchasConBloqueoPermanente++;
+                                    break; // Una cancha puede tener múltiples bloqueos, solo contar una vez
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 // Debug para fecha específica
                 if (fechaStr === '2025-09-12' && hora === '23:00') {
                     console.log('🔍 Debug para 12/09/2025 23:00:');
@@ -2481,12 +2624,14 @@ function renderizarCalendario(data = null) {
                     console.log('  - hora:', hora);
                     console.log('  - calendarioData[fechaStr]:', calendarioData[fechaStr]);
                     console.log('  - reservasEnSlot:', reservasEnSlot);
+                    console.log('  - canchasConBloqueoPermanente:', canchasConBloqueoPermanente);
                     console.log('  - totalCanchas:', canchas.length);
                 }
                 
                 // Determinar estado de disponibilidad
+                // Las canchas ocupadas incluyen tanto reservas como bloqueos permanentes
                 const totalCanchas = canchas.length;
-                const canchasOcupadas = reservasEnSlot.length;
+                const canchasOcupadas = reservasEnSlot.length + canchasConBloqueoPermanente;
                 const canchasDisponibles = totalCanchas - canchasOcupadas;
                 
                 let estadoSlot = '';
@@ -3414,6 +3559,43 @@ function verificarDisponibilidadCanchaAdmin(horaInicio, horaFin, disponibilidadD
                 user_id: user?.id
             });
         }
+    }
+    
+    // Verificar bloqueos permanentes
+    if (disponibilidadData.bloqueos_permanentes && disponibilidadData.bloqueos_permanentes.length > 0) {
+        console.log(`🔍 Verificando ${disponibilidadData.bloqueos_permanentes.length} bloqueo(s) permanente(s) para horario ${horaInicio}-${horaFin}`);
+        
+        for (const bloqueo of disponibilidadData.bloqueos_permanentes) {
+            let aplicaHorario = false;
+            console.log(`  🔍 Bloqueo permanente:`, bloqueo);
+            
+            if (bloqueo.tipo_horario === 'todo_el_dia') {
+                // Todo el día bloqueado - siempre aplica
+                aplicaHorario = true;
+                console.log(`    ✅ Bloqueo de todo el día aplica`);
+            } else if (bloqueo.tipo_horario === 'especifico' && bloqueo.hora_inicio) {
+                // Verificar si la hora solicitada coincide con la hora bloqueada
+                const horaBloqueo = bloqueo.hora_inicio.substring(0, 5);
+                aplicaHorario = horaInicio.substring(0, 5) === horaBloqueo;
+                console.log(`    🔍 Comparando hora bloqueo (${horaBloqueo}) con hora solicitada (${horaInicio.substring(0, 5)}): ${aplicaHorario}`);
+            } else if (bloqueo.tipo_horario === 'rango' && bloqueo.hora_inicio && bloqueo.hora_fin) {
+                // Verificar si hay superposición con el rango bloqueado
+                aplicaHorario = haySuperposicionHorariosAdmin(horaInicio, horaFin, bloqueo.hora_inicio, bloqueo.hora_fin);
+                console.log(`    🔍 Verificando superposición con rango ${bloqueo.hora_inicio}-${bloqueo.hora_fin}: ${aplicaHorario}`);
+            }
+            
+            if (aplicaHorario) {
+                console.log('❌ Cancha bloqueada permanentemente:', {
+                    motivo: bloqueo.motivo,
+                    bloqueo: `${bloqueo.hora_inicio}-${bloqueo.hora_fin}`,
+                    solicitada: `${horaInicio}-${horaFin}`,
+                    tipo_horario: bloqueo.tipo_horario
+                });
+                return false;
+            }
+        }
+    } else {
+        console.log(`ℹ️ No hay bloqueos permanentes en disponibilidadData`);
     }
     
     console.log('✅ Cancha disponible');

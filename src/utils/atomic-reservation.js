@@ -135,6 +135,29 @@ class AtomicReservationManager {
                         code: 'TEMPORARILY_BLOCKED'
                     };
                 }
+                
+                // Verificar bloqueos permanentes de la cancha
+                const bloqueosHelper = require('./bloqueos-helper');
+                bloqueosHelper.setDatabase(this.db);
+                
+                // Verificar cada hora en el rango
+                const horaInicioNum = parseInt(hora_inicio.split(':')[0]);
+                const horaFinNum = parseInt(hora_fin.split(':')[0]);
+                
+                for (let hora = horaInicioNum; hora < horaFinNum; hora++) {
+                    const horaStr = `${String(hora).padStart(2, '0')}:00`;
+                    const bloqueo = await bloqueosHelper.verificarBloqueoActivo(cancha_id, fecha, horaStr);
+                    
+                    if (bloqueo) {
+                        await client.query('ROLLBACK');
+                        console.log('❌ Bloqueo permanente activo, transacción cancelada');
+                        return {
+                            success: false,
+                            error: `La cancha está bloqueada: ${bloqueo.motivo}${bloqueo.descripcion ? ' - ' + bloqueo.descripcion : ''}`,
+                            code: 'PERMANENTLY_BLOCKED'
+                        };
+                    }
+                }
             }
 
             // PASO 3: Generar código de reserva único
