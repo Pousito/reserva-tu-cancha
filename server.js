@@ -856,7 +856,7 @@ app.use('/api/payments', paymentRoutes);
 
 // ===== RUTAS DE DESCUENTOS =====
 const { router: discountRoutes, setDatabase: setDiscountDatabase } = require('./src/routes/discounts');
-setDiscountDatabase(db); // Pasar la instancia de la base de datos
+// NOTA: setDiscountDatabase se llamará después de inicializar la BD en initializeDatabase()
 app.use('/api/discounts', discountRoutes);
 
 // ===== RUTAS DE GASTOS E INGRESOS =====
