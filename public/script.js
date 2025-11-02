@@ -4603,15 +4603,20 @@ function actualizarResumenPrecio() {
         canchaSeleccionada.precio_actual = precioBase;
         console.log('🔧 Corrigiendo precio_actual en actualizarResumenPrecio:', precioBase);
     }
-    
-    const precioAPagar = pagarMitad ? Math.round(precioBase / 2) : precioBase;
+
+    // Si hay código de descuento aplicado, usar ese precio en lugar del precioBase
+    const precioFinal = precioConDescuento || precioBase;
+    const precioAPagar = pagarMitad ? Math.round(precioFinal / 2) : precioFinal;
     
     console.log('💰 DEBUG actualizarResumenPrecio - Precios:', {
         precioBase: precioBase,
+        precioConDescuento: precioConDescuento,
+        precioFinal: precioFinal,
         precioOriginal: precioOriginal,
         precioHoraNormal: precioHoraNormal,
         precioAPagar: precioAPagar,
         tiene_promocion: canchaSeleccionada.tiene_promocion,
+        tiene_codigo_descuento: !!precioConDescuento,
         pagarMitad: pagarMitad
     });
     
@@ -4633,8 +4638,60 @@ function actualizarResumenPrecio() {
             tiene_promocion_valida: tienePromocionValida
         });
         
-        if (tienePromocionValida) {
-            // Mostrar precio con promoción
+        // Si hay código de descuento aplicado, mostrarlo
+        const tieneCodigoDescuento = precioConDescuento && precioConDescuento < precioBase;
+
+        if (tieneCodigoDescuento) {
+            // Hay código de descuento aplicado
+            if (tienePromocionValida) {
+                // Promoción + Código de descuento
+                if (pagarMitad) {
+                    precioElement.innerHTML = `
+                        <div>
+                            <div>
+                                <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(precioOriginal)}</span>
+                                <span class="text-decoration-line-through text-muted ms-2">$${formatCurrencyChile(precioBase)}</span>
+                                <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioFinal)}</span>
+                            </div>
+                            <div class="mt-1">
+                                <strong class="text-primary">$${formatCurrencyChile(precioAPagar)} (50%)</strong>
+                                <small class="text-muted ms-1">Resto en el complejo</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    precioElement.innerHTML = `
+                        <div>
+                            <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(precioOriginal)}</span>
+                            <span class="text-decoration-line-through text-muted ms-2">$${formatCurrencyChile(precioBase)}</span>
+                            <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioFinal)}</span>
+                        </div>
+                    `;
+                }
+            } else {
+                // Solo código de descuento, sin promoción
+                if (pagarMitad) {
+                    precioElement.innerHTML = `
+                        <div>
+                            <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(precioBase)}</span>
+                            <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioFinal)}</span>
+                            <br>
+                            <strong class="text-primary">$${formatCurrencyChile(precioAPagar)} (50%)</strong>
+                            <br>
+                            <small class="text-muted">Resto en el complejo</small>
+                        </div>
+                    `;
+                } else {
+                    precioElement.innerHTML = `
+                        <div>
+                            <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(precioBase)}</span>
+                            <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precioFinal)}</span>
+                        </div>
+                    `;
+                }
+            }
+        } else if (tienePromocionValida) {
+            // Solo promoción, sin código de descuento
             if (pagarMitad) {
                 precioElement.innerHTML = `
                     <div>
@@ -4659,7 +4716,7 @@ function actualizarResumenPrecio() {
                 `;
             }
         } else {
-            // Precio normal sin promoción
+            // Precio normal sin promoción ni código
             if (pagarMitad) {
                 precioElement.innerHTML = `
                     <div>
