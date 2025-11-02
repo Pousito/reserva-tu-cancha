@@ -751,16 +751,15 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
         const user = req.user;
         
         console.log('🔒 Creando bloqueo temporal administrativo:', { fecha, hora_inicio, hora_fin, session_id, tipo, user: user.email });
-        
-        // Validar que no se esté intentando reservar en horarios pasados
-        const ahora = new Date();
+
+        // Validar formato de fecha y hora
         let fechaHoraReserva;
-        
+
         try {
             // Manejar diferentes formatos de hora
             const horaFormateada = hora_inicio.includes(':') ? hora_inicio : `${hora_inicio}:00:00`;
             fechaHoraReserva = new Date(`${fecha}T${horaFormateada}`);
-            
+
             // Verificar que la fecha sea válida
             if (isNaN(fechaHoraReserva.getTime())) {
                 throw new Error('Fecha o hora inválida');
@@ -776,24 +775,13 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
                 }
             });
         }
-        
-        console.log('🕐 Validando horario:', {
-            ahora: ahora.toISOString(),
-            fechaHoraReserva: fechaHoraReserva.toISOString(),
-            diferencia: fechaHoraReserva.getTime() - ahora.getTime()
+
+        // NOTA: No validamos horarios pasados para admins
+        // Los owners/managers pueden necesitar crear reservas para "ahora mismo"
+        // si un cliente llama y quiere jugar inmediatamente
+        console.log('🕐 Horario de reserva:', {
+            fechaHoraReserva: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' })
         });
-        
-        if (fechaHoraReserva <= ahora) {
-            return res.status(400).json({
-                success: false,
-                error: 'No se pueden hacer reservas en horarios pasados',
-                detalles: {
-                    hora_actual: ahora.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
-                    hora_solicitada: fechaHoraReserva.toLocaleString('es-CL', { timeZone: 'America/Santiago' }),
-                    mensaje: 'Solo se pueden hacer reservas para fechas y horarios futuros'
-                }
-            });
-        }
         
         // Obtener todas las canchas del complejo del usuario
         let canchasQuery;
