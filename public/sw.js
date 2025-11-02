@@ -34,7 +34,8 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('✅ Service Worker instalado correctamente');
-        return self.skipWaiting();
+        // NO usar skipWaiting() automáticamente para evitar recargas constantes
+        // self.skipWaiting() se llamará solo cuando sea necesario
       })
       .catch((error) => {
         console.error('❌ Error instalando Service Worker:', error);
@@ -60,7 +61,8 @@ self.addEventListener('activate', (event) => {
       })
       .then(() => {
         console.log('✅ Service Worker activado correctamente');
-        return self.clients.claim();
+        // NO usar clients.claim() automáticamente para evitar conflictos
+        // Esto permitirá que la página controle cuándo actualizar
       })
   );
 });
