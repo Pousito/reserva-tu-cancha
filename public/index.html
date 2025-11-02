@@ -538,22 +538,41 @@
                     .then((registration) => {
                         console.log('✅ Service Worker registrado:', registration.scope);
                         
-                        // Verificar actualizaciones
-                        // Forzar actualización del Service Worker
-                        registration.update();
+                        // Verificar actualizaciones solo si no hay una recarga pendiente
+                        // Usar sessionStorage para evitar loops de recarga
+                        const hasReloaded = sessionStorage.getItem('sw_reload_pending');
+                        if (!hasReloaded) {
+                            // Verificar actualizaciones cada 60 segundos (no inmediatamente)
+                            setTimeout(() => {
+                                registration.update();
+                            }, 60000);
+                        }
                         
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // Nueva versión disponible - forzar recarga automática
-                                    console.log('🔄 Nueva versión del Service Worker disponible, recargando automáticamente...');
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 1000);
+                        // Solo agregar listener una vez
+                        if (!registration.updateListenerAdded) {
+                            registration.updateListenerAdded = true;
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                if (newWorker) {
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                            // Verificar si ya hay una recarga pendiente
+                                            const reloadPending = sessionStorage.getItem('sw_reload_pending');
+                                            if (!reloadPending) {
+                                                // Nueva versión disponible - marcar recarga pendiente y recargar
+                                                sessionStorage.setItem('sw_reload_pending', 'true');
+                                                console.log('🔄 Nueva versión del Service Worker disponible, recargando automáticamente...');
+                                                setTimeout(() => {
+                                                    // Limpiar flag después de un tiempo para permitir futuras actualizaciones
+                                                    sessionStorage.removeItem('sw_reload_pending');
+                                                    window.location.reload();
+                                                }, 2000);
+                                            }
+                                        }
+                                    });
                                 }
                             });
-                        });
+                        }
                     })
                     .catch((error) => {
                         console.log('❌ Error registrando Service Worker:', error);
