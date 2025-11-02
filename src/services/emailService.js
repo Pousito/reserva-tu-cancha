@@ -5,10 +5,44 @@ const { formatDateForChile } = require('../utils/dateUtils');
 const formatearHora = (hora) => {
   if (typeof hora === 'string') {
     // Si tiene formato HH:MM:SS, quitar los segundos
-    return hora.includes(':') && hora.split(':').length === 3 ? 
+    return hora.includes(':') && hora.split(':').length === 3 ?
            hora.substring(0, 5) : hora;
   }
   return hora;
+};
+
+/**
+ * Ajustar fecha para medianoche (00:00)
+ * Cuando la hora es 00:00, la reserva es realmente para el día siguiente
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @param {string} hora - Hora en formato HH:MM o HH:MM:SS
+ * @returns {string} Fecha ajustada en formato YYYY-MM-DD
+ */
+const ajustarFechaParaMedianoche = (fecha, hora) => {
+  if (!fecha || !hora) return fecha;
+
+  // Extraer solo HH:MM si viene HH:MM:SS
+  const horaLimpia = formatearHora(hora);
+
+  // Si la hora es 00:00 (medianoche), es el día siguiente
+  if (horaLimpia === '00:00') {
+    try {
+      const [año, mes, dia] = fecha.split('-').map(Number);
+      const fechaObj = new Date(año, mes - 1, dia);
+      // Sumar un día
+      fechaObj.setDate(fechaObj.getDate() + 1);
+      // Retornar en formato YYYY-MM-DD
+      const añoAjustado = fechaObj.getFullYear();
+      const mesAjustado = String(fechaObj.getMonth() + 1).padStart(2, '0');
+      const diaAjustado = String(fechaObj.getDate()).padStart(2, '0');
+      return `${añoAjustado}-${mesAjustado}-${diaAjustado}`;
+    } catch (error) {
+      console.error('Error ajustando fecha para medianoche en email:', error);
+      return fecha;
+    }
+  }
+
+  return fecha;
 };
 
 class EmailService {
@@ -97,24 +131,26 @@ class EmailService {
 
   // Generar plantilla HTML para confirmación de reserva
   generateReservationEmailHTML(reservaData) {
-    const { 
-      codigo_reserva, 
-      nombre_cliente, 
-      email_cliente, 
-      complejo, 
-      cancha, 
-      fecha, 
-      hora_inicio, 
-      hora_fin, 
+    const {
+      codigo_reserva,
+      nombre_cliente,
+      email_cliente,
+      complejo,
+      cancha,
+      fecha,
+      hora_inicio,
+      hora_fin,
       precio_total,
       porcentaje_pagado = 100
     } = reservaData;
 
-    // CORRECCIÓN CRÍTICA: Formatear fecha correctamente para zona horaria de Chile
+    // CORRECCIÓN CRÍTICA: Ajustar fecha si es medianoche (00:00) + Formatear para zona horaria de Chile
+    const fechaAjustada = ajustarFechaParaMedianoche(fecha, hora_inicio);
+
     let fechaFormateada;
-    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    if (typeof fechaAjustada === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaAjustada)) {
       // Usar formatDateForChile que maneja correctamente la zona horaria de Chile
-      fechaFormateada = formatDateForChile(fecha, {
+      fechaFormateada = formatDateForChile(fechaAjustada, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -122,7 +158,7 @@ class EmailService {
       });
     } else {
       // Usar la función original para otros formatos
-      fechaFormateada = formatDateForChile(fecha, {
+      fechaFormateada = formatDateForChile(fechaAjustada, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -380,7 +416,7 @@ Código de Reserva: ${reservaData.codigo_reserva}
 Detalles:
 - Complejo: ${reservaData.complejo}
 - Cancha: ${reservaData.cancha}
-- Fecha: ${formatDateForChile(reservaData.fecha, {
+- Fecha: ${formatDateForChile(ajustarFechaParaMedianoche(reservaData.fecha, reservaData.hora_inicio), {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -484,7 +520,7 @@ Gracias por elegir Reserva Tu Cancha!
               <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
               <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
-              <p><strong>Fecha:</strong> ${formatDateForChile(reservaData.fecha, {
+              <p><strong>Fecha:</strong> ${formatDateForChile(ajustarFechaParaMedianoche(reservaData.fecha, reservaData.hora_inicio), {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -508,7 +544,7 @@ Cliente: ${reservaData.nombre_cliente}
 Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
 Cancha: ${reservaData.cancha}
-Fecha: ${formatDateForChile(reservaData.fecha, {
+Fecha: ${formatDateForChile(ajustarFechaParaMedianoche(reservaData.fecha, reservaData.hora_inicio), {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -555,7 +591,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
               <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
               <p><strong>Cancha:</strong> ${reservaData.cancha}</p>
-              <p><strong>Fecha:</strong> ${formatDateForChile(reservaData.fecha, {
+              <p><strong>Fecha:</strong> ${formatDateForChile(ajustarFechaParaMedianoche(reservaData.fecha, reservaData.hora_inicio), {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -578,7 +614,7 @@ Cliente: ${reservaData.nombre_cliente}
 Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
 Cancha: ${reservaData.cancha}
-Fecha: ${formatDateForChile(reservaData.fecha, {
+Fecha: ${formatDateForChile(ajustarFechaParaMedianoche(reservaData.fecha, reservaData.hora_inicio), {
         weekday: 'long',
         year: 'numeric',
         month: 'long',

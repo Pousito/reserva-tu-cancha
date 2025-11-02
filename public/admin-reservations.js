@@ -33,6 +33,41 @@ if (typeof formatearHora === 'undefined') {
     console.log('🔧 Función formatearHora definida como respaldo');
 }
 
+/**
+ * Ajustar fecha para medianoche (00:00)
+ * Cuando la hora es 00:00, la reserva es realmente para el día siguiente
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @param {string} hora - Hora en formato HH:MM o HH:MM:SS
+ * @returns {string} Fecha ajustada en formato YYYY-MM-DD
+ */
+function ajustarFechaParaMedianoche(fecha, hora) {
+    if (!fecha || !hora) return fecha;
+
+    // Extraer solo HH:MM si viene HH:MM:SS
+    const horaLimpia = hora.includes(':') && hora.split(':').length === 3 ?
+                       hora.substring(0, 5) : hora;
+
+    // Si la hora es 00:00 (medianoche), es el día siguiente
+    if (horaLimpia === '00:00') {
+        try {
+            const [año, mes, dia] = fecha.split('-').map(Number);
+            const fechaObj = new Date(año, mes - 1, dia);
+            // Sumar un día
+            fechaObj.setDate(fechaObj.getDate() + 1);
+            // Retornar en formato YYYY-MM-DD
+            const añoAjustado = fechaObj.getFullYear();
+            const mesAjustado = String(fechaObj.getMonth() + 1).padStart(2, '0');
+            const diaAjustado = String(fechaObj.getDate()).padStart(2, '0');
+            return `${añoAjustado}-${mesAjustado}-${diaAjustado}`;
+        } catch (error) {
+            console.error('Error ajustando fecha para medianoche en admin:', error);
+            return fecha;
+        }
+    }
+
+    return fecha;
+}
+
 // Variables para el calendario
 let vistaActual = 'lista';
 let semanaActual = new Date();
@@ -555,7 +590,7 @@ function mostrarReservas(reservasAMostrar) {
             </td>
             <td>${reserva.complejo_nombre}</td>
             <td>${reserva.cancha_nombre}</td>
-            <td>${reserva.fecha ? formatearFechaParaAPI(reserva.fecha) : 'Sin fecha'}</td>
+            <td>${reserva.fecha ? formatearFechaParaAPI(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio)) : 'Sin fecha'}</td>
             <td>
                 <span class="badge bg-light text-dark">
                     ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}
@@ -681,7 +716,7 @@ async function verDetalles(codigoReserva) {
                 <p><strong>Código:</strong> <code>${reserva.codigo_reserva}</code></p>
                 <p><strong>Complejo:</strong> ${reserva.complejo_nombre}</p>
                 <p><strong>Cancha:</strong> ${reserva.cancha_nombre}</p>
-                <p><strong>Fecha:</strong> ${formatearFechaParaAPI(reserva.fecha)}</p>
+                <p><strong>Fecha:</strong> ${formatearFechaParaAPI(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio))}</p>
                 <p><strong>Hora:</strong> ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}</p>
                 <p><strong>Precio Total:</strong> ${reserva.precio_total ? `$${formatCurrencyChile(reserva.precio_total)}` : 'No disponible'}</p>
                 <p><strong>Estado:</strong> 
