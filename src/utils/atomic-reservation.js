@@ -176,15 +176,27 @@ class AtomicReservationManager {
             }
             
             // Recalcular porcentaje_pagado basado en precio_total y monto_abonado para asegurar precisión
-            const porcentajePagadoFinal = precio_total > 0 && monto_abonado > 0 
-                ? Math.round((monto_abonado / precio_total) * 100) 
-                : (porcentaje_pagado || 0);
+            // IMPORTANTE: Siempre recalcular basándose en precio_total y monto_abonado, nunca confiar en el valor recibido
+            let porcentajePagadoFinal = 0;
+            if (precio_total > 0 && monto_abonado > 0) {
+                porcentajePagadoFinal = Math.round((monto_abonado / precio_total) * 100);
+            } else if (monto_abonado === 0) {
+                porcentajePagadoFinal = 0;
+            } else if (precio_total > 0) {
+                porcentajePagadoFinal = 0;
+            }
+            
+            // Asegurar que no exceda 100%
+            if (porcentajePagadoFinal > 100) {
+                porcentajePagadoFinal = 100;
+            }
             
             console.log('💰 AtomicReservation - Cálculo de porcentaje:', {
                 precio_total,
                 monto_abonado,
                 porcentaje_pagado_recibido: porcentaje_pagado,
-                porcentaje_pagado_final: porcentajePagadoFinal
+                porcentaje_pagado_final: porcentajePagadoFinal,
+                calculo: `${monto_abonado} / ${precio_total} * 100 = ${porcentajePagadoFinal}%`
             });
             
             // Incluir metodo_pago, estado_pago y monto_abonado en la inserción

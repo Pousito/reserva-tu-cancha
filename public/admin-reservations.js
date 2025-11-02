@@ -3610,7 +3610,16 @@ async function crearReservaAdmin() {
     }
     
     // Calcular porcentaje pagado
+    // IMPORTANTE: Usar precioCancha (que puede incluir promociones) para el cálculo
     const porcentajePagado = precioCancha > 0 ? Math.round((montoAbonado / precioCancha) * 100) : 0;
+    
+    // Debug del cálculo del porcentaje
+    console.log('💰 Frontend - Cálculo de porcentaje:', {
+        precioCancha,
+        montoAbonado,
+        porcentajePagado,
+        calculo: `${montoAbonado} / ${precioCancha} * 100 = ${porcentajePagado}%`
+    });
     
     // Determinar estado de pago según método y monto
     let estadoPago = 'pendiente';
