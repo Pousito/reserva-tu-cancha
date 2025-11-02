@@ -562,6 +562,11 @@ async function initializeDatabase() {
     reportService = new ReportService(db);
     console.log('📊 Sistema de reportes inicializado');
     
+    // Configurar base de datos en routers que la necesitan
+    const { setDatabase: setDiscountDatabase } = require('./src/routes/discounts');
+    setDiscountDatabase(db);
+    console.log('✅ Base de datos configurada en router de descuentos');
+    
     // Verificar y agregar campo visible a complejos
     await ensureVisibleFieldExists();
     
