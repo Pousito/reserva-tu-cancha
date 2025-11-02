@@ -111,6 +111,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         let query = `
             SELECT 
                 r.id,
+                r.codigo_reserva,
                 r.codigo_reserva as codigo,
                 r.fecha,
                 r.hora_inicio,
@@ -120,6 +121,7 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                 r.nombre_cliente,
                 r.email_cliente,
                 r.telefono_cliente,
+                r.tipo_reserva,
                 c.id as cancha_id,
                 c.nombre as cancha_numero,
                 c.tipo as cancha_tipo,
