@@ -31,7 +31,7 @@ async function fixProductionSchema() {
             SELECT column_name 
             FROM information_schema.columns 
             WHERE table_name = 'reservas' 
-            AND column_name IN ('tipo_reserva', 'creada_por_admin', 'admin_id', 'metodo_contacto', 'comision_aplicada', 'porcentaje_pagado')
+            AND column_name IN ('tipo_reserva', 'creada_por_admin', 'admin_id', 'metodo_contacto', 'comision_aplicada', 'porcentaje_pagado', 'metodo_pago', 'monto_abonado')
             ORDER BY column_name;
         `);
         
@@ -45,7 +45,9 @@ async function fixProductionSchema() {
             { nombre: 'admin_id', tipo: 'INTEGER' },
             { nombre: 'metodo_contacto', tipo: 'VARCHAR(50) DEFAULT \'web\'' },
             { nombre: 'comision_aplicada', tipo: 'DECIMAL(10,2) DEFAULT 0' },
-            { nombre: 'porcentaje_pagado', tipo: 'INTEGER DEFAULT 100' }
+            { nombre: 'porcentaje_pagado', tipo: 'INTEGER DEFAULT 100' },
+            { nombre: 'metodo_pago', tipo: 'VARCHAR(50) DEFAULT NULL' },
+            { nombre: 'monto_abonado', tipo: 'INTEGER DEFAULT 0' }
         ];
         
         for (const columna of columnasAAgregar) {

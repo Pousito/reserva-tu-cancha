@@ -6952,6 +6952,118 @@ app.get('/api/debug/optimize-database', async (req, res) => {
   }
 });
 
+// ===== ENDPOINT PARA AGREGAR COLUMNAS FALTANTES (MIGRACIÓN) =====
+app.post('/api/debug/add-reservas-columns', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    console.log('🔧 Agregando columnas faltantes a tabla reservas...');
+    
+    const dbInfo = db.getDatabaseInfo();
+    if (dbInfo.type !== 'PostgreSQL') {
+      return res.json({ 
+        success: false, 
+        message: 'Esta migración solo funciona con PostgreSQL',
+        currentDb: dbInfo.type
+      });
+    }
+    
+    // Verificar columnas existentes
+    const columnasCheck = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas' 
+      AND column_name IN ('metodo_pago', 'monto_abonado')
+      ORDER BY column_name
+    `);
+    
+    const columnasExistentes = columnasCheck.map(row => row.column_name);
+    console.log('📊 Columnas existentes:', columnasExistentes);
+    
+    const resultados = [];
+    
+    // Agregar metodo_pago si no existe
+    if (!columnasExistentes.includes('metodo_pago')) {
+      try {
+        await db.run(`
+          ALTER TABLE reservas 
+          ADD COLUMN metodo_pago VARCHAR(50) DEFAULT NULL
+        `);
+        resultados.push({
+          columna: 'metodo_pago',
+          estado: 'agregada',
+          mensaje: 'Columna metodo_pago agregada exitosamente'
+        });
+        console.log('✅ Columna metodo_pago agregada');
+      } catch (error) {
+        resultados.push({
+          columna: 'metodo_pago',
+          estado: 'error',
+          mensaje: error.message
+        });
+        console.error('❌ Error agregando metodo_pago:', error.message);
+      }
+    } else {
+      resultados.push({
+        columna: 'metodo_pago',
+        estado: 'ya_existe',
+        mensaje: 'La columna metodo_pago ya existe'
+      });
+    }
+    
+    // Agregar monto_abonado si no existe
+    if (!columnasExistentes.includes('monto_abonado')) {
+      try {
+        await db.run(`
+          ALTER TABLE reservas 
+          ADD COLUMN monto_abonado INTEGER DEFAULT 0
+        `);
+        resultados.push({
+          columna: 'monto_abonado',
+          estado: 'agregada',
+          mensaje: 'Columna monto_abonado agregada exitosamente'
+        });
+        console.log('✅ Columna monto_abonado agregada');
+      } catch (error) {
+        resultados.push({
+          columna: 'monto_abonado',
+          estado: 'error',
+          mensaje: error.message
+        });
+        console.error('❌ Error agregando monto_abonado:', error.message);
+      }
+    } else {
+      resultados.push({
+        columna: 'monto_abonado',
+        estado: 'ya_existe',
+        mensaje: 'La columna monto_abonado ya existe'
+      });
+    }
+    
+    // Verificación final
+    const columnasFinal = await db.query(`
+      SELECT column_name, data_type, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'reservas' 
+      AND column_name IN ('metodo_pago', 'monto_abonado')
+      ORDER BY column_name
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Migración de columnas completada',
+      dbType: dbInfo.type,
+      resultados: resultados,
+      columnas: columnasFinal
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en migración de columnas:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ===== ENDPOINT PARA AGREGAR CAMPOS DE ROL =====
 app.get('/api/debug/add-role-fields', async (req, res) => {
   try {
