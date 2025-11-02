@@ -5544,24 +5544,9 @@ async function validarCodigoDescuento() {
             }
             mostrarMensajeDescuento(mensaje, 'success');
 
-            // Actualizar precio en el resumen
-            const precioOriginalElement = document.getElementById('precioOriginal');
-            if (precioOriginalElement) {
-                // Si hay promoción, mostrar precio original → precio con promoción → precio final
-                if (canchaSeleccionada.tiene_promocion && canchaSeleccionada.precio_actual < canchaSeleccionada.precio_hora) {
-                    precioOriginalElement.innerHTML = `
-                        <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(canchaSeleccionada.precio_hora)}</span>
-                        <span class="text-decoration-line-through text-muted ms-2">$${formatCurrencyChile(data.monto_original)}</span>
-                        <span class="text-success fw-bold ms-2">$${formatCurrencyChile(data.monto_final)}</span>
-                    `;
-                } else {
-                    // Solo código de descuento, sin promoción
-                    precioOriginalElement.innerHTML = `
-                        <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(data.monto_original)}</span>
-                        <span class="text-primary fw-bold ms-2">$${formatCurrencyChile(data.monto_final)}</span>
-                    `;
-                }
-            }
+            // IMPORTANTE: Llamar a actualizarResumenPrecio() para que recalcule
+            // considerando el código de descuento y el estado del checkbox "Pagar 50%"
+            actualizarResumenPrecio();
 
         } else {
             mostrarMensajeDescuento(data.error || 'Código de descuento no válido', 'error');
