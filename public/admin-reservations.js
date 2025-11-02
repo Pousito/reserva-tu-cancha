@@ -2790,9 +2790,12 @@ function forzarActualizacionCalendario() {
  */
 async function seleccionarSlot(fecha, hora) {
     console.log('📅 Slot seleccionado:', { fecha, hora });
-    
+
+    // CORRECCIÓN: Ajustar fecha si es medianoche (00:00) antes de formatear
+    const fechaAjustada = ajustarFechaParaMedianoche(fecha, hora);
+
     // Formatear fecha para mostrar (usando fecha local para evitar problemas de zona horaria)
-    const [año, mes, dia] = fecha.split('-').map(Number);
+    const [año, mes, dia] = fechaAjustada.split('-').map(Number);
     const fechaObj = new Date(año, mes - 1, dia); // Crear fecha local
     const fechaFormateada = fechaObj.toLocaleDateString('es-CL', {
         weekday: 'long',
