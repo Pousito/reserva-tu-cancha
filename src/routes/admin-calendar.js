@@ -470,7 +470,9 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             email_cliente,
             telefono_cliente,
             rut_cliente,
-            notas
+            notas,
+            metodo_pago,
+            estado_pago
         } = req.body;
         
         const user = req.user;
@@ -532,7 +534,9 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             precio_total: precioCalculado.finalPrice,
             tipo_reserva: 'administrativa',
             admin_id: user.id,
-            bloqueo_id: req.body.bloqueo_id || null // ID del bloqueo temporal del admin actual
+            bloqueo_id: req.body.bloqueo_id || null, // ID del bloqueo temporal del admin actual
+            metodo_pago: metodo_pago || null, // Método de pago seleccionado
+            estado_pago: estado_pago || 'pendiente' // Estado de pago (pagado, por_pagar, pendiente)
         };
         
         const options = {

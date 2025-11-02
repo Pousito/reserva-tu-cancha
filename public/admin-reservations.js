@@ -2867,6 +2867,7 @@ async function crearReservaAdmin() {
     const rutInput = document.getElementById('modalRutCliente');
     const telefonoInput = document.getElementById('modalTelefonoCliente');
     const canchaSelect = document.getElementById('modalCancha');
+    const metodoPagoSelect = document.getElementById('modalMetodoPago');
     
     // Obtener valores
     const nombre = nombreInput.value.trim();
@@ -2874,6 +2875,7 @@ async function crearReservaAdmin() {
     const rut = rutInput.value.trim();
     const telefono = telefonoInput.value.trim();
     const canchaId = canchaSelect.value;
+    const metodoPago = metodoPagoSelect.value;
     
     // Verificar que se haya seleccionado una hora del calendario
     if (!window.reservaSeleccionada) {
@@ -2907,6 +2909,13 @@ async function crearReservaAdmin() {
         return;
     }
     
+    // Validar método de pago
+    if (!metodoPago) {
+        mostrarNotificacion('Por favor selecciona un método de pago', 'danger');
+        metodoPagoSelect.focus();
+        return;
+    }
+    
     // Validar formato de los campos
     if (!validarNombre(nombre)) {
         mostrarNotificacion('Por favor ingresa un nombre completo válido (nombre y apellido)', 'danger');
@@ -2937,6 +2946,14 @@ async function crearReservaAdmin() {
     const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
     const precioCancha = canchaSeleccionada ? (canchaSeleccionada.precio_hora || canchaSeleccionada.precio || 0) : 0;
     
+    // Determinar estado de pago según método seleccionado
+    let estadoPago = 'pendiente';
+    if (metodoPago === 'efectivo') {
+        estadoPago = 'por_pagar';
+    } else if (metodoPago === 'transferencia' || metodoPago === 'webpay' || metodoPago === 'tarjeta') {
+        estadoPago = 'pagado';
+    }
+    
     // Preparar datos para envío
     const datos = {
         cancha_id: canchaId,
@@ -2950,7 +2967,9 @@ async function crearReservaAdmin() {
         tipo_reserva: 'administrativa',
         creada_por_admin: true,
         precio_total: precioCancha, // Precio dinámico de la cancha
-        bloqueo_id: window.reservaSeleccionada.bloqueoId // ID del bloqueo temporal del admin actual
+        bloqueo_id: window.reservaSeleccionada.bloqueoId, // ID del bloqueo temporal del admin actual
+        metodo_pago: metodoPago, // Método de pago seleccionado
+        estado_pago: estadoPago // Estado de pago según método
     };
     
     // Mostrar indicador de procesamiento

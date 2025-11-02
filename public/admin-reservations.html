@@ -925,6 +925,20 @@
                         <strong>Precio de la reserva:</strong> <span id="precioModal">Selecciona una cancha</span>
                     </div>
                     
+                    <!-- Método de pago -->
+                    <div class="mb-3">
+                        <label for="modalMetodoPago" class="form-label">Método de Pago *</label>
+                        <select class="form-select" id="modalMetodoPago" required>
+                            <option value="">Seleccionar método de pago</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia Bancaria</option>
+                            <option value="webpay">Webpay Plus</option>
+                            <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                        <div class="form-text">Selecciona el método de pago para esta reserva</div>
+                    </div>
+                    
                 </form>
             </div>
             <div class="modal-footer-reservation">
