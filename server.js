@@ -2502,22 +2502,48 @@ app.post('/api/admin/clear-cache', authenticateToken, requireRolePermission(['su
   }
 });
 
+// DEBUG: Endpoint temporal para verificar reserva en BD
+app.get('/api/debug/reserva/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log('🔍 DEBUG - Verificando reserva en BD:', codigo);
+
+    const result = await db.query(`
+      SELECT codigo_reserva, precio_total, monto_abonado, porcentaje_pagado,
+             metodo_pago, estado_pago, created_at
+      FROM reservas
+      WHERE codigo_reserva = $1
+    `, [codigo]);
+
+    console.log('🔍 DEBUG - Resultado de BD:', result);
+
+    res.json({
+      success: true,
+      reserva: result[0] || null,
+      encontrada: result.length > 0
+    });
+  } catch (error) {
+    console.error('❌ Error en debug:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para ejecutar script de creación de tabla directamente
 app.post('/api/admin/run-create-table-script', async (req, res) => {
   try {
     console.log('🔧 Ejecutando script de creación de tabla...');
-    
+
     // Importar y ejecutar el script
     const { createDepositosTable } = require('./scripts/create-depositos-table-direct');
-    
+
     // Ejecutar el script
     await createDepositosTable();
-    
+
     res.json({
       success: true,
       message: 'Script ejecutado exitosamente'
     });
-    
+
   } catch (error) {
     console.error('❌ Error ejecutando script:', error);
     res.status(500).json({

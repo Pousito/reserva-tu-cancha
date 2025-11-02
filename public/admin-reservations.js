@@ -623,8 +623,9 @@ async function verDetalles(codigoReserva) {
     const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
     if (!reserva) return;
     
-    // Calcular monto abonado (usando porcentaje_pagado si está disponible)
-    const montoAbonado = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+    // Calcular monto abonado - USAR ?? para evitar rounding errors
+    // ?? solo cae al fallback si es null/undefined, NO si es 0
+    const montoAbonado = reserva.monto_abonado ?? (reserva.precio_total && reserva.porcentaje_pagado ?
         Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
     const metodoPago = reserva.metodo_pago || 'No especificado';
     const estadoPago = reserva.estado_pago || 'pendiente';
@@ -1020,7 +1021,8 @@ async function guardarNuevoAbono(codigoReserva) {
     const metodoPago = metodoSelect.value;
     const notas = notasInput?.value?.trim() || null;
     const precioTotal = reserva.precio_total || 0;
-    const montoAbonadoActual = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+    // USAR ?? para evitar rounding errors - solo cae al fallback si es null/undefined, NO si es 0
+    const montoAbonadoActual = reserva.monto_abonado ?? (reserva.precio_total && reserva.porcentaje_pagado ?
         Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
     const restante = Math.max(0, precioTotal - montoAbonadoActual);
     
@@ -2257,15 +2259,20 @@ function renderizarCalendario(data = null) {
     // Header con horas
     html += '<div class="calendar-header">Hora</div>';
     
-    // Headers de días
+    // Headers de días - Usar obtenerInicioSemana para calcular correctamente
+    const inicioSemana = new Date(semanaActual);
+    const dia = inicioSemana.getDay();
+    const diff = dia === 0 ? -6 : 1 - dia; // Si es domingo, retroceder 6 días; sino ir al lunes
+    inicioSemana.setDate(inicioSemana.getDate() + diff);
+
     for (let i = 0; i < 7; i++) {
-        const fecha = new Date(semanaActual);
-        fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
+        const fecha = new Date(inicioSemana);
+        fecha.setDate(inicioSemana.getDate() + i);
         const esHoy = esMismoDia(fecha, new Date());
         const esOtroMes = fecha.getMonth() !== semanaActual.getMonth();
-        
+
         console.log(`📅 Día ${i}: ${fecha.toDateString()} (número: ${fecha.getDate()})`);
-        
+
         html += `<div class="calendar-day-header ${esHoy ? 'today' : ''} ${esOtroMes ? 'other-month' : ''}">
             ${dias[i]}<br>
             <small>${fecha.getDate()}</small>
@@ -2297,10 +2304,10 @@ function renderizarCalendario(data = null) {
     // Si no hay horarios del backend, generar horarios por defecto
     if (todasLasHoras.size === 0) {
         console.log('⚠️ DEBUG renderizarCalendario - No hay horarios del backend, generando por defecto');
-        // Generar horarios para todos los días de la semana
+        // Generar horarios para todos los días de la semana usando inicioSemana ya calculado
         for (let i = 0; i < 7; i++) {
-            const fecha = new Date(semanaActual);
-            fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
+            const fecha = new Date(inicioSemana);
+            fecha.setDate(inicioSemana.getDate() + i);
             const horas = generarHoras(formatearFecha(fecha));
             console.log(`🕐 DEBUG renderizarCalendario - Horas generadas para día ${i}:`, horas);
             horas.forEach(hora => todasLasHoras.add(hora));
@@ -2334,16 +2341,16 @@ function renderizarCalendario(data = null) {
         // Columna de hora
         html += `<div class="calendar-time-slot">${hora}</div>`;
         
-        // Columnas de días
+        // Columnas de días - Usar inicioSemana ya calculado
         for (let i = 0; i < 7; i++) {
-            const fecha = new Date(semanaActual);
-            fecha.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
+            const fecha = new Date(inicioSemana);
+            fecha.setDate(inicioSemana.getDate() + i);
             // Usar fecha local en lugar de UTC para evitar desfase de zona horaria
             const fechaStr = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
-            
+
             // Verificar si esta hora está disponible para este día
-            const fechaObj = new Date(semanaActual);
-            fechaObj.setDate(semanaActual.getDate() - semanaActual.getDay() + 1 + i);
+            const fechaObj = new Date(inicioSemana);
+            fechaObj.setDate(inicioSemana.getDate() + i);
             const diaSemana = fechaObj.getDay();
             
             // Obtener el complejo actual del usuario
