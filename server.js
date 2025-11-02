@@ -2561,9 +2561,20 @@ app.delete('/api/debug/reserva/:codigo', async (req, res) => {
 
       const reservaData = reserva.rows[0];
 
-      // Eliminar registros relacionados primero
-      await client.query(`DELETE FROM historial_abonos_reservas WHERE codigo_reserva = $1`, [codigo]);
-      await client.query(`DELETE FROM uso_codigos_descuento WHERE reserva_id = $1`, [reservaData.id]);
+      // Eliminar registros relacionados primero (si las tablas existen)
+      try {
+        await client.query(`DELETE FROM historial_abonos_reservas WHERE codigo_reserva = $1`, [codigo]);
+        console.log('✅ Eliminados registros de historial_abonos_reservas');
+      } catch (err) {
+        console.log('⚠️ Tabla historial_abonos_reservas no existe o no tiene registros');
+      }
+
+      try {
+        await client.query(`DELETE FROM uso_codigos_descuento WHERE reserva_id = $1`, [reservaData.id]);
+        console.log('✅ Eliminados registros de uso_codigos_descuento');
+      } catch (err) {
+        console.log('⚠️ Tabla uso_codigos_descuento no existe o no tiene registros');
+      }
 
       // Eliminar la reserva
       const result = await client.query(`
