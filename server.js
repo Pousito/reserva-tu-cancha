@@ -2346,7 +2346,7 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
       JOIN complejos co ON c.complejo_id = co.id
       JOIN ciudades ci ON co.ciudad_id = ci.id
       ${whereClause}
-      ORDER BY r.fecha_creacion DESC
+      ORDER BY COALESCE(r.fecha_creacion, r.created_at, r.fecha) DESC
     `, params);
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
