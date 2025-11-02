@@ -286,6 +286,21 @@
             display: none;
         }
 
+        .btn-dev {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn-dev:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.4);
+        }
+
+        .dev-only {
+            display: none;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -526,6 +541,9 @@
                 <button class="btn btn-secondary" onclick="goBack()">
                     ← Volver
                 </button>
+                <button class="btn btn-dev dev-only" id="devPayButton" onclick="simularPagoExitoso()" style="display: none;">
+                    🧪 Simular Pago Exitoso (DEV)
+                </button>
                 <button class="btn btn-primary" id="payButton" onclick="processPayment()">
                     💳 Pagar Ahora
                 </button>
@@ -542,6 +560,18 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadReservationData();
             setupPaymentMethodSelection();
+
+            // Mostrar botón de simulación solo en desarrollo (localhost)
+            const isDevelopment = window.location.hostname === 'localhost' ||
+                                 window.location.hostname === '127.0.0.1';
+
+            if (isDevelopment) {
+                const devButton = document.getElementById('devPayButton');
+                if (devButton) {
+                    devButton.style.display = 'inline-flex';
+                    console.log('🧪 Modo desarrollo detectado - Botón de simulación habilitado');
+                }
+            }
         });
 
         // Cargar datos del bloqueo temporal desde la URL
@@ -996,6 +1026,54 @@
             } catch (error) {
                 console.error('Error confirmando pago:', error);
                 showError('Error confirmando pago: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        /**
+         * Simular pago exitoso (SOLO DESARROLLO)
+         * Esta función crea directamente la reserva sin pasar por Transbank
+         */
+        async function simularPagoExitoso() {
+            console.log('🧪 Simulando pago exitoso en desarrollo...');
+
+            if (!reservationData) {
+                showError('Datos de reserva no disponibles');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                hideMessages();
+
+                // Llamar al endpoint de simulación de pago (solo disponible en desarrollo)
+                const response = await fetch('/api/payments/simulate-success', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reservationCode: reservationData.code,
+                        amount: reservationData.amount
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('🧪 Pago simulado exitosamente! Tu reserva está activa.');
+                    setTimeout(() => {
+                        // Redirigir a página de éxito
+                        const emailParam = result.email_sent ? 'sent' : 'failed';
+                        window.location.href = `/payment-success.html?code=${result.reservationCode}&email=${emailParam}`;
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Error simulando pago');
+                }
+
+            } catch (error) {
+                console.error('Error simulando pago:', error);
+                showError('Error simulando pago: ' + error.message);
                 showLoading(false);
             }
         }

@@ -516,4 +516,146 @@ router.get('/history/:reservationCode', async (req, res) => {
     }
 });
 
+/**
+ * Simular pago exitoso (SOLO DESARROLLO)
+ * POST /api/payments/simulate-success
+ * Este endpoint solo está disponible en desarrollo (localhost)
+ */
+router.post('/simulate-success', async (req, res) => {
+    // IMPORTANTE: Solo permitir en desarrollo
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({
+            success: false,
+            error: 'Endpoint no disponible en producción'
+        });
+    }
+
+    try {
+        console.log('🧪 Simulando pago exitoso en desarrollo...');
+        const { reservationCode, amount } = req.body;
+
+        if (!reservationCode || !amount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de reserva y monto requeridos'
+            });
+        }
+
+        // Buscar el bloqueo temporal por session_id (que es igual al reservationCode)
+        const bloqueo = await db.get(
+            'SELECT * FROM bloqueos_temporales WHERE session_id = $1',
+            [reservationCode]
+        );
+
+        if (!bloqueo) {
+            return res.status(404).json({
+                success: false,
+                error: 'Bloqueo temporal no encontrado'
+            });
+        }
+
+        const datosCliente = JSON.parse(bloqueo.datos_cliente);
+
+        // Generar código de reserva único (6 caracteres)
+        const codigoReserva = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        // Calcular comisión para reserva web (3.5% + IVA)
+        const { calculateCommissionWithIVA } = require('../config/commissions');
+        const comisionData = calculateCommissionWithIVA(datosCliente.precio_total, 'directa');
+        const comisionWeb = comisionData.comisionTotal;
+
+        // Crear la reserva directamente (simulando pago exitoso)
+        await db.run(`
+            INSERT INTO reservas (
+                cancha_id, nombre_cliente, email_cliente, telefono_cliente,
+                rut_cliente, fecha, hora_inicio, hora_fin, precio_total,
+                codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado,
+                tipo_reserva, comision_aplicada
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        `, [
+            bloqueo.cancha_id,
+            datosCliente.nombre_cliente,
+            datosCliente.email_cliente,
+            datosCliente.telefono_cliente,
+            datosCliente.rut_cliente,
+            bloqueo.fecha,
+            bloqueo.hora_inicio,
+            bloqueo.hora_fin,
+            datosCliente.precio_total,
+            codigoReserva,
+            'confirmada',
+            'pagado',
+            new Date().toISOString(),
+            datosCliente.porcentaje_pagado || 100,
+            'directa',
+            comisionWeb
+        ]);
+
+        // Eliminar el bloqueo temporal
+        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [bloqueo.id]);
+
+        console.log(`✅ Reserva simulada creada exitosamente: ${codigoReserva}`);
+
+        // Enviar emails
+        let emailSent = false;
+
+        try {
+            const EmailService = require('../services/emailService');
+            const emailService = new EmailService();
+
+            // Obtener información completa de la reserva para el email
+            const reservaInfo = await db.get(`
+                SELECT r.id, r.cancha_id, r.nombre_cliente, r.email_cliente,
+                       r.telefono_cliente, r.rut_cliente,
+                       TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
+                       r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
+                       r.porcentaje_pagado,
+                       c.nombre as cancha_nombre, c.tipo, co.nombre as complejo_nombre
+                FROM reservas r
+                JOIN canchas c ON r.cancha_id = c.id
+                JOIN complejos co ON c.complejo_id = co.id
+                WHERE r.codigo_reserva = $1
+            `, [codigoReserva]);
+
+            if (reservaInfo) {
+                const emailData = {
+                    codigo_reserva: reservaInfo.codigo_reserva,
+                    email_cliente: reservaInfo.email_cliente,
+                    nombre_cliente: reservaInfo.nombre_cliente,
+                    complejo: reservaInfo.complejo_nombre || 'Complejo Deportivo',
+                    cancha: reservaInfo.cancha_nombre || 'Cancha',
+                    fecha: reservaInfo.fecha,
+                    hora_inicio: reservaInfo.hora_inicio,
+                    hora_fin: reservaInfo.hora_fin,
+                    precio_total: reservaInfo.precio_total,
+                    porcentaje_pagado: reservaInfo.porcentaje_pagado || 100
+                };
+
+                const emailResults = await emailService.sendConfirmationEmails(emailData);
+                emailSent = emailResults.cliente || emailResults.simulated;
+
+                console.log('📧 Resultados de emails (simulación):', emailResults);
+            }
+        } catch (error) {
+            console.error('❌ Error enviando emails en simulación:', error.message);
+        }
+
+        res.json({
+            success: true,
+            message: '🧪 Pago simulado exitosamente (modo desarrollo)',
+            reservationCode: codigoReserva,
+            amount: amount,
+            authorizationCode: 'SIM-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            email_sent: emailSent
+        });
+
+    } catch (error) {
+        console.error('❌ Error en simulación de pago:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor: ' + error.message
+        });
+    }
+});
+
 module.exports = { router, setDatabase };
