@@ -200,6 +200,37 @@ class DatabaseManager {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      
+      // Verificar y agregar PRIMARY KEY si no existe (para tablas existentes)
+      console.log('🔧 Verificando PRIMARY KEY en tabla usuarios...');
+      const checkPKUsuarios = await client.query(`
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'usuarios' 
+        AND constraint_type = 'PRIMARY KEY'
+      `);
+      
+      if (checkPKUsuarios.rows.length === 0) {
+        console.log('🔧 Agregando PRIMARY KEY a tabla usuarios...');
+        // Verificar que la columna id existe
+        const checkIdColumnUsuarios = await client.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'usuarios' AND column_name = 'id'
+        `);
+        
+        if (checkIdColumnUsuarios.rows.length > 0) {
+          await client.query(`
+            ALTER TABLE usuarios 
+            ADD PRIMARY KEY (id)
+          `);
+          console.log('✅ PRIMARY KEY agregada a tabla usuarios');
+        } else {
+          console.log('⚠️ Columna id no existe en usuarios, se requiere intervención manual');
+        }
+      } else {
+        console.log('✅ PRIMARY KEY ya existe en tabla usuarios');
+      }
 
       // Crear tabla reservas
       await client.query(`
