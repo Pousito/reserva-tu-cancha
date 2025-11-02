@@ -92,7 +92,7 @@ function horaCoincideConPromocion(hora, promocion) {
         case 'rango':
             const horaInicio = promocion.hora_inicio.substring(0, 5);
             const horaFin = promocion.hora_fin.substring(0, 5);
-            return horaLimpia >= horaInicio && horaLimpia < horaFin;
+            return horaLimpia >= horaInicio && horaLimpia <= horaFin;
             
         default:
             return false;

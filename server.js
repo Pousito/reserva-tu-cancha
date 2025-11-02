@@ -4648,8 +4648,8 @@ async function verificarPromocionActiva(canchaId, fecha, hora) {
       } else if (promo.tipo_horario === 'rango' && promo.hora_inicio && promo.hora_fin) {
         const horaInicioPromo = promo.hora_inicio.substring(0, 5);
         const horaFinPromo = promo.hora_fin.substring(0, 5);
-        horarioValido = horaReserva >= horaInicioPromo && horaReserva < horaFinPromo;
-        console.log(`   🕐 Validación de rango: ${horaInicioPromo} <= ${horaReserva} < ${horaFinPromo} = ${horarioValido}`);
+        horarioValido = horaReserva >= horaInicioPromo && horaReserva <= horaFinPromo;
+        console.log(`   🕐 Validación de rango: ${horaInicioPromo} <= ${horaReserva} <= ${horaFinPromo} = ${horarioValido}`);
       }
       
       console.log(`   ✔️ Horario válido: ${horarioValido}`);
