@@ -12,7 +12,21 @@ const setDatabase = (databaseInstance) => {
 // Endpoint para validar un código de descuento
 router.post('/validar', async (req, res) => {
   try {
+    // Verificar que la base de datos esté configurada
+    if (!db) {
+      console.error('❌ Error: Base de datos no configurada en discounts router');
+      return res.status(500).json({ 
+        error: 'Error de configuración del servidor' 
+      });
+    }
+
     const { codigo, email_cliente, monto_original } = req.body;
+
+    console.log('🎫 Validando código de descuento (backend):', {
+      codigo: codigo,
+      email_cliente: email_cliente,
+      monto_original: monto_original
+    });
 
     if (!codigo || !email_cliente || !monto_original) {
       return res.status(400).json({ 

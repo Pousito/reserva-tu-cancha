@@ -5442,7 +5442,13 @@ async function validarCodigoDescuento() {
             precio: canchaSeleccionada.precio_hora
         });
         
-        const response = await fetch('/api/discounts/validar', {
+        // Usar API_BASE para asegurar compatibilidad con desarrollo y producción
+        const apiBase = window.API_BASE || '/api';
+        const url = `${apiBase}/discounts/validar`;
+        
+        console.log('🔗 URL de validación:', url);
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
