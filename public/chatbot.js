@@ -209,7 +209,7 @@ class Chatbot {
             
             // Descuentos
             'descuento': '🎫 <b>Códigos de Descuento Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% de descuento<br><br><b>BIENVENIDA15:</b> 15% de descuento<br><br><b>FIDELIDAD10:</b> 10% de descuento<br><br>💡 <i>Aplica el código al hacer tu reserva.</i>',
-            'codigo': '🎫 <b>Códigos Activos:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% descuento<br><br><b>BIENVENIDA15:</b> 15% descuento<br><br><b>FIDELIDAD10:</b> 10% descuento<br><br>¿Quieres aplicar alguno?',
+            'codigo': '🎫 <b>Código Activo:</b><br><br><b>RESERVABORDERIO10:</b> 10% descuento<br><br>Válido hasta el 14 de noviembre de 2025<br><br>¿Quieres aplicarlo?',
             'promocion': '🎫 <b>Promociones Disponibles:</b><br><br><b>RESERVATUSCANCHAS20:</b> 20% descuento<br><br><b>BIENVENIDA15:</b> 15% descuento<br><br><b>FIDELIDAD10:</b> 10% descuento<br><br>💡 <i>Válidos hasta agotar stock</i>',
             
             // Contacto
