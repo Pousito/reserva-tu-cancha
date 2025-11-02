@@ -5430,24 +5430,30 @@ async function validarCodigoDescuento() {
         mostrarMensajeDescuento('Por favor selecciona una cancha primero', 'error');
         return;
     }
-    
+
+    // Usar precio_actual si existe (precio con promoción), sino usar precio_hora (precio original)
+    const precioBase = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
+
     // Mostrar loading
     aplicarBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validando...';
     aplicarBtn.disabled = true;
-    
+
     try {
         console.log('🎫 Validando código de descuento:', {
             codigo: codigo,
             email: emailCliente,
-            precio: canchaSeleccionada.precio_hora
+            precio_original: canchaSeleccionada.precio_hora,
+            precio_con_promocion: canchaSeleccionada.precio_actual,
+            precio_base_para_descuento: precioBase,
+            tiene_promocion: canchaSeleccionada.tiene_promocion
         });
-        
+
         // Usar API_BASE para asegurar compatibilidad con desarrollo y producción
         const apiBase = window.API_BASE || '/api';
         const url = `${apiBase}/discounts/validar`;
-        
+
         console.log('🔗 URL de validación:', url);
-        
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -5456,7 +5462,7 @@ async function validarCodigoDescuento() {
             body: JSON.stringify({
                 codigo: codigo,
                 email_cliente: emailCliente,
-                monto_original: canchaSeleccionada.precio_hora
+                monto_original: precioBase  // Usar precio con promoción si existe
             })
         });
         
@@ -5469,20 +5475,37 @@ async function validarCodigoDescuento() {
             descuentoAplicado = data;
             precioOriginal = data.monto_original;
             precioConDescuento = data.monto_final;
-            
+
             // Mostrar resumen de descuento
             mostrarResumenDescuento(data);
-            mostrarMensajeDescuento(`¡Descuento aplicado! ${data.porcentaje_descuento}% de descuento`, 'success');
-            
+
+            // Mensaje diferente si hay promoción activa
+            let mensaje = `¡Descuento aplicado! ${data.porcentaje_descuento}% de descuento`;
+            if (canchaSeleccionada.tiene_promocion && canchaSeleccionada.precio_actual < canchaSeleccionada.precio_hora) {
+                const descuentoPromo = Math.round(((canchaSeleccionada.precio_hora - canchaSeleccionada.precio_actual) / canchaSeleccionada.precio_hora) * 100);
+                mensaje = `¡Descuentos aplicados! ${descuentoPromo}% promoción + ${data.porcentaje_descuento}% código`;
+            }
+            mostrarMensajeDescuento(mensaje, 'success');
+
             // Actualizar precio en el resumen
             const precioOriginalElement = document.getElementById('precioOriginal');
             if (precioOriginalElement) {
-                precioOriginalElement.innerHTML = `
-                    <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(data.monto_original)}</span>
-                    <span class="text-primary fw-bold ms-2">$${formatCurrencyChile(data.monto_final)}</span>
-                `;
+                // Si hay promoción, mostrar precio original → precio con promoción → precio final
+                if (canchaSeleccionada.tiene_promocion && canchaSeleccionada.precio_actual < canchaSeleccionada.precio_hora) {
+                    precioOriginalElement.innerHTML = `
+                        <span class="text-decoration-line-through text-muted small">$${formatCurrencyChile(canchaSeleccionada.precio_hora)}</span>
+                        <span class="text-decoration-line-through text-muted ms-2">$${formatCurrencyChile(data.monto_original)}</span>
+                        <span class="text-success fw-bold ms-2">$${formatCurrencyChile(data.monto_final)}</span>
+                    `;
+                } else {
+                    // Solo código de descuento, sin promoción
+                    precioOriginalElement.innerHTML = `
+                        <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(data.monto_original)}</span>
+                        <span class="text-primary fw-bold ms-2">$${formatCurrencyChile(data.monto_final)}</span>
+                    `;
+                }
             }
-            
+
         } else {
             mostrarMensajeDescuento(data.error || 'Código de descuento no válido', 'error');
             limpiarDescuento();
