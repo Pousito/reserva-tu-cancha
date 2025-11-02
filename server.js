@@ -2310,7 +2310,16 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
     
     const userRole = req.user.rol;
-    const complexFilter = req.complexFilter;
+    // Usar complexFilter del middleware requireComplexAccess
+    let complexFilter = req.complexFilter;
+    
+    // Fallback: intentar obtener de user si complexFilter no está disponible
+    if (!complexFilter && (userRole === 'owner' || userRole === 'manager')) {
+      complexFilter = req.user?.complejo_id;
+      console.log('⚠️ Fallback: Obteniendo complejo_id de req.user:', complexFilter);
+    }
+    
+    console.log('📋 getAllReservas - Rol:', userRole, 'Complejo ID:', complexFilter);
     
     // Construir filtros según el rol
     let whereClause = '';
@@ -2319,10 +2328,13 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     if (userRole === 'super_admin') {
       // Super admin ve todo
       whereClause = '';
-    } else if (userRole === 'owner' || userRole === 'manager') {
+    } else if ((userRole === 'owner' || userRole === 'manager') && complexFilter) {
       // Dueños y administradores solo ven su complejo
       whereClause = 'WHERE c.complejo_id = $1';
       params = [complexFilter];
+      console.log('✅ Filtro aplicado - Solo mostrando reservas del complejo:', complexFilter);
+    } else if (userRole === 'owner' || userRole === 'manager') {
+      console.error('⚠️ ADVERTENCIA: Owner/Manager sin complejo_id asignado. No se aplicará filtro de complejo.');
     }
     
     const reservas = await db.query(`
