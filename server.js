@@ -2533,6 +2533,72 @@ app.get('/api/debug/reserva/:codigo', async (req, res) => {
   }
 });
 
+// DEBUG: Endpoint temporal para crear código de descuento RESERVABORDERIO10
+app.post('/api/debug/create-discount-code', async (req, res) => {
+  try {
+    console.log('🎫 Creando código de descuento RESERVABORDERIO10...');
+
+    const client = await db.pgPool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Verificar si ya existe
+      const existente = await client.query(`
+        SELECT id, codigo FROM codigos_descuento WHERE codigo = 'RESERVABORDERIO10'
+      `);
+
+      if (existente.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.json({
+          success: true,
+          message: 'El código ya existe',
+          codigo: existente.rows[0]
+        });
+      }
+
+      // Crear el código
+      const fechaInicio = new Date().toISOString().split('T')[0];
+      const fechaFin = '2025-11-14';
+
+      const result = await client.query(`
+        INSERT INTO codigos_descuento
+        (codigo, descripcion, porcentaje_descuento, monto_maximo_descuento,
+         fecha_inicio, fecha_fin, usos_maximos, activo)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *
+      `, [
+        'RESERVABORDERIO10',
+        'Descuento del 10% para reservas en Espacio Deportivo Borde Río',
+        10.00,
+        null,
+        fechaInicio,
+        fechaFin,
+        null,
+        true
+      ]);
+
+      await client.query('COMMIT');
+
+      res.json({
+        success: true,
+        message: 'Código creado exitosamente',
+        codigo: result.rows[0]
+      });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('❌ Error creando código:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para ejecutar script de creación de tabla directamente
 app.post('/api/admin/run-create-table-script', async (req, res) => {
   try {
