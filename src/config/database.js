@@ -143,6 +143,49 @@ class DatabaseManager {
           precio_hora INTEGER
         )
       `);
+      
+      // Verificar y agregar PRIMARY KEY si no existe (para tablas existentes)
+      console.log('🔧 Verificando PRIMARY KEY en tabla canchas...');
+      const checkPK = await client.query(`
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'canchas' 
+        AND constraint_type = 'PRIMARY KEY'
+      `);
+      
+      if (checkPK.rows.length === 0) {
+        console.log('🔧 Agregando PRIMARY KEY a tabla canchas...');
+        // Verificar que la columna id existe
+        const checkIdColumn = await client.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'canchas' AND column_name = 'id'
+        `);
+        
+        if (checkIdColumn.rows.length > 0) {
+          await client.query(`
+            ALTER TABLE canchas 
+            ADD PRIMARY KEY (id)
+          `);
+          console.log('✅ PRIMARY KEY agregada a tabla canchas');
+        } else {
+          console.log('⚠️ Columna id no existe en canchas, creando tabla completa...');
+          // Si no existe la columna id, recrear la tabla (caso extremo)
+          await client.query(`DROP TABLE IF EXISTS canchas CASCADE`);
+          await client.query(`
+            CREATE TABLE canchas (
+              id SERIAL PRIMARY KEY,
+              complejo_id INTEGER REFERENCES complejos(id),
+              nombre VARCHAR(255) NOT NULL,
+              tipo VARCHAR(50),
+              precio_hora INTEGER
+            )
+          `);
+          console.log('✅ Tabla canchas recreada con PRIMARY KEY');
+        }
+      } else {
+        console.log('✅ PRIMARY KEY ya existe en tabla canchas');
+      }
 
       // Crear tabla usuarios
       await client.query(`
