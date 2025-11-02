@@ -3099,15 +3099,15 @@ app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, requireRo
   try {
     console.log('⚽ Cargando canchas para administración...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
-    
+
     const userRole = req.user.rol;
     const complexFilter = req.complexFilter;
-    const { complejoId } = req.query; // Obtener complejoId de query parameters
-    
+    const { complejoId, fecha, hora } = req.query; // Obtener complejoId, fecha y hora de query parameters
+
     // Construir filtros según el rol
     let whereClause = '';
     let params = [];
-    
+
     if (userRole === 'super_admin') {
       // Super admin puede filtrar por complejo específico si se proporciona
       if (complejoId) {
@@ -3119,7 +3119,7 @@ app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, requireRo
       whereClause = 'WHERE c.complejo_id = $1';
       params = [complexFilter];
     }
-    
+
     const canchas = await db.query(`
       SELECT c.*, co.nombre as complejo_nombre, co.id as complejo_id, ci.nombre as ciudad_nombre
       FROM canchas c
@@ -3128,7 +3128,68 @@ app.get('/api/admin/canchas', authenticateToken, requireComplexAccess, requireRo
       ${whereClause}
       ORDER BY co.nombre, c.nombre
     `, params);
-    
+
+    // IMPORTANTE: Siempre establecer precio_original como precio_hora
+    canchas.forEach(cancha => {
+      cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+      cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+      cancha.tiene_promocion = false;
+    });
+
+    // Si se proporciona fecha y hora, verificar promociones activas
+    if (fecha && hora) {
+      console.log('🎯 Verificando promociones para fecha:', fecha, 'hora:', hora);
+      try {
+        const promocionesHelper = require('./src/utils/promociones-helper');
+        promocionesHelper.setDatabase(db); // Establecer la instancia de la base de datos
+
+        for (const cancha of canchas) {
+          try {
+            const precioInfo = await promocionesHelper.obtenerPrecioConPromocion(
+              cancha.id,
+              fecha,
+              hora
+            );
+
+            // IMPORTANTE: precio_original siempre debe ser precio_hora
+            const precioOriginal = parseFloat(cancha.precio_hora) || 0;
+            const precioActual = parseFloat(precioInfo.precio) || precioOriginal;
+
+            cancha.precio_original = precioOriginal;
+            cancha.precio_actual = precioActual;
+            cancha.tiene_promocion = precioInfo.tienePromocion === true;
+
+            if (cancha.tiene_promocion) {
+              cancha.promocion_info = {
+                nombre: precioInfo.promocionNombre,
+                descuento: precioInfo.descuento,
+                porcentaje_descuento: precioInfo.porcentajeDescuento
+              };
+              console.log(`✅ Promoción aplicada a cancha ${cancha.id}: ${cancha.precio_original} → ${cancha.precio_actual}`);
+            } else {
+              cancha.promocion_info = null;
+            }
+          } catch (canchaError) {
+            console.error(`⚠️ Error verificando promoción para cancha ${cancha.id}:`, canchaError.message);
+            // Continuar con precio normal si hay error
+            cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+            cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+            cancha.tiene_promocion = false;
+            cancha.promocion_info = null;
+          }
+        }
+      } catch (error) {
+        console.error('⚠️ Error verificando promociones:', error.message);
+        // Si hay error, asegurar que todas las canchas tengan precio_original establecido
+        canchas.forEach(cancha => {
+          cancha.precio_original = parseFloat(cancha.precio_hora) || 0;
+          cancha.precio_actual = parseFloat(cancha.precio_hora) || 0;
+          cancha.tiene_promocion = false;
+          cancha.promocion_info = null;
+        });
+      }
+    }
+
     console.log(`✅ ${canchas.length} canchas cargadas para administración`);
     res.json(canchas);
   } catch (error) {

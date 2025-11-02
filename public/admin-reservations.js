@@ -3166,35 +3166,44 @@ async function cargarCanchasModal(complejoIdParam = null) {
     const modalComplejoElement = document.getElementById('modalComplejo');
     const complejoId = complejoIdParam || (modalComplejoElement ? modalComplejoElement.value : '');
     const select = document.getElementById('modalCancha');
-    
+
     console.log('🔍 cargarCanchasModal - modalComplejoElement:', modalComplejoElement);
     console.log('🔍 cargarCanchasModal - complejoIdParam:', complejoIdParam);
     console.log('🔍 cargarCanchasModal - complejoId final:', complejoId);
     console.log('🔍 cargarCanchasModal - modalComplejoElement.value:', modalComplejoElement ? modalComplejoElement.value : 'elemento no encontrado');
-    
+
     select.innerHTML = '<option value="">Seleccionar cancha</option>';
-    
+
     if (complejoId) {
         try {
-            console.log('🔍 cargarCanchasModal - haciendo fetch a:', `${API_BASE}/admin/canchas?complejoId=${complejoId}`);
-            const response = await fetch(`${API_BASE}/admin/canchas?complejoId=${complejoId}`, {
+            // Construir URL con fecha y hora si están disponibles
+            let url = `${API_BASE}/admin/canchas?complejoId=${complejoId}`;
+
+            // Si hay datos de reserva seleccionada, incluir fecha y hora para calcular precios con promoción
+            if (window.reservaSeleccionada && window.reservaSeleccionada.fecha && window.reservaSeleccionada.horaInicio) {
+                url += `&fecha=${window.reservaSeleccionada.fecha}&hora=${window.reservaSeleccionada.horaInicio}`;
+                console.log('🎯 cargarCanchasModal - Solicitando precios con promoción para:', window.reservaSeleccionada.fecha, window.reservaSeleccionada.horaInicio);
+            }
+
+            console.log('🔍 cargarCanchasModal - haciendo fetch a:', url);
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${AdminUtils.getAuthToken()}`
                 }
             });
-            
+
             console.log('🔍 cargarCanchasModal - response status:', response.status);
             console.log('🔍 cargarCanchasModal - response ok:', response.ok);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             if (response.ok) {
                 const canchasData = await response.json();
                 console.log('🔍 cargarCanchasModal - canchasData recibidas:', canchasData);
                 console.log('🔍 cargarCanchasModal - cantidad de canchas:', canchasData.length);
-                
+
                 if (canchasData.length === 0) {
                     console.log('⚠️ cargarCanchasModal - No se encontraron canchas para el complejo:', complejoId);
                     const option = document.createElement('option');
@@ -3211,17 +3220,27 @@ async function cargarCanchasModal(complejoIdParam = null) {
                         // Si no hay reserva seleccionada, mostrar todas las canchas
                         canchasData.forEach(cancha => {
                             console.log('🔍 cargarCanchasModal - procesando cancha:', cancha);
-                            const precio = cancha.precio_hora || cancha.precio || 0;
-                            console.log('🔍 cargarCanchasModal - precio calculado:', precio, 'precio_hora:', cancha.precio_hora, 'precio:', cancha.precio);
+                            // Usar precio_actual si existe (con promoción), sino precio_hora
+                            const precio = cancha.precio_actual || cancha.precio_hora || cancha.precio || 0;
+                            console.log('🔍 cargarCanchasModal - precio calculado:', precio, 'precio_actual:', cancha.precio_actual, 'precio_hora:', cancha.precio_hora);
                             const option = document.createElement('option');
                             option.value = cancha.id;
-                            option.textContent = `${cancha.nombre} - ${cancha.tipo}`;
+
+                            // Mostrar indicador de promoción si existe
+                            let nombreCancha = `${cancha.nombre} - ${cancha.tipo}`;
+                            if (cancha.tiene_promocion) {
+                                nombreCancha += ` (Promoción: $${formatCurrencyChile(precio)})`;
+                            }
+
+                            option.textContent = nombreCancha;
                             option.dataset.precio = precio;
+                            option.dataset.precioOriginal = cancha.precio_original || cancha.precio_hora || 0;
+                            option.dataset.tienePromocion = cancha.tiene_promocion ? 'true' : 'false';
                             select.appendChild(option);
                         });
                     }
                 }
-                
+
                 console.log('🔍 cargarCanchasModal - opciones agregadas al select:', select.innerHTML);
             } else {
                 console.error('❌ cargarCanchasModal - Error en respuesta:', response.status, response.statusText);
@@ -3279,7 +3298,7 @@ async function cargarCanchasDisponiblesModal(canchasData, select, complejoId) {
     }
     
     console.log('🔍 cargarCanchasDisponiblesModal - Canchas disponibles encontradas:', canchasDisponibles.length, 'de', canchasData.length);
-    
+
     if (canchasDisponibles.length === 0) {
         const option = document.createElement('option');
         option.value = '';
@@ -3288,11 +3307,21 @@ async function cargarCanchasDisponiblesModal(canchasData, select, complejoId) {
         select.appendChild(option);
     } else {
         canchasDisponibles.forEach(cancha => {
-            const precio = cancha.precio_hora || cancha.precio || 0;
+            // Usar precio_actual si existe (con promoción), sino precio_hora
+            const precio = cancha.precio_actual || cancha.precio_hora || cancha.precio || 0;
             const option = document.createElement('option');
             option.value = cancha.id;
-            option.textContent = `${cancha.nombre} - ${cancha.tipo}`;
+
+            // Mostrar indicador de promoción si existe
+            let nombreCancha = `${cancha.nombre} - ${cancha.tipo}`;
+            if (cancha.tiene_promocion) {
+                nombreCancha += ` (Promoción: $${formatCurrencyChile(precio)})`;
+            }
+
+            option.textContent = nombreCancha;
             option.dataset.precio = precio;
+            option.dataset.precioOriginal = cancha.precio_original || cancha.precio_hora || 0;
+            option.dataset.tienePromocion = cancha.tiene_promocion ? 'true' : 'false';
             select.appendChild(option);
         });
     }
@@ -3817,19 +3846,55 @@ function actualizarPrecioModal() {
         return;
     }
     
-    // Buscar la cancha seleccionada
-    const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
-    if (canchaSeleccionada) {
-        // Obtener precio actual (considerando promociones)
-        const precio = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora || 0;
-        precioElement.textContent = `$${formatCurrencyChile(precio)} por hora`;
-        
+    // Buscar la cancha seleccionada - primero en el select, luego en la lista global
+    const selectedOption = canchaSelect.options[canchaSelect.selectedIndex];
+    let canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
+
+    // Si hay datos en el dataset del option, usar esos (más actualizados con promociones)
+    if (selectedOption && selectedOption.dataset.precio) {
+        const precio = parseFloat(selectedOption.dataset.precio) || 0;
+        const precioOriginal = parseFloat(selectedOption.dataset.precioOriginal) || precio;
+        const tienePromocion = selectedOption.dataset.tienePromocion === 'true';
+
+        // Actualizar canchaSeleccionada con datos del option si existe
+        if (canchaSeleccionada) {
+            canchaSeleccionada.precio_actual = precio;
+            canchaSeleccionada.precio_original = precioOriginal;
+            canchaSeleccionada.tiene_promocion = tienePromocion;
+        }
+
+        // Mostrar precio con indicador de promoción si aplica
+        if (tienePromocion && precio < precioOriginal) {
+            precioElement.innerHTML = `
+                <span class="text-decoration-line-through text-muted">$${formatCurrencyChile(precioOriginal)}</span>
+                <span class="text-success fw-bold ms-2">$${formatCurrencyChile(precio)}</span>
+                <small class="badge bg-success ms-2">Promoción</small>
+            `;
+        } else {
+            precioElement.textContent = `$${formatCurrencyChile(precio)} por hora`;
+        }
+
         // Actualizar max del campo de monto abonado
         if (montoAbonadoInput) {
             montoAbonadoInput.max = precio;
             montoAbonadoInput.placeholder = `0 - Máximo: $${formatCurrencyChile(precio)}`;
         }
-        
+
+        // Actualizar info del monto abonado
+        if (montoAbonadoInfo) {
+            montoAbonadoInfo.textContent = `Ingresa el monto que el cliente ha pagado (máximo: $${formatCurrencyChile(precio)}). Puede ser 0 si el cliente no abona.`;
+        }
+    } else if (canchaSeleccionada) {
+        // Fallback: usar datos de la lista global
+        const precio = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora || 0;
+        precioElement.textContent = `$${formatCurrencyChile(precio)} por hora`;
+
+        // Actualizar max del campo de monto abonado
+        if (montoAbonadoInput) {
+            montoAbonadoInput.max = precio;
+            montoAbonadoInput.placeholder = `0 - Máximo: $${formatCurrencyChile(precio)}`;
+        }
+
         // Actualizar info del monto abonado
         if (montoAbonadoInfo) {
             montoAbonadoInfo.textContent = `Ingresa el monto que el cliente ha pagado (máximo: $${formatCurrencyChile(precio)}). Puede ser 0 si el cliente no abona.`;
