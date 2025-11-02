@@ -524,6 +524,18 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         const AtomicReservationManager = require('../utils/atomic-reservation');
         const atomicManager = new AtomicReservationManager(db);
         
+        // Recalcular porcentaje_pagado basado en precio_total y monto_abonado para evitar errores
+        const precioFinal = precioCalculado.finalPrice;
+        const montoAbonadoFinal = monto_abonado || 0;
+        const porcentajePagadoRecalculado = precioFinal > 0 ? Math.round((montoAbonadoFinal / precioFinal) * 100) : 0;
+        
+        console.log('💰 Cálculo de pago:', {
+            precio_total: precioFinal,
+            monto_abonado: montoAbonadoFinal,
+            porcentaje_pagado_recibido: porcentaje_pagado,
+            porcentaje_pagado_recalculado: porcentajePagadoRecalculado
+        });
+        
         const reservationData = {
             cancha_id,
             fecha,
@@ -533,14 +545,14 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             email_cliente,
             telefono_cliente,
             rut_cliente,
-            precio_total: precioCalculado.finalPrice,
+            precio_total: precioFinal,
             tipo_reserva: 'administrativa',
             admin_id: user.id,
             bloqueo_id: req.body.bloqueo_id || null, // ID del bloqueo temporal del admin actual
             metodo_pago: metodo_pago || null, // Método de pago seleccionado
             estado_pago: estado_pago || 'pendiente', // Estado de pago (pagado, por_pagar, pendiente)
-            monto_abonado: monto_abonado || 0, // Monto abonado por el cliente
-            porcentaje_pagado: porcentaje_pagado || 0 // Porcentaje pagado calculado
+            monto_abonado: montoAbonadoFinal, // Monto abonado por el cliente
+            porcentaje_pagado: porcentajePagadoRecalculado // Porcentaje pagado recalculado
         };
         
         const options = {

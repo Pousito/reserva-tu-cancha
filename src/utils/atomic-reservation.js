@@ -28,7 +28,7 @@ class AtomicReservationManager {
             tipo_reserva = 'directa',
             admin_id = null,
             bloqueo_id = null,
-            porcentaje_pagado = 100,
+            porcentaje_pagado = 0,
             metodo_pago = null,
             estado_pago = 'pendiente',
             monto_abonado = 0
