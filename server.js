@@ -2533,6 +2533,65 @@ app.get('/api/debug/reserva/:codigo', async (req, res) => {
   }
 });
 
+// DEBUG: Endpoint temporal para eliminar reserva por código
+app.delete('/api/debug/reserva/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log('🗑️ Eliminando reserva:', codigo);
+
+    const client = await db.pgPool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Verificar que existe
+      const reserva = await client.query(`
+        SELECT id, codigo_reserva, nombre_cliente, email_cliente, fecha, precio_total, estado
+        FROM reservas
+        WHERE codigo_reserva = $1
+      `, [codigo]);
+
+      if (reserva.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({
+          success: false,
+          error: 'Reserva no encontrada'
+        });
+      }
+
+      const reservaData = reserva.rows[0];
+
+      // Eliminar registros relacionados primero
+      await client.query(`DELETE FROM historial_abonos_reservas WHERE codigo_reserva = $1`, [codigo]);
+      await client.query(`DELETE FROM uso_codigos_descuento WHERE reserva_id = $1`, [reservaData.id]);
+
+      // Eliminar la reserva
+      const result = await client.query(`
+        DELETE FROM reservas WHERE codigo_reserva = $1
+        RETURNING *
+      `, [codigo]);
+
+      await client.query('COMMIT');
+
+      res.json({
+        success: true,
+        message: 'Reserva eliminada exitosamente',
+        reserva: reservaData
+      });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('❌ Error eliminando reserva:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DEBUG: Endpoint temporal para crear código de descuento RESERVABORDERIO10
 app.post('/api/debug/create-discount-code', async (req, res) => {
   try {
