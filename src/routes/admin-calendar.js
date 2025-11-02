@@ -525,17 +525,40 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         
         // IMPORTANTE: Si el frontend envía precio_total, usarlo (puede incluir promociones)
         // Si no, usar el precio calculado con comisión
-        const precioFinal = req.body.precio_total || precioCalculado.finalPrice;
-        const montoAbonadoFinal = monto_abonado || 0;
+        // Asegurar que precioFinal sea un número
+        const precioFinal = parseFloat(req.body.precio_total) || parseFloat(precioCalculado.finalPrice) || 0;
+        // Asegurar que montoAbonadoFinal sea un número válido
+        const montoAbonadoFinal = parseFloat(monto_abonado) || 0;
+        
+        console.log('💰 Backend - Valores recibidos (ANTES de cálculo):', {
+            precio_total_enviado: req.body.precio_total,
+            precio_total_tipo: typeof req.body.precio_total,
+            precio_calculado_finalPrice: precioCalculado.finalPrice,
+            precio_calculado_tipo: typeof precioCalculado.finalPrice,
+            monto_abonado_enviado: monto_abonado,
+            monto_abonado_tipo: typeof monto_abonado,
+            precio_final_usado: precioFinal,
+            precio_final_tipo: typeof precioFinal,
+            monto_abonado_final: montoAbonadoFinal,
+            monto_abonado_final_tipo: typeof montoAbonadoFinal
+        });
         
         // Recalcular porcentaje_pagado SIEMPRE basado en precio_total y monto_abonado
         // NO confiar en el valor recibido del frontend
-        const porcentajePagadoRecalculado = precioFinal > 0 && montoAbonadoFinal > 0 
-            ? Math.round((montoAbonadoFinal / precioFinal) * 100) 
-            : (montoAbonadoFinal === 0 ? 0 : 0);
+        // Validar que ambos sean números válidos y mayores que 0
+        let porcentajePagadoRecalculado = 0;
+        if (precioFinal > 0 && montoAbonadoFinal > 0 && !isNaN(precioFinal) && !isNaN(montoAbonadoFinal)) {
+            porcentajePagadoRecalculado = Math.round((montoAbonadoFinal / precioFinal) * 100);
+        } else if (montoAbonadoFinal === 0 || isNaN(montoAbonadoFinal)) {
+            porcentajePagadoRecalculado = 0;
+        }
         
         // Asegurar que no exceda 100%
-        const porcentajeFinal = porcentajePagadoRecalculado > 100 ? 100 : porcentajePagadoRecalculado;
+        if (porcentajePagadoRecalculado > 100) {
+            porcentajePagadoRecalculado = 100;
+        }
+        
+        const porcentajeFinal = porcentajePagadoRecalculado;
         
         console.log('💰 Backend - Cálculo de pago:', {
             precio_base: precioBase,
@@ -546,7 +569,12 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             porcentaje_pagado_recibido: porcentaje_pagado,
             porcentaje_pagado_recalculado: porcentajePagadoRecalculado,
             porcentaje_final: porcentajeFinal,
-            calculo: `${montoAbonadoFinal} / ${precioFinal} * 100 = ${porcentajeFinal}%`
+            calculo: `${montoAbonadoFinal} / ${precioFinal} * 100 = ${porcentajeFinal}%`,
+            validacion: {
+                precio_es_numero: !isNaN(precioFinal) && typeof precioFinal === 'number',
+                monto_es_numero: !isNaN(montoAbonadoFinal) && typeof montoAbonadoFinal === 'number',
+                ambos_mayores_cero: precioFinal > 0 && montoAbonadoFinal > 0
+            }
         });
         
         // Usar AtomicReservationManager para crear reserva de forma atómica

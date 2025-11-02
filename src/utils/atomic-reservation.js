@@ -177,12 +177,28 @@ class AtomicReservationManager {
             
             // Recalcular porcentaje_pagado basado en precio_total y monto_abonado para asegurar precisión
             // IMPORTANTE: Siempre recalcular basándose en precio_total y monto_abonado, nunca confiar en el valor recibido
+            // Asegurar que ambos sean números válidos
+            const precioTotalNum = parseFloat(precio_total) || 0;
+            const montoAbonadoNum = parseFloat(monto_abonado) || 0;
+            
+            console.log('💰 AtomicReservation - Valores recibidos (ANTES de cálculo):', {
+                precio_total_recibido: precio_total,
+                precio_total_tipo: typeof precio_total,
+                precio_total_num: precioTotalNum,
+                monto_abonado_recibido: monto_abonado,
+                monto_abonado_tipo: typeof monto_abonado,
+                monto_abonado_num: montoAbonadoNum,
+                porcentaje_pagado_recibido: porcentaje_pagado,
+                porcentaje_pagado_tipo: typeof porcentaje_pagado
+            });
+            
             let porcentajePagadoFinal = 0;
-            if (precio_total > 0 && monto_abonado > 0) {
-                porcentajePagadoFinal = Math.round((monto_abonado / precio_total) * 100);
-            } else if (monto_abonado === 0) {
+            // Validar que ambos sean números válidos y mayores que 0
+            if (precioTotalNum > 0 && montoAbonadoNum > 0 && !isNaN(precioTotalNum) && !isNaN(montoAbonadoNum)) {
+                porcentajePagadoFinal = Math.round((montoAbonadoNum / precioTotalNum) * 100);
+            } else if (montoAbonadoNum === 0 || isNaN(montoAbonadoNum)) {
                 porcentajePagadoFinal = 0;
-            } else if (precio_total > 0) {
+            } else if (precioTotalNum > 0) {
                 porcentajePagadoFinal = 0;
             }
             
@@ -192,11 +208,16 @@ class AtomicReservationManager {
             }
             
             console.log('💰 AtomicReservation - Cálculo de porcentaje:', {
-                precio_total,
-                monto_abonado,
+                precio_total: precioTotalNum,
+                monto_abonado: montoAbonadoNum,
                 porcentaje_pagado_recibido: porcentaje_pagado,
                 porcentaje_pagado_final: porcentajePagadoFinal,
-                calculo: `${monto_abonado} / ${precio_total} * 100 = ${porcentajePagadoFinal}%`
+                calculo: `${montoAbonadoNum} / ${precioTotalNum} * 100 = ${porcentajePagadoFinal}%`,
+                validacion: {
+                    precio_es_numero: !isNaN(precioTotalNum) && typeof precioTotalNum === 'number',
+                    monto_es_numero: !isNaN(montoAbonadoNum) && typeof montoAbonadoNum === 'number',
+                    ambos_mayores_cero: precioTotalNum > 0 && montoAbonadoNum > 0
+                }
             });
             
             // Incluir metodo_pago, estado_pago y monto_abonado en la inserción
