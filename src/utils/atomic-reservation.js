@@ -245,26 +245,42 @@ class AtomicReservationManager {
             // PASO 5.5: Si hay monto abonado inicial, guardarlo en el historial
             if (monto_abonado > 0 && metodo_pago) {
                 try {
-                    const insertHistorialQuery = `
-                        INSERT INTO historial_abonos_reservas (
-                            reserva_id, codigo_reserva, monto_abonado, metodo_pago, notas, usuario_id
-                        ) VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING *
+                    // Verificar si la tabla historial_abonos_reservas existe
+                    const tableExistsQuery = `
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables
+                            WHERE table_schema = 'public'
+                            AND table_name = 'historial_abonos_reservas'
+                        )
                     `;
-                    
-                    const historialParams = [
-                        nuevaReserva.id,
-                        codigo_reserva,
-                        monto_abonado,
-                        metodo_pago,
-                        'Abono inicial al crear la reserva',
-                        admin_id
-                    ];
-                    
-                    const historialResult = await client.query(insertHistorialQuery, historialParams);
-                    console.log('✅ Abono inicial guardado en historial:', historialResult.rows[0]);
+                    const tableExistsResult = await client.query(tableExistsQuery);
+                    const tableExists = tableExistsResult.rows[0].exists;
+
+                    if (tableExists) {
+                        const insertHistorialQuery = `
+                            INSERT INTO historial_abonos_reservas (
+                                reserva_id, codigo_reserva, monto_abonado, metodo_pago, notas, usuario_id
+                            ) VALUES ($1, $2, $3, $4, $5, $6)
+                            RETURNING *
+                        `;
+
+                        const historialParams = [
+                            nuevaReserva.id,
+                            codigo_reserva,
+                            monto_abonado,
+                            metodo_pago,
+                            'Abono inicial al crear la reserva',
+                            admin_id
+                        ];
+
+                        const historialResult = await client.query(insertHistorialQuery, historialParams);
+                        console.log('✅ Abono inicial guardado en historial:', historialResult.rows[0]);
+                    } else {
+                        console.log('⚠️ Tabla historial_abonos_reservas no existe, saltando inserción de historial');
+                    }
                 } catch (historialError) {
                     console.error('⚠️ Error guardando abono inicial en historial:', historialError);
+                    console.error('⚠️ Stack trace historial:', historialError.stack);
                     // No fallar la reserva si falla el historial, solo registrar el error
                 }
             }
