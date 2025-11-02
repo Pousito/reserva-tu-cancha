@@ -376,6 +376,44 @@
             }
         }
 
+        /**
+         * Ajustar fecha para medianoche (00:00)
+         * Cuando la hora es 00:00, la reserva es realmente para el día siguiente
+         */
+        function ajustarFechaParaMedianoche(fecha, hora) {
+            if (!fecha || !hora) return fecha;
+
+            // Extraer solo HH:MM si viene HH:MM:SS
+            const horaLimpia = hora.includes(':') && hora.split(':').length === 3 ?
+                               hora.substring(0, 5) : hora;
+
+            // Si la hora es 00:00 (medianoche), es el día siguiente
+            if (horaLimpia === '00:00') {
+                try {
+                    // Si es formato ISO con T, extraer solo la parte de fecha
+                    let fechaStr = fecha;
+                    if (fecha.includes('T')) {
+                        fechaStr = fecha.split('T')[0];
+                    }
+
+                    const [año, mes, dia] = fechaStr.split('-').map(Number);
+                    const fechaObj = new Date(año, mes - 1, dia);
+                    // Sumar un día
+                    fechaObj.setDate(fechaObj.getDate() + 1);
+                    // Retornar en formato YYYY-MM-DD
+                    const añoAjustado = fechaObj.getFullYear();
+                    const mesAjustado = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                    const diaAjustado = String(fechaObj.getDate()).padStart(2, '0');
+                    return `${añoAjustado}-${mesAjustado}-${diaAjustado}`;
+                } catch (error) {
+                    console.error('Error ajustando fecha para medianoche:', error);
+                    return fecha;
+                }
+            }
+
+            return fecha;
+        }
+
         // Mostrar datos de la reserva
         function displayReservationData() {
             if (!reservationData) return;
@@ -385,7 +423,9 @@
             document.getElementById('clientEmail').textContent = reservationData.email_cliente;
             document.getElementById('complexName').textContent = reservationData.complejo_nombre || 'Complejo Deportivo';
             document.getElementById('courtName').textContent = reservationData.cancha_nombre || 'Cancha';
-            document.getElementById('reservationDate').textContent = formatDate(reservationData.fecha);
+            // Aplicar ajuste de medianoche antes de formatear
+            const fechaAjustada = ajustarFechaParaMedianoche(reservationData.fecha, reservationData.hora_inicio);
+            document.getElementById('reservationDate').textContent = formatDate(fechaAjustada);
             document.getElementById('reservationTime').textContent = formatTimeRange(reservationData.hora_inicio, reservationData.hora_fin);
             
             // Mostrar monto pagado considerando porcentaje

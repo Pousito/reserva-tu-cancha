@@ -590,7 +590,15 @@ function mostrarReservas(reservasAMostrar) {
             </td>
             <td>${reserva.complejo_nombre}</td>
             <td>${reserva.cancha_nombre}</td>
-            <td>${reserva.fecha ? formatearFechaParaAPI(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio)) : 'Sin fecha'}</td>
+            <td>${reserva.fecha ? (() => {
+                try {
+                    const fechaAjustada = ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio);
+                    return formatearFecha(fechaAjustada);
+                } catch (error) {
+                    console.error('Error formateando fecha en tabla:', error, reserva.fecha, reserva.hora_inicio);
+                    return 'Error fecha';
+                }
+            })() : 'Sin fecha'}</td>
             <td>
                 <span class="badge bg-light text-dark">
                     ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}
