@@ -675,7 +675,13 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         
     } catch (error) {
         console.error('❌ Error creando reserva administrativa:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('❌ Stack trace:', error.stack);
+        console.error('❌ Error completo:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        res.status(500).json({
+            error: 'Error interno del servidor al crear la reserva',
+            detalles: error.message,
+            code: 'INTERNAL_ERROR'
+        });
     }
 });
 
