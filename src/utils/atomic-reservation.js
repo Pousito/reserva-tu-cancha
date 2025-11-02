@@ -175,6 +175,18 @@ class AtomicReservationManager {
                 }
             }
             
+            // Recalcular porcentaje_pagado basado en precio_total y monto_abonado para asegurar precisión
+            const porcentajePagadoFinal = precio_total > 0 && monto_abonado > 0 
+                ? Math.round((monto_abonado / precio_total) * 100) 
+                : (porcentaje_pagado || 0);
+            
+            console.log('💰 AtomicReservation - Cálculo de porcentaje:', {
+                precio_total,
+                monto_abonado,
+                porcentaje_pagado_recibido: porcentaje_pagado,
+                porcentaje_pagado_final: porcentajePagadoFinal
+            });
+            
             // Incluir metodo_pago, estado_pago y monto_abonado en la inserción
             const insertQuery = `
                 INSERT INTO reservas (
@@ -190,7 +202,7 @@ class AtomicReservationManager {
                 codigo_reserva, cancha_id, fechaParaBD, hora_inicio, hora_fin,
                 nombre_cliente, email_cliente || null, telefono_cliente || null, rut_cliente || null,
                 precio_total, 'confirmada', estado_pago, metodo_pago || null, monto_abonado || 0, new Date().toISOString(), tipo_reserva,
-                comision, admin_id !== null, admin_id, porcentaje_pagado
+                comision, admin_id !== null, admin_id, porcentajePagadoFinal
             ];
             
             const insertResult = await client.query(insertQuery, insertParams);
