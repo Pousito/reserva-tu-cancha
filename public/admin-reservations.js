@@ -623,24 +623,49 @@ function verDetalles(codigoReserva) {
     const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
     if (!reserva) return;
     
+    // Calcular monto abonado (usando porcentaje_pagado si está disponible)
+    const montoAbonado = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+        Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
+    const metodoPago = reserva.metodo_pago || 'No especificado';
+    const estadoPago = reserva.estado_pago || 'pendiente';
+    
+    // Mapear valores de método de pago a nombres legibles
+    const metodoPagoNames = {
+        'efectivo': 'Efectivo',
+        'transferencia': 'Transferencia Bancaria',
+        'webpay': 'Webpay Plus',
+        'tarjeta': 'Tarjeta de Crédito/Débito',
+        'cliente_no_abona': 'Cliente no abona',
+        'otros': 'Otros'
+    };
+    const metodoPagoNombre = metodoPagoNames[metodoPago] || metodoPago;
+    
+    // Mapear estados de pago a nombres legibles
+    const estadoPagoNames = {
+        'pagado': 'Pagado',
+        'por_pagar': 'Por Pagar',
+        'pendiente': 'Pendiente'
+    };
+    const estadoPagoNombre = estadoPagoNames[estadoPago] || estadoPago;
+    
     const modalBody = document.getElementById('reservationModalBody');
     modalBody.innerHTML = `
         <div class="row">
             <div class="col-md-6">
-                <h6>Información del Cliente</h6>
+                <h6><i class="fas fa-user me-2"></i>Información del Cliente</h6>
                 <p><strong>Nombre:</strong> ${reserva.nombre_cliente}</p>
                 <p><strong>Email:</strong> ${reserva.email_cliente}</p>
                 <p><strong>RUT:</strong> ${reserva.rut_cliente}</p>
                 ${reserva.telefono_cliente ? `<p><strong>Teléfono:</strong> ${reserva.telefono_cliente}</p>` : ''}
             </div>
             <div class="col-md-6">
-                <h6>Detalles de la Reserva</h6>
+                <h6><i class="fas fa-calendar-check me-2"></i>Detalles de la Reserva</h6>
                 <p><strong>Código:</strong> <code>${reserva.codigo_reserva}</code></p>
                 <p><strong>Complejo:</strong> ${reserva.complejo_nombre}</p>
                 <p><strong>Cancha:</strong> ${reserva.cancha_nombre}</p>
                 <p><strong>Fecha:</strong> ${formatearFechaParaAPI(reserva.fecha)}</p>
                 <p><strong>Hora:</strong> ${formatearHora(reserva.hora_inicio)} - ${formatearHora(reserva.hora_fin)}</p>
-                <p><strong>Precio:</strong> ${reserva.precio_total ? `$${formatCurrencyChile(reserva.precio_total)}` : 'No disponible'}</p>
+                <p><strong>Precio Total:</strong> ${reserva.precio_total ? `$${formatCurrencyChile(reserva.precio_total)}` : 'No disponible'}</p>
                 <p><strong>Estado:</strong> 
                     <span class="badge badge-status badge-${reserva.estado}">
                         ${reserva.estado.charAt(0).toUpperCase() + reserva.estado.slice(1)}
@@ -650,7 +675,34 @@ function verDetalles(codigoReserva) {
         </div>
         <div class="row mt-3">
             <div class="col-12">
-                <h6>Información Adicional</h6>
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Información de Pago</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Monto Abonado:</strong> <span id="detalleMontoAbonado">$${formatCurrencyChile(montoAbonado)}</span></p>
+                                <p><strong>Método de Pago:</strong> <span id="detalleMetodoPago">${metodoPagoNombre}</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Estado de Pago:</strong> 
+                                    <span class="badge badge-status badge-${estadoPago}">${estadoPagoNombre}</span>
+                                </p>
+                                <p><strong>Porcentaje Pagado:</strong> ${reserva.porcentaje_pagado || 0}%</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editarPagoReserva('${codigoReserva}')">
+                            <i class="fas fa-edit me-2"></i>Editar Monto y Método de Pago
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6><i class="fas fa-info-circle me-2"></i>Información Adicional</h6>
                 <p><strong>Fecha de Creación:</strong> ${formatearFechaHora(reserva.created_at)}</p>
                 <p><strong>ID de Transacción:</strong> ${reserva.transaction_id || 'N/A'}</p>
             </div>
@@ -659,6 +711,243 @@ function verDetalles(codigoReserva) {
     
     const modal = new bootstrap.Modal(document.getElementById('reservationModal'));
     modal.show();
+}
+
+/**
+ * Editar monto abonado y método de pago de una reserva
+ */
+function editarPagoReserva(codigoReserva) {
+    const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
+    if (!reserva) {
+        mostrarNotificacion('Reserva no encontrada', 'danger');
+        return;
+    }
+    
+    // Calcular monto abonado actual
+    const montoAbonadoActual = reserva.monto_abonado || (reserva.precio_total && reserva.porcentaje_pagado ? 
+        Math.round(reserva.precio_total * (reserva.porcentaje_pagado / 100)) : 0);
+    const metodoPagoActual = reserva.metodo_pago || '';
+    const precioTotal = reserva.precio_total || 0;
+    
+    // Crear modal de edición
+    const modalHTML = `
+        <div class="modal fade" id="modalEditarPago" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-edit me-2"></i>Editar Pago - Reserva ${codigoReserva}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Precio Total:</strong> $${formatCurrencyChile(precioTotal)}
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarMontoAbonado" class="form-label">Monto Abonado *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="editarMontoAbonado" 
+                                       value="${montoAbonadoActual}" min="0" max="${precioTotal}" step="1000" required>
+                            </div>
+                            <div class="form-text">Máximo: $${formatCurrencyChile(precioTotal)}</div>
+                            <div class="invalid-feedback d-none" id="editarMontoError">
+                                El monto no puede ser mayor al precio total.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editarMetodoPago" class="form-label">Método de Pago *</label>
+                            <select class="form-select" id="editarMetodoPago" required>
+                                <option value="">Seleccionar método de pago</option>
+                                <option value="efectivo" ${metodoPagoActual === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                                <option value="transferencia" ${metodoPagoActual === 'transferencia' ? 'selected' : ''}>Transferencia Bancaria</option>
+                                <option value="webpay" ${metodoPagoActual === 'webpay' ? 'selected' : ''}>Webpay Plus</option>
+                                <option value="tarjeta" ${metodoPagoActual === 'tarjeta' ? 'selected' : ''}>Tarjeta de Crédito/Débito</option>
+                                <option value="cliente_no_abona" ${metodoPagoActual === 'cliente_no_abona' ? 'selected' : ''}>Cliente no abona</option>
+                                <option value="otros" ${metodoPagoActual === 'otros' ? 'selected' : ''}>Otros</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-warning" id="editarPagoAlerta" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="editarPagoAlertaTexto"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionPago('${codigoReserva}')">
+                            <i class="fas fa-save me-2"></i>Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior si existe
+    const modalAnterior = document.getElementById('modalEditarPago');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
+    
+    // Agregar modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar validación en tiempo real
+    const montoInput = document.getElementById('editarMontoAbonado');
+    const metodoSelect = document.getElementById('editarMetodoPago');
+    const alerta = document.getElementById('editarPagoAlerta');
+    
+    montoInput.addEventListener('input', function() {
+        const monto = parseFloat(this.value) || 0;
+        if (monto > precioTotal) {
+            this.classList.add('is-invalid');
+            document.getElementById('editarMontoError').classList.remove('d-none');
+        } else {
+            this.classList.remove('is-invalid');
+            document.getElementById('editarMontoError').classList.add('d-none');
+        }
+        
+        // Actualizar alerta
+        if (monto === 0 && metodoSelect.value !== 'cliente_no_abona') {
+            alerta.style.display = 'block';
+            alerta.querySelector('#editarPagoAlertaTexto').textContent = 'Si el monto es 0, el método de pago se cambiará automáticamente a "Cliente no abona".';
+            metodoSelect.value = 'cliente_no_abona';
+        } else {
+            alerta.style.display = 'none';
+        }
+    });
+    
+    metodoSelect.addEventListener('change', function() {
+        const monto = parseFloat(montoInput.value) || 0;
+        if (monto === 0 && this.value !== 'cliente_no_abona') {
+            alerta.style.display = 'block';
+            alerta.querySelector('#editarPagoAlertaTexto').textContent = 'Si el monto es 0, el método de pago debe ser "Cliente no abona".';
+            this.value = 'cliente_no_abona';
+        } else {
+            alerta.style.display = 'none';
+        }
+    });
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarPago'));
+    modal.show();
+    
+    // Limpiar modal cuando se cierre
+    document.getElementById('modalEditarPago').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar edición de pago
+ */
+async function guardarEdicionPago(codigoReserva) {
+    const montoInput = document.getElementById('editarMontoAbonado');
+    const metodoSelect = document.getElementById('editarMetodoPago');
+    
+    if (!montoInput || !metodoSelect) return;
+    
+    const reserva = reservas.find(r => r.codigo_reserva === codigoReserva);
+    if (!reserva) {
+        mostrarNotificacion('Reserva no encontrada', 'danger');
+        return;
+    }
+    
+    const montoAbonado = parseFloat(montoInput.value) || 0;
+    const metodoPago = metodoSelect.value;
+    const precioTotal = reserva.precio_total || 0;
+    
+    // Validar
+    if (!metodoPago) {
+        mostrarNotificacion('Por favor selecciona un método de pago', 'danger');
+        metodoSelect.focus();
+        return;
+    }
+    
+    if (montoAbonado < 0) {
+        mostrarNotificacion('El monto no puede ser negativo', 'danger');
+        montoInput.focus();
+        return;
+    }
+    
+    if (montoAbonado > precioTotal) {
+        mostrarNotificacion(`El monto no puede ser mayor al precio total ($${formatCurrencyChile(precioTotal)})`, 'danger');
+        montoInput.focus();
+        return;
+    }
+    
+    // Calcular porcentaje pagado
+    const porcentajePagado = precioTotal > 0 ? Math.round((montoAbonado / precioTotal) * 100) : 0;
+    
+    // Determinar estado de pago
+    let estadoPago = 'pendiente';
+    if (metodoPago === 'cliente_no_abona' || montoAbonado === 0) {
+        estadoPago = 'pendiente';
+    } else if (metodoPago === 'efectivo') {
+        estadoPago = montoAbonado >= precioTotal ? 'pagado' : 'por_pagar';
+    } else if (metodoPago === 'transferencia' || metodoPago === 'webpay' || metodoPago === 'tarjeta') {
+        estadoPago = montoAbonado >= precioTotal ? 'pagado' : 'por_pagar';
+    } else {
+        estadoPago = montoAbonado >= precioTotal ? 'pagado' : 'por_pagar';
+    }
+    
+    try {
+        const token = AdminUtils.getAuthToken();
+        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/pago`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                monto_abonado: montoAbonado,
+                metodo_pago: metodoPago,
+                estado_pago: estadoPago,
+                porcentaje_pagado: porcentajePagado
+            })
+        });
+        
+        const resultado = await response.json();
+        
+        if (response.ok) {
+            mostrarNotificacion('Pago actualizado exitosamente', 'success');
+            
+            // Cerrar modal de edición
+            const modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditarPago'));
+            if (modalEditar) {
+                modalEditar.hide();
+            }
+            
+            // Cerrar y actualizar modal de detalles
+            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
+            if (modalDetalles) {
+                modalDetalles.hide();
+            }
+            
+            // Recargar reservas
+            await cargarReservas();
+            
+            // Recargar calendario si estamos en vista calendario
+            if (vistaActual === 'calendario') {
+                await cargarCalendario();
+            }
+            
+            // Reabrir detalles con datos actualizados
+            setTimeout(() => {
+                verDetalles(codigoReserva);
+            }, 500);
+            
+        } else {
+            mostrarNotificacion(resultado.error || 'Error al actualizar el pago', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error de conexión al actualizar el pago', 'danger');
+    }
 }
 
 async function confirmarReserva(codigoReserva) {
@@ -2868,6 +3157,7 @@ async function crearReservaAdmin() {
     const telefonoInput = document.getElementById('modalTelefonoCliente');
     const canchaSelect = document.getElementById('modalCancha');
     const metodoPagoSelect = document.getElementById('modalMetodoPago');
+    const montoAbonadoInput = document.getElementById('modalMontoAbonado');
     
     // Obtener valores
     const nombre = nombreInput.value.trim();
@@ -2876,6 +3166,7 @@ async function crearReservaAdmin() {
     const telefono = telefonoInput.value.trim();
     const canchaId = canchaSelect.value;
     const metodoPago = metodoPagoSelect.value;
+    const montoAbonado = parseFloat(montoAbonadoInput.value) || 0;
     
     // Verificar que se haya seleccionado una hora del calendario
     if (!window.reservaSeleccionada) {
@@ -2942,16 +3233,53 @@ async function crearReservaAdmin() {
         return;
     }
     
-    // Obtener el precio de la cancha seleccionada
+    // Obtener el precio de la cancha seleccionada (considerando promociones si hay)
     const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
-    const precioCancha = canchaSeleccionada ? (canchaSeleccionada.precio_hora || canchaSeleccionada.precio || 0) : 0;
+    if (!canchaSeleccionada) {
+        mostrarNotificacion('Error: Cancha no encontrada', 'danger');
+        return;
+    }
     
-    // Determinar estado de pago según método seleccionado
+    // Obtener precio actual (puede ser promocional)
+    const precioCancha = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora || 0;
+    
+    // Validar monto abonado
+    if (isNaN(montoAbonado) || montoAbonado < 0) {
+        mostrarNotificacion('Por favor ingresa un monto válido', 'danger');
+        montoAbonadoInput.focus();
+        return;
+    }
+    
+    if (montoAbonado > precioCancha) {
+        mostrarNotificacion(`El monto abonado ($${formatCurrencyChile(montoAbonado)}) no puede ser mayor al precio de la cancha ($${formatCurrencyChile(precioCancha)})`, 'danger');
+        montoAbonadoInput.focus();
+        montoAbonadoInput.classList.add('is-invalid');
+        return;
+    }
+    
+    montoAbonadoInput.classList.remove('is-invalid');
+    
+    // Si monto es 0, forzar método "cliente_no_abona"
+    if (montoAbonado === 0) {
+        if (metodoPago !== 'cliente_no_abona') {
+            metodoPagoSelect.value = 'cliente_no_abona';
+            mostrarNotificacion('Método de pago cambiado a "Cliente no abona" porque el monto es 0', 'info', 3000);
+        }
+    }
+    
+    // Calcular porcentaje pagado
+    const porcentajePagado = precioCancha > 0 ? Math.round((montoAbonado / precioCancha) * 100) : 0;
+    
+    // Determinar estado de pago según método y monto
     let estadoPago = 'pendiente';
-    if (metodoPago === 'efectivo') {
-        estadoPago = 'por_pagar';
+    if (metodoPago === 'cliente_no_abona' || montoAbonado === 0) {
+        estadoPago = 'pendiente';
+    } else if (metodoPago === 'efectivo') {
+        estadoPago = montoAbonado >= precioCancha ? 'pagado' : 'por_pagar';
     } else if (metodoPago === 'transferencia' || metodoPago === 'webpay' || metodoPago === 'tarjeta') {
-        estadoPago = 'pagado';
+        estadoPago = montoAbonado >= precioCancha ? 'pagado' : 'por_pagar';
+    } else {
+        estadoPago = montoAbonado >= precioCancha ? 'pagado' : 'por_pagar';
     }
     
     // Preparar datos para envío
@@ -2966,10 +3294,12 @@ async function crearReservaAdmin() {
         rut_cliente: formatearRUT(rut),
         tipo_reserva: 'administrativa',
         creada_por_admin: true,
-        precio_total: precioCancha, // Precio dinámico de la cancha
+        precio_total: precioCancha, // Precio dinámico de la cancha (considerando promociones)
         bloqueo_id: window.reservaSeleccionada.bloqueoId, // ID del bloqueo temporal del admin actual
         metodo_pago: metodoPago, // Método de pago seleccionado
-        estado_pago: estadoPago // Estado de pago según método
+        estado_pago: estadoPago, // Estado de pago según método y monto
+        monto_abonado: montoAbonado, // Monto abonado por el cliente
+        porcentaje_pagado: porcentajePagado // Porcentaje pagado calculado
     };
     
     // Mostrar indicador de procesamiento
@@ -3057,27 +3387,100 @@ function actualizarBloqueoIdPorCancha() {
 }
 
 /**
+ * Validar monto abonado en tiempo real
+ */
+function validarMontoAbonado() {
+    const montoAbonadoInput = document.getElementById('modalMontoAbonado');
+    const canchaSelect = document.getElementById('modalCancha');
+    const montoAbonadoError = document.getElementById('montoAbonadoError');
+    
+    if (!montoAbonadoInput || !canchaSelect || !canchaSelect.value) return;
+    
+    const canchaId = canchaSelect.value;
+    const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
+    if (!canchaSeleccionada) return;
+    
+    const precioCancha = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora || 0;
+    const montoAbonado = parseFloat(montoAbonadoInput.value) || 0;
+    
+    if (montoAbonado > precioCancha) {
+        montoAbonadoInput.classList.add('is-invalid');
+        if (montoAbonadoError) {
+            montoAbonadoError.classList.remove('d-none');
+        }
+        return false;
+    } else {
+        montoAbonadoInput.classList.remove('is-invalid');
+        if (montoAbonadoError) {
+            montoAbonadoError.classList.add('d-none');
+        }
+        return true;
+    }
+}
+
+/**
+ * Actualizar método de pago según el monto abonado
+ */
+function actualizarMetodoPagoSegunMonto() {
+    const montoAbonadoInput = document.getElementById('modalMontoAbonado');
+    const metodoPagoSelect = document.getElementById('modalMetodoPago');
+    
+    if (!montoAbonadoInput || !metodoPagoSelect) return;
+    
+    const montoAbonado = parseFloat(montoAbonadoInput.value) || 0;
+    
+    if (montoAbonado === 0 && metodoPagoSelect.value !== 'cliente_no_abona') {
+        metodoPagoSelect.value = 'cliente_no_abona';
+        mostrarNotificacion('Método de pago cambiado a "Cliente no abona" porque el monto es 0', 'info', 2000);
+    }
+}
+
+/**
  * Actualizar el precio mostrado en el modal cuando se selecciona una cancha
  */
 function actualizarPrecioModal() {
     const canchaSelect = document.getElementById('modalCancha');
     const precioElement = document.getElementById('precioModal');
+    const montoAbonadoInput = document.getElementById('modalMontoAbonado');
+    const montoAbonadoInfo = document.getElementById('montoAbonadoInfo');
     
     if (!canchaSelect || !precioElement) return;
     
     const canchaId = canchaSelect.value;
     if (!canchaId) {
         precioElement.textContent = 'Selecciona una cancha';
+        if (montoAbonadoInput) {
+            montoAbonadoInput.max = '';
+            montoAbonadoInput.placeholder = '0';
+        }
+        if (montoAbonadoInfo) {
+            montoAbonadoInfo.textContent = 'Ingresa el monto que el cliente ha pagado. Puede ser 0 si el cliente no abona.';
+        }
         return;
     }
     
     // Buscar la cancha seleccionada
     const canchaSeleccionada = canchas.find(cancha => cancha.id == canchaId);
     if (canchaSeleccionada) {
-        const precio = canchaSeleccionada.precio_hora || canchaSeleccionada.precio || 0;
+        // Obtener precio actual (considerando promociones)
+        const precio = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora || 0;
         precioElement.textContent = `$${formatCurrencyChile(precio)} por hora`;
+        
+        // Actualizar max del campo de monto abonado
+        if (montoAbonadoInput) {
+            montoAbonadoInput.max = precio;
+            montoAbonadoInput.placeholder = `0 - Máximo: $${formatCurrencyChile(precio)}`;
+        }
+        
+        // Actualizar info del monto abonado
+        if (montoAbonadoInfo) {
+            montoAbonadoInfo.textContent = `Ingresa el monto que el cliente ha pagado (máximo: $${formatCurrencyChile(precio)}). Puede ser 0 si el cliente no abona.`;
+        }
     } else {
         precioElement.textContent = 'Precio no disponible';
+        if (montoAbonadoInput) {
+            montoAbonadoInput.max = '';
+        }
     }
 }
 
@@ -3264,10 +3667,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Calcular precio cuando cambian los campos
-    document.getElementById('modalCancha').addEventListener('change', function() {
-        actualizarPrecioModal();
-        actualizarBloqueoIdPorCancha();
-    });
+    const modalCanchaElement = document.getElementById('modalCancha');
+    if (modalCanchaElement) {
+        modalCanchaElement.addEventListener('change', function() {
+            actualizarPrecioModal();
+            actualizarBloqueoIdPorCancha();
+        });
+    }
+    
+    // Validar monto abonado en tiempo real
+    const montoAbonadoInput = document.getElementById('modalMontoAbonado');
+    if (montoAbonadoInput) {
+        montoAbonadoInput.addEventListener('input', function() {
+            validarMontoAbonado();
+        });
+        
+        montoAbonadoInput.addEventListener('blur', function() {
+            validarMontoAbonado();
+            actualizarMetodoPagoSegunMonto();
+        });
+    }
+    
+    // Actualizar método de pago cuando cambia el monto
+    const metodoPagoSelect = document.getElementById('modalMetodoPago');
+    if (metodoPagoSelect) {
+        metodoPagoSelect.addEventListener('change', function() {
+            const monto = parseFloat(montoAbonadoInput?.value) || 0;
+            if (monto === 0 && this.value !== 'cliente_no_abona') {
+                this.value = 'cliente_no_abona';
+                mostrarNotificacion('Método de pago cambiado a "Cliente no abona" porque el monto es 0', 'info', 2000);
+            }
+        });
+    }
     
     // Cargar horas cuando cambia la fecha
     // document.getElementById('modalFecha').addEventListener('change', cargarHorasModal);

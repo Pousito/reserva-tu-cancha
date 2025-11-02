@@ -119,7 +119,7 @@ async function getReservasRecientes(req, res) {
              r.telefono_cliente, r.rut_cliente,
              TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
              r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
-             r.estado, r.estado_pago, r.created_at,
+             r.estado, r.estado_pago, r.monto_abonado, r.metodo_pago, r.porcentaje_pagado, r.created_at,
              co.nombre as complejo_nombre, can.nombre as cancha_nombre,
              r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, 
              r.email_cliente as cliente_email
@@ -250,7 +250,7 @@ async function getAllReservasAdmin(req, res) {
              r.telefono_cliente, r.rut_cliente,
              TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha,
              r.hora_inicio, r.hora_fin, r.precio_total, r.codigo_reserva,
-             r.estado, r.estado_pago, r.created_at,
+             r.estado, r.estado_pago, r.monto_abonado, r.metodo_pago, r.porcentaje_pagado, r.created_at,
              co.nombre as complejo_nombre, can.nombre as cancha_nombre,
              r.nombre_cliente as cliente_nombre, r.rut_cliente as cliente_rut, 
              r.email_cliente as cliente_email

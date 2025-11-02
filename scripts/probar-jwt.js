@@ -41,3 +41,5 @@ console.log('2. Abrir DevTools → Application → Local Storage');
 console.log('3. Verificar que adminToken contenga un JWT token');
 console.log('4. Ir a Gestión de Depósitos');
 console.log('5. Los complejos deberían cargarse');
+
+

@@ -239,3 +239,5 @@ COMMENT ON COLUMN depositos_complejos.monto_a_depositar IS 'Monto final que se d
 -- JOIN complejos c ON dc.complejo_id = c.id
 -- WHERE dc.estado = 'pendiente'
 -- ORDER BY dc.fecha_deposito DESC;
+
+

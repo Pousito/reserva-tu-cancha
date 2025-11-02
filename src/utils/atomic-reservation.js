@@ -30,7 +30,8 @@ class AtomicReservationManager {
             bloqueo_id = null,
             porcentaje_pagado = 100,
             metodo_pago = null,
-            estado_pago = 'pendiente'
+            estado_pago = 'pendiente',
+            monto_abonado = 0
         } = reservationData;
 
         const {

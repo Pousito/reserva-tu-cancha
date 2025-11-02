@@ -472,7 +472,9 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             rut_cliente,
             notas,
             metodo_pago,
-            estado_pago
+            estado_pago,
+            monto_abonado,
+            porcentaje_pagado
         } = req.body;
         
         const user = req.user;
@@ -536,7 +538,9 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             admin_id: user.id,
             bloqueo_id: req.body.bloqueo_id || null, // ID del bloqueo temporal del admin actual
             metodo_pago: metodo_pago || null, // Método de pago seleccionado
-            estado_pago: estado_pago || 'pendiente' // Estado de pago (pagado, por_pagar, pendiente)
+            estado_pago: estado_pago || 'pendiente', // Estado de pago (pagado, por_pagar, pendiente)
+            monto_abonado: monto_abonado || 0, // Monto abonado por el cliente
+            porcentaje_pagado: porcentaje_pagado || 0 // Porcentaje pagado calculado
         };
         
         const options = {

@@ -302,3 +302,5 @@ El sistema de gestión de depósitos está **100% funcional** y listo para usar.
 4. ✅ Comenzar a gestionar depósitos
 
 **¡Ya puedes controlar completamente los pagos a tus complejos!** 🚀
+
+

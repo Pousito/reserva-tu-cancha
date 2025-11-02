@@ -479,6 +479,19 @@ function updateCharts() {
     
     // Gráfico de ocupación por complejo
     console.log('📊 Actualizando gráfico de ocupación:', charts.reservasPorComplejo);
+    console.log('🔍 Detalle de ocupación por complejo:', JSON.stringify(charts.reservasPorComplejo, null, 2));
+    if (charts.reservasPorComplejo && charts.reservasPorComplejo.length > 0) {
+        charts.reservasPorComplejo.forEach((item, index) => {
+            console.log(`  Complejo ${index + 1}:`, {
+                nombre: item.complejo,
+                ocupacion_real: item.ocupacion_real,
+                ocupacion_tipo: typeof item.ocupacion_real,
+                ocupacion_parseFloat: parseFloat(item.ocupacion_real || 0),
+                horas_disponibles: item.horas_disponibles,
+                horas_ocupadas: item.horas_ocupadas
+            });
+        });
+    }
     updateOccupancyChart(charts.reservasPorComplejo);
     
     // Gráfico de horarios populares
@@ -780,7 +793,18 @@ function updateReservationsChart(data) {
 // Actualizar gráfico de ocupación
 function updateOccupancyChart(data) {
     const canvas = document.getElementById('occupancyChart');
-    if (!canvas || !data) return;
+    if (!canvas || !data) {
+        console.warn('⚠️ No se puede actualizar gráfico de ocupación:', { canvas: !!canvas, data: !!data });
+        return;
+    }
+    
+    console.log('🔍 updateOccupancyChart - Datos recibidos:', data);
+    console.log('🔍 updateOccupancyChart - Valores de ocupación:', data.map(item => ({
+        complejo: item.complejo,
+        ocupacion_real: item.ocupacion_real,
+        parseFloat: parseFloat(item.ocupacion_real || 0),
+        rounded: Math.round(parseFloat(item.ocupacion_real || 0))
+    })));
     
     const ctx = canvas.getContext('2d');
     
@@ -796,7 +820,11 @@ function updateOccupancyChart(data) {
             labels: data.map(item => item.complejo),
             datasets: [{
                 label: 'Ocupación (%)',
-                data: data.map(item => Math.round(parseFloat(item.ocupacion_real))),
+                data: data.map(item => {
+                    const ocupacion = parseFloat(item.ocupacion_real || 0);
+                    // Si el valor es menor a 1, usar ceil para mostrar al menos 1%, sino redondear normalmente
+                    return ocupacion < 1 && ocupacion > 0 ? Math.ceil(ocupacion) : Math.round(ocupacion);
+                }),
                 backgroundColor: gradient,
                 borderColor: '#f59e0b',
                 borderWidth: 2,
@@ -1291,7 +1319,13 @@ async function updateTopComplexesTable() {
                     <td><strong>${item.complejo}</strong></td>
                     <td><span class="badge bg-primary">${item.cantidad || 0}</span></td>
                     <td><span class="text-success">$${formatCurrencyChile(parseInt(item.ingresos || 0))}</span></td>
-                    <td><span class="badge bg-info">${Math.round(parseFloat(item.ocupacion_real || 0))}%</span></td>
+                    <td><span class="badge bg-info">${
+                        (() => {
+                            const ocupacion = parseFloat(item.ocupacion_real || 0);
+                            // Si el valor es menor a 1, usar ceil para mostrar al menos 1%, sino redondear normalmente
+                            return ocupacion < 1 && ocupacion > 0 ? Math.ceil(ocupacion) : Math.round(ocupacion);
+                        })()
+                    }%</span></td>
                 </tr>
             `).join('');
         } else {

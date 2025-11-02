@@ -52,3 +52,5 @@ SELECT
     'Tabla creada exitosamente' as resultado,
     COUNT(*) as total_registros
 FROM depositos_complejos;
+
+

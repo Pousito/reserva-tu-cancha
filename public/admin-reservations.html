@@ -925,6 +925,22 @@
                         <strong>Precio de la reserva:</strong> <span id="precioModal">Selecciona una cancha</span>
                     </div>
                     
+                    <!-- Monto abonado -->
+                    <div class="mb-3">
+                        <label for="modalMontoAbonado" class="form-label">Monto Abonado por el Cliente *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="modalMontoAbonado" 
+                                   placeholder="0" min="0" step="1000" required>
+                        </div>
+                        <div class="form-text" id="montoAbonadoInfo">
+                            Ingresa el monto que el cliente ha pagado. Puede ser 0 si el cliente no abona.
+                        </div>
+                        <div class="invalid-feedback d-none" id="montoAbonadoError">
+                            El monto no puede ser mayor al precio de la cancha.
+                        </div>
+                    </div>
+                    
                     <!-- Método de pago -->
                     <div class="mb-3">
                         <label for="modalMetodoPago" class="form-label">Método de Pago *</label>
@@ -934,6 +950,7 @@
                             <option value="transferencia">Transferencia Bancaria</option>
                             <option value="webpay">Webpay Plus</option>
                             <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                            <option value="cliente_no_abona">Cliente no abona</option>
                             <option value="otros">Otros</option>
                         </select>
                         <div class="form-text">Selecciona el método de pago para esta reserva</div>

@@ -3128,6 +3128,90 @@ app.put('/api/admin/reservas/:codigoReserva/confirmar', authenticateToken, requi
 });
 
 // Endpoint para cancelar una reserva (panel de administración)
+// Endpoint para actualizar monto abonado y método de pago de una reserva
+app.put('/api/admin/reservas/:codigoReserva/pago', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  try {
+    const { codigoReserva } = req.params;
+    const { monto_abonado, metodo_pago, estado_pago, porcentaje_pagado } = req.body;
+    const user = req.user;
+    
+    console.log('💰 Actualizando pago de reserva:', {
+      codigoReserva,
+      monto_abonado,
+      metodo_pago,
+      estado_pago,
+      porcentaje_pagado,
+      user: user.email
+    });
+    
+    // Validar campos requeridos
+    if (monto_abonado === undefined || metodo_pago === undefined || estado_pago === undefined) {
+      return res.status(400).json({ error: 'Faltan campos requeridos: monto_abonado, metodo_pago, estado_pago' });
+    }
+    
+    // Buscar la reserva
+    let query = `
+      SELECT r.*, c.complejo_id
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE r.codigo_reserva = $1
+    `;
+    const params = [codigoReserva];
+    
+    // Filtrar por complejo si es owner/manager
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      query += ` AND c.complejo_id = $2`;
+      params.push(user.complejo_id);
+    }
+    
+    const reservaResult = await db.query(query, params);
+    
+    if (!reservaResult || reservaResult.length === 0) {
+      return res.status(404).json({ error: 'Reserva no encontrada o sin acceso' });
+    }
+    
+    const reserva = reservaResult[0];
+    
+    // Validar que monto_abonado no sea mayor que precio_total
+    if (monto_abonado > reserva.precio_total) {
+      return res.status(400).json({ error: `El monto abonado no puede ser mayor al precio total ($${reserva.precio_total})` });
+    }
+    
+    // Actualizar reserva
+    const updateQuery = `
+      UPDATE reservas
+      SET monto_abonado = $1,
+          metodo_pago = $2,
+          estado_pago = $3,
+          porcentaje_pagado = $4
+      WHERE codigo_reserva = $5
+      RETURNING *
+    `;
+    
+    const updateParams = [
+      monto_abonado,
+      metodo_pago,
+      estado_pago,
+      porcentaje_pagado || Math.round((monto_abonado / reserva.precio_total) * 100),
+      codigoReserva
+    ];
+    
+    const updateResult = await db.query(updateQuery, updateParams);
+    
+    console.log('✅ Pago actualizado exitosamente:', updateResult[0]);
+    
+    res.json({
+      success: true,
+      mensaje: 'Pago actualizado exitosamente',
+      reserva: updateResult[0]
+    });
+    
+  } catch (error) {
+    console.error('❌ Error actualizando pago:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 app.put('/api/admin/reservas/:codigoReserva/cancelar', authenticateToken, requireComplexAccess, async (req, res) => {
   try {
     const { codigoReserva } = req.params;
