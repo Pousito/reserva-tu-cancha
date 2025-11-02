@@ -2533,6 +2533,111 @@ app.get('/api/debug/reserva/:codigo', async (req, res) => {
   }
 });
 
+// DEBUG: Endpoint temporal para eliminar múltiples reservas
+app.post('/api/debug/reservas/delete-batch', async (req, res) => {
+  try {
+    const { codigos } = req.body;
+
+    if (!codigos || !Array.isArray(codigos) || codigos.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe proporcionar un array de códigos de reserva'
+      });
+    }
+
+    console.log('🗑️ Eliminando reservas en batch:', codigos);
+
+    const client = await db.pgPool.connect();
+    const resultados = [];
+
+    try {
+      await client.query('BEGIN');
+
+      // Verificar qué tablas existen
+      const tablesCheck = await client.query(`
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name IN ('historial_abonos_reservas', 'uso_codigos_descuento')
+      `);
+
+      const existingTables = tablesCheck.rows.map(r => r.table_name);
+      console.log('📋 Tablas existentes:', existingTables);
+
+      // Eliminar cada reserva
+      for (const codigo of codigos) {
+        try {
+          // Verificar que existe
+          const reserva = await client.query(`
+            SELECT id, codigo_reserva, nombre_cliente, fecha, estado
+            FROM reservas
+            WHERE codigo_reserva = $1
+          `, [codigo]);
+
+          if (reserva.rows.length === 0) {
+            resultados.push({
+              codigo,
+              success: false,
+              error: 'No encontrada'
+            });
+            continue;
+          }
+
+          const reservaData = reserva.rows[0];
+
+          // Eliminar de tablas relacionadas
+          if (existingTables.includes('historial_abonos_reservas')) {
+            await client.query(`DELETE FROM historial_abonos_reservas WHERE codigo_reserva = $1`, [codigo]);
+          }
+
+          if (existingTables.includes('uso_codigos_descuento')) {
+            await client.query(`DELETE FROM uso_codigos_descuento WHERE reserva_id = $1`, [reservaData.id]);
+          }
+
+          // Eliminar la reserva
+          await client.query(`DELETE FROM reservas WHERE codigo_reserva = $1`, [codigo]);
+
+          resultados.push({
+            codigo,
+            success: true,
+            reserva: reservaData
+          });
+
+        } catch (error) {
+          resultados.push({
+            codigo,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+
+      await client.query('COMMIT');
+
+      const exitosas = resultados.filter(r => r.success).length;
+      const fallidas = resultados.filter(r => !r.success).length;
+
+      res.json({
+        success: true,
+        message: `Eliminadas ${exitosas} reservas, ${fallidas} fallidas`,
+        total: codigos.length,
+        exitosas,
+        fallidas,
+        resultados
+      });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('❌ Error eliminando reservas en batch:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DEBUG: Endpoint temporal para eliminar reserva por código
 app.delete('/api/debug/reserva/:codigo', async (req, res) => {
   try {
