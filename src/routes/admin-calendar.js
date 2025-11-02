@@ -382,7 +382,8 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
             
             calendarioData[fecha][horaInicio].push({
                 reservada: true,
-                codigo_reserva: item.codigo || item.codigo_reserva,
+                codigo: item.codigo || item.codigo_reserva || 'N/A',
+                codigo_reserva: item.codigo_reserva || item.codigo || 'N/A',
                 cliente: item.nombre_cliente,
                 cancha: `Cancha ${item.cancha_numero}`,
                 cancha_nombre: `Cancha ${item.cancha_numero}`,
