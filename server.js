@@ -2561,19 +2561,25 @@ app.delete('/api/debug/reserva/:codigo', async (req, res) => {
 
       const reservaData = reserva.rows[0];
 
-      // Eliminar registros relacionados primero (si las tablas existen)
-      try {
+      // Verificar qué tablas existen antes de intentar eliminar
+      const tablesCheck = await client.query(`
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name IN ('historial_abonos_reservas', 'uso_codigos_descuento')
+      `);
+
+      const existingTables = tablesCheck.rows.map(r => r.table_name);
+      console.log('📋 Tablas existentes:', existingTables);
+
+      // Eliminar de tablas relacionadas solo si existen
+      if (existingTables.includes('historial_abonos_reservas')) {
         await client.query(`DELETE FROM historial_abonos_reservas WHERE codigo_reserva = $1`, [codigo]);
         console.log('✅ Eliminados registros de historial_abonos_reservas');
-      } catch (err) {
-        console.log('⚠️ Tabla historial_abonos_reservas no existe o no tiene registros');
       }
 
-      try {
+      if (existingTables.includes('uso_codigos_descuento')) {
         await client.query(`DELETE FROM uso_codigos_descuento WHERE reserva_id = $1`, [reservaData.id]);
         console.log('✅ Eliminados registros de uso_codigos_descuento');
-      } catch (err) {
-        console.log('⚠️ Tabla uso_codigos_descuento no existe o no tiene registros');
       }
 
       // Eliminar la reserva
