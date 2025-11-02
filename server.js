@@ -2339,6 +2339,18 @@ app.get('/api/admin/reservas', authenticateToken, requireComplexAccess, requireR
     
     console.log(`✅ ${reservas.length} reservas cargadas para administración`);
     
+    // DEBUG: Verificar complejos en las reservas cargadas
+    if (reservas && reservas.length > 0) {
+        const complejosUnicos = [...new Set(reservas.map(r => `${r.complejo_id}-${r.complejo_nombre}`))];
+        console.log('🔍 DEBUG SERVER - Complejos en reservas cargadas:', complejosUnicos);
+        console.log('🔍 DEBUG SERVER - Primera reserva:', {
+            codigo: reservas[0].codigo_reserva,
+            complejo_id: reservas[0].complejo_id,
+            complejo_nombre: reservas[0].complejo_nombre,
+            cancha: reservas[0].cancha_nombre
+        });
+    }
+    
     // DEBUG: Verificar precios de las primeras 3 reservas
     if (reservas && reservas.length > 0) {
         console.log('🔍 DEBUG SERVER - Primeras 3 reservas:');
