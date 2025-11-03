@@ -2753,6 +2753,8 @@ function generarHoras(fecha = null) {
 function obtenerInicioSemana(fecha) {
     console.log('🔍 obtenerInicioSemana llamada con fecha:', fecha);
     const inicio = new Date(fecha);
+    // Normalizar a medianoche ANTES de calcular para evitar problemas de zona horaria
+    inicio.setHours(0, 0, 0, 0);
     const dia = inicio.getDay();
     // Lunes = 1, Martes = 2, ..., Domingo = 0
     // Si es domingo (0), necesitamos ir al lunes anterior (-6)
@@ -2775,6 +2777,8 @@ function obtenerInicioSemana(fecha) {
 function obtenerFinSemana(fecha) {
     console.log('🔍 obtenerFinSemana llamada con fecha:', fecha);
     const fin = new Date(fecha);
+    // Normalizar a medianoche ANTES de calcular para evitar problemas de zona horaria
+    fin.setHours(0, 0, 0, 0);
     const dia = fin.getDay();
     // Domingo = 0, Lunes = 1, ..., Sábado = 6
     // Si es domingo (0), no necesitamos mover la fecha (0)
