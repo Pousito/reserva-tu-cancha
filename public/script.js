@@ -4641,6 +4641,34 @@ function mostrarModalReserva() {
          </div>
      `;
     
+    // Configurar sugerencia de código de descuento para Espacio Deportivo Borde Río
+    const codigoDescuentoLabel = document.querySelector('label[for="codigoDescuento"]');
+    const codigoDescuentoInput = document.getElementById('codigoDescuento');
+    
+    if (complejoSeleccionado && (complejoSeleccionado.id == 7 || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río')) {
+        // Mostrar sugerencia del código RESERVABORDERIO10
+        if (codigoDescuentoLabel) {
+            codigoDescuentoLabel.innerHTML = `
+                <i class="fas fa-tag me-2"></i>
+                Código de descuento 
+                <span class="text-muted small">(sugerencia: <strong class="text-primary">RESERVABORDERIO10</strong>)</span>
+            `;
+        }
+        if (codigoDescuentoInput) {
+            codigoDescuentoInput.placeholder = 'RESERVABORDERIO10 (recomendado)';
+        }
+    } else {
+        // Restaurar texto normal para otros complejos
+        if (codigoDescuentoLabel) {
+            codigoDescuentoLabel.innerHTML = `
+                <i class="fas fa-tag me-2"></i>Código de descuento (opcional)
+            `;
+        }
+        if (codigoDescuentoInput) {
+            codigoDescuentoInput.placeholder = 'Ingresa tu código de descuento';
+        }
+    }
+    
     modal.show();
     
     // Actualizar el resumen de precio inmediatamente para asegurar que use el precio correcto
