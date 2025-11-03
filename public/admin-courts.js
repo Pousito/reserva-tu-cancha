@@ -438,6 +438,15 @@ async function loadCourts() {
 function displayCourts(courtsToShow) {
     const container = document.getElementById('courtsList');
     
+    // Asegurar que currentUser esté definido
+    if (!currentUser) {
+        currentUser = AdminUtils.getCurrentUser();
+        console.log('🔍 currentUser obtenido en displayCourts:', currentUser);
+    }
+    
+    console.log('🔍 displayCourts - currentUser:', currentUser);
+    console.log('🔍 displayCourts - Rol del usuario:', currentUser?.rol);
+    
     if (courtsToShow.length === 0) {
         container.innerHTML = `
             <div class="alert alert-info">
