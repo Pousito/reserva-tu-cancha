@@ -607,18 +607,30 @@ function mostrarReservas(reservasAMostrar) {
         // Determinar tipo de reserva
         const tipoReserva = reserva.tipo_reserva || 'directa';
         
-        // Calcular comisión correcta según el tipo de reserva
+        // Usar comisión_aplicada de la base de datos (ya considera exenciones)
+        // Si no está disponible, calcular como fallback
         let comision = 0;
         let porcentajeComision = 0;
         
-        if (tipoReserva === 'directa') {
-            // Reserva web: 3.5%
-            porcentajeComision = 3.5;
-            comision = Math.round(reserva.precio_total * 0.035);
+        if (reserva.comision_aplicada !== null && reserva.comision_aplicada !== undefined) {
+            // Usar el valor de la base de datos (ya considera exenciones por fecha)
+            comision = parseFloat(reserva.comision_aplicada) || 0;
+            
+            // Calcular porcentaje para mostrar (solo si hay comisión)
+            if (comision > 0 && reserva.precio_total > 0) {
+                porcentajeComision = parseFloat((comision / reserva.precio_total * 100).toFixed(2));
+            } else {
+                porcentajeComision = 0;
+            }
         } else {
-            // Reserva administrativa: 1.75%
-            porcentajeComision = 1.75;
-            comision = Math.round(reserva.precio_total * 0.0175);
+            // Fallback: calcular según tipo (solo si no hay valor en BD)
+            if (tipoReserva === 'directa') {
+                porcentajeComision = 3.5;
+                comision = Math.round(reserva.precio_total * 0.035);
+            } else {
+                porcentajeComision = 1.75;
+                comision = Math.round(reserva.precio_total * 0.0175);
+            }
         }
         
         // Generar HTML de la fila según el rol del usuario
@@ -677,12 +689,21 @@ function mostrarReservas(reservasAMostrar) {
         
         // Solo incluir columna de comisión si no es manager
         if (!isManager) {
+            // Mostrar comisión, con indicador si está exento
+            const comisionDisplay = comision === 0 ? 
+                `<span class="text-success" title="Exento de comisiones hasta 2026-01-01">$0</span>` :
+                `$${formatCurrencyChile(comision)}`;
+            
+            const porcentajeDisplay = comision === 0 ? 
+                `<small class="text-success">Exento</small>` :
+                `<small>${porcentajeComision}%</small>`;
+            
             rowHtml += `
             <td>
                 <div class="comision-info">
-                    <strong>$${formatCurrencyChile(comision)}</strong>
+                    <strong>${comisionDisplay}</strong>
                     <br>
-                    <small>${porcentajeComision}%</small>
+                    ${porcentajeDisplay}
                 </div>
             </td>`;
         }
