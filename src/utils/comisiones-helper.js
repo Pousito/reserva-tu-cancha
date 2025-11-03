@@ -42,8 +42,28 @@ async function estaExentoDeComision(complejoId, fechaReserva) {
         const complejo = Array.isArray(complejoResult) ? complejoResult[0] : (complejoResult.rows?.[0] || complejoResult[0]);
         const comisionInicioFecha = complejo.comision_inicio_fecha;
         
-        // Si no hay fecha de inicio configurada, aplicar comisión por defecto
+        // Si no hay fecha de inicio configurada
         if (!comisionInicioFecha) {
+            // Caso especial: Espacio Deportivo Borde Río (ID: 7) debe estar exento hasta 2026-01-01
+            if (complejoId === 7) {
+                console.log(`🎁 Complejo ${complejoId} (Espacio Deportivo Borde Río): Aplicando exención hasta 2026-01-01 por defecto`);
+                // Verificar si la fecha de reserva es anterior a 2026-01-01
+                let fechaReservaLimpia = fechaReserva;
+                if (fechaReserva instanceof Date) {
+                    const year = fechaReserva.getFullYear();
+                    const month = String(fechaReserva.getMonth() + 1).padStart(2, '0');
+                    const day = String(fechaReserva.getDate()).padStart(2, '0');
+                    fechaReservaLimpia = `${year}-${month}-${day}`;
+                } else if (typeof fechaReserva === 'string' && fechaReserva.includes('T')) {
+                    fechaReservaLimpia = fechaReserva.split('T')[0];
+                }
+                
+                // Si la fecha es anterior a 2026-01-01, está exento
+                if (fechaReservaLimpia < '2026-01-01') {
+                    return true;
+                }
+            }
+            
             console.log(`ℹ️ Complejo ${complejoId} sin fecha de inicio de comisiones, aplicando comisión por defecto`);
             return false;
         }

@@ -7797,6 +7797,83 @@ app.get('/api/debug/optimize-database', async (req, res) => {
 });
 
 // ===== ENDPOINT PARA AGREGAR COLUMNAS FALTANTES (MIGRACIÓN) =====
+// Endpoint temporal para configurar fecha de inicio de comisiones y corregir reservas
+app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('🔧 Configurando exención de comisiones...');
+    
+    // 1. Agregar columna si no existe
+    const colExists = await db.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'complejos' 
+      AND column_name = 'comision_inicio_fecha'
+    `);
+    
+    if (!colExists || colExists.length === 0) {
+      await db.query(`ALTER TABLE complejos ADD COLUMN comision_inicio_fecha DATE`);
+      console.log('✅ Columna comision_inicio_fecha agregada');
+    }
+    
+    // 2. Configurar fecha para Borde Río
+    await db.query(`
+      UPDATE complejos 
+      SET comision_inicio_fecha = '2026-01-01' 
+      WHERE id = 7 AND nombre = 'Espacio Deportivo Borde Río'
+    `);
+    console.log('✅ Fecha configurada para Borde Río');
+    
+    // 3. Corregir reservas existentes del complejo 7 con fecha < 2026-01-01
+    const result = await db.query(`
+      UPDATE reservas 
+      SET comision_aplicada = 0 
+      FROM canchas c
+      WHERE reservas.cancha_id = c.id 
+      AND c.complejo_id = 7
+      AND reservas.fecha < '2026-01-01'
+      AND reservas.comision_aplicada > 0
+    `);
+    
+    console.log(`✅ Reservas corregidas`);
+    
+    // 4. Verificar
+    const verificar = await db.query(`
+      SELECT 
+        r.codigo_reserva,
+        r.fecha,
+        r.comision_aplicada,
+        comp.nombre as complejo_nombre,
+        comp.comision_inicio_fecha
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos comp ON c.complejo_id = comp.id
+      WHERE comp.id = 7
+      AND r.fecha < '2026-01-01'
+      ORDER BY r.fecha DESC
+      LIMIT 10
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Exención de comisiones configurada',
+      complejo: {
+        id: 7,
+        nombre: 'Espacio Deportivo Borde Río',
+        fecha_inicio_comisiones: '2026-01-01'
+      },
+      reservas_corregidas: verificar || [],
+      total: verificar?.length || 0
+    });
+    
+  } catch (error) {
+    console.error('❌ Error configurando exención:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 app.post('/api/debug/add-reservas-columns', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🔧 Agregando columnas faltantes a tabla reservas...');
