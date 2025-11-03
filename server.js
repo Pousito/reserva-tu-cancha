@@ -8062,6 +8062,103 @@ app.post('/api/debug/crear-usuario-owner', authenticateToken, requireRolePermiss
   }
 });
 
+// Endpoint para reemplazar owner de un complejo
+app.post('/api/debug/reemplazar-owner', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    const { email_antiguo, email_nuevo, nombre_nuevo, password_nuevo, complejo_id } = req.body;
+    
+    if (!email_antiguo || !email_nuevo || !nombre_nuevo || !password_nuevo || !complejo_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan campos requeridos: email_antiguo, email_nuevo, nombre_nuevo, password_nuevo, complejo_id'
+      });
+    }
+    
+    console.log('🔄 Reemplazando owner...', { email_antiguo, email_nuevo, complejo_id });
+    
+    // Verificar que el complejo existe
+    const complejo = await db.query('SELECT id, nombre FROM complejos WHERE id = $1', [complejo_id]);
+    if (!complejo || complejo.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Complejo no encontrado'
+      });
+    }
+    
+    // Verificar que el usuario antiguo existe y es owner del complejo
+    const usuarioAntiguo = await db.query(
+      'SELECT id, email, nombre, rol, complejo_id FROM usuarios WHERE email = $1 AND complejo_id = $2',
+      [email_antiguo, complejo_id]
+    );
+    
+    if (!usuarioAntiguo || usuarioAntiguo.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario antiguo no encontrado o no pertenece a este complejo'
+      });
+    }
+    
+    if (usuarioAntiguo[0].rol !== 'owner') {
+      return res.status(400).json({
+        success: false,
+        error: 'El usuario antiguo no es owner de este complejo'
+      });
+    }
+    
+    // Verificar si el email nuevo ya existe
+    const usuarioNuevoExistente = await db.query('SELECT id, email FROM usuarios WHERE email = $1', [email_nuevo]);
+    if (usuarioNuevoExistente && usuarioNuevoExistente.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'El email nuevo ya está registrado'
+      });
+    }
+    
+    // Eliminar usuario antiguo
+    await db.query('DELETE FROM usuarios WHERE id = $1', [usuarioAntiguo[0].id]);
+    console.log(`🗑️ Usuario antiguo eliminado: ${email_antiguo}`);
+    
+    // Hashear la contraseña del nuevo usuario
+    const hashedPassword = await bcrypt.hash(password_nuevo, 10);
+    
+    // Crear el nuevo usuario
+    const resultado = await db.query(`
+      INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id)
+      VALUES ($1, $2, $3, 'owner', true, $4)
+      RETURNING id, email, nombre, rol, complejo_id, activo
+    `, [email_nuevo, hashedPassword, nombre_nuevo, complejo_id]);
+    
+    const usuarioNuevo = resultado[0];
+    
+    console.log(`✅ Usuario nuevo creado exitosamente: ${email_nuevo}`);
+    
+    res.json({
+      success: true,
+      message: 'Owner reemplazado exitosamente',
+      usuario_eliminado: {
+        email: usuarioAntiguo[0].email,
+        nombre: usuarioAntiguo[0].nombre
+      },
+      usuario_nuevo: {
+        id: usuarioNuevo.id,
+        email: usuarioNuevo.email,
+        nombre: usuarioNuevo.nombre,
+        rol: usuarioNuevo.rol,
+        complejo_id: usuarioNuevo.complejo_id,
+        complejo_nombre: complejo[0].nombre,
+        activo: usuarioNuevo.activo
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error reemplazando owner:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 app.post('/api/debug/add-reservas-columns', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🔧 Agregando columnas faltantes a tabla reservas...');
