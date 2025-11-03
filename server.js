@@ -3101,7 +3101,7 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
       await db.query(`DROP TRIGGER IF EXISTS trigger_sincronizar_reserva_ingresos ON reservas;`);
       await db.query(`
         CREATE TRIGGER trigger_sincronizar_reserva_ingresos
-            AFTER INSERT OR UPDATE OF estado, monto_abonado, precio_total
+            AFTER INSERT OR UPDATE OF estado, monto_abonado, precio_total, comision_aplicada
             ON reservas
             FOR EACH ROW
             EXECUTE FUNCTION sincronizar_reserva_ingresos();
