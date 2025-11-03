@@ -5734,7 +5734,34 @@ app.post('/api/reservas', async (req, res) => {
     // Usar AtomicReservationManager para crear reserva de forma atómica
     const AtomicReservationManager = require('./src/utils/atomic-reservation');
     const atomicManager = new AtomicReservationManager(db);
-    
+
+    // Obtener complejo_id de la cancha para determinar comisión
+    const canchaInfoResult = await db.query(
+      'SELECT complejo_id FROM canchas WHERE id = $1',
+      [cancha_id]
+    );
+    const complejo_id = canchaInfoResult[0]?.complejo_id;
+
+    // Determinar tasa de comisión según complejo y fecha
+    let commissionRate = 0.035; // 3.5% por defecto para reservas web
+
+    // Lógica especial para Borde Río (complejo_id = 7)
+    if (complejo_id === 7) {
+      // Parsear la fecha de la reserva
+      const fechaReserva = new Date(fecha);
+      const fechaLimite = new Date('2025-12-31T23:59:59');
+
+      if (fechaReserva <= fechaLimite) {
+        // Hasta el 31 de diciembre de 2025: 0% comisión
+        commissionRate = 0;
+        console.log('🎁 Borde Río: Aplicando comisión 0% (hasta 31 dic 2025) - Reserva Web');
+      } else {
+        // A partir del 1 de enero de 2026: 3.5% + IVA para reservas web
+        commissionRate = 0.035;
+        console.log('💰 Borde Río: Aplicando comisión 3.5% (desde 1 ene 2026) - Reserva Web');
+      }
+    }
+
     const reservationData = {
       cancha_id,
       fecha,
@@ -5748,10 +5775,10 @@ app.post('/api/reservas', async (req, res) => {
       tipo_reserva: 'directa',
       bloqueo_id
     };
-    
+
     const options = {
       skipAvailabilityCheck: false, // Siempre verificar disponibilidad
-      commissionRate: 0.035 // 3.5% para reservas web
+      commissionRate: commissionRate
     };
     
     const result = await atomicManager.createAtomicReservation(reservationData, options);

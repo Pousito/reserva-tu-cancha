@@ -580,7 +580,34 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         // Usar AtomicReservationManager para crear reserva de forma atómica
         const AtomicReservationManager = require('../utils/atomic-reservation');
         const atomicManager = new AtomicReservationManager(db);
-        
+
+        // Obtener complejo_id de la cancha para determinar comisión
+        const canchaInfo = await db.query(
+            'SELECT complejo_id FROM canchas WHERE id = $1',
+            [cancha_id]
+        );
+        const complejo_id = canchaInfo[0]?.complejo_id;
+
+        // Determinar tasa de comisión según complejo y fecha
+        let commissionRate = 0.0175; // 1.75% por defecto para reservas administrativas
+
+        // Lógica especial para Borde Río (complejo_id = 7)
+        if (complejo_id === 7) {
+            // Parsear la fecha de la reserva
+            const fechaReserva = new Date(fecha);
+            const fechaLimite = new Date('2025-12-31T23:59:59');
+
+            if (fechaReserva <= fechaLimite) {
+                // Hasta el 31 de diciembre de 2025: 0% comisión
+                commissionRate = 0;
+                console.log('🎁 Borde Río: Aplicando comisión 0% (hasta 31 dic 2025)');
+            } else {
+                // A partir del 1 de enero de 2026: 1.75% + IVA para admin
+                commissionRate = 0.0175;
+                console.log('💰 Borde Río: Aplicando comisión 1.75% (desde 1 ene 2026)');
+            }
+        }
+
         const reservationData = {
             cancha_id,
             fecha,
@@ -599,10 +626,10 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             monto_abonado: montoAbonadoFinal, // Monto abonado por el cliente
             porcentaje_pagado: porcentajeFinal // Porcentaje pagado recalculado (no confiar en frontend)
         };
-        
+
         const options = {
             skipAvailabilityCheck: false, // Siempre verificar disponibilidad
-            commissionRate: 0.0175 // 1.75% para reservas administrativas
+            commissionRate: commissionRate
         };
         
         console.log('🔍 Ejecutando reserva atómica administrativa...');
