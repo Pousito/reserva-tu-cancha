@@ -7926,10 +7926,10 @@ app.post('/api/debug/limpiar-registros-huérfanos', authenticateToken, requireRo
         gi.fecha,
         gi.descripcion,
         CASE 
-          WHEN gi.descripcion LIKE 'Reserva #%' THEN 
-            SUBSTRING(gi.descripcion FROM 'Reserva #([A-Z0-9]+)')
-          WHEN gi.descripcion LIKE 'Comisión Reserva #%' THEN 
-            SUBSTRING(gi.descripcion FROM 'Comisión Reserva #([A-Z0-9]+)')
+          WHEN gi.descripcion ~ 'Reserva #[A-Z0-9]+' THEN 
+            (regexp_match(gi.descripcion, 'Reserva #([A-Z0-9]+)'))[1]
+          WHEN gi.descripcion ~ 'Comisión Reserva #[A-Z0-9]+' THEN 
+            (regexp_match(gi.descripcion, 'Comisión Reserva #([A-Z0-9]+)'))[1]
           ELSE NULL
         END as codigo_reserva
       FROM gastos_ingresos gi
@@ -7942,10 +7942,10 @@ app.post('/api/debug/limpiar-registros-huérfanos', authenticateToken, requireRo
         SELECT 1 
         FROM reservas r
         WHERE r.codigo_reserva = CASE 
-          WHEN gi.descripcion LIKE 'Reserva #%' THEN 
-            SUBSTRING(gi.descripcion FROM 'Reserva #([A-Z0-9]+)')
-          WHEN gi.descripcion LIKE 'Comisión Reserva #%' THEN 
-            SUBSTRING(gi.descripcion FROM 'Comisión Reserva #([A-Z0-9]+)')
+          WHEN gi.descripcion ~ 'Reserva #[A-Z0-9]+' THEN 
+            (regexp_match(gi.descripcion, 'Reserva #([A-Z0-9]+)'))[1]
+          WHEN gi.descripcion ~ 'Comisión Reserva #[A-Z0-9]+' THEN 
+            (regexp_match(gi.descripcion, 'Comisión Reserva #([A-Z0-9]+)'))[1]
           ELSE NULL
         END
       )
