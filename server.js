@@ -7910,6 +7910,89 @@ app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, require
   }
 });
 
+// Endpoint para limpiar registros huérfanos en gastos_ingresos
+app.post('/api/debug/limpiar-registros-huérfanos', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    console.log('🧹 Limpiando registros huérfanos en gastos_ingresos...');
+    
+    const complejoId = req.user.complejo_id || 7; // Por defecto complejo 7 si no está definido
+    
+    // 1. Encontrar ingresos/egresos asociados a reservas que no existen
+    const registrosHuerfanos = await db.query(`
+      SELECT 
+        gi.id,
+        gi.tipo,
+        gi.monto,
+        gi.fecha,
+        gi.descripcion,
+        CASE 
+          WHEN gi.descripcion LIKE 'Reserva #%' THEN 
+            SUBSTRING(gi.descripcion FROM 'Reserva #([A-Z0-9]+)')
+          WHEN gi.descripcion LIKE 'Comisión Reserva #%' THEN 
+            SUBSTRING(gi.descripcion FROM 'Comisión Reserva #([A-Z0-9]+)')
+          ELSE NULL
+        END as codigo_reserva
+      FROM gastos_ingresos gi
+      WHERE gi.complejo_id = $1
+      AND (
+        (gi.descripcion LIKE 'Reserva #%' OR gi.descripcion LIKE 'Comisión Reserva #%')
+        OR (gi.descripcion = '' AND gi.tipo = 'gasto')
+      )
+      AND NOT EXISTS (
+        SELECT 1 
+        FROM reservas r
+        WHERE r.codigo_reserva = CASE 
+          WHEN gi.descripcion LIKE 'Reserva #%' THEN 
+            SUBSTRING(gi.descripcion FROM 'Reserva #([A-Z0-9]+)')
+          WHEN gi.descripcion LIKE 'Comisión Reserva #%' THEN 
+            SUBSTRING(gi.descripcion FROM 'Comisión Reserva #([A-Z0-9]+)')
+          ELSE NULL
+        END
+      )
+    `, [complejoId]);
+    
+    console.log(`🔍 Encontrados ${registrosHuerfanos.length} registros huérfanos`);
+    
+    if (registrosHuerfanos.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No se encontraron registros huérfanos',
+        registros_eliminados: 0
+      });
+    }
+    
+    // 2. Eliminar registros huérfanos
+    const idsAEliminar = registrosHuerfanos.map(r => r.id);
+    const resultado = await db.query(`
+      DELETE FROM gastos_ingresos
+      WHERE id = ANY($1::int[])
+    `, [idsAEliminar]);
+    
+    console.log(`✅ ${idsAEliminar.length} registros huérfanos eliminados`);
+    
+    res.json({
+      success: true,
+      message: 'Registros huérfanos eliminados',
+      registros_eliminados: idsAEliminar.length,
+      detalles: registrosHuerfanos.map(r => ({
+        id: r.id,
+        tipo: r.tipo,
+        monto: r.monto,
+        fecha: r.fecha,
+        descripcion: r.descripcion,
+        codigo_reserva: r.codigo_reserva
+      }))
+    });
+    
+  } catch (error) {
+    console.error('❌ Error limpiando registros huérfanos:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 app.post('/api/debug/add-reservas-columns', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🔧 Agregando columnas faltantes a tabla reservas...');
