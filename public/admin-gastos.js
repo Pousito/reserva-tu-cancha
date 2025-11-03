@@ -32,11 +32,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Establecer fecha de hoy por defecto
     document.getElementById('movimientoFecha').valueAsDate = new Date();
     
-    // Establecer filtro de fecha del mes actual
+    // Establecer filtro de fecha del mes actual (incluyendo todo el mes, sin límite superior)
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Obtener último día del mes para incluir reservas futuras del mes actual
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     document.getElementById('filterFechaDesde').valueAsDate = firstDay;
-    document.getElementById('filterFechaHasta').valueAsDate = today;
+    document.getElementById('filterFechaHasta').valueAsDate = lastDay;
     
     // Cargar datos
     await cargarCategorias();
