@@ -7798,7 +7798,7 @@ app.get('/api/debug/optimize-database', async (req, res) => {
 
 // ===== ENDPOINT PARA AGREGAR COLUMNAS FALTANTES (MIGRACIÓN) =====
 // Endpoint temporal para configurar fecha de inicio de comisiones y corregir reservas
-app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🔧 Configurando exención de comisiones...');
     
