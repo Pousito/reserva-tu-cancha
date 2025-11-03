@@ -7911,7 +7911,7 @@ app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, require
 });
 
 // Endpoint para limpiar registros huérfanos en gastos_ingresos
-app.post('/api/debug/limpiar-registros-huérfanos', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+app.post('/api/debug/limpiar-registros-huerfanos', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🧹 Limpiando registros huérfanos en gastos_ingresos...');
     
