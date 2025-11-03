@@ -2760,8 +2760,11 @@ function obtenerInicioSemana(fecha) {
     // Si es martes (2), necesitamos ir al lunes anterior (-1)
     const diff = dia === 0 ? -6 : 1 - dia;
     inicio.setDate(inicio.getDate() + diff);
-    // Devolver fecha en formato ISO (YYYY-MM-DD) para el backend
-    const fechaISO = inicio.toISOString().split('T')[0];
+    // Formatear manualmente para evitar problema de zona horaria con toISOString()
+    const year = inicio.getFullYear();
+    const month = String(inicio.getMonth() + 1).padStart(2, '0');
+    const day = String(inicio.getDate()).padStart(2, '0');
+    const fechaISO = `${year}-${month}-${day}`;
     console.log('🔍 obtenerInicioSemana devuelve:', fechaISO);
     return fechaISO;
 }
@@ -2779,8 +2782,11 @@ function obtenerFinSemana(fecha) {
     // Si es sábado (6), necesitamos ir al domingo siguiente (+1)
     const diff = dia === 0 ? 0 : 7 - dia;
     fin.setDate(fin.getDate() + diff);
-    // Devolver fecha en formato ISO (YYYY-MM-DD) para el backend
-    const fechaISO = fin.toISOString().split('T')[0];
+    // Formatear manualmente para evitar problema de zona horaria con toISOString()
+    const year = fin.getFullYear();
+    const month = String(fin.getMonth() + 1).padStart(2, '0');
+    const day = String(fin.getDate()).padStart(2, '0');
+    const fechaISO = `${year}-${month}-${day}`;
     console.log('🔍 obtenerFinSemana devuelve:', fechaISO);
     return fechaISO;
 }
