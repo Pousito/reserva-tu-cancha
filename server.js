@@ -2837,10 +2837,32 @@ app.get('/api/debug/reserva/:codigo', async (req, res) => {
     console.log('🔍 DEBUG - Verificando reserva en BD:', codigo);
 
     const result = await db.query(`
-      SELECT codigo_reserva, precio_total, monto_abonado, porcentaje_pagado,
-             metodo_pago, estado_pago, created_at
-      FROM reservas
-      WHERE codigo_reserva = $1
+      SELECT
+        r.id,
+        r.codigo_reserva,
+        r.fecha,
+        r.hora_inicio,
+        r.hora_fin,
+        r.precio_total,
+        r.monto_abonado,
+        r.porcentaje_pagado,
+        r.metodo_pago,
+        r.estado,
+        r.estado_pago,
+        r.tipo_reserva,
+        r.nombre_cliente,
+        r.email_cliente,
+        r.telefono_cliente,
+        r.rut_cliente,
+        r.cancha_id,
+        c.nombre as cancha_nombre,
+        c.complejo_id,
+        comp.nombre as complejo_nombre,
+        r.created_at
+      FROM reservas r
+      LEFT JOIN canchas c ON r.cancha_id = c.id
+      LEFT JOIN complejos comp ON c.complejo_id = comp.id
+      WHERE r.codigo_reserva = $1
     `, [codigo]);
 
     console.log('🔍 DEBUG - Resultado de BD:', result);
