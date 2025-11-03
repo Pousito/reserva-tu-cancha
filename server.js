@@ -6296,8 +6296,8 @@ app.post('/api/auth/request-password-reset', async (req, res) => {
 
     const userData = user[0];
     
-    // Verificar que sea un administrador
-    if (!['super_admin', 'admin', 'complejo_admin'].includes(userData.rol)) {
+    // Verificar que sea un administrador (incluyendo owners y managers)
+    if (!['super_admin', 'admin', 'complejo_admin', 'owner', 'manager'].includes(userData.rol)) {
       return res.status(403).json({ 
         success: false, 
         message: 'Solo los administradores pueden restablecer contraseñas' 
