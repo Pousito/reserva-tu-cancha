@@ -8062,6 +8062,160 @@ app.post('/api/debug/crear-usuario-owner', authenticateToken, requireRolePermiss
   }
 });
 
+// Endpoint para eliminar reservas específicas y todos sus registros relacionados
+app.post('/api/debug/eliminar-reservas-borde-rio', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
+  try {
+    const codigosReservas = ['NTJ673', 'CKY44S', 'BIR0DN', '86NX6F', '4Q1IY7'];
+    const complejoId = req.user.complejo_id || 7; // Por defecto complejo 7
+    
+    console.log('🗑️ Eliminando reservas del complejo Borde Río:', codigosReservas);
+    
+    const client = await db.pgPool.connect();
+    const resultados = [];
+    
+    try {
+      await client.query('BEGIN');
+      
+      for (const codigo of codigosReservas) {
+        try {
+          // Verificar que la reserva existe y pertenece al complejo
+          const reserva = await client.query(`
+            SELECT r.id, r.codigo_reserva, r.nombre_cliente, r.fecha, r.estado,
+                   c.complejo_id, comp.nombre as complejo_nombre
+            FROM reservas r
+            JOIN canchas c ON r.cancha_id = c.id
+            JOIN complejos comp ON c.complejo_id = comp.id
+            WHERE r.codigo_reserva = $1 AND c.complejo_id = $2
+          `, [codigo, complejoId]);
+          
+          if (reserva.rows.length === 0) {
+            resultados.push({
+              codigo,
+              success: false,
+              error: 'Reserva no encontrada o no pertenece a este complejo'
+            });
+            continue;
+          }
+          
+          const reservaData = reserva.rows[0];
+          
+          // 1. Eliminar ingresos relacionados en gastos_ingresos
+          const ingresosEliminados = await client.query(`
+            DELETE FROM gastos_ingresos
+            WHERE descripcion LIKE 'Reserva #' || $1 || '%'
+            AND tipo = 'ingreso'
+            RETURNING id, monto, descripcion
+          `, [codigo]);
+          
+          console.log(`   ✅ Eliminados ${ingresosEliminados.rows.length} ingresos para ${codigo}`);
+          
+          // 2. Eliminar egresos de comisión relacionados
+          const egresosEliminados = await client.query(`
+            DELETE FROM gastos_ingresos
+            WHERE descripcion LIKE 'Comisión Reserva #' || $1 || '%'
+            AND tipo = 'gasto'
+            RETURNING id, monto, descripcion
+          `, [codigo]);
+          
+          console.log(`   ✅ Eliminados ${egresosEliminados.rows.length} egresos de comisión para ${codigo}`);
+          
+          // 3. Eliminar historial de abonos
+          const historialEliminado = await client.query(`
+            DELETE FROM historial_abonos_reservas
+            WHERE codigo_reserva = $1 OR reserva_id = $2
+            RETURNING id
+          `, [codigo, reservaData.id]);
+          
+          console.log(`   ✅ Eliminados ${historialEliminado.rows.length} registros de historial de abonos para ${codigo}`);
+          
+          // 4. Eliminar uso de códigos de descuento (si existe la tabla)
+          try {
+            const codigosDescuentoEliminados = await client.query(`
+              DELETE FROM uso_codigos_descuento
+              WHERE reserva_id = $1
+              RETURNING id
+            `, [reservaData.id]);
+            if (codigosDescuentoEliminados.rows.length > 0) {
+              console.log(`   ✅ Eliminados ${codigosDescuentoEliminados.rows.length} registros de códigos de descuento para ${codigo}`);
+            }
+          } catch (error) {
+            // La tabla puede no existir, ignorar error
+            console.log(`   ℹ️ Tabla uso_codigos_descuento no existe o error ignorado`);
+          }
+          
+          // 5. Eliminar la reserva
+          await client.query(`DELETE FROM reservas WHERE codigo_reserva = $1`, [codigo]);
+          
+          resultados.push({
+            codigo,
+            success: true,
+            reserva: {
+              nombre_cliente: reservaData.nombre_cliente,
+              fecha: reservaData.fecha,
+              estado: reservaData.estado
+            },
+            eliminados: {
+              ingresos: ingresosEliminados.rows.length,
+              egresos_comision: egresosEliminados.rows.length,
+              historial_abonos: historialEliminado.rows.length
+            }
+          });
+          
+          console.log(`   ✅ Reserva ${codigo} eliminada exitosamente`);
+          
+        } catch (error) {
+          resultados.push({
+            codigo,
+            success: false,
+            error: error.message
+          });
+          console.error(`   ❌ Error eliminando reserva ${codigo}:`, error.message);
+        }
+      }
+      
+      await client.query('COMMIT');
+      
+      const exitosas = resultados.filter(r => r.success).length;
+      const fallidas = resultados.filter(r => !r.success).length;
+      
+      const totalIngresos = resultados
+        .filter(r => r.success && r.eliminados)
+        .reduce((sum, r) => sum + (r.eliminados.ingresos || 0), 0);
+      const totalEgresos = resultados
+        .filter(r => r.success && r.eliminados)
+        .reduce((sum, r) => sum + (r.eliminados.egresos_comision || 0), 0);
+      
+      res.json({
+        success: true,
+        message: `Proceso completado: ${exitosas} reservas eliminadas, ${fallidas} fallidas`,
+        resumen: {
+          total_procesadas: codigosReservas.length,
+          exitosas,
+          fallidas,
+          registros_relacionados_eliminados: {
+            ingresos: totalIngresos,
+            egresos_comision: totalEgresos
+          }
+        },
+        resultados
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error eliminando reservas:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Endpoint para reemplazar owner de un complejo
 app.post('/api/debug/reemplazar-owner', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   try {
