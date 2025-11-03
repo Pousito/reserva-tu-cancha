@@ -7841,7 +7841,25 @@ app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, require
     `);
     console.log('✅ Fecha configurada para Borde Río');
     
-    // 3. Corregir reservas existentes del complejo 7 con fecha < 2026-01-01
+    // 3. Eliminar egresos de comisión existentes para reservas exentas
+    const eliminarEgresos = await db.query(`
+      DELETE FROM gastos_ingresos
+      WHERE id IN (
+        SELECT gi.id
+        FROM gastos_ingresos gi
+        JOIN reservas r ON gi.descripcion LIKE '%Comisión Reserva #' || r.codigo_reserva || '%'
+        JOIN canchas c ON r.cancha_id = c.id
+        WHERE c.complejo_id = 7
+        AND gi.tipo = 'gasto'
+        AND gi.descripcion LIKE 'Comisión Reserva #%'
+        AND r.fecha < '2026-01-01'
+      )
+    `);
+    
+    console.log(`✅ Egresos de comisión eliminados para reservas exentas`);
+    
+    // 4. Corregir reservas existentes del complejo 7 con fecha < 2026-01-01
+    // Esto disparará el trigger que sincronizará los egresos
     const result = await db.query(`
       UPDATE reservas 
       SET comision_aplicada = 0 
@@ -7852,7 +7870,7 @@ app.post('/api/debug/configurar-exencion-comisiones', authenticateToken, require
       AND reservas.comision_aplicada > 0
     `);
     
-    console.log(`✅ Reservas corregidas`);
+    console.log(`✅ Reservas corregidas (trigger disparado para sincronización)`);
     
     // 4. Verificar
     const verificar = await db.query(`
