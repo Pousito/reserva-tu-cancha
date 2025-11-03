@@ -149,6 +149,19 @@ class DatabaseManager {
           ADD COLUMN comision_inicio_fecha DATE
         `);
         console.log('✅ Columna comision_inicio_fecha agregada exitosamente');
+        
+        // Configurar fecha de inicio de comisiones para Espacio Deportivo Borde Río (ID: 7)
+        // Exento hasta 2026-01-01, comisiones a partir de esa fecha
+        try {
+          await client.query(`
+            UPDATE complejos 
+            SET comision_inicio_fecha = '2026-01-01' 
+            WHERE id = 7 AND nombre = 'Espacio Deportivo Borde Río'
+          `);
+          console.log('✅ Fecha de inicio de comisiones configurada para Espacio Deportivo Borde Río (2026-01-01)');
+        } catch (error) {
+          console.log('⚠️ No se pudo configurar fecha para Borde Río:', error.message);
+        }
       } else {
         console.log('✅ Columna comision_inicio_fecha ya existe');
       }
