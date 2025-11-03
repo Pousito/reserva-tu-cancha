@@ -2943,6 +2943,281 @@ app.get('/api/debug/ingresos-reserva/:codigo', async (req, res) => {
   }
 });
 
+// DEBUG: Endpoint temporal para instalar trigger de sincronización y crear ingreso faltante
+app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
+  try {
+    const { codigo_reserva } = req.body;
+    console.log('🔧 DEBUG - Instalando trigger e ingreso para reserva:', codigo_reserva);
+
+    const resultados = {
+      trigger_function_creada: false,
+      trigger_creado: false,
+      ingreso_creado: false,
+      comision_creada: false,
+      errores: []
+    };
+
+    // 1. Crear función del trigger (MODIFICADA para usar monto_abonado)
+    try {
+      await db.query(`
+        CREATE OR REPLACE FUNCTION sincronizar_reserva_ingresos()
+        RETURNS TRIGGER AS $$
+        DECLARE
+            categoria_ingreso_id INTEGER;
+            categoria_comision_id INTEGER;
+            monto_ingreso DECIMAL(10,2);
+            comision_monto DECIMAL(10,2);
+            tipo_reserva_texto TEXT;
+            complejo_id_reserva INTEGER;
+        BEGIN
+            -- Solo procesar cuando el estado cambia a 'confirmada'
+            IF NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada') THEN
+
+                -- Obtener complejo_id a partir de la cancha
+                SELECT complejo_id INTO complejo_id_reserva
+                FROM canchas
+                WHERE id = NEW.cancha_id;
+
+                IF complejo_id_reserva IS NULL THEN
+                    RAISE WARNING 'No se pudo obtener complejo_id para cancha_id %', NEW.cancha_id;
+                    RETURN NEW;
+                END IF;
+
+                -- Buscar categoría de ingresos para este complejo
+                SELECT id INTO categoria_ingreso_id
+                FROM categorias_gastos
+                WHERE complejo_id = complejo_id_reserva
+                AND tipo = 'ingreso'
+                AND nombre = 'Reservas Web'
+                LIMIT 1;
+
+                -- Buscar categoría de comisión para este complejo
+                SELECT id INTO categoria_comision_id
+                FROM categorias_gastos
+                WHERE complejo_id = complejo_id_reserva
+                AND tipo = 'gasto'
+                AND nombre = 'Comisión Plataforma'
+                LIMIT 1;
+
+                -- Si no existen las categorías, no hacer nada
+                IF categoria_ingreso_id IS NULL OR categoria_comision_id IS NULL THEN
+                    RAISE NOTICE 'Categorías no encontradas para complejo %, saltando sincronización', complejo_id_reserva;
+                    RETURN NEW;
+                END IF;
+
+                -- CAMBIO IMPORTANTE: Usar monto_abonado en vez de precio_total
+                monto_ingreso := COALESCE(NEW.monto_abonado, 0);
+                comision_monto := COALESCE(NEW.comision_aplicada, 0);
+
+                -- Determinar tipo de reserva para descripción
+                tipo_reserva_texto := CASE
+                    WHEN NEW.tipo_reserva = 'directa' THEN 'Web (3.5% + IVA)'
+                    WHEN NEW.tipo_reserva = 'administrativa' THEN 'Admin (1.75% + IVA)'
+                    ELSE 'Reserva'
+                END;
+
+                -- Solo crear registros si hay un monto abonado válido
+                IF monto_ingreso > 0 THEN
+
+                    -- Verificar si ya existe un ingreso para esta reserva
+                    IF NOT EXISTS (
+                        SELECT 1 FROM gastos_ingresos
+                        WHERE descripcion LIKE 'Reserva #' || NEW.codigo_reserva || '%'
+                        AND tipo = 'ingreso'
+                    ) THEN
+
+                        -- 1. Registrar INGRESO por el monto ABONADO
+                        INSERT INTO gastos_ingresos (
+                            complejo_id,
+                            categoria_id,
+                            tipo,
+                            monto,
+                            fecha,
+                            descripcion,
+                            metodo_pago,
+                            usuario_id
+                        ) VALUES (
+                            complejo_id_reserva,
+                            categoria_ingreso_id,
+                            'ingreso',
+                            monto_ingreso,
+                            NEW.fecha::DATE,
+                            'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id) || ' (Abono ' || NEW.porcentaje_pagado || '%)',
+                            COALESCE(NEW.metodo_pago, 'por_definir'),
+                            NULL
+                        );
+
+                        RAISE NOTICE 'Ingreso registrado: $% (Reserva #%, Abono %)', monto_ingreso, NEW.codigo_reserva, NEW.porcentaje_pagado;
+                    END IF;
+
+                    -- Verificar si ya existe un gasto de comisión para esta reserva
+                    IF NOT EXISTS (
+                        SELECT 1 FROM gastos_ingresos
+                        WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
+                        AND tipo = 'gasto'
+                    ) THEN
+
+                        -- 2. Registrar GASTO por comisión (solo si hay comisión > 0)
+                        IF comision_monto > 0 THEN
+                            INSERT INTO gastos_ingresos (
+                                complejo_id,
+                                categoria_id,
+                                tipo,
+                                monto,
+                                fecha,
+                                descripcion,
+                                metodo_pago,
+                                usuario_id
+                            ) VALUES (
+                                complejo_id_reserva,
+                                categoria_comision_id,
+                                'gasto',
+                                comision_monto,
+                                NEW.fecha::DATE,
+                                'Comisión Reserva #' || NEW.codigo_reserva || ' - ' || tipo_reserva_texto,
+                                'automatico',
+                                NULL
+                            );
+
+                            RAISE NOTICE 'Comisión registrada: $% (Reserva #% - %)', comision_monto, NEW.codigo_reserva, tipo_reserva_texto;
+                        END IF;
+                    END IF;
+                END IF;
+            END IF;
+
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      resultados.trigger_function_creada = true;
+      console.log('✅ Función del trigger creada');
+    } catch (error) {
+      console.error('❌ Error creando función:', error);
+      resultados.errores.push({ paso: 'crear_funcion', error: error.message });
+    }
+
+    // 2. Crear trigger
+    try {
+      await db.query(`DROP TRIGGER IF EXISTS trigger_sincronizar_reserva_ingresos ON reservas;`);
+      await db.query(`
+        CREATE TRIGGER trigger_sincronizar_reserva_ingresos
+            AFTER INSERT OR UPDATE OF estado, monto_abonado, precio_total
+            ON reservas
+            FOR EACH ROW
+            EXECUTE FUNCTION sincronizar_reserva_ingresos();
+      `);
+      resultados.trigger_creado = true;
+      console.log('✅ Trigger creado');
+    } catch (error) {
+      console.error('❌ Error creando trigger:', error);
+      resultados.errores.push({ paso: 'crear_trigger', error: error.message });
+    }
+
+    // 3. Si se especificó un código de reserva, crear el ingreso manualmente
+    if (codigo_reserva) {
+      try {
+        // Obtener datos de la reserva
+        const reservaResult = await db.query(`
+          SELECT r.*, c.complejo_id, c.nombre as cancha_nombre
+          FROM reservas r
+          JOIN canchas c ON r.cancha_id = c.id
+          WHERE r.codigo_reserva = $1
+        `, [codigo_reserva]);
+        const reserva = reservaResult[0];
+
+        if (reserva) {
+          // Verificar que no exista ya un ingreso
+          const existeIngreso = await db.query(`
+            SELECT id FROM gastos_ingresos
+            WHERE descripcion LIKE '%' || $1 || '%' AND tipo = 'ingreso'
+          `, [codigo_reserva]);
+
+          if (existeIngreso.length === 0 && reserva.monto_abonado > 0) {
+            // Crear ingreso por el monto abonado
+            await db.query(`
+              INSERT INTO gastos_ingresos (
+                complejo_id,
+                categoria_id,
+                tipo,
+                monto,
+                fecha,
+                descripcion,
+                metodo_pago,
+                usuario_id
+              ) VALUES (
+                $1,
+                (SELECT id FROM categorias_gastos WHERE complejo_id = $1 AND tipo = 'ingreso' AND nombre = 'Reservas Web' LIMIT 1),
+                'ingreso',
+                $2,
+                $3,
+                $4,
+                $5,
+                NULL
+              )
+            `, [
+              reserva.complejo_id,
+              reserva.monto_abonado,
+              reserva.fecha,
+              `Reserva #${codigo_reserva} - ${reserva.cancha_nombre} (Abono ${reserva.porcentaje_pagado}%)`,
+              reserva.metodo_pago || 'transferencia'
+            ]);
+            resultados.ingreso_creado = true;
+            console.log(`✅ Ingreso creado: $${reserva.monto_abonado} para reserva ${codigo_reserva}`);
+
+            // Crear comisión si existe
+            if (reserva.comision_aplicada > 0) {
+              await db.query(`
+                INSERT INTO gastos_ingresos (
+                  complejo_id,
+                  categoria_id,
+                  tipo,
+                  monto,
+                  fecha,
+                  descripcion,
+                  metodo_pago,
+                  usuario_id
+                ) VALUES (
+                  $1,
+                  (SELECT id FROM categorias_gastos WHERE complejo_id = $1 AND tipo = 'gasto' AND nombre = 'Comisión Plataforma' LIMIT 1),
+                  'gasto',
+                  $2,
+                  $3,
+                  $4,
+                  'automatico',
+                  NULL
+                )
+              `, [
+                reserva.complejo_id,
+                reserva.comision_aplicada,
+                reserva.fecha,
+                `Comisión Reserva #${codigo_reserva} - Admin (1.75% + IVA)`
+              ]);
+              resultados.comision_creada = true;
+              console.log(`✅ Comisión creada: $${reserva.comision_aplicada} para reserva ${codigo_reserva}`);
+            }
+          } else if (existeIngreso.length > 0) {
+            resultados.errores.push({ paso: 'crear_ingreso_manual', error: 'Ya existe un ingreso para esta reserva' });
+          }
+        } else {
+          resultados.errores.push({ paso: 'crear_ingreso_manual', error: 'Reserva no encontrada' });
+        }
+      } catch (error) {
+        console.error('❌ Error creando ingreso manual:', error);
+        resultados.errores.push({ paso: 'crear_ingreso_manual', error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Proceso completado',
+      resultados
+    });
+  } catch (error) {
+    console.error('❌ Error general:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DEBUG: Endpoint temporal para eliminar múltiples reservas
 app.post('/api/debug/reservas/delete-batch', async (req, res) => {
   try {
