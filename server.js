@@ -7993,6 +7993,75 @@ app.post('/api/debug/limpiar-registros-huerfanos', authenticateToken, requireRol
   }
 });
 
+// Endpoint para crear usuario owner en un complejo
+app.post('/api/debug/crear-usuario-owner', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    const { email, nombre, password, complejo_id } = req.body;
+    
+    if (!email || !nombre || !password || !complejo_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan campos requeridos: email, nombre, password, complejo_id'
+      });
+    }
+    
+    console.log('👤 Creando usuario owner...', { email, nombre, complejo_id });
+    
+    // Verificar que el complejo existe
+    const complejo = await db.query('SELECT id, nombre FROM complejos WHERE id = $1', [complejo_id]);
+    if (!complejo || complejo.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Complejo no encontrado'
+      });
+    }
+    
+    // Verificar si el usuario ya existe
+    const usuarioExistente = await db.query('SELECT id, email FROM usuarios WHERE email = $1', [email]);
+    if (usuarioExistente && usuarioExistente.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'El email ya está registrado'
+      });
+    }
+    
+    // Hashear la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Crear el usuario
+    const resultado = await db.query(`
+      INSERT INTO usuarios (email, password, nombre, rol, activo, complejo_id)
+      VALUES ($1, $2, $3, 'owner', true, $4)
+      RETURNING id, email, nombre, rol, complejo_id, activo
+    `, [email, hashedPassword, nombre, complejo_id]);
+    
+    const usuario = resultado[0];
+    
+    console.log(`✅ Usuario owner creado exitosamente: ${email}`);
+    
+    res.json({
+      success: true,
+      message: 'Usuario owner creado exitosamente',
+      usuario: {
+        id: usuario.id,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        rol: usuario.rol,
+        complejo_id: usuario.complejo_id,
+        complejo_nombre: complejo[0].nombre,
+        activo: usuario.activo
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando usuario owner:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 app.post('/api/debug/add-reservas-columns', authenticateToken, requireRolePermission(['super_admin', 'owner']), async (req, res) => {
   try {
     console.log('🔧 Agregando columnas faltantes a tabla reservas...');
