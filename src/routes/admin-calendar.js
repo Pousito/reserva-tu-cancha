@@ -588,24 +588,29 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         );
         const complejo_id = canchaInfo[0]?.complejo_id;
 
-        // Determinar tasa de comisión según complejo y fecha
+        // Verificar si el complejo está exento de comisiones usando el helper
+        // El helper se usará dentro de AtomicReservationManager, pero aquí determinamos la tasa base
         let commissionRate = 0.0175; // 1.75% por defecto para reservas administrativas
-
-        // Lógica especial para Borde Río (complejo_id = 7)
-        if (complejo_id === 7) {
-            // Parsear la fecha de la reserva
-            const fechaReserva = new Date(fecha);
-            const fechaLimite = new Date('2025-12-31T23:59:59');
-
-            if (fechaReserva <= fechaLimite) {
-                // Hasta el 31 de diciembre de 2025: 0% comisión
-                commissionRate = 0;
-                console.log('🎁 Borde Río: Aplicando comisión 0% (hasta 31 dic 2025)');
-            } else {
-                // A partir del 1 de enero de 2026: 1.75% + IVA para admin
-                commissionRate = 0.0175;
-                console.log('💰 Borde Río: Aplicando comisión 1.75% (desde 1 ene 2026)');
-            }
+        
+        // Verificar exención usando el helper
+        const comisionesHelper = require('../utils/comisiones-helper');
+        comisionesHelper.setDatabase(db);
+        
+        // Normalizar fecha para verificación
+        let fechaReservaLimpia = fecha;
+        if (fecha instanceof Date) {
+            const year = fecha.getFullYear();
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const day = String(fecha.getDate()).padStart(2, '0');
+            fechaReservaLimpia = `${year}-${month}-${day}`;
+        } else if (typeof fecha === 'string' && fecha.includes('T')) {
+            fechaReservaLimpia = fecha.split('T')[0];
+        }
+        
+        const estaExento = await comisionesHelper.estaExentoDeComision(complejo_id, fechaReservaLimpia);
+        if (estaExento) {
+            commissionRate = 0;
+            console.log(`🎁 Complejo ${complejo_id}: Aplicando comisión 0% (exento hasta fecha de inicio)`);
         }
 
         const reservationData = {

@@ -227,9 +227,38 @@ router.post('/confirm', async (req, res) => {
         console.log('🔍 DEBUG - porcentaje_pagado del cliente:', datosCliente.porcentaje_pagado);
 
         // Calcular comisión para reserva web (3.5% + IVA) - Solo para registro, no se suma al precio
-        const { calculateCommissionWithIVA } = require('../config/commissions');
-        const comisionData = calculateCommissionWithIVA(datosCliente.precio_total, 'directa');
-        const comisionWeb = comisionData.comisionTotal; // Comisión con IVA incluido
+        // Verificar si el complejo está exento de comisiones
+        const canchaInfo = await db.query(`
+            SELECT c.complejo_id 
+            FROM canchas c 
+            WHERE c.id = $1
+        `, [bloqueoData.cancha_id]);
+        
+        let comisionWeb = 0;
+        if (canchaInfo && canchaInfo.length > 0) {
+            const complejoId = canchaInfo[0].complejo_id;
+            const comisionesHelper = require('../utils/comisiones-helper');
+            comisionesHelper.setDatabase(db);
+            
+            // Normalizar fecha
+            let fechaReservaLimpia = bloqueoData.fecha;
+            if (fechaReservaLimpia.includes('T')) {
+                fechaReservaLimpia = fechaReservaLimpia.split('T')[0];
+            }
+            
+            const comisionData = await comisionesHelper.calcularComisionConIVAExencion(
+                complejoId,
+                fechaReservaLimpia,
+                datosCliente.precio_total,
+                'directa'
+            );
+            comisionWeb = comisionData.comisionTotal;
+        } else {
+            // Fallback: calcular comisión normal si no se puede obtener el complejo
+            const { calculateCommissionWithIVA } = require('../config/commissions');
+            const comisionData = calculateCommissionWithIVA(datosCliente.precio_total, 'directa');
+            comisionWeb = comisionData.comisionTotal;
+        }
         
         // Crear la reserva real
         const reservaId = await db.run(`

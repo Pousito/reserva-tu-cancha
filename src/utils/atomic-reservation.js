@@ -164,9 +164,42 @@ class AtomicReservationManager {
             const codigo_reserva = this.generateReservationCode();
             console.log('🎫 Código de reserva generado:', codigo_reserva);
 
-            // PASO 4: Calcular comisión (solo para registro, no se suma al precio)
-            const comision = Math.round(precio_total * commissionRate);
-            console.log('💰 Precio calculado:', { precio_total, comision, nota: 'La comisión es solo informativa' });
+            // PASO 4: Calcular comisión considerando exención por fecha de inicio
+            // Obtener complejo_id desde la cancha para verificar exención
+            const canchaInfo = await client.query(`
+                SELECT complejo_id FROM canchas WHERE id = $1
+            `, [cancha_id]);
+            
+            let comision = 0;
+            if (canchaInfo.rows && canchaInfo.rows.length > 0) {
+                const complejoId = canchaInfo.rows[0].complejo_id;
+                
+                // Usar helper para calcular comisión con exención
+                const comisionesHelper = require('./comisiones-helper');
+                comisionesHelper.setDatabase(this.db);
+                
+                // Preparar fecha para BD
+                let fechaParaComision = fecha;
+                if (fecha instanceof Date) {
+                    const year = fecha.getFullYear();
+                    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const day = String(fecha.getDate()).padStart(2, '0');
+                    fechaParaComision = `${year}-${month}-${day}`;
+                } else if (typeof fecha === 'string' && fecha.includes('T')) {
+                    fechaParaComision = fecha.split('T')[0];
+                }
+                
+                comision = await comisionesHelper.calcularComisionConExencion(
+                    complejoId, 
+                    fechaParaComision, 
+                    precio_total, 
+                    tipo_reserva
+                );
+            } else {
+                // Fallback: calcular comisión normal si no se puede obtener el complejo
+                comision = Math.round(precio_total * commissionRate);
+            }
+            console.log('💰 Precio calculado:', { precio_total, comision, tipo_reserva, nota: 'La comisión considera exención por fecha' });
 
             // PASO 5: Crear la reserva
             console.log('💾 Creando reserva en base de datos...');

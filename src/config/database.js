@@ -132,6 +132,26 @@ class DatabaseManager {
           email VARCHAR(255)
         )
       `);
+      
+      // Verificar y agregar columna comision_inicio_fecha si no existe
+      console.log('🔧 Verificando columna comision_inicio_fecha en complejos...');
+      const checkComisionCol = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'complejos' 
+        AND column_name = 'comision_inicio_fecha'
+      `);
+      
+      if (checkComisionCol.rows.length === 0) {
+        console.log('🔧 Agregando columna comision_inicio_fecha a complejos...');
+        await client.query(`
+          ALTER TABLE complejos 
+          ADD COLUMN comision_inicio_fecha DATE
+        `);
+        console.log('✅ Columna comision_inicio_fecha agregada exitosamente');
+      } else {
+        console.log('✅ Columna comision_inicio_fecha ya existe');
+      }
 
       // Crear tabla canchas
       await client.query(`
