@@ -8076,6 +8076,16 @@ app.post('/api/debug/eliminar-reservas-borde-rio', authenticateToken, requireRol
     try {
       await client.query('BEGIN');
       
+      // Verificar qué tablas existen antes de comenzar
+      const tablesCheck = await client.query(`
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name IN ('historial_abonos_reservas', 'uso_codigos_descuento')
+      `);
+      
+      const existingTables = tablesCheck.rows.map(r => r.table_name);
+      console.log('📋 Tablas existentes:', existingTables);
+      
       for (const codigo of codigosReservas) {
         try {
           // Verificar que la reserva existe y pertenece al complejo
@@ -8119,28 +8129,34 @@ app.post('/api/debug/eliminar-reservas-borde-rio', authenticateToken, requireRol
           
           console.log(`   ✅ Eliminados ${egresosEliminados.rows.length} egresos de comisión para ${codigo}`);
           
-          // 3. Eliminar historial de abonos
-          const historialEliminado = await client.query(`
-            DELETE FROM historial_abonos_reservas
-            WHERE codigo_reserva = $1 OR reserva_id = $2
-            RETURNING id
-          `, [codigo, reservaData.id]);
+          // 3. Eliminar historial de abonos (solo si la tabla existe)
+          let historialEliminadoCount = 0;
+          if (existingTables.includes('historial_abonos_reservas')) {
+            const historialEliminado = await client.query(`
+              DELETE FROM historial_abonos_reservas
+              WHERE codigo_reserva = $1 OR reserva_id = $2
+              RETURNING id
+            `, [codigo, reservaData.id]);
+            historialEliminadoCount = historialEliminado.rows.length;
+            console.log(`   ✅ Eliminados ${historialEliminadoCount} registros de historial de abonos para ${codigo}`);
+          } else {
+            console.log(`   ℹ️ Tabla historial_abonos_reservas no existe, saltando...`);
+          }
           
-          console.log(`   ✅ Eliminados ${historialEliminado.rows.length} registros de historial de abonos para ${codigo}`);
-          
-          // 4. Eliminar uso de códigos de descuento (si existe la tabla)
-          try {
+          // 4. Eliminar uso de códigos de descuento (solo si la tabla existe)
+          let codigosDescuentoCount = 0;
+          if (existingTables.includes('uso_codigos_descuento')) {
             const codigosDescuentoEliminados = await client.query(`
               DELETE FROM uso_codigos_descuento
               WHERE reserva_id = $1
               RETURNING id
             `, [reservaData.id]);
-            if (codigosDescuentoEliminados.rows.length > 0) {
-              console.log(`   ✅ Eliminados ${codigosDescuentoEliminados.rows.length} registros de códigos de descuento para ${codigo}`);
+            codigosDescuentoCount = codigosDescuentoEliminados.rows.length;
+            if (codigosDescuentoCount > 0) {
+              console.log(`   ✅ Eliminados ${codigosDescuentoCount} registros de códigos de descuento para ${codigo}`);
             }
-          } catch (error) {
-            // La tabla puede no existir, ignorar error
-            console.log(`   ℹ️ Tabla uso_codigos_descuento no existe o error ignorado`);
+          } else {
+            console.log(`   ℹ️ Tabla uso_codigos_descuento no existe, saltando...`);
           }
           
           // 5. Eliminar la reserva
@@ -8157,7 +8173,8 @@ app.post('/api/debug/eliminar-reservas-borde-rio', authenticateToken, requireRol
             eliminados: {
               ingresos: ingresosEliminados.rows.length,
               egresos_comision: egresosEliminados.rows.length,
-              historial_abonos: historialEliminado.rows.length
+              historial_abonos: historialEliminadoCount,
+              codigos_descuento: codigosDescuentoCount
             }
           });
           
