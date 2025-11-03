@@ -3050,15 +3050,24 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
                         RAISE NOTICE 'Ingreso registrado: $% (Reserva #%, Abono %)', monto_ingreso, NEW.codigo_reserva, NEW.porcentaje_pagado;
                     END IF;
 
-                    -- Verificar si ya existe un gasto de comisión para esta reserva
-                    IF NOT EXISTS (
-                        SELECT 1 FROM gastos_ingresos
+                    -- Gestionar gasto de comisión:
+                    -- Si comision_monto = 0, eliminar cualquier egreso existente
+                    -- Si comision_monto > 0, crear o actualizar el egreso
+                    IF comision_monto = 0 THEN
+                        -- Eliminar egresos de comisión existentes para esta reserva
+                        DELETE FROM gastos_ingresos
                         WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
-                        AND tipo = 'gasto'
-                    ) THEN
-
-                        -- 2. Registrar GASTO por comisión (solo si hay comisión > 0)
-                        IF comision_monto > 0 THEN
+                        AND tipo = 'gasto';
+                        
+                        RAISE NOTICE 'Egreso de comisión eliminado (Reserva #% - Exento)', NEW.codigo_reserva;
+                    ELSE
+                        -- Si hay comisión > 0, verificar si existe y crear/actualizar
+                        IF NOT EXISTS (
+                            SELECT 1 FROM gastos_ingresos
+                            WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
+                            AND tipo = 'gasto'
+                        ) THEN
+                            -- Crear nuevo egreso de comisión
                             INSERT INTO gastos_ingresos (
                                 complejo_id,
                                 categoria_id,
@@ -3080,6 +3089,15 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
                             );
 
                             RAISE NOTICE 'Comisión registrada: $% (Reserva #% - %)', comision_monto, NEW.codigo_reserva, tipo_reserva_texto;
+                        ELSE
+                            -- Actualizar egreso existente
+                            UPDATE gastos_ingresos
+                            SET monto = comision_monto,
+                                descripcion = 'Comisión Reserva #' || NEW.codigo_reserva || ' - ' || tipo_reserva_texto
+                            WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
+                            AND tipo = 'gasto';
+                            
+                            RAISE NOTICE 'Egreso de comisión actualizado: $% (Reserva #%)', comision_monto, NEW.codigo_reserva;
                         END IF;
                     END IF;
                 END IF;
