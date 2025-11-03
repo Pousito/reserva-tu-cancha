@@ -2878,6 +2878,71 @@ app.get('/api/debug/reserva/:codigo', async (req, res) => {
   }
 });
 
+// DEBUG: Verificar ingresos relacionados con una reserva
+app.get('/api/debug/ingresos-reserva/:codigo', async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log('🔍 DEBUG - Verificando ingresos para reserva:', codigo);
+
+    // 1. Obtener datos de la reserva
+    const reservaResult = await db.query(`
+      SELECT r.*, c.complejo_id, comp.nombre as complejo_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      JOIN complejos comp ON c.complejo_id = comp.id
+      WHERE r.codigo_reserva = $1
+    `, [codigo]);
+    const reserva = reservaResult[0];
+
+    if (!reserva) {
+      return res.status(404).json({ success: false, message: 'Reserva no encontrada' });
+    }
+
+    // 2. Buscar ingresos en gastos_ingresos relacionados con esta reserva
+    const ingresosResult = await db.query(`
+      SELECT * FROM gastos_ingresos
+      WHERE descripcion LIKE '%' || $1 || '%'
+      ORDER BY creado_en DESC
+    `, [codigo]);
+
+    // 3. Verificar si el trigger existe
+    const triggerResult = await db.query(`
+      SELECT trigger_name, event_manipulation, action_timing
+      FROM information_schema.triggers
+      WHERE trigger_name LIKE '%reserva%ingresos%'
+      AND event_object_table = 'reservas'
+    `);
+
+    // 4. Buscar categorías de ingresos para este complejo
+    const categoriasResult = await db.query(`
+      SELECT * FROM categorias_gastos
+      WHERE complejo_id = $1 OR complejo_id IS NULL
+      ORDER BY tipo, nombre
+    `, [reserva.complejo_id]);
+
+    res.json({
+      success: true,
+      reserva: {
+        codigo: reserva.codigo_reserva,
+        estado: reserva.estado,
+        precio_total: reserva.precio_total,
+        monto_abonado: reserva.monto_abonado,
+        porcentaje_pagado: reserva.porcentaje_pagado,
+        complejo_id: reserva.complejo_id,
+        complejo_nombre: reserva.complejo_nombre,
+        fecha: reserva.fecha
+      },
+      ingresos_encontrados: ingresosResult.length,
+      ingresos: ingresosResult,
+      triggers_activos: triggerResult,
+      categorias_disponibles: categoriasResult
+    });
+  } catch (error) {
+    console.error('❌ Error en debug ingresos:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DEBUG: Endpoint temporal para eliminar múltiples reservas
 app.post('/api/debug/reservas/delete-batch', async (req, res) => {
   try {
