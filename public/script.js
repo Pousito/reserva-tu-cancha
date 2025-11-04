@@ -4645,7 +4645,9 @@ function mostrarModalReserva() {
     
     // Configurar sugerencia de código de descuento para Espacio Deportivo Borde Río
     // IMPORTANTE: Esperar a que el modal esté completamente visible antes de actualizar elementos
-    console.log('🎟️ INICIANDO configuración de código descuento - mostrarModalReserva ejecutado');
+    console.log('🎟️🎟️🎟️ INICIANDO configuración de código descuento - mostrarModalReserva ejecutado - VERSIÓN CON REINTENTOS');
+    console.log('🎟️ Complejo seleccionado:', complejoSeleccionado);
+    console.log('🎟️ modal.show() ejecutado, ahora configurando código descuento...');
     
     // Intentar múltiples veces con delays incrementales para asegurar que los elementos estén disponibles
     const configurarCodigoDescuento = (intento = 1) => {
