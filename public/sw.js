@@ -3,9 +3,9 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v9';
-const STATIC_CACHE = 'static-v9';
-const DYNAMIC_CACHE = 'dynamic-v9';
+const CACHE_NAME = 'reserva-tu-cancha-v10';
+const STATIC_CACHE = 'static-v10';
+const DYNAMIC_CACHE = 'dynamic-v10';
 
 // Assets estáticos para cachear (SIN script.js - se carga siempre desde red)
 const STATIC_ASSETS = [
