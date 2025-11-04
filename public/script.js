@@ -4645,7 +4645,11 @@ function mostrarModalReserva() {
     
     // Configurar sugerencia de código de descuento para Espacio Deportivo Borde Río
     // IMPORTANTE: Esperar a que el modal esté completamente visible antes de actualizar elementos
-    setTimeout(() => {
+    console.log('🎟️ INICIANDO configuración de código descuento - mostrarModalReserva ejecutado');
+    
+    // Intentar múltiples veces con delays incrementales para asegurar que los elementos estén disponibles
+    const configurarCodigoDescuento = (intento = 1) => {
+        console.log(`🎟️ Intento ${intento} de configuración de código descuento`);
         const codigoDescuentoLabel = document.querySelector('label[for="codigoDescuento"]');
         const codigoDescuentoInput = document.getElementById('codigoDescuento');
         
@@ -4661,6 +4665,13 @@ function mostrarModalReserva() {
             placeholder_actual: codigoDescuentoInput?.placeholder
         });
         
+        // Si los elementos no están disponibles y aún no hemos intentado 3 veces, intentar de nuevo
+        if ((!codigoDescuentoLabel || !codigoDescuentoInput) && intento < 3) {
+            console.log(`🎟️ Elementos no disponibles, reintentando en ${intento * 100}ms...`);
+            setTimeout(() => configurarCodigoDescuento(intento + 1), intento * 100);
+            return;
+        }
+        
         if (complejoSeleccionado && (complejoSeleccionado.id == 7 || complejoSeleccionado.nombre === 'Espacio Deportivo Borde Río')) {
             // Mostrar sugerencia del código RESERVABORDERIO10
             console.log('✅ Configurando sugerencia RESERVABORDERIO10 para Borde Río');
@@ -4672,13 +4683,13 @@ function mostrarModalReserva() {
                 `;
                 console.log('✅ Label actualizado con sugerencia');
             } else {
-                console.warn('⚠️ Label de código descuento no encontrado');
+                console.warn('⚠️ Label de código descuento no encontrado después de', intento, 'intentos');
             }
             if (codigoDescuentoInput) {
                 codigoDescuentoInput.placeholder = 'RESERVABORDERIO10 (recomendado)';
                 console.log('✅ Placeholder actualizado con sugerencia');
             } else {
-                console.warn('⚠️ Input de código descuento no encontrado');
+                console.warn('⚠️ Input de código descuento no encontrado después de', intento, 'intentos');
             }
         } else {
             // Restaurar texto normal para otros complejos
@@ -4692,7 +4703,10 @@ function mostrarModalReserva() {
                 codigoDescuentoInput.placeholder = 'Ingresa tu código de descuento';
             }
         }
-    }, 100);
+    };
+    
+    // Iniciar configuración después de un pequeño delay
+    setTimeout(() => configurarCodigoDescuento(1), 150);
     
     // Actualizar el resumen de precio inmediatamente para asegurar que use el precio correcto
     actualizarResumenPrecio();
