@@ -454,7 +454,7 @@ Gracias por elegir Reserva Tu Cancha!
       'Centro Deportivo Costero': ['naxiin_320@hotmail.com'],
       'Club Deportivo Norte': ['naxiin_320@hotmail.com'],
       'Complejo Demo 3': ['owner@complejodemo3.cl', 'manager@complejodemo3.cl'],
-      'Espacio Deportivo Borde Río': ['magda.espinoza.se@gmail.com', 'admin@borderio.cl']
+      'Espacio Deportivo Borde Río': ['magda.espinoza.se@gmail.com', 'admin@borderio.cl', 'manager@borderio.cl']
     };
     
     return adminEmails[complejoNombre] || ['admin@reservatuscanchas.cl'];
