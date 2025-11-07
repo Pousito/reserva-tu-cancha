@@ -567,6 +567,11 @@ async function initializeDatabase() {
     setDiscountDatabase(db);
     console.log('✅ Base de datos configurada en router de descuentos');
     
+    // Configurar base de datos en router de pagos (si aún no está configurado)
+    const { setDatabase: setPaymentDatabase } = require('./src/routes/payments');
+    setPaymentDatabase(db);
+    console.log('✅ Base de datos configurada en router de pagos');
+    
     // Verificar y agregar campo visible a complejos
     await ensureVisibleFieldExists();
     

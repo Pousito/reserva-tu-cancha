@@ -113,10 +113,19 @@ router.post('/confirm', async (req, res) => {
             });
         }
 
+        // Verificar que la base de datos esté inicializada
+        if (!db) {
+            console.error('❌ Base de datos no inicializada');
+            return res.status(500).json({
+                success: false,
+                error: 'Base de datos no inicializada. Por favor, intenta nuevamente en unos momentos.'
+            });
+        }
+
         // Buscar información del pago
         console.log('🔍 Buscando pago con token:', token_ws);
-        console.log('🔍 Instancia de db:', db);
-        console.log('🔍 Método get disponible:', typeof db.get);
+        console.log('🔍 Instancia de db:', db ? 'Disponible' : 'No disponible');
+        console.log('🔍 Método get disponible:', typeof db?.get);
         
         const payment = await db.get(
             'SELECT * FROM pagos WHERE transbank_token = $1',
@@ -150,7 +159,30 @@ router.post('/confirm', async (req, res) => {
             try {
                 console.log('🏦 Confirmando transacción real con Transbank...');
                 confirmResult = await paymentService.confirmTransaction(token_ws);
-                console.log('✅ Confirmación exitosa:', confirmResult);
+                console.log('✅ Resultado de confirmación:', confirmResult);
+                
+                // Verificar si la confirmación fue exitosa
+                if (!confirmResult || !confirmResult.success) {
+                    const errorMsg = confirmResult?.error || 'Error desconocido al confirmar transacción';
+                    console.error('❌ Confirmación fallida:', errorMsg);
+                    
+                    // Actualizar estado del pago como fallido
+                    await db.run(
+                        'UPDATE pagos SET status = $1 WHERE transbank_token = $2',
+                        ['failed', token_ws]
+                    );
+                    
+                    // Eliminar el bloqueo temporal
+                    if (payment.bloqueo_id) {
+                        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
+                    }
+                    
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Error confirmando pago con Transbank: ' + errorMsg,
+                        details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.'
+                    });
+                }
             } catch (error) {
                 console.error('❌ Error en confirmación real:', error);
                 console.log('🔧 Detalles del error:', {
@@ -159,6 +191,17 @@ router.post('/confirm', async (req, res) => {
                     token: token_ws
                 });
                 
+                // Actualizar estado del pago como fallido
+                await db.run(
+                    'UPDATE pagos SET status = $1 WHERE transbank_token = $2',
+                    ['failed', token_ws]
+                );
+                
+                // Eliminar el bloqueo temporal
+                if (payment.bloqueo_id) {
+                    await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
+                }
+                
                 // En lugar de simular éxito, vamos a manejar el error correctamente
                 return res.status(500).json({
                     success: false,
@@ -166,25 +209,6 @@ router.post('/confirm', async (req, res) => {
                     details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.'
                 });
             }
-        }
-
-        if (!confirmResult || !confirmResult.success) {
-            // Actualizar estado del pago como fallido
-            await db.run(
-                'UPDATE pagos SET status = $1 WHERE transbank_token = $2',
-                ['failed', token_ws]
-            );
-
-            // No necesitamos actualizar reserva ya que aún no existe
-            // Solo eliminamos el bloqueo temporal
-            if (payment.bloqueo_id) {
-                await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
-            }
-
-            return res.status(500).json({
-                success: false,
-                error: 'Error confirmando pago: ' + confirmResult.error
-            });
         }
 
         // Actualizar información del pago
@@ -295,7 +319,7 @@ router.post('/confirm', async (req, res) => {
         // Los emails se enviarán en segundo plano después de responder
 
         console.log('✅ Pago confirmado:', {
-            reservationCode: payment.codigo_reserva,
+            reservationCode: payment.reservation_code,
             token: token_ws,
             amount: confirmResult.amount,
             authorizationCode: confirmResult.authorizationCode
@@ -359,6 +383,10 @@ router.post('/confirm', async (req, res) => {
             }
         } catch (error) {
             console.error('❌ Error enviando emails:', error.message);
+            console.error('❌ Stack trace del error de email:', error.stack);
+            // No fallar el proceso completo si el email falla
+            // El pago ya está confirmado y la reserva creada
+            emailSent = false;
         }
 
         // Responder con información del estado del email
@@ -373,6 +401,130 @@ router.post('/confirm', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error confirmando pago:', error);
+        console.error('❌ Stack trace:', error.stack);
+        console.error('❌ Error details:', {
+            message: error.message,
+            name: error.name,
+            code: error.code,
+            token_ws: req.body?.token_ws
+        });
+        
+        // En producción, no exponer detalles del error al cliente
+        const errorMessage = process.env.NODE_ENV === 'production' 
+            ? 'Error interno del servidor. Por favor, contacta soporte con el código de reserva.'
+            : `Error interno del servidor: ${error.message}`;
+        
+        res.status(500).json({
+            success: false,
+            error: errorMessage
+        });
+    }
+});
+
+/**
+ * Buscar reserva por código de autorización de Transbank
+ * GET /api/payments/find-by-authorization/:authorizationCode
+ */
+router.get('/find-by-authorization/:authorizationCode', async (req, res) => {
+    try {
+        const { authorizationCode } = req.params;
+
+        if (!authorizationCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Código de autorización requerido'
+            });
+        }
+
+        // Verificar que la base de datos esté inicializada
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                error: 'Base de datos no inicializada'
+            });
+        }
+
+        // Buscar el pago con el código de autorización
+        const pago = await db.get(`
+            SELECT 
+                p.*,
+                r.id as reserva_id,
+                r.codigo_reserva,
+                r.nombre_cliente,
+                r.email_cliente,
+                r.telefono_cliente,
+                r.rut_cliente,
+                TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha_reserva,
+                r.hora_inicio,
+                r.hora_fin,
+                r.precio_total,
+                r.estado as estado_reserva,
+                r.estado_pago,
+                r.porcentaje_pagado,
+                c.nombre as cancha_nombre,
+                c.tipo as cancha_tipo,
+                co.nombre as complejo_nombre,
+                co.direccion as complejo_direccion,
+                co.telefono as complejo_telefono
+            FROM pagos p
+            LEFT JOIN reservas r ON p.reservation_code = r.codigo_reserva
+            LEFT JOIN canchas c ON r.cancha_id = c.id
+            LEFT JOIN complejos co ON c.complejo_id = co.id
+            WHERE p.authorization_code = $1
+            ORDER BY p.created_at DESC
+            LIMIT 1
+        `, [authorizationCode]);
+
+        if (!pago) {
+            return res.status(404).json({
+                success: false,
+                error: 'No se encontró ningún pago con ese código de autorización'
+            });
+        }
+
+        res.json({
+            success: true,
+            pago: {
+                id: pago.id,
+                token: pago.transbank_token,
+                orderId: pago.order_id,
+                authorizationCode: pago.authorization_code,
+                amount: pago.amount,
+                status: pago.status,
+                paymentTypeCode: pago.payment_type_code,
+                responseCode: pago.response_code,
+                installmentsNumber: pago.installments_number,
+                transactionDate: pago.transaction_date,
+                createdAt: pago.created_at
+            },
+            reserva: pago.reserva_id ? {
+                id: pago.reserva_id,
+                codigoReserva: pago.codigo_reserva,
+                nombreCliente: pago.nombre_cliente,
+                emailCliente: pago.email_cliente,
+                telefonoCliente: pago.telefono_cliente,
+                rutCliente: pago.rut_cliente,
+                fecha: pago.fecha_reserva,
+                horaInicio: pago.hora_inicio,
+                horaFin: pago.hora_fin,
+                precioTotal: pago.precio_total,
+                estado: pago.estado_reserva,
+                estadoPago: pago.estado_pago,
+                porcentajePagado: pago.porcentaje_pagado,
+                cancha: {
+                    nombre: pago.cancha_nombre,
+                    tipo: pago.cancha_tipo
+                },
+                complejo: {
+                    nombre: pago.complejo_nombre,
+                    direccion: pago.complejo_direccion,
+                    telefono: pago.complejo_telefono
+                }
+            } : null
+        });
+
+    } catch (error) {
+        console.error('❌ Error buscando reserva por autorización:', error);
         res.status(500).json({
             success: false,
             error: 'Error interno del servidor'
