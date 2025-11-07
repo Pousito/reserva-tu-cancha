@@ -6786,7 +6786,116 @@ app.post('/api/debug/clean-production-db', async (req, res) => {
   }
 });
 
-// ===== ENDPOINT DE DEBUG PARA PROBAR FORMATEO DE FECHA =====
+// ===== ENDPOINT TEMPORAL PARA ACTUALIZAR RESERVA VIZJ4P (SIN AUTENTICACIÓN CON CLAVE SECRETA) =====
+app.post('/api/admin/reservas/vizj4p/actualizar-precio', async (req, res) => {
+  try {
+    // Clave secreta temporal para seguridad
+    const SECRET_KEY = 'actualizar_vizj4p_2025';
+    const { secret_key } = req.body;
+    
+    if (secret_key !== SECRET_KEY) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Clave secreta inválida' 
+      });
+    }
+    
+    console.log('🔧 Actualizando reserva VIZJ4P...');
+    
+    const codigoReserva = 'VIZJ4P';
+    const nuevoPrecioTotal = 20700;
+    const nuevoMontoAbonado = Math.round(nuevoPrecioTotal / 2); // 10350
+    
+    // Verificar reserva actual
+    const reservaActual = await db.get(`
+      SELECT r.id, r.codigo_reserva, r.precio_total, r.porcentaje_pagado, r.monto_abonado,
+             p.id as pago_id, p.amount as monto_pago
+      FROM reservas r
+      LEFT JOIN pagos p ON r.codigo_reserva = p.reservation_code
+      WHERE UPPER(r.codigo_reserva) = UPPER($1)
+    `, [codigoReserva]);
+    
+    if (!reservaActual) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Reserva VIZJ4P no encontrada' 
+      });
+    }
+    
+    console.log('📋 Estado actual:', {
+      precio_total: reservaActual.precio_total,
+      monto_abonado: reservaActual.monto_abonado,
+      porcentaje_pagado: reservaActual.porcentaje_pagado,
+      monto_pago: reservaActual.monto_pago
+    });
+    
+    // Actualizar reserva
+    const reservaActualizada = await db.run(`
+      UPDATE reservas 
+      SET precio_total = $1, 
+          monto_abonado = $2
+      WHERE UPPER(codigo_reserva) = UPPER($3)
+      RETURNING id, codigo_reserva, precio_total, porcentaje_pagado, monto_abonado
+    `, [nuevoPrecioTotal, nuevoMontoAbonado, codigoReserva]);
+    
+    console.log('✅ Reserva actualizada:', reservaActualizada);
+    
+    // Actualizar pago si existe
+    let pagoActualizado = null;
+    if (reservaActual.pago_id) {
+      const pagoResult = await db.run(`
+        UPDATE pagos 
+        SET amount = $1
+        WHERE reservation_code = $2
+        RETURNING id, reservation_code, amount, status
+      `, [nuevoMontoAbonado, codigoReserva]);
+      
+      pagoActualizado = pagoResult;
+      console.log('✅ Pago actualizado:', pagoResult);
+    }
+    
+    // Verificar resultado final
+    const reservaFinal = await db.get(`
+      SELECT r.id, r.codigo_reserva, r.precio_total, r.porcentaje_pagado, r.monto_abonado,
+             p.id as pago_id, p.amount as monto_pago
+      FROM reservas r
+      LEFT JOIN pagos p ON r.codigo_reserva = p.reservation_code
+      WHERE UPPER(r.codigo_reserva) = UPPER($1)
+    `, [codigoReserva]);
+    
+    const montoPagadoEsperado = Math.round(reservaFinal.precio_total / 2);
+    const montoPendienteEsperado = Math.round(reservaFinal.precio_total / 2);
+    
+    res.json({
+      success: true,
+      message: 'Reserva VIZJ4P actualizada exitosamente',
+      datos_anteriores: {
+        precio_total: reservaActual.precio_total,
+        monto_abonado: reservaActual.monto_abonado,
+        monto_pago: reservaActual.monto_pago
+      },
+      datos_nuevos: {
+        precio_total: reservaFinal.precio_total,
+        monto_abonado: reservaFinal.monto_abonado,
+        porcentaje_pagado: reservaFinal.porcentaje_pagado,
+        monto_pago: reservaFinal.monto_pago
+      },
+      montos_mostrados_en_modal: {
+        pagado_online: montoPagadoEsperado,
+        pendiente_complejo: montoPendienteEsperado
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error actualizando reserva VIZJ4P:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// ===== FIN ENDPOINT TEMPORAL =====
 app.get('/api/debug/test-date-formatting', async (req, res) => {
   try {
     console.log('🔍 DEBUG: Probando formateo de fechas...');

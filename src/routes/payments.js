@@ -48,6 +48,49 @@ router.post('/init', async (req, res) => {
 
         console.log('✅ Bloqueo temporal encontrado:', bloqueo.id);
 
+        // IMPORTANTE: Guardar respaldo de los datos del cliente ANTES de iniciar el pago
+        // Esto permite recuperar los datos incluso si hay problemas durante el proceso de pago
+        try {
+            console.log('💾 Guardando respaldo de datos del cliente antes de iniciar pago...');
+            
+            // Verificar si ya existe un respaldo para este bloqueo
+            const existingBackup = await db.get(
+                'SELECT id FROM pagos_fallidos_backup WHERE bloqueo_id = $1',
+                [bloqueo.id]
+            );
+            
+            if (!existingBackup) {
+                // Guardar en tabla de respaldo como "pending" (pendiente de pago)
+                await db.run(`
+                    INSERT INTO pagos_fallidos_backup (
+                        transbank_token, reservation_code, bloqueo_id, amount, 
+                        status, error_message, datos_cliente, cancha_id, 
+                        fecha, hora_inicio, hora_fin
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                `, [
+                    'PENDING_' + reservationCode, // Token temporal hasta que Transbank devuelva el real
+                    reservationCode,
+                    bloqueo.id,
+                    amount,
+                    'pending', // Estado pendiente - el pago aún no se ha procesado
+                    'Pago iniciado - esperando confirmación de Transbank',
+                    bloqueo.datos_cliente || JSON.stringify({}),
+                    bloqueo.cancha_id,
+                    bloqueo.fecha,
+                    bloqueo.hora_inicio,
+                    bloqueo.hora_fin
+                ]);
+                
+                console.log('✅ Respaldo guardado exitosamente antes de iniciar pago');
+            } else {
+                console.log('⚠️ Ya existe un respaldo para este bloqueo');
+            }
+        } catch (backupError) {
+            console.error('❌ Error guardando respaldo antes de iniciar pago:', backupError);
+            // No fallar el proceso completo si falla el respaldo
+            // Continuar con el proceso de pago normalmente
+        }
+
         // Generar ID único para la orden
         const orderId = paymentService.generateOrderId(reservationCode);
         console.log('🔑 Order ID generado:', orderId);
@@ -240,6 +283,22 @@ router.post('/confirm', async (req, res) => {
             ]
         );
 
+        // Actualizar el respaldo con el token real de Transbank y marcarlo como exitoso
+        try {
+            await db.run(`
+                UPDATE pagos_fallidos_backup 
+                SET transbank_token = $1, 
+                    status = 'success',
+                    procesado = TRUE,
+                    error_message = 'Pago confirmado exitosamente'
+                WHERE bloqueo_id = $2 OR reservation_code = $3
+            `, [token_ws, payment.bloqueo_id, payment.reservation_code]);
+            console.log('✅ Respaldo actualizado con token real de Transbank');
+        } catch (updateError) {
+            console.error('⚠️ Error actualizando respaldo (no crítico):', updateError);
+            // No fallar el proceso si falla la actualización del respaldo
+        }
+
         // Crear la reserva real después del pago exitoso
         // Primero, obtener los datos del bloqueo temporal
         bloqueoData = await db.get(
@@ -349,14 +408,9 @@ router.post('/confirm', async (req, res) => {
             throw new Error(`Error creando reserva: ${reservaError.message}`);
         }
 
-        // IMPORTANTE: Solo eliminar el bloqueo temporal DESPUÉS de confirmar que la reserva se creó
-        // Esto evita perder los datos si hay un error después de crear la reserva
-        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
-
         console.log(`✅ Reserva creada exitosamente: ${payment.reservation_code}`);
 
-        // Los emails se enviarán en segundo plano después de responder
-
+        // Los emails se enviarán antes de eliminar el bloqueo temporal
         console.log('✅ Pago confirmado:', {
             reservationCode: payment.reservation_code,
             token: token_ws,
@@ -428,6 +482,19 @@ router.post('/confirm', async (req, res) => {
             emailSent = false;
         }
 
+        // IMPORTANTE: Solo eliminar el bloqueo temporal DESPUÉS de confirmar que:
+        // 1. La reserva se creó exitosamente
+        // 2. Los emails se intentaron enviar (aunque fallen)
+        // Esto evita perder los datos si hay un error en cualquier parte del proceso
+        try {
+            await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
+            console.log('✅ Bloqueo temporal eliminado exitosamente');
+        } catch (deleteError) {
+            console.error('❌ Error eliminando bloqueo temporal:', deleteError);
+            // No fallar el proceso completo si falla la eliminación del bloqueo
+            // La reserva ya está creada y el pago confirmado
+        }
+
         // Responder con información del estado del email
         res.json({
             success: true,
@@ -450,10 +517,55 @@ router.post('/confirm', async (req, res) => {
             bloqueo_found: !!bloqueoData
         });
         
+        // IMPORTANTE: Guardar respaldo de los datos del cliente antes de que se pierdan
+        // Esto permite recuperar los datos incluso si el bloqueo temporal se elimina o expira
+        if (payment && payment.bloqueo_id && bloqueoData) {
+            try {
+                console.log('💾 Guardando respaldo de datos del cliente en tabla de respaldo...');
+                
+                // Guardar en tabla de respaldo
+                // Verificar si ya existe un registro con este token para evitar duplicados
+                const existingBackup = await db.get(
+                    'SELECT id FROM pagos_fallidos_backup WHERE transbank_token = $1',
+                    [payment.transbank_token || req.body?.token_ws]
+                );
+                
+                if (!existingBackup) {
+                    await db.run(`
+                        INSERT INTO pagos_fallidos_backup (
+                            transbank_token, reservation_code, bloqueo_id, amount, 
+                            status, error_message, datos_cliente, cancha_id, 
+                            fecha, hora_inicio, hora_fin
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    `, [
+                    payment.transbank_token || req.body?.token_ws,
+                    payment.reservation_code,
+                    payment.bloqueo_id,
+                    payment.amount || 0,
+                    'failed',
+                    error.message,
+                    bloqueoData.datos_cliente || JSON.stringify({}),
+                    bloqueoData.cancha_id,
+                    bloqueoData.fecha,
+                    bloqueoData.hora_inicio,
+                    bloqueoData.hora_fin
+                    ]);
+                    
+                    console.log('✅ Respaldo guardado exitosamente en pagos_fallidos_backup');
+                } else {
+                    console.log('⚠️ Ya existe un respaldo para este token, no se duplicará');
+                }
+            } catch (backupError) {
+                console.error('❌ Error guardando respaldo:', backupError);
+                // No fallar el proceso completo si falla el respaldo
+            }
+        }
+        
         // Si el pago fue encontrado pero falló la confirmación, mantener el bloqueo temporal
         if (payment && payment.bloqueo_id) {
             try {
                 console.log('⚠️ Manteniendo bloqueo temporal para recuperación manual. Bloqueo ID:', payment.bloqueo_id);
+                console.log('💾 Datos también guardados en tabla de respaldo para análisis futuro');
                 // No eliminar el bloqueo temporal para permitir recuperación manual
             } catch (cleanupError) {
                 console.error('❌ Error en cleanup:', cleanupError);
@@ -470,6 +582,11 @@ router.post('/confirm', async (req, res) => {
             res.status(500).json({
                 success: false,
                 error: errorMessage,
+                // Incluir información útil para recuperación
+                ...(payment && {
+                    reservation_code: payment.reservation_code,
+                    bloqueo_id: payment.bloqueo_id
+                }),
                 // En desarrollo, incluir más detalles
                 ...(process.env.NODE_ENV !== 'production' && {
                     details: error.message,

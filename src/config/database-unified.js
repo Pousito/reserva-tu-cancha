@@ -184,6 +184,39 @@ class DatabaseManager {
         )
       `);
 
+      // Crear tabla de respaldo para intentos de pago fallidos
+      // Esta tabla guarda los datos del cliente incluso si el bloqueo temporal se elimina
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS pagos_fallidos_backup (
+          id SERIAL PRIMARY KEY,
+          transbank_token VARCHAR(255) NOT NULL,
+          reservation_code VARCHAR(50),
+          bloqueo_id VARCHAR(50),
+          amount INTEGER NOT NULL,
+          status VARCHAR(50) DEFAULT 'failed',
+          error_message TEXT,
+          datos_cliente TEXT NOT NULL,
+          cancha_id INTEGER REFERENCES canchas(id),
+          fecha DATE,
+          hora_inicio TIME,
+          hora_fin TIME,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          procesado BOOLEAN DEFAULT FALSE,
+          reserva_creada_id INTEGER REFERENCES reservas(id)
+        )
+      `);
+
+      // Crear índice para búsquedas rápidas
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_pagos_fallidos_token ON pagos_fallidos_backup(transbank_token)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_pagos_fallidos_reservation_code ON pagos_fallidos_backup(reservation_code)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_pagos_fallidos_procesado ON pagos_fallidos_backup(procesado)
+      `);
+
       // Verificar y agregar columna codigo_reserva si no existe
       console.log('🔧 Verificando columna codigo_reserva en bloqueos_temporales...');
       const checkColumn = await client.query(`
