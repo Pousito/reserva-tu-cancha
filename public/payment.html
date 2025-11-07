@@ -529,7 +529,7 @@
                     ← Volver
                 </button>
                 <button class="btn btn-dev dev-only" id="devPayButton" onclick="simularPagoExitoso()" style="display: none;">
-                    🧪 Simular Pago Exitoso (DEV)
+                    🧪 Simular Pago Exitoso
                 </button>
                 <button class="btn btn-primary" id="payButton" onclick="processPayment()">
                     💳 Pagar Ahora
@@ -548,15 +548,23 @@
             loadReservationData();
             setupPaymentMethodSelection();
 
-            // Mostrar botón de simulación solo en desarrollo (localhost)
+            // Mostrar botón de simulación en desarrollo y producción
+            // Útil para testing y recuperación de reservas cuando hay problemas con WebPay
             const isDevelopment = window.location.hostname === 'localhost' ||
                                  window.location.hostname === '127.0.0.1';
+            
+            // Habilitar también en producción para facilitar testing
+            const showSimulationButton = true; // Siempre mostrar el botón
 
-            if (isDevelopment) {
+            if (showSimulationButton) {
                 const devButton = document.getElementById('devPayButton');
                 if (devButton) {
                     devButton.style.display = 'inline-flex';
-                    console.log('🧪 Modo desarrollo detectado - Botón de simulación habilitado');
+                    if (isDevelopment) {
+                        console.log('🧪 Modo desarrollo detectado - Botón de simulación habilitado');
+                    } else {
+                        console.log('🧪 Botón de simulación habilitado en producción');
+                    }
                 }
             }
         });
@@ -1018,11 +1026,12 @@
         }
 
         /**
-         * Simular pago exitoso (SOLO DESARROLLO)
+         * Simular pago exitoso (HABILITADO EN PRODUCCIÓN)
          * Esta función crea directamente la reserva sin pasar por Transbank
+         * Útil para testing y recuperación de reservas cuando hay problemas con WebPay
          */
         async function simularPagoExitoso() {
-            console.log('🧪 Simulando pago exitoso en desarrollo...');
+            console.log('🧪 Simulando pago exitoso...');
 
             if (!reservationData) {
                 showError('Datos de reserva no disponibles');

@@ -759,21 +759,16 @@ router.get('/history/:reservationCode', async (req, res) => {
 });
 
 /**
- * Simular pago exitoso (SOLO DESARROLLO)
+ * Simular pago exitoso (HABILITADO EN PRODUCCIÓN)
  * POST /api/payments/simulate-success
- * Este endpoint solo está disponible en desarrollo (localhost)
+ * Este endpoint permite simular pagos para testing y recuperación de reservas
  */
 router.post('/simulate-success', async (req, res) => {
-    // IMPORTANTE: Solo permitir en desarrollo
-    if (process.env.NODE_ENV === 'production') {
-        return res.status(403).json({
-            success: false,
-            error: 'Endpoint no disponible en producción'
-        });
-    }
-
+    // Permitir en producción para facilitar testing y recuperación de reservas
+    // Se puede restringir con autenticación si es necesario en el futuro
+    
     try {
-        console.log('🧪 Simulando pago exitoso en desarrollo...');
+        console.log('🧪 Simulando pago exitoso...');
         const { reservationCode, amount } = req.body;
 
         if (!reservationCode || !amount) {
@@ -884,7 +879,7 @@ router.post('/simulate-success', async (req, res) => {
 
         res.json({
             success: true,
-            message: '🧪 Pago simulado exitosamente (modo desarrollo)',
+            message: '🧪 Pago simulado exitosamente',
             reservationCode: codigoReserva,
             amount: amount,
             authorizationCode: 'SIM-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
