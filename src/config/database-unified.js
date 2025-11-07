@@ -233,7 +233,14 @@ class DatabaseManager {
       // Asegurar zona horaria en cada consulta para producción
       await client.query("SET timezone = 'America/Santiago'");
       const result = await client.query(sql, params);
-      return { lastID: result.rows[0]?.id || 0, changes: result.rowCount };
+      
+      // Si la consulta tiene RETURNING, devolver el ID del primer registro
+      let lastID = 0;
+      if (result.rows && result.rows.length > 0 && result.rows[0].id) {
+        lastID = result.rows[0].id;
+      }
+      
+      return { lastID: lastID, changes: result.rowCount };
     } finally {
       client.release();
     }

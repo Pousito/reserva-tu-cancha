@@ -103,6 +103,9 @@ router.post('/init', async (req, res) => {
  * POST /api/payments/confirm
  */
 router.post('/confirm', async (req, res) => {
+    let payment = null;
+    let bloqueoData = null;
+    
     try {
         const { token_ws } = req.body;
 
@@ -127,7 +130,7 @@ router.post('/confirm', async (req, res) => {
         console.log('🔍 Instancia de db:', db ? 'Disponible' : 'No disponible');
         console.log('🔍 Método get disponible:', typeof db?.get);
         
-        const payment = await db.get(
+        payment = await db.get(
             'SELECT * FROM pagos WHERE transbank_token = $1',
             [token_ws]
         );
@@ -239,7 +242,7 @@ router.post('/confirm', async (req, res) => {
 
         // Crear la reserva real después del pago exitoso
         // Primero, obtener los datos del bloqueo temporal
-        const bloqueoData = await db.get(
+        bloqueoData = await db.get(
             'SELECT * FROM bloqueos_temporales WHERE id = $1',
             [payment.bloqueo_id]
         );
@@ -256,64 +259,95 @@ router.post('/confirm', async (req, res) => {
 
         // Calcular comisión para reserva web (3.5% + IVA) - Solo para registro, no se suma al precio
         // Verificar si el complejo está exento de comisiones
-        const canchaInfo = await db.query(`
-            SELECT c.complejo_id 
-            FROM canchas c 
-            WHERE c.id = $1
-        `, [bloqueoData.cancha_id]);
-        
+        console.log('💰 Calculando comisión para reserva...');
         let comisionWeb = 0;
-        if (canchaInfo && canchaInfo.length > 0) {
-            const complejoId = canchaInfo[0].complejo_id;
-            const comisionesHelper = require('../utils/comisiones-helper');
-            comisionesHelper.setDatabase(db);
+        try {
+            const canchaInfo = await db.query(`
+                SELECT c.complejo_id 
+                FROM canchas c 
+                WHERE c.id = $1
+            `, [bloqueoData.cancha_id]);
             
-            // Normalizar fecha
-            let fechaReservaLimpia = bloqueoData.fecha;
-            if (fechaReservaLimpia.includes('T')) {
-                fechaReservaLimpia = fechaReservaLimpia.split('T')[0];
+            console.log('🔍 Información de cancha obtenida:', canchaInfo);
+            
+            if (canchaInfo && canchaInfo.length > 0) {
+                const complejoId = canchaInfo[0].complejo_id;
+                console.log('🏢 Complejo ID:', complejoId);
+                
+                const comisionesHelper = require('../utils/comisiones-helper');
+                comisionesHelper.setDatabase(db);
+                
+                // Normalizar fecha
+                let fechaReservaLimpia = bloqueoData.fecha;
+                if (fechaReservaLimpia.includes('T')) {
+                    fechaReservaLimpia = fechaReservaLimpia.split('T')[0];
+                }
+                
+                const comisionData = await comisionesHelper.calcularComisionConIVAExencion(
+                    complejoId,
+                    fechaReservaLimpia,
+                    datosCliente.precio_total,
+                    'directa'
+                );
+                comisionWeb = comisionData.comisionTotal;
+                console.log('✅ Comisión calculada:', comisionWeb);
+            } else {
+                console.log('⚠️ No se encontró información de cancha, usando cálculo de comisión por defecto');
+                // Fallback: calcular comisión normal si no se puede obtener el complejo
+                const { calculateCommissionWithIVA } = require('../config/commissions');
+                const comisionData = calculateCommissionWithIVA(datosCliente.precio_total, 'directa');
+                comisionWeb = comisionData.comisionTotal;
             }
-            
-            const comisionData = await comisionesHelper.calcularComisionConIVAExencion(
-                complejoId,
-                fechaReservaLimpia,
-                datosCliente.precio_total,
-                'directa'
-            );
-            comisionWeb = comisionData.comisionTotal;
-        } else {
-            // Fallback: calcular comisión normal si no se puede obtener el complejo
-            const { calculateCommissionWithIVA } = require('../config/commissions');
-            const comisionData = calculateCommissionWithIVA(datosCliente.precio_total, 'directa');
-            comisionWeb = comisionData.comisionTotal;
+        } catch (comisionError) {
+            console.error('❌ Error calculando comisión:', comisionError);
+            // Continuar con comisión 0 si hay error
+            comisionWeb = 0;
         }
         
         // Crear la reserva real
-        const reservaId = await db.run(`
-            INSERT INTO reservas (
-                cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
-                rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado,
-                tipo_reserva, comision_aplicada
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-        `, [
-            bloqueoData.cancha_id,
-            datosCliente.nombre_cliente,
-            datosCliente.email_cliente,
-            datosCliente.telefono_cliente,
-            datosCliente.rut_cliente,
-            bloqueoData.fecha,
-            bloqueoData.hora_inicio,
-            bloqueoData.hora_fin,
-            datosCliente.precio_total,
-            payment.reservation_code,
-            'confirmada',
-            'pagado',
-            new Date().toISOString(),
-            datosCliente.porcentaje_pagado || 100,
-            'directa',
-            comisionWeb
-        ]);
+        console.log('📝 Creando reserva en base de datos...');
+        console.log('📋 Datos de reserva:', {
+            cancha_id: bloqueoData.cancha_id,
+            nombre_cliente: datosCliente.nombre_cliente,
+            email_cliente: datosCliente.email_cliente,
+            codigo_reserva: payment.reservation_code,
+            precio_total: datosCliente.precio_total
+        });
+        
+        try {
+            const reservaResult = await db.run(`
+                INSERT INTO reservas (
+                    cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
+                    rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
+                    codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado,
+                    tipo_reserva, comision_aplicada
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                RETURNING id
+            `, [
+                bloqueoData.cancha_id,
+                datosCliente.nombre_cliente,
+                datosCliente.email_cliente,
+                datosCliente.telefono_cliente,
+                datosCliente.rut_cliente,
+                bloqueoData.fecha,
+                bloqueoData.hora_inicio,
+                bloqueoData.hora_fin,
+                datosCliente.precio_total,
+                payment.reservation_code,
+                'confirmada',
+                'pagado',
+                new Date().toISOString(),
+                datosCliente.porcentaje_pagado || 100,
+                'directa',
+                comisionWeb
+            ]);
+            
+            console.log('✅ Reserva creada exitosamente. ID:', reservaResult.lastID);
+        } catch (reservaError) {
+            console.error('❌ Error creando reserva:', reservaError);
+            console.error('❌ Stack trace:', reservaError.stack);
+            throw new Error(`Error creando reserva: ${reservaError.message}`);
+        }
 
         // IMPORTANTE: Solo eliminar el bloqueo temporal DESPUÉS de confirmar que la reserva se creó
         // Esto evita perder los datos si hay un error después de crear la reserva
@@ -411,18 +445,40 @@ router.post('/confirm', async (req, res) => {
             message: error.message,
             name: error.name,
             code: error.code,
-            token_ws: req.body?.token_ws
+            token_ws: req.body?.token_ws,
+            payment_found: !!payment,
+            bloqueo_found: !!bloqueoData
         });
+        
+        // Si el pago fue encontrado pero falló la confirmación, mantener el bloqueo temporal
+        if (payment && payment.bloqueo_id) {
+            try {
+                console.log('⚠️ Manteniendo bloqueo temporal para recuperación manual. Bloqueo ID:', payment.bloqueo_id);
+                // No eliminar el bloqueo temporal para permitir recuperación manual
+            } catch (cleanupError) {
+                console.error('❌ Error en cleanup:', cleanupError);
+            }
+        }
         
         // En producción, no exponer detalles del error al cliente
         const errorMessage = process.env.NODE_ENV === 'production' 
             ? 'Error interno del servidor. Por favor, contacta soporte con el código de reserva.'
             : `Error interno del servidor: ${error.message}`;
         
-        res.status(500).json({
-            success: false,
-            error: errorMessage
-        });
+        // Asegurar que la respuesta se envíe correctamente
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                error: errorMessage,
+                // En desarrollo, incluir más detalles
+                ...(process.env.NODE_ENV !== 'production' && {
+                    details: error.message,
+                    stack: error.stack
+                })
+            });
+        } else {
+            console.error('⚠️ Headers ya enviados, no se puede enviar respuesta de error');
+        }
     }
 });
 

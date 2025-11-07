@@ -538,19 +538,42 @@
                     .then((registration) => {
                         console.log('✅ Service Worker registrado:', registration.scope);
                         
-                        // Verificar actualizaciones solo si no hay una recarga pendiente
-                        // Usar sessionStorage para evitar loops de recarga
-                        const hasReloaded = sessionStorage.getItem('sw_reload_pending');
-                        if (!hasReloaded) {
-                            // Verificar actualizaciones cada 60 segundos (no inmediatamente)
-                            setTimeout(() => {
-                                registration.update();
-                            }, 60000);
-                        }
-                        
                         // Solo agregar listener una vez
                         if (!registration.updateListenerAdded) {
                             registration.updateListenerAdded = true;
+                            
+                            // Verificar actualizaciones solo cuando la página vuelve a estar visible
+                            // después de estar oculta por más de 5 minutos (evita recargas constantes)
+                            let lastVisibilityCheck = Date.now();
+                            let updateCheckInterval = null;
+                            
+                            document.addEventListener('visibilitychange', () => {
+                                if (!document.hidden) {
+                                    const timeSinceLastCheck = Date.now() - lastVisibilityCheck;
+                                    // Solo verificar si han pasado más de 5 minutos desde la última verificación
+                                    if (timeSinceLastCheck > 5 * 60 * 1000) {
+                                        console.log('🔍 Verificando actualizaciones del Service Worker...');
+                                        lastVisibilityCheck = Date.now();
+                                        registration.update();
+                                    }
+                                }
+                            });
+                            
+                            // Verificar actualizaciones solo una vez al día (cada 24 horas)
+                            // Esto evita recargas constantes mientras mantiene la funcionalidad
+                            const lastUpdateCheck = localStorage.getItem('sw_last_update_check');
+                            const now = Date.now();
+                            const oneDay = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
+                            
+                            if (!lastUpdateCheck || (now - parseInt(lastUpdateCheck)) > oneDay) {
+                                console.log('🔍 Verificación periódica de actualizaciones del Service Worker...');
+                                localStorage.setItem('sw_last_update_check', now.toString());
+                                // Verificar después de 10 segundos para no interferir con la carga inicial
+                                setTimeout(() => {
+                                    registration.update();
+                                }, 10000);
+                            }
+                            
                             registration.addEventListener('updatefound', () => {
                                 const newWorker = registration.installing;
                                 if (newWorker) {
@@ -559,14 +582,31 @@
                                             // Verificar si ya hay una recarga pendiente
                                             const reloadPending = sessionStorage.getItem('sw_reload_pending');
                                             if (!reloadPending) {
-                                                // Nueva versión disponible - marcar recarga pendiente y recargar
+                                                // Nueva versión disponible - NO recargar automáticamente
+                                                // Solo mostrar notificación al usuario para que decida cuándo recargar
+                                                console.log('🔄 Nueva versión del Service Worker disponible');
                                                 sessionStorage.setItem('sw_reload_pending', 'true');
-                                                console.log('🔄 Nueva versión del Service Worker disponible, recargando automáticamente...');
+                                                
+                                                // Mostrar notificación discreta al usuario
+                                                const notification = document.createElement('div');
+                                                notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 20px; border-radius: 5px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+                                                notification.innerHTML = `
+                                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                                        <span>🔄 Nueva versión disponible</span>
+                                                        <button onclick="window.location.reload()" style="background: white; color: #28a745; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; font-weight: bold;">Actualizar</button>
+                                                        <button onclick="this.parentElement.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">×</button>
+                                                    </div>
+                                                `;
+                                                document.body.appendChild(notification);
+                                                
+                                                // Auto-ocultar después de 10 segundos
                                                 setTimeout(() => {
-                                                    // Limpiar flag después de un tiempo para permitir futuras actualizaciones
-                                                    sessionStorage.removeItem('sw_reload_pending');
-                                                    window.location.reload();
-                                                }, 2000);
+                                                    if (notification.parentElement) {
+                                                        notification.style.opacity = '0';
+                                                        notification.style.transition = 'opacity 0.5s';
+                                                        setTimeout(() => notification.remove(), 500);
+                                                    }
+                                                }, 10000);
                                             }
                                         }
                                     });
