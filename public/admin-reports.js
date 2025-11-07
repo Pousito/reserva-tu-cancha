@@ -14,6 +14,44 @@ function formatCurrencyChile(amount) {
     });
 }
 
+// Formatear fecha de última reserva sin problemas de zona horaria
+function formatearFechaUltimaReserva(fecha) {
+    if (!fecha) return 'N/A';
+    
+    // Si es un string ISO con T, extraer solo la parte de fecha
+    if (typeof fecha === 'string') {
+        if (fecha.includes('T')) {
+            const fechaParte = fecha.split('T')[0];
+            const [año, mes, dia] = fechaParte.split('-');
+            return `${dia}/${mes}/${año}`;
+        }
+        // Si ya está en formato YYYY-MM-DD
+        if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [año, mes, dia] = fecha.split('-');
+            return `${dia}/${mes}/${año}`;
+        }
+    }
+    
+    // Si es un objeto Date, formatear directamente sin conversión de zona horaria
+    if (fecha instanceof Date) {
+        const año = fecha.getUTCFullYear();
+        const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+        const dia = String(fecha.getUTCDate()).padStart(2, '0');
+        return `${dia}/${mes}/${año}`;
+    }
+    
+    // Fallback: intentar parsear como fecha
+    try {
+        const fechaObj = new Date(fecha);
+        const año = fechaObj.getUTCFullYear();
+        const mes = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+        const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
+        return `${dia}/${mes}/${año}`;
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
 // Variables para almacenar instancias de gráficos
 let revenueChart = null;
 let typeChart = null;
