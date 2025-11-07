@@ -6808,7 +6808,7 @@ app.post('/api/admin/reservas/vizj4p/actualizar-precio', async (req, res) => {
     
     // Verificar reserva actual
     const reservaActual = await db.get(`
-      SELECT r.id, r.codigo_reserva, r.precio_total, r.porcentaje_pagado, r.monto_abonado,
+      SELECT r.id, r.codigo_reserva, r.precio_total, r.porcentaje_pagado, r.monto_abonado, r.comision_aplicada,
              p.id as pago_id, p.amount as monto_pago
       FROM reservas r
       LEFT JOIN pagos p ON r.codigo_reserva = p.reservation_code
@@ -6826,17 +6826,19 @@ app.post('/api/admin/reservas/vizj4p/actualizar-precio', async (req, res) => {
       precio_total: reservaActual.precio_total,
       monto_abonado: reservaActual.monto_abonado,
       porcentaje_pagado: reservaActual.porcentaje_pagado,
-      monto_pago: reservaActual.monto_pago
+      monto_pago: reservaActual.monto_pago,
+      comision_aplicada: reservaActual.comision_aplicada
     });
     
     // Actualizar reserva
     const reservaActualizada = await db.run(`
       UPDATE reservas 
       SET precio_total = $1, 
-          monto_abonado = $2
+          monto_abonado = $2,
+          comision_aplicada = $4
       WHERE UPPER(codigo_reserva) = UPPER($3)
-      RETURNING id, codigo_reserva, precio_total, porcentaje_pagado, monto_abonado
-    `, [nuevoPrecioTotal, nuevoMontoAbonado, codigoReserva]);
+      RETURNING id, codigo_reserva, precio_total, porcentaje_pagado, monto_abonado, comision_aplicada
+    `, [nuevoPrecioTotal, nuevoMontoAbonado, codigoReserva, 0]);
     
     console.log('✅ Reserva actualizada:', reservaActualizada);
     
@@ -6856,7 +6858,7 @@ app.post('/api/admin/reservas/vizj4p/actualizar-precio', async (req, res) => {
     
     // Verificar resultado final
     const reservaFinal = await db.get(`
-      SELECT r.id, r.codigo_reserva, r.precio_total, r.porcentaje_pagado, r.monto_abonado,
+      SELECT r.id, r.codigo_reserva, r.precio_total, r.porcentaje_pagado, r.monto_abonado, r.comision_aplicada,
              p.id as pago_id, p.amount as monto_pago
       FROM reservas r
       LEFT JOIN pagos p ON r.codigo_reserva = p.reservation_code
@@ -6872,13 +6874,15 @@ app.post('/api/admin/reservas/vizj4p/actualizar-precio', async (req, res) => {
       datos_anteriores: {
         precio_total: reservaActual.precio_total,
         monto_abonado: reservaActual.monto_abonado,
-        monto_pago: reservaActual.monto_pago
+        monto_pago: reservaActual.monto_pago,
+        comision_aplicada: reservaActual.comision_aplicada
       },
       datos_nuevos: {
         precio_total: reservaFinal.precio_total,
         monto_abonado: reservaFinal.monto_abonado,
         porcentaje_pagado: reservaFinal.porcentaje_pagado,
-        monto_pago: reservaFinal.monto_pago
+        monto_pago: reservaFinal.monto_pago,
+        comision_aplicada: reservaFinal.comision_aplicada
       },
       montos_mostrados_en_modal: {
         pagado_online: montoPagadoEsperado,
