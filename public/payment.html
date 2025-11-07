@@ -548,13 +548,9 @@
             loadReservationData();
             setupPaymentMethodSelection();
 
-            // Mostrar botón de simulación en desarrollo y producción
-            // Útil para testing y recuperación de reservas cuando hay problemas con WebPay
-            const isDevelopment = window.location.hostname === 'localhost' ||
-                                 window.location.hostname === '127.0.0.1';
-            
-            // Habilitar también en producción para facilitar testing
-            const showSimulationButton = true; // Siempre mostrar el botón
+            // Botón de simulación oculto por defecto
+            // Se puede habilitar manualmente si es necesario para testing
+            const showSimulationButton = false; // Ocultar el botón
 
             if (showSimulationButton) {
                 const devButton = document.getElementById('devPayButton');
