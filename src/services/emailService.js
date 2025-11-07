@@ -301,21 +301,21 @@ class EmailService {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Precio Total Reserva:</span>
-                    <span class="detail-value">$${precio_total.toLocaleString()}</span>
+                    <span class="detail-value">$${parseInt(precio_total).toLocaleString()}</span>
                 </div>
                 ${porcentaje_pagado === 50 ? `
                 <div class="detail-row">
                     <span class="detail-label">Pagado Online:</span>
-                    <span class="detail-value" style="color: #28a745; font-weight: bold;">$${Math.round(precio_total / 2).toLocaleString()} (50%)</span>
+                    <span class="detail-value" style="color: #28a745; font-weight: bold;">$${Math.round(parseInt(precio_total) / 2).toLocaleString()} (50%)</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Pendiente en Complejo:</span>
-                    <span class="detail-value" style="color: #dc3545; font-weight: bold;">$${Math.round(precio_total / 2).toLocaleString()} (50%)</span>
+                    <span class="detail-value" style="color: #dc3545; font-weight: bold;">$${Math.round(parseInt(precio_total) / 2).toLocaleString()} (50%)</span>
                 </div>
                 ` : `
                 <div class="detail-row">
                     <span class="detail-label">Pagado Online:</span>
-                    <span class="detail-value" style="color: #28a745; font-weight: bold;">$${precio_total.toLocaleString()} (100%)</span>
+                    <span class="detail-value" style="color: #28a745; font-weight: bold;">$${parseInt(precio_total).toLocaleString()} (100%)</span>
                 </div>
                 `}
             </div>
@@ -323,8 +323,8 @@ class EmailService {
             ${porcentaje_pagado === 50 ? `
             <div class="instructions" style="background-color: #fff3cd; border-color: #ffc107;">
                 <h3 style="color: #856404;">⚠️ Pago Parcial (50%)</h3>
-                <p><strong>Has pagado $${Math.round(precio_total / 2).toLocaleString()} (50% de $${precio_total.toLocaleString()}).</strong></p>
-                <p>El 50% restante ($${Math.round(precio_total / 2).toLocaleString()}) debe ser cancelado <strong>directamente en el complejo deportivo</strong> antes o al momento de usar la cancha.</p>
+                <p><strong>Has pagado $${Math.round(parseInt(precio_total) / 2).toLocaleString()} (50% de $${parseInt(precio_total).toLocaleString()}).</strong></p>
+                <p>El 50% restante ($${Math.round(parseInt(precio_total) / 2).toLocaleString()}) debe ser cancelado <strong>directamente en el complejo deportivo</strong> antes o al momento de usar la cancha.</p>
             </div>
             ` : ''}
 
