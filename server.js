@@ -9501,7 +9501,11 @@ app.get('/api/admin/customers-analysis', authenticateToken, requireComplexAccess
         SUM(r.precio_total) as total_gastado,
         ROUND(SUM(r.precio_total) / COUNT(*), 0) as promedio_por_reserva,
         MIN(r.fecha) as primera_reserva,
-        MAX(r.fecha) as ultima_reserva
+        -- Obtener la última reserva de TODAS las reservas del cliente, no solo del rango filtrado
+        (SELECT MAX(r2.fecha) 
+         FROM reservas r2 
+         WHERE r2.email_cliente = r.email_cliente 
+         AND r2.estado IN ('confirmada', 'pendiente')) as ultima_reserva
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
