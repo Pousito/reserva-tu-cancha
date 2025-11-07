@@ -172,15 +172,17 @@ router.post('/confirm', async (req, res) => {
                         ['failed', token_ws]
                     );
                     
-                    // Eliminar el bloqueo temporal
-                    if (payment.bloqueo_id) {
-                        await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
-                    }
+                    // IMPORTANTE: NO eliminar el bloqueo temporal aquí
+                    // El pago fue procesado pero falló la confirmación
+                    // Necesitamos mantener los datos del bloqueo temporal para poder recrear la reserva manualmente
+                    console.log('⚠️ Bloqueo temporal mantenido para recuperación manual. Bloqueo ID:', payment.bloqueo_id);
                     
                     return res.status(500).json({
                         success: false,
                         error: 'Error confirmando pago con Transbank: ' + errorMsg,
-                        details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.'
+                        details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.',
+                        bloqueo_id: payment.bloqueo_id, // Incluir el bloqueo_id para recuperación
+                        reservation_code: payment.reservation_code
                     });
                 }
             } catch (error) {
@@ -197,16 +199,18 @@ router.post('/confirm', async (req, res) => {
                     ['failed', token_ws]
                 );
                 
-                // Eliminar el bloqueo temporal
-                if (payment.bloqueo_id) {
-                    await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
-                }
+                // IMPORTANTE: NO eliminar el bloqueo temporal aquí
+                // El pago fue procesado pero falló la confirmación
+                // Necesitamos mantener los datos del bloqueo temporal para poder recrear la reserva manualmente
+                console.log('⚠️ Bloqueo temporal mantenido para recuperación manual. Bloqueo ID:', payment.bloqueo_id);
                 
                 // En lugar de simular éxito, vamos a manejar el error correctamente
                 return res.status(500).json({
                     success: false,
                     error: 'Error confirmando pago con Transbank: ' + error.message,
-                    details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.'
+                    details: 'El pago fue procesado pero no se pudo confirmar. Contacta soporte.',
+                    bloqueo_id: payment.bloqueo_id, // Incluir el bloqueo_id para recuperación
+                    reservation_code: payment.reservation_code
                 });
             }
         }
@@ -241,7 +245,7 @@ router.post('/confirm', async (req, res) => {
         );
 
         if (!bloqueoData) {
-            throw new Error('Bloqueo temporal no encontrado');
+            throw new Error('Bloqueo temporal no encontrado - los datos pueden haberse perdido');
         }
 
         const datosCliente = JSON.parse(bloqueoData.datos_cliente);
@@ -311,7 +315,8 @@ router.post('/confirm', async (req, res) => {
             comisionWeb
         ]);
 
-        // Eliminar el bloqueo temporal
+        // IMPORTANTE: Solo eliminar el bloqueo temporal DESPUÉS de confirmar que la reserva se creó
+        // Esto evita perder los datos si hay un error después de crear la reserva
         await db.run('DELETE FROM bloqueos_temporales WHERE id = $1', [payment.bloqueo_id]);
 
         console.log(`✅ Reserva creada exitosamente: ${payment.reservation_code}`);

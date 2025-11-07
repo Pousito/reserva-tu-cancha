@@ -5308,14 +5308,37 @@ async function buscarReserva() {
     
     try {
         const response = await fetch(`${API_BASE}/reservas/${busqueda}`);
-        const reserva = await response.json();
+        const data = await response.json();
         
         if (response.ok) {
-            mostrarResultadoReserva(reserva);
+            mostrarResultadoReserva(data);
         } else {
-            mostrarNotificacion('Reserva no encontrada', 'danger');
+            // Si hay información sobre un pago encontrado, mostrarla
+            if (data.pago_encontrado) {
+                mostrarNotificacion(data.mensaje || 'Se encontró un pago pero la reserva no se creó. Contacta a soporte.', 'warning');
+                // Mostrar información del pago si está disponible
+                if (data.codigo_autorizacion) {
+                    const resultadoDiv = document.getElementById('resultadoReserva');
+                    if (resultadoDiv) {
+                        resultadoDiv.innerHTML = `
+                            <div class="alert alert-warning">
+                                <h5>⚠️ Pago Encontrado</h5>
+                                <p><strong>Código de Reserva:</strong> ${data.codigo_reserva}</p>
+                                <p><strong>Código de Autorización:</strong> ${data.codigo_autorizacion}</p>
+                                <p><strong>Monto Pagado:</strong> $${data.monto?.toLocaleString() || 'N/A'}</p>
+                                <p><strong>Fecha del Pago:</strong> ${data.fecha_pago || 'N/A'}</p>
+                                <hr>
+                                <p class="mb-0"><strong>Importante:</strong> Tu pago fue procesado correctamente, pero hubo un problema al crear la reserva. Por favor, contacta a <a href="mailto:soporte@reservatuscanchas.cl">soporte@reservatuscanchas.cl</a> con tu código de reserva para resolverlo.</p>
+                            </div>
+                        `;
+                    }
+                }
+            } else {
+                mostrarNotificacion(data.error || 'Reserva no encontrada', 'danger');
+            }
         }
     } catch (error) {
+        console.error('Error buscando reserva:', error);
         mostrarNotificacion('Error al buscar la reserva', 'danger');
     }
 }

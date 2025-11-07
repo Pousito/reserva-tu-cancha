@@ -211,11 +211,55 @@ async function getReservaByCodigo(req, res) {
       WHERE r.codigo_reserva = $1 OR LOWER(r.nombre_cliente) = LOWER($2)
     `, [busqueda, busqueda]);
     
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Reserva no encontrada. Verifica el código o nombre ingresado.' });
+    if (rows.length > 0) {
+      return res.json(rows[0]);
     }
     
-    res.json(rows[0]);
+    // Si no se encuentra la reserva, buscar si hay un pago asociado
+    const pago = await db.get(`
+      SELECT 
+        p.*,
+        p.created_at::text as fecha_pago,
+        p.status as estado_pago
+      FROM pagos p
+      WHERE p.reservation_code = $1
+      ORDER BY p.created_at DESC
+      LIMIT 1
+    `, [busqueda]);
+    
+    if (pago) {
+      // Si hay un pago pero no hay reserva, informar al usuario
+      if (pago.status === 'approved') {
+        return res.status(404).json({ 
+          error: 'Reserva no encontrada',
+          pago_encontrado: true,
+          mensaje: 'Se encontró un pago aprobado para este código, pero la reserva no se creó correctamente. Por favor, contacta a soporte@reservatuscanchas.cl con tu código de reserva.',
+          codigo_reserva: pago.reservation_code,
+          codigo_autorizacion: pago.authorization_code,
+          monto: pago.amount,
+          fecha_pago: pago.fecha_pago
+        });
+      } else if (pago.status === 'pending') {
+        return res.status(404).json({ 
+          error: 'Reserva no encontrada',
+          pago_encontrado: true,
+          mensaje: 'Se encontró un pago pendiente para este código. Por favor, espera a que se procese o contacta a soporte.',
+          codigo_reserva: pago.reservation_code,
+          estado: pago.status
+        });
+      } else {
+        return res.status(404).json({ 
+          error: 'Reserva no encontrada',
+          pago_encontrado: true,
+          mensaje: 'Se encontró un pago para este código, pero el estado es: ' + pago.status + '. Por favor, contacta a soporte.',
+          codigo_reserva: pago.reservation_code,
+          estado: pago.status
+        });
+      }
+    }
+    
+    // Si no se encuentra ni reserva ni pago
+    return res.status(404).json({ error: 'Reserva no encontrada. Verifica el código o nombre ingresado.' });
   } catch (err) {
     console.error('Error buscando reserva:', err);
     res.status(500).json({ error: err.message });
