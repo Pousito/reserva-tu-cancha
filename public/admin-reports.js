@@ -1537,7 +1537,7 @@ async function updateCustomersTable() {
                         <span class="badge bg-success">$${formatCurrencyChile(customer.promedio_por_reserva)}</span>
                     </td>
                     <td class="text-center">
-                        <small class="text-muted">${new Date(customer.ultima_reserva).toLocaleDateString()}</small>
+                        <small class="text-muted">${formatearFechaUltimaReserva(customer.ultima_reserva)}</small>
                     </td>
                 </tr>
             `).join('');
