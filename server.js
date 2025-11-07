@@ -2948,7 +2948,110 @@ app.get('/api/debug/ingresos-reserva/:codigo', async (req, res) => {
   }
 });
 
-// DEBUG: Endpoint temporal para instalar trigger de sincronización y crear ingreso faltante
+// Endpoint temporal para sincronizar ingreso de reserva específica
+app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    console.log('🔄 Sincronizando ingreso para reserva:', codigo);
+    
+    // Obtener datos de la reserva
+    const reservaResult = await db.query(`
+      SELECT r.*, c.complejo_id, c.nombre as cancha_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE r.codigo_reserva = $1
+    `, [codigo]);
+    
+    if (!reservaResult || reservaResult.length === 0) {
+      return res.status(404).json({ success: false, error: 'Reserva no encontrada' });
+    }
+    
+    const reserva = reservaResult[0];
+    
+    if (reserva.estado !== 'confirmada') {
+      return res.status(400).json({ success: false, error: 'La reserva no está confirmada' });
+    }
+    
+    // Verificar si ya existe un ingreso
+    const existeIngreso = await db.query(`
+      SELECT id FROM gastos_ingresos
+      WHERE descripcion LIKE '%' || $1 || '%' AND tipo = 'ingreso'
+    `, [codigo]);
+    
+    if (existeIngreso.length > 0) {
+      return res.json({ 
+        success: true, 
+        message: 'El ingreso ya existe',
+        ingreso_id: existeIngreso[0].id
+      });
+    }
+    
+    // Buscar categoría de ingresos
+    const categoriaIngreso = await db.query(`
+      SELECT id FROM categorias_gastos
+      WHERE complejo_id = $1
+      AND tipo = 'ingreso'
+      AND nombre = 'Reservas Web'
+      LIMIT 1
+    `, [reserva.complejo_id]);
+    
+    if (!categoriaIngreso || categoriaIngreso.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Categoría de ingresos no encontrada para este complejo' 
+      });
+    }
+    
+    const montoIngreso = reserva.monto_abonado || reserva.precio_total || 0;
+    
+    if (montoIngreso <= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'La reserva no tiene monto válido' 
+      });
+    }
+    
+    // Crear ingreso
+    const ingresoResult = await db.query(`
+      INSERT INTO gastos_ingresos (
+        complejo_id,
+        categoria_id,
+        tipo,
+        monto,
+        fecha,
+        descripcion,
+        metodo_pago,
+        usuario_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [
+      reserva.complejo_id,
+      categoriaIngreso[0].id,
+      'ingreso',
+      montoIngreso,
+      reserva.fecha,
+      `Reserva #${codigo} - ${reserva.cancha_nombre}${reserva.porcentaje_pagado ? ` (Abono ${reserva.porcentaje_pagado}%)` : ''}`,
+      reserva.metodo_pago || 'webpay',
+      null
+    ]);
+    
+    console.log('✅ Ingreso creado:', ingresoResult[0].id);
+    
+    res.json({
+      success: true,
+      message: 'Ingreso sincronizado exitosamente',
+      ingreso_id: ingresoResult[0].id,
+      monto: montoIngreso
+    });
+    
+  } catch (error) {
+    console.error('❌ Error sincronizando ingreso:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
 app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
   try {
     const { codigo_reserva } = req.body;
