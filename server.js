@@ -3167,7 +3167,7 @@ app.post('/api/admin/crear-tabla-codigos-unico-uso', authenticateToken, requireR
     try {
       await client.query('BEGIN');
       
-      // Crear tabla
+      // Crear tabla sin foreign key primero (la agregaremos después si es necesario)
       await client.query(`
         CREATE TABLE IF NOT EXISTS codigos_unico_uso (
           id SERIAL PRIMARY KEY,
@@ -3177,13 +3177,33 @@ app.post('/api/admin/crear-tabla-codigos-unico-uso', authenticateToken, requireR
           usado BOOLEAN DEFAULT FALSE,
           usado_en TIMESTAMP,
           bloqueo_id VARCHAR(50),
-          reserva_id INTEGER REFERENCES reservas(id),
+          reserva_id INTEGER,
           creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           expira_en TIMESTAMP,
           descripcion TEXT
         )
       `);
       console.log('✅ Tabla codigos_unico_uso creada/verificada');
+
+      // Agregar foreign key si no existe
+      try {
+        await client.query(`
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_constraint 
+              WHERE conname = 'codigos_unico_uso_reserva_id_fkey'
+            ) THEN
+              ALTER TABLE codigos_unico_uso 
+              ADD CONSTRAINT codigos_unico_uso_reserva_id_fkey 
+              FOREIGN KEY (reserva_id) REFERENCES reservas(id);
+            END IF;
+          END $$;
+        `);
+        console.log('✅ Foreign key agregada/verificada');
+      } catch (fkError) {
+        console.log('⚠️ No se pudo agregar foreign key (puede que ya exista o la tabla reservas no tenga PK):', fkError.message);
+      }
 
       // Crear índices
       await client.query(`
