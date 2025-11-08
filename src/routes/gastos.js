@@ -154,7 +154,7 @@ router.get('/categorias', authenticateToken, async (req, res) => {
 router.get('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, res) => {
     try {
         const usuario = req.user;
-        const { tipo, categoria_id, fecha_desde, fecha_hasta } = req.query;
+        const { tipo, categoria_id, fecha_desde, fecha_hasta, metodo_pago } = req.query;
         
         let query = `
             SELECT 
@@ -209,6 +209,12 @@ router.get('/movimientos', authenticateToken, requireOwnerOrAdmin, async (req, r
         if (fecha_hasta) {
             query += ` AND gi.fecha <= $${paramIndex}`;
             params.push(fecha_hasta);
+            paramIndex++;
+        }
+        
+        if (metodo_pago) {
+            query += ` AND gi.metodo_pago = $${paramIndex}`;
+            params.push(metodo_pago);
             paramIndex++;
         }
         

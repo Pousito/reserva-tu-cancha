@@ -19,8 +19,8 @@ function setDatabase(databaseInstance) {
 router.post('/init', async (req, res) => {
     try {
         console.log('🔍 Iniciando proceso de pago...');
-        const { reservationCode, amount, sessionId } = req.body;
-        console.log('📋 Datos recibidos:', { reservationCode, amount, sessionId });
+        const { reservationCode, amount, sessionId, codigo_unico_uso } = req.body;
+        console.log('📋 Datos recibidos:', { reservationCode, amount, sessionId, codigo_unico_uso });
 
         // Validar datos requeridos
         if (!reservationCode || !amount || !sessionId) {
@@ -47,6 +47,108 @@ router.post('/init', async (req, res) => {
         }
 
         console.log('✅ Bloqueo temporal encontrado:', bloqueo.id);
+
+        // IMPORTANTE: Si hay un código de un solo uso, validarlo y marcarlo como usado ANTES de ir a Transbank
+        if (codigo_unico_uso) {
+            console.log('🎫 Validando código de un solo uso:', codigo_unico_uso);
+            
+            try {
+                // Obtener email del cliente desde el bloqueo temporal
+                const datosCliente = JSON.parse(bloqueo.datos_cliente || '{}');
+                const emailCliente = datosCliente.email_cliente;
+
+                if (!emailCliente) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'No se pudo obtener el email del cliente para validar el código'
+                    });
+                }
+
+                // Validar y marcar como usado el código directamente desde la base de datos
+                const codigoData = await db.get(`
+                    SELECT * FROM codigos_unico_uso 
+                    WHERE codigo = $1
+                `, [codigo_unico_uso.toUpperCase()]);
+
+                if (!codigoData) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Código no válido'
+                    });
+                }
+
+                if (codigoData.usado) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Este código ya ha sido utilizado'
+                    });
+                }
+
+                if (codigoData.email_cliente.toLowerCase() !== emailCliente.toLowerCase()) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Este código no corresponde a tu email'
+                    });
+                }
+
+                if (codigoData.expira_en) {
+                    const ahora = new Date();
+                    const expiraEn = new Date(codigoData.expira_en);
+                    if (ahora > expiraEn) {
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Este código ha expirado'
+                        });
+                    }
+                }
+
+                // Marcar como usado usando transacción para evitar race conditions
+                const client = await db.pgPool.connect();
+                try {
+                    await client.query('BEGIN');
+
+                    // Verificar nuevamente que no esté usado (double-check)
+                    const codigoVerificado = await client.query(`
+                        SELECT usado FROM codigos_unico_uso 
+                        WHERE codigo = $1 FOR UPDATE
+                    `, [codigo_unico_uso.toUpperCase()]);
+
+                    if (codigoVerificado.rows[0].usado) {
+                        await client.query('ROLLBACK');
+                        return res.status(400).json({
+                            success: false,
+                            error: 'Este código ya ha sido utilizado'
+                        });
+                    }
+
+                    // Marcar como usado
+                    await client.query(`
+                        UPDATE codigos_unico_uso 
+                        SET usado = TRUE, 
+                            usado_en = NOW(),
+                            bloqueo_id = $1
+                        WHERE codigo = $2
+                    `, [bloqueo.id, codigo_unico_uso.toUpperCase()]);
+
+                    await client.query('COMMIT');
+
+                    console.log(`✅ Código ${codigo_unico_uso.toUpperCase()} marcado como usado. Descuento: $${codigoData.monto_descuento}`);
+
+                } catch (txError) {
+                    await client.query('ROLLBACK');
+                    throw txError;
+                } finally {
+                    client.release();
+                }
+
+            } catch (codigoError) {
+                console.error('❌ Error validando código de un solo uso:', codigoError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Error validando código de un solo uso: ' + codigoError.message
+                });
+            }
+        }
 
         // IMPORTANTE: Guardar respaldo de los datos del cliente ANTES de iniciar el pago
         // Esto permite recuperar los datos incluso si hay problemas durante el proceso de pago

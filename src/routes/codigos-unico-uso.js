@@ -200,7 +200,10 @@ router.post('/validar-y-usar', async (req, res) => {
 // Endpoint para verificar si un código es válido (sin usarlo)
 router.post('/verificar', async (req, res) => {
   try {
+    console.log('🔍 Endpoint /verificar llamado');
+    
     if (!db) {
+      console.error('❌ Base de datos no configurada en router codigos-unico-uso');
       return res.status(500).json({ 
         success: false,
         error: 'Base de datos no configurada' 
@@ -208,6 +211,7 @@ router.post('/verificar', async (req, res) => {
     }
 
     const { codigo, email_cliente } = req.body;
+    console.log('📋 Parámetros recibidos:', { codigo, email_cliente });
 
     if (!codigo || !email_cliente) {
       return res.status(400).json({ 
@@ -217,10 +221,12 @@ router.post('/verificar', async (req, res) => {
     }
 
     // Buscar el código
+    console.log('🔍 Buscando código:', codigo.toUpperCase());
     const codigoData = await db.get(`
       SELECT * FROM codigos_unico_uso 
       WHERE codigo = $1
     `, [codigo.toUpperCase()]);
+    console.log('📦 Código encontrado:', codigoData ? 'Sí' : 'No');
 
     if (!codigoData) {
       return res.json({
@@ -269,10 +275,12 @@ router.post('/verificar', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error verificando código:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({ 
       success: false,
       error: 'Error interno del servidor',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

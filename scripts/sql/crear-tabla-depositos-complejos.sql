@@ -241,3 +241,4 @@ COMMENT ON COLUMN depositos_complejos.monto_a_depositar IS 'Monto final que se d
 -- ORDER BY dc.fecha_deposito DESC;
 
 
+

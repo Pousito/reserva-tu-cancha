@@ -447,6 +447,8 @@ Gracias por elegir Reserva Tu Cancha!
 
   // Obtener emails del administrador del complejo
   getComplexAdminEmails(complejoNombre) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     const adminEmails = {
       'MagnaSports': ['naxiin320@gmail.com'],
       'Complejo Deportivo Central': ['naxiin_320@hotmail.com'],
@@ -454,7 +456,10 @@ Gracias por elegir Reserva Tu Cancha!
       'Centro Deportivo Costero': ['naxiin_320@hotmail.com'],
       'Club Deportivo Norte': ['naxiin_320@hotmail.com'],
       'Complejo Demo 3': ['owner@complejodemo3.cl', 'manager@complejodemo3.cl'],
-      'Espacio Deportivo Borde Río': ['magda.espinoza.se@gmail.com', 'admin@borderio.cl', 'manager@borderio.cl']
+      'Espacio Deportivo Borde Río': isProduction 
+        ? ['magda.espinoza.se@gmail.com', 'admin@borderio.cl', 'manager@borderio.cl']
+        : ['admin@borderio.cl', 'manager@borderio.cl'],
+      'Complejo En Desarrollo': ['naxiin_320@hotmail.com', 'naxiin320@gmail.com']
     };
     
     return adminEmails[complejoNombre] || ['admin@reservatuscanchas.cl'];

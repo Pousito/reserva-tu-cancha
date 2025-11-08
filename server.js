@@ -930,7 +930,7 @@ app.use('/api/payments', paymentRoutes);
 
 // ===== RUTAS DE CÓDIGOS DE UN SOLO USO =====
 const { router: codigosUnicoUsoRoutes, setDatabase: setCodigosUnicoUsoDatabase } = require('./src/routes/codigos-unico-uso');
-setCodigosUnicoUsoDatabase(db);
+// NOTA: setCodigosUnicoUsoDatabase se llamará después de inicializar la BD en initializeDatabase()
 app.use('/api/codigos-unico-uso', codigosUnicoUsoRoutes);
 
 // ===== RUTAS DE DESCUENTOS =====

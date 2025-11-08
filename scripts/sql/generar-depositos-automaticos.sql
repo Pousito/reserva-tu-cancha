@@ -131,3 +131,4 @@ FROM information_schema.triggers
 WHERE trigger_name = 'trigger_generar_deposito_automatico';
 
 
+
