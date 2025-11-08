@@ -514,6 +514,62 @@ const getCurrentTimestampFunction = () => {
 };
 
 // Verificar y agregar campo visible a complejos
+async function ensureReservasAdminCategoryExists() {
+  try {
+    console.log('🔄 Verificando categoría "Reservas Administrativas" para todos los complejos...');
+    
+    // Obtener todos los complejos
+    const complejos = await db.query('SELECT id, nombre FROM complejos ORDER BY id');
+    console.log(`📊 Verificando ${complejos.length} complejos`);
+    
+    let creadas = 0;
+    let yaExistentes = 0;
+    
+    for (const complejo of complejos) {
+      // Verificar si ya existe la categoría
+      const existe = await db.query(`
+        SELECT id FROM categorias_gastos
+        WHERE complejo_id = $1
+        AND tipo = 'ingreso'
+        AND nombre = 'Reservas Administrativas'
+      `, [complejo.id]);
+      
+      if (!existe || existe.length === 0) {
+        // Crear categoría
+        await db.query(`
+          INSERT INTO categorias_gastos (
+            complejo_id,
+            nombre,
+            descripcion,
+            icono,
+            color,
+            tipo,
+            es_predefinida
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          complejo.id,
+          'Reservas Administrativas',
+          'Ingresos por reservas creadas por administradores del complejo',
+          'fas fa-user-tie',
+          '#007bff',
+          'ingreso',
+          true
+        ]);
+        
+        console.log(`✅ Categoría creada para complejo: ${complejo.nombre} (ID: ${complejo.id})`);
+        creadas++;
+      } else {
+        yaExistentes++;
+      }
+    }
+    
+    console.log(`✅ Verificación completada: ${creadas} creadas, ${yaExistentes} ya existían`);
+  } catch (error) {
+    console.error('❌ Error verificando/creando categorías:', error);
+    // No lanzar error para no bloquear el inicio del servidor
+  }
+}
+
 async function ensureVisibleFieldExists() {
   try {
     const result = await db.query(`
