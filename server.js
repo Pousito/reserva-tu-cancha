@@ -771,9 +771,22 @@ async function populateSampleData() {
 }
 
 // Inicializar base de datos al arrancar
+// Inicializar base de datos y luego configurar routers
 initializeDatabase().then(() => {
   // Aplicar middleware de métricas de base de datos después de la conexión
   app.use(databaseMetricsMiddleware(db));
+  
+  // Asegurar que los routers tengan la base de datos configurada
+  const { setDatabase: setDiscountDatabase } = require('./src/routes/discounts');
+  setDiscountDatabase(db);
+  console.log('✅ Base de datos configurada en router de descuentos (post-inicialización)');
+  
+  const { setDatabase: setCodigosUnicoUsoDatabase } = require('./src/routes/codigos-unico-uso');
+  setCodigosUnicoUsoDatabase(db);
+  console.log('✅ Base de datos configurada en router de códigos único uso (post-inicialización)');
+}).catch((error) => {
+  console.error('❌ Error crítico inicializando base de datos:', error);
+  process.exit(1);
 });
 
 // ==================== RUTAS API ====================
