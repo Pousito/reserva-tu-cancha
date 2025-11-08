@@ -3158,6 +3158,65 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
   }
 });
 
+// Endpoint temporal para verificar tabla y código
+app.get('/api/admin/verificar-tabla-codigos', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
+  try {
+    // Verificar si la tabla existe
+    const tablaExiste = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'codigos_unico_uso'
+      )
+    `);
+    
+    const existe = tablaExiste.rows[0].exists;
+    
+    if (!existe) {
+      return res.json({
+        tabla_existe: false,
+        mensaje: 'La tabla codigos_unico_uso NO existe'
+      });
+    }
+    
+    // Contar códigos
+    const totalCodigos = await client.query(`
+      SELECT COUNT(*) as total FROM codigos_unico_uso
+    `);
+    
+    // Buscar el código específico
+    const codigoBuscado = await client.query(`
+      SELECT * FROM codigos_unico_uso 
+      WHERE codigo = $1
+    `, ['BASTIANCABRERA5MIL']);
+    
+    // Listar todos los códigos
+    const todosLosCodigos = await client.query(`
+      SELECT codigo, email_cliente, usado, monto_descuento 
+      FROM codigos_unico_uso
+      LIMIT 10
+    `);
+    
+    res.json({
+      tabla_existe: true,
+      total_codigos: parseInt(totalCodigos.rows[0].total),
+      codigo_buscado: codigoBuscado.rows.length > 0 ? codigoBuscado.rows[0] : null,
+      todos_los_codigos: todosLosCodigos.rows
+    });
+    
+  } catch (error) {
+    console.error('❌ Error verificando tabla:', error);
+    res.status(500).json({
+      error: 'Error verificando tabla',
+      message: error.message
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Endpoint temporal para crear la tabla codigos_unico_uso
 app.post('/api/admin/crear-tabla-codigos-unico-uso', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   const client = await db.pgPool.connect();
