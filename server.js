@@ -3158,6 +3158,59 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
   }
 });
 
+// Endpoint temporal para crear código BASTIANCABRERA5MIL en producción
+app.post('/api/admin/crear-codigo-bastian', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
+  try {
+    const codigo = 'BASTIANCABRERA5MIL';
+    const emailSebastian = 'eliecer.castillo.cabrera@gmail.com';
+    const montoDescuento = 5000;
+    
+    // Verificar si el código ya existe
+    const codigoExistente = await client.query(`
+      SELECT * FROM codigos_unico_uso WHERE codigo = $1
+    `, [codigo]);
+    
+    if (codigoExistente.rows.length > 0) {
+      return res.json({
+        success: true,
+        mensaje: 'El código ya existe',
+        codigo: codigoExistente.rows[0]
+      });
+    }
+    
+    // Crear el código
+    const resultado = await client.query(`
+      INSERT INTO codigos_unico_uso 
+      (codigo, email_cliente, monto_descuento, descripcion)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `, [
+      codigo,
+      emailSebastian,
+      montoDescuento,
+      'Código de compensación para Sebastián Cabrera - Descuento de $5,000'
+    ]);
+    
+    res.json({
+      success: true,
+      mensaje: 'Código creado exitosamente',
+      codigo: resultado.rows[0]
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando código:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error creando código',
+      message: error.message
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Endpoint temporal para verificar tabla y código
 app.get('/api/admin/verificar-tabla-codigos', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   const client = await db.pgPool.connect();
