@@ -3058,6 +3058,88 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
   }
 });
 
+// Endpoint temporal para crear categoría "Reservas Administrativas" en todos los complejos
+app.post('/api/admin/crear-categoria-reservas-admin', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('🔄 Creando categoría "Reservas Administrativas" para todos los complejos...');
+    
+    // Obtener todos los complejos
+    const complejos = await db.query('SELECT id, nombre FROM complejos ORDER BY id');
+    console.log(`📊 Encontrados ${complejos.length} complejos`);
+    
+    const resultados = [];
+    
+    for (const complejo of complejos) {
+      // Verificar si ya existe la categoría
+      const existe = await db.query(`
+        SELECT id FROM categorias_gastos
+        WHERE complejo_id = $1
+        AND tipo = 'ingreso'
+        AND nombre = 'Reservas Administrativas'
+      `, [complejo.id]);
+      
+      if (!existe || existe.length === 0) {
+        // Crear categoría
+        const resultado = await db.query(`
+          INSERT INTO categorias_gastos (
+            complejo_id,
+            nombre,
+            descripcion,
+            icono,
+            color,
+            tipo,
+            es_predefinida
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id
+        `, [
+          complejo.id,
+          'Reservas Administrativas',
+          'Ingresos por reservas creadas por administradores del complejo',
+          'fas fa-user-tie',
+          '#007bff',
+          'ingreso',
+          true
+        ]);
+        
+        console.log(`✅ Categoría creada para complejo: ${complejo.nombre} (ID: ${complejo.id})`);
+        resultados.push({
+          complejo: complejo.nombre,
+          complejo_id: complejo.id,
+          accion: 'creada',
+          categoria_id: resultado[0].id
+        });
+      } else {
+        console.log(`ℹ️  Categoría ya existe para complejo: ${complejo.nombre} (ID: ${complejo.id})`);
+        resultados.push({
+          complejo: complejo.nombre,
+          complejo_id: complejo.id,
+          accion: 'ya_existia',
+          categoria_id: existe[0].id
+        });
+      }
+    }
+    
+    console.log(`✅ Proceso completado: ${resultados.length} complejos procesados`);
+    
+    res.json({
+      success: true,
+      message: 'Categorías procesadas exitosamente',
+      resultados: resultados,
+      total_complejos: complejos.length,
+      creadas: resultados.filter(r => r.accion === 'creada').length,
+      ya_existian: resultados.filter(r => r.accion === 'ya_existia').length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creando categorías:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message 
+    });
+  }
+});
+
 // Endpoint temporal para normalizar métodos de pago de reservas web
 app.post('/api/admin/normalizar-metodos-pago-reservas-web', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   try {
