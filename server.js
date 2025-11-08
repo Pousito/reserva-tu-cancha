@@ -575,6 +575,9 @@ async function initializeDatabase() {
     // Verificar y agregar campo visible a complejos
     await ensureVisibleFieldExists();
     
+    // Crear categoría "Reservas Administrativas" si no existe para todos los complejos
+    await ensureReservasAdminCategoryExists();
+    
     // Poblar con datos de ejemplo si está vacía
     await populateSampleData();
     
