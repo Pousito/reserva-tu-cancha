@@ -186,8 +186,10 @@ class DatabaseManager {
 
       // Crear tabla de códigos de un solo uso
       console.log('🔧 Creando/verificando tabla codigos_unico_uso...');
+      console.log('🔍 Entorno:', process.env.NODE_ENV);
+      console.log('🔍 DATABASE_URL configurado:', !!process.env.DATABASE_URL);
       try {
-        await client.query(`
+        const createTableResult = await client.query(`
           CREATE TABLE IF NOT EXISTS codigos_unico_uso (
             id SERIAL PRIMARY KEY,
             codigo VARCHAR(50) UNIQUE NOT NULL,
@@ -203,6 +205,7 @@ class DatabaseManager {
           )
         `);
         console.log('✅ Tabla codigos_unico_uso creada/verificada');
+        console.log('📊 Resultado CREATE TABLE:', createTableResult.command);
 
         // Crear índices para búsquedas rápidas
         await client.query(`
