@@ -42,7 +42,7 @@ async function getCategorias(req, res) {
 async function getMovimientos(req, res) {
     try {
         const usuario = req.user;
-        const { tipo, categoria_id, fecha_desde, fecha_hasta } = req.query;
+        const { tipo, categoria_id, fecha_desde, fecha_hasta, metodo_pago } = req.query;
         
         // Construir query base
         let query = `
@@ -104,6 +104,18 @@ async function getMovimientos(req, res) {
         if (fecha_hasta) {
             query += ` AND gi.fecha <= $${paramIndex}`;
             params.push(fecha_hasta);
+            paramIndex++;
+        }
+        
+        if (metodo_pago) {
+            // Buscar tanto "webpay" como "Web" (case-insensitive) para compatibilidad con datos antiguos
+            if (metodo_pago === 'webpay') {
+                query += ` AND (gi.metodo_pago = $${paramIndex} OR LOWER(gi.metodo_pago) = 'web')`;
+                params.push(metodo_pago);
+            } else {
+                query += ` AND gi.metodo_pago = $${paramIndex}`;
+                params.push(metodo_pago);
+            }
             paramIndex++;
         }
         

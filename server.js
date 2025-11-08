@@ -2986,14 +2986,18 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
       });
     }
     
-    // Buscar categoría de ingresos
+    // Buscar categoría de ingresos según el tipo de reserva
     const categoriaIngreso = await db.query(`
       SELECT id FROM categorias_gastos
       WHERE complejo_id = $1
       AND tipo = 'ingreso'
-      AND nombre = 'Reservas Web'
+      AND nombre = CASE 
+        WHEN $2 = 'directa' THEN 'Reservas Web'
+        WHEN $2 = 'administrativa' THEN 'Reservas Administrativas'
+        ELSE 'Reservas Web'
+      END
       LIMIT 1
-    `, [reserva.complejo_id]);
+    `, [reserva.complejo_id, reserva.tipo_reserva]);
     
     if (!categoriaIngreso || categoriaIngreso.length === 0) {
       return res.status(404).json({ 
@@ -3031,7 +3035,8 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
       montoIngreso,
       reserva.fecha,
       `Reserva #${codigo} - ${reserva.cancha_nombre}${reserva.porcentaje_pagado ? ` (Abono ${reserva.porcentaje_pagado}%)` : ''}`,
-      reserva.metodo_pago || 'webpay',
+      // Para reservas web (directa), usar 'webpay', sino usar el método de pago de la reserva o 'por_definir'
+      reserva.tipo_reserva === 'directa' ? 'webpay' : (reserva.metodo_pago || 'por_definir'),
       null
     ]);
     
@@ -3052,6 +3057,80 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
     });
   }
 });
+
+// Endpoint temporal para normalizar métodos de pago de reservas web
+app.post('/api/admin/normalizar-metodos-pago-reservas-web', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  try {
+    console.log('🔄 Normalizando métodos de pago de reservas web...');
+    
+    const client = await db.pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Estrategia 1: Actualizar ingresos de reservas web usando JOIN con reservas
+      const updateQuery1 = `
+        UPDATE gastos_ingresos gi
+        SET metodo_pago = 'webpay'
+        FROM reservas r
+        WHERE gi.descripcion LIKE '%Reserva #' || r.codigo_reserva || '%'
+        AND gi.tipo = 'ingreso'
+        AND r.tipo_reserva = 'directa'
+        AND (LOWER(gi.metodo_pago) = 'web' OR LOWER(gi.metodo_pago) = 'automatico' OR gi.metodo_pago = 'Automático')
+        AND gi.metodo_pago != 'webpay'
+      `;
+      
+      const result1 = await client.query(updateQuery1);
+      console.log(`✅ Actualizados ${result1.rowCount} registros usando JOIN con reservas`);
+      
+      // Estrategia 2: Actualizar ingresos que tienen descripción de reserva pero no coinciden con JOIN
+      // Buscar ingresos que tienen "Reserva #" en la descripción y están en categoría "Reservas Web"
+      const updateQuery2 = `
+        UPDATE gastos_ingresos gi
+        SET metodo_pago = 'webpay'
+        FROM categorias_gastos cg
+        WHERE gi.categoria_id = cg.id
+        AND cg.nombre = 'Reservas Web'
+        AND gi.tipo = 'ingreso'
+        AND gi.descripcion LIKE 'Reserva%'
+        AND (LOWER(gi.metodo_pago) = 'web' OR LOWER(gi.metodo_pago) = 'automatico' OR gi.metodo_pago = 'Automático')
+        AND gi.metodo_pago != 'webpay'
+      `;
+      
+      const result2 = await client.query(updateQuery2);
+      console.log(`✅ Actualizados ${result2.rowCount} registros usando categoría "Reservas Web"`);
+      
+      await client.query('COMMIT');
+      
+      const totalActualizados = result1.rowCount + result2.rowCount;
+      console.log(`✅ Métodos de pago normalizados: ${totalActualizados} registros actualizados en total`);
+      
+      res.json({
+        success: true,
+        message: `Métodos de pago normalizados exitosamente`,
+        registros_actualizados: totalActualizados,
+        detalles: {
+          por_join_reservas: result1.rowCount,
+          por_categoria: result2.rowCount
+        }
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error normalizando métodos de pago:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message 
+    });
+  }
+});
+
 app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
   try {
     const { codigo_reserva } = req.body;
@@ -3078,8 +3157,11 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
             tipo_reserva_texto TEXT;
             complejo_id_reserva INTEGER;
         BEGIN
-            -- Solo procesar cuando el estado cambia a 'confirmada'
-            IF NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada') THEN
+            -- Procesar cuando:
+            -- 1. El estado cambia a 'confirmada' (nueva reserva confirmada)
+            -- 2. O cuando el estado es 'confirmada' y se actualiza monto_abonado (abono adicional)
+            IF (NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada'))
+               OR (NEW.estado = 'confirmada' AND OLD.estado = 'confirmada' AND (NEW.monto_abonado != OLD.monto_abonado OR OLD.monto_abonado IS NULL)) THEN
 
                 -- Obtener complejo_id a partir de la cancha
                 SELECT complejo_id INTO complejo_id_reserva
@@ -3091,12 +3173,16 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
                     RETURN NEW;
                 END IF;
 
-                -- Buscar categoría de ingresos para este complejo
+                -- Buscar categoría de ingresos para este complejo según el tipo de reserva
                 SELECT id INTO categoria_ingreso_id
                 FROM categorias_gastos
                 WHERE complejo_id = complejo_id_reserva
                 AND tipo = 'ingreso'
-                AND nombre = 'Reservas Web'
+                AND nombre = CASE 
+                    WHEN NEW.tipo_reserva = 'directa' THEN 'Reservas Web'
+                    WHEN NEW.tipo_reserva = 'administrativa' THEN 'Reservas Administrativas'
+                    ELSE 'Reservas Web'
+                END
                 LIMIT 1;
 
                 -- Buscar categoría de comisión para este complejo
@@ -3151,11 +3237,29 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
                             monto_ingreso,
                             NEW.fecha::DATE,
                             'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id) || ' (Abono ' || NEW.porcentaje_pagado || '%)',
-                            COALESCE(NEW.metodo_pago, 'por_definir'),
+                            -- Para reservas web (directa), usar 'webpay', sino usar el método de pago de la reserva o 'por_definir'
+                            CASE 
+                                WHEN NEW.tipo_reserva = 'directa' THEN 'webpay'
+                                ELSE COALESCE(NEW.metodo_pago, 'por_definir')
+                            END,
                             NULL
                         );
 
                         RAISE NOTICE 'Ingreso registrado: $% (Reserva #%, Abono %)', monto_ingreso, NEW.codigo_reserva, NEW.porcentaje_pagado;
+                    ELSE
+                        -- Si el ingreso ya existe, actualizar método de pago si cambió
+                        UPDATE gastos_ingresos
+                        SET metodo_pago = CASE 
+                                WHEN NEW.tipo_reserva = 'directa' THEN 'webpay'
+                                ELSE COALESCE(NEW.metodo_pago, 'por_definir')
+                            END,
+                            monto = monto_ingreso,
+                            descripcion = 'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id) || ' (Abono ' || NEW.porcentaje_pagado || '%)',
+                            actualizado_en = NOW()
+                        WHERE descripcion LIKE 'Reserva #' || NEW.codigo_reserva || '%'
+                        AND tipo = 'ingreso';
+                        
+                        RAISE NOTICE 'Ingreso actualizado: $% (Reserva #%, Método: %)', monto_ingreso, NEW.codigo_reserva, COALESCE(NEW.metodo_pago, 'por_definir');
                     END IF;
 
                     -- Gestionar gasto de comisión:
@@ -4360,7 +4464,7 @@ app.post('/api/admin/reservas/:codigoReserva/agregar-abono', authenticateToken, 
     
     // Buscar la reserva
     let query = `
-      SELECT r.*, c.complejo_id
+      SELECT r.*, c.complejo_id, c.nombre as cancha_nombre
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       WHERE r.codigo_reserva = $1
@@ -4425,6 +4529,63 @@ app.post('/api/admin/reservas/:codigoReserva/agregar-abono', authenticateToken, 
         estadoPago = 'pagado';
       } else if (nuevoMontoAbonado > 0) {
         estadoPago = 'por_pagar';
+      }
+      
+      // 3. Crear ingreso adicional por el abono (solo el monto del nuevo abono)
+      // Buscar categoría de ingresos para este complejo
+      const categoriaIngresoQuery = `
+        SELECT id FROM categorias_gastos
+        WHERE complejo_id = $1
+        AND tipo = 'ingreso'
+        AND nombre = 'Reservas Web'
+        LIMIT 1
+      `;
+      const categoriaIngresoResult = await client.query(categoriaIngresoQuery, [reserva.complejo_id]);
+      
+      if (categoriaIngresoResult.rows.length > 0) {
+        const categoriaIngresoId = categoriaIngresoResult.rows[0].id;
+        
+        // Crear ingreso adicional por el abono
+        const insertIngresoQuery = `
+          INSERT INTO gastos_ingresos (
+            complejo_id,
+            categoria_id,
+            tipo,
+            monto,
+            fecha,
+            descripcion,
+            metodo_pago,
+            usuario_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING id
+        `;
+        
+        // Mapear método de pago del frontend al valor correcto
+        let metodoPagoIngreso = metodo_pago;
+        if (metodo_pago === 'transferencia') {
+          metodoPagoIngreso = 'transferencia';
+        } else if (metodo_pago === 'tarjeta') {
+          metodoPagoIngreso = 'tarjeta';
+        } else if (metodo_pago === 'efectivo') {
+          metodoPagoIngreso = 'efectivo';
+        } else if (metodo_pago === 'otros') {
+          metodoPagoIngreso = 'otros';
+        } else {
+          metodoPagoIngreso = metodo_pago || 'por_definir';
+        }
+        
+        await client.query(insertIngresoQuery, [
+          reserva.complejo_id,
+          categoriaIngresoId,
+          'ingreso',
+          monto_abonado, // Solo el monto del nuevo abono
+          new Date().toISOString().split('T')[0], // Fecha actual
+          `Abono adicional Reserva #${codigoReserva} - ${reserva.cancha_nombre || 'Cancha'}`,
+          metodoPagoIngreso,
+          user.id
+        ]);
+        
+        console.log(`✅ Ingreso adicional creado: $${monto_abonado} (${metodoPagoIngreso})`);
       }
       
       const updateReservaQuery = `
