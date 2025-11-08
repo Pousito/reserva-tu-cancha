@@ -5700,7 +5700,7 @@ async function validarCodigoDescuento() {
     aplicarBtn.disabled = true;
 
     try {
-        console.log('🎫 Validando código de descuento:', {
+        console.log('🎫 Validando código:', {
             codigo: codigo,
             email: emailCliente,
             precio_original: canchaSeleccionada.precio_hora,
@@ -5709,14 +5709,13 @@ async function validarCodigoDescuento() {
             tiene_promocion: canchaSeleccionada.tiene_promocion
         });
 
-        // Primero intentar validar como código de descuento normal
+        // PRIMERO: Verificar si es un código de un solo uso
         const apiBase = API_BASE || '/api';
         let esCodigoUnicoUso = false;
         let codigoUnicoUsoData = null;
         
-        // Verificar si es un código de un solo uso
+        console.log('🔍 Verificando si es código de un solo uso:', codigo);
         try {
-            console.log('🔍 Verificando si es código de un solo uso:', codigo);
             const verificarUnicoUsoResponse = await fetch(`${apiBase}/codigos-unico-uso/verificar`, {
                 method: 'POST',
                 headers: {
@@ -5740,6 +5739,8 @@ async function validarCodigoDescuento() {
                 }
             } else if (verificarUnicoUsoResponse.status === 404) {
                 console.log('⚠️ Endpoint de códigos único uso no disponible (404), continuando con validación normal...');
+            } else {
+                console.log('⚠️ Respuesta inesperada del endpoint de códigos único uso:', verificarUnicoUsoResponse.status);
             }
         } catch (error) {
             console.log('⚠️ Error verificando código único uso (continuando con validación normal):', error.message);
@@ -5783,6 +5784,7 @@ async function validarCodigoDescuento() {
         }
         
         // Si no es código de un solo uso, continuar con validación normal de descuento
+        console.log('🎫 Validando código de descuento normal:', codigo);
         const url = `${apiBase}/discounts/validar`;
 
         console.log('🔗 URL de validación:', url);
