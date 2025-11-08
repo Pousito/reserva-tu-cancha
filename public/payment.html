@@ -603,6 +603,7 @@
                     hora_inicio: bloqueo.hora_inicio, // Guardar hora_inicio para ajuste de medianoche
                     time: formatearRangoHoras(bloqueo.hora_inicio, bloqueo.hora_fin),
                     clientName: datosCliente.nombre_cliente,
+                    email: datosCliente.email_cliente, // Agregar email para validación de código único uso
                     amount: datosCliente.monto_pagado || datosCliente.precio_total, // Usar monto_pagado (50% o 100%)
                     precioTotal: datosCliente.precio_total, // Precio total de la reserva
                     porcentajePagado: datosCliente.porcentaje_pagado || 100 // 50 o 100
@@ -746,7 +747,45 @@
                 const sessionId = reservationData.code;
 
                 // Obtener código de un solo uso de sessionStorage si existe
-                const codigoUnicoUso = sessionStorage.getItem('codigoUnicoUso');
+                let codigoUnicoUso = sessionStorage.getItem('codigoUnicoUso');
+                
+                // IMPORTANTE: Si hay un código único uso, verificar que el email coincida
+                // antes de enviarlo. Si no coincide, limpiarlo y no enviarlo.
+                if (codigoUnicoUso && reservationData.email) {
+                    try {
+                        // Verificar rápidamente si el código corresponde al email actual
+                        const verifyResponse = await fetch('/api/codigos-unico-uso/verificar', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                codigo: codigoUnicoUso,
+                                email_cliente: reservationData.email
+                            })
+                        });
+                        
+                        if (verifyResponse.ok) {
+                            const verifyResult = await verifyResponse.json();
+                            if (!verifyResult.success || !verifyResult.valido) {
+                                // El código no es válido para este email, limpiarlo
+                                console.log('⚠️ Código único uso no válido para este email, limpiando...');
+                                sessionStorage.removeItem('codigoUnicoUso');
+                                codigoUnicoUso = null;
+                            }
+                        } else {
+                            // Error verificando, limpiar por seguridad
+                            console.log('⚠️ Error verificando código único uso, limpiando...');
+                            sessionStorage.removeItem('codigoUnicoUso');
+                            codigoUnicoUso = null;
+                        }
+                    } catch (verifyError) {
+                        // Error en la verificación, limpiar por seguridad
+                        console.log('⚠️ Error verificando código único uso:', verifyError);
+                        sessionStorage.removeItem('codigoUnicoUso');
+                        codigoUnicoUso = null;
+                    }
+                }
                 
                 // Iniciar transacción
                 const response = await fetch('/api/payments/init', {
