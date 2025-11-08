@@ -1837,18 +1837,22 @@ app.get('/api/disponibilidad-completa/:complejoId/:fecha', async (req, res) => {
       // Obtener bloqueos temporales para todas las canchas del complejo
       const canchaIds = Object.keys(resultado).map(id => parseInt(id));
       if (canchaIds.length > 0) {
+      console.log(`🔍 Buscando bloqueos temporales para canchas: [${canchaIds.join(', ')}] en fecha: ${fecha}`);
       const bloqueos = await db.query(`
         SELECT cancha_id, hora_inicio, hora_fin, session_id, expira_en
         FROM bloqueos_temporales 
-        WHERE cancha_id IN (${canchaIds.map((_, i) => `$${i + 1}`).join(',')}) 
-        AND fecha::date = $${canchaIds.length + 1}::date 
-        AND expira_en > $${canchaIds.length + 2}
-      `, [...canchaIds, fecha, new Date().toISOString()]);
+        WHERE cancha_id = ANY($1::int[])
+        AND fecha::date = $2::date 
+        AND expira_en > NOW()
+      `, [canchaIds, fecha]);
+      
+      console.log(`📦 Bloqueos temporales encontrados: ${Array.isArray(bloqueos) ? bloqueos.length : (bloqueos?.rows?.length || 0)}`);
       
       // Agregar bloqueos temporales a cada cancha
       // db.query() devuelve directamente un array
       const bloqueosData = Array.isArray(bloqueos) ? bloqueos : (bloqueos?.rows || []);
       bloqueosData.forEach(bloqueo => {
+        console.log(`  🔒 Bloqueo temporal encontrado: Cancha ${bloqueo.cancha_id}, ${bloqueo.hora_inicio}-${bloqueo.hora_fin}, expira: ${bloqueo.expira_en}`);
         if (resultado[bloqueo.cancha_id]) {
           resultado[bloqueo.cancha_id].bloqueos.push({
             hora_inicio: bloqueo.hora_inicio,
