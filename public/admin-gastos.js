@@ -257,11 +257,13 @@ async function cargarMovimientos() {
         const categoria = document.getElementById('filterCategoria').value;
         const fechaDesde = document.getElementById('filterFechaDesde').value;
         const fechaHasta = document.getElementById('filterFechaHasta').value;
+        const metodoPago = document.getElementById('filterMetodoPago').value;
         
         if (tipo) params.append('tipo', tipo);
         if (categoria) params.append('categoria_id', categoria);
         if (fechaDesde) params.append('fecha_desde', fechaDesde);
         if (fechaHasta) params.append('fecha_hasta', fechaHasta);
+        if (metodoPago) params.append('metodo_pago', metodoPago);
         
         const response = await fetch(`${API_BASE}/gastos/movimientos?${params}`, {
             headers: {
@@ -310,16 +312,54 @@ async function cargarMovimientos() {
 function renderizarTabla() {
     const tbody = document.getElementById('movimientosTableBody');
     
+    // Obtener el método de pago filtrado para mostrar mensaje específico
+    const metodoPagoFiltro = document.getElementById('filterMetodoPago')?.value || '';
+    
     if (movimientos.length === 0) {
+        let mensaje = 'No hay movimientos registrados';
+        if (metodoPagoFiltro) {
+            const metodoNombre = {
+                'transferencia': 'Transferencia',
+                'webpay': 'WebPay Plus',
+                'tarjeta': 'Tarjeta de Crédito/Débito',
+                'efectivo': 'Efectivo',
+                'otros': 'Otro'
+            }[metodoPagoFiltro] || metodoPagoFiltro;
+            mensaje = `No hay movimientos con método de pago "${metodoNombre}"`;
+        }
+        
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-muted py-5">
+                <td colspan="7" class="text-center text-muted py-5">
                     <i class="fas fa-inbox fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
-                    No hay movimientos registrados
+                    ${mensaje}
                 </td>
             </tr>
         `;
         return;
+    }
+    
+    // Función para formatear método de pago
+    function formatearMetodoPago(metodo) {
+        if (!metodo) return '<span class="text-muted">N/A</span>';
+        const metodos = {
+            'transferencia': 'Transferencia',
+            'webpay': 'WebPay Plus',
+            'Web': 'WebPay Plus', // Compatibilidad con datos antiguos
+            'web': 'WebPay Plus', // Case-insensitive
+            'tarjeta': 'Tarjeta Crédito/Débito',
+            'efectivo': 'Efectivo',
+            'otros': 'Otro',
+            'automatico': 'Automático',
+            'Automático': 'Automático', // Compatibilidad
+            'por_definir': 'Por Definir'
+        };
+        // Normalizar a minúsculas para comparar
+        const metodoLower = metodo.toLowerCase();
+        if (metodoLower === 'web' || metodoLower === 'webpay') {
+            return 'WebPay Plus';
+        }
+        return metodos[metodo] || metodo;
     }
     
     tbody.innerHTML = movimientos.map(mov => `
@@ -339,6 +379,9 @@ function renderizarTabla() {
             </td>
             <td>${mov.descripcion || '<span class="text-muted">Sin descripción</span>'}</td>
             <td><strong>$${Number(mov.monto).toLocaleString('es-CL')}</strong></td>
+            <td>
+                <span class="badge bg-secondary">${formatearMetodoPago(mov.metodo_pago)}</span>
+            </td>
             <td>
                 <button class="btn btn-sm btn-outline-primary" onclick="editarMovimiento(${mov.id})">
                     <i class="fas fa-edit"></i>
@@ -905,9 +948,9 @@ function updateCategoriasFilter() {
 }
 
 function applyFilters() {
-    // Filtrar datos localmente en lugar de recargar desde el servidor
-    filtrarMovimientosLocalmente();
-    actualizarGraficos();
+    // Siempre recargar desde el servidor cuando hay filtros activos para asegurar datos actualizados
+    // Esto es especialmente importante para el filtro de método de pago
+    cargarMovimientos();
 }
 
 // ============================================
@@ -920,8 +963,9 @@ function filtrarMovimientosLocalmente() {
     const categoria = document.getElementById('filterCategoria').value;
     const fechaDesde = document.getElementById('filterFechaDesde').value;
     const fechaHasta = document.getElementById('filterFechaHasta').value;
+    const metodoPago = document.getElementById('filterMetodoPago').value;
     
-    console.log('🔍 Aplicando filtros locales:', { tipo, categoria, fechaDesde, fechaHasta });
+    console.log('🔍 Aplicando filtros locales:', { tipo, categoria, fechaDesde, fechaHasta, metodoPago });
     
     // Filtrar movimientos
     let movimientosFiltrados = [...movimientos]; // Copia de todos los movimientos
@@ -946,6 +990,11 @@ function filtrarMovimientosLocalmente() {
         console.log(`📊 Filtrado hasta ${fechaHasta}:`, movimientosFiltrados.length);
     }
     
+    if (metodoPago) {
+        movimientosFiltrados = movimientosFiltrados.filter(m => m.metodo_pago === metodoPago);
+        console.log(`📊 Filtrado por método de pago ${metodoPago}:`, movimientosFiltrados.length);
+    }
+    
     // Actualizar la variable global de movimientos filtrados
     window.movimientosFiltrados = movimientosFiltrados;
     
@@ -963,16 +1012,54 @@ function filtrarMovimientosLocalmente() {
 function renderizarTablaConDatos(datos) {
     const tbody = document.getElementById('movimientosTableBody');
     
+    // Obtener el método de pago filtrado para mostrar mensaje específico
+    const metodoPagoFiltro = document.getElementById('filterMetodoPago')?.value || '';
+    
     if (datos.length === 0) {
+        let mensaje = 'No hay movimientos que coincidan con los filtros';
+        if (metodoPagoFiltro) {
+            const metodoNombre = {
+                'transferencia': 'Transferencia',
+                'webpay': 'WebPay Plus',
+                'tarjeta': 'Tarjeta de Crédito/Débito',
+                'efectivo': 'Efectivo',
+                'otros': 'Otro'
+            }[metodoPagoFiltro] || metodoPagoFiltro;
+            mensaje = `No hay movimientos con método de pago "${metodoNombre}"`;
+        }
+        
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center text-muted py-5">
+                <td colspan="7" class="text-center text-muted py-5">
                     <i class="fas fa-inbox fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
-                    No hay movimientos que coincidan con los filtros
+                    ${mensaje}
                 </td>
             </tr>
         `;
         return;
+    }
+    
+    // Función para formatear método de pago
+    function formatearMetodoPago(metodo) {
+        if (!metodo) return '<span class="text-muted">N/A</span>';
+        const metodos = {
+            'transferencia': 'Transferencia',
+            'webpay': 'WebPay Plus',
+            'Web': 'WebPay Plus', // Compatibilidad con datos antiguos
+            'web': 'WebPay Plus', // Case-insensitive
+            'tarjeta': 'Tarjeta Crédito/Débito',
+            'efectivo': 'Efectivo',
+            'otros': 'Otro',
+            'automatico': 'Automático',
+            'Automático': 'Automático', // Compatibilidad
+            'por_definir': 'Por Definir'
+        };
+        // Normalizar a minúsculas para comparar
+        const metodoLower = metodo.toLowerCase();
+        if (metodoLower === 'web' || metodoLower === 'webpay') {
+            return 'WebPay Plus';
+        }
+        return metodos[metodo] || metodo;
     }
     
     tbody.innerHTML = datos.map(mov => `
@@ -985,13 +1072,16 @@ function renderizarTablaConDatos(datos) {
                 </span>
             </td>
             <td>
-                <div class="category-badge" style="color: ${mov.categoria_color}">
-                    <i class="${mov.categoria_icono}"></i>
+                <span class="category-badge" style="background: ${mov.categoria_color}20; color: ${mov.categoria_color};">
+                    <i class="fas ${mov.categoria_icono}"></i>
                     ${mov.categoria_nombre}
-                </div>
+                </span>
             </td>
-            <td class="fw-bold">$${Number(mov.monto).toLocaleString('es-CL')}</td>
-            <td>${mov.descripcion || '-'}</td>
+            <td>${mov.descripcion || '<span class="text-muted">Sin descripción</span>'}</td>
+            <td><strong>$${Number(mov.monto).toLocaleString('es-CL')}</strong></td>
+            <td>
+                <span class="badge bg-secondary">${formatearMetodoPago(mov.metodo_pago)}</span>
+            </td>
             <td>
                 <button class="btn btn-sm btn-outline-primary" onclick="editarMovimiento(${mov.id})">
                     <i class="fas fa-edit"></i>

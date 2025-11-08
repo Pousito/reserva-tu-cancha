@@ -893,6 +893,17 @@
                     <label class="form-label">Fecha Hasta</label>
                     <input type="date" class="form-control" id="filterFechaHasta" onchange="applyFilters()">
                 </div>
+                <div>
+                    <label class="form-label">Método de Recaudación</label>
+                    <select class="form-select" id="filterMetodoPago" onchange="applyFilters()">
+                        <option value="">Todos</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="webpay">WebPay Plus (Página)</option>
+                        <option value="tarjeta">Tarjeta de Crédito/Débito (Transbank Presencial)</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="otros">Otro</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -1080,12 +1091,13 @@
                             <th>Categoría</th>
                             <th>Descripción</th>
                             <th>Monto</th>
+                            <th>Método de Pago</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="movimientosTableBody">
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-5">
+                            <td colspan="7" class="text-center text-muted py-5">
                                 <i class="fas fa-inbox fa-3x mb-3 d-block" style="opacity: 0.3;"></i>
                                 No hay movimientos registrados
                             </td>
@@ -1137,10 +1149,11 @@
                             <label class="form-label">Método de Pago</label>
                             <select class="form-select" id="movimientoMetodo">
                                 <option value="">No especificado</option>
-                                <option value="efectivo">Efectivo</option>
                                 <option value="transferencia">Transferencia</option>
-                                <option value="tarjeta">Tarjeta</option>
-                                <option value="cheque">Cheque</option>
+                                <option value="webpay">WebPay Plus (Página)</option>
+                                <option value="tarjeta">Tarjeta de Crédito/Débito (Transbank Presencial)</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="otros">Otro</option>
                             </select>
                         </div>
 
