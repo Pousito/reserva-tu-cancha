@@ -169,8 +169,10 @@ class DatabaseManager {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      console.log('✅ Tabla bloqueos_temporales verificada/creada');
 
       // Crear tabla de tokens de restablecimiento de contraseña
+      console.log('🔧 Creando tabla password_reset_tokens...');
       await client.query(`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
