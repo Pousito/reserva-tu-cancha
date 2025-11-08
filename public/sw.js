@@ -3,14 +3,13 @@
  * Cache de assets estáticos y funcionalidad offline
  */
 
-const CACHE_NAME = 'reserva-tu-cancha-v10';
-const STATIC_CACHE = 'static-v10';
-const DYNAMIC_CACHE = 'dynamic-v10';
+const CACHE_NAME = 'reserva-tu-cancha-v11';
+const STATIC_CACHE = 'static-v11';
+const DYNAMIC_CACHE = 'dynamic-v11';
 
-// Assets estáticos para cachear (SIN script.js - se carga siempre desde red)
+// Assets estáticos para cachear (SIN index.html ni script.js - se cargan siempre desde red)
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/styles.css',
   '/assets/css/styles.css',
   '/js/chart.min.js',
@@ -87,15 +86,16 @@ async function handleRequest(request) {
   const url = new URL(request.url);
 
   try {
-    // NO cachear archivos JavaScript críticos (siempre ir a la red para tener última versión)
+    // NO cachear archivos JavaScript críticos ni HTML (siempre ir a la red para tener última versión)
     if (url.pathname === '/script.js' ||
+        url.pathname === '/index.html' ||
         url.pathname === '/js/url-config.js' ||
         url.pathname === '/js/time-utils.js' ||
         url.pathname === '/payment.js' ||
         url.pathname === '/chatbot.js' ||
         url.pathname === '/assets/js/payment.js' ||
         (url.pathname.includes('admin-') && url.pathname.endsWith('.js'))) {
-      console.log('🔄 Cargando archivo JS crítico desde la red:', url.pathname);
+      console.log('🔄 Cargando archivo crítico desde la red:', url.pathname);
       // Agregar timestamp para forzar recarga sin caché
       const urlWithTimestamp = new URL(request.url);
       urlWithTimestamp.searchParams.set('_t', Date.now());
