@@ -5238,9 +5238,11 @@ async function confirmarReserva() {
         
         const datosEnvio = {
             ...formData,
-            session_id: sessionId
+            session_id: sessionId,
+            codigo_unico_uso: window.codigoUnicoUso || null // Incluir código de un solo uso si existe
         };
         console.log('📤 Datos que se enviarán:', datosEnvio);
+        console.log('🎫 Código de un solo uso:', window.codigoUnicoUso);
         
         const response = await fetch(`${API_BASE}/reservas/bloquear-y-pagar`, {
             method: 'POST',
@@ -5258,6 +5260,12 @@ async function confirmarReserva() {
         
         if (response.ok) {
             console.log('✅ Bloqueo temporal creado, redirigiendo a pago...', result);
+            
+            // Guardar código de un solo uso en sessionStorage antes de redirigir
+            if (window.codigoUnicoUso) {
+                sessionStorage.setItem('codigoUnicoUso', window.codigoUnicoUso);
+                console.log('💾 Código de un solo uso guardado en sessionStorage:', window.codigoUnicoUso);
+            }
             
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('reservaModal'));
@@ -5701,8 +5709,74 @@ async function validarCodigoDescuento() {
             tiene_promocion: canchaSeleccionada.tiene_promocion
         });
 
-        // Usar API_BASE para asegurar compatibilidad con desarrollo y producción
+        // Primero intentar validar como código de descuento normal
         const apiBase = window.API_BASE || '/api';
+        let esCodigoUnicoUso = false;
+        let codigoUnicoUsoData = null;
+        
+        // Verificar si es un código de un solo uso
+        try {
+            const verificarUnicoUsoResponse = await fetch(`${apiBase}/codigos-unico-uso/verificar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    codigo: codigo,
+                    email_cliente: emailCliente
+                })
+            });
+            
+            if (verificarUnicoUsoResponse.ok) {
+                const unicoUsoData = await verificarUnicoUsoResponse.json();
+                if (unicoUsoData.success && unicoUsoData.valido) {
+                    esCodigoUnicoUso = true;
+                    codigoUnicoUsoData = unicoUsoData;
+                    console.log('✅ Código de un solo uso detectado:', codigo);
+                }
+            }
+        } catch (error) {
+            console.log('No es código de un solo uso, continuando con validación normal...');
+        }
+        
+        if (esCodigoUnicoUso) {
+            // Es un código de un solo uso
+            const montoDescuento = codigoUnicoUsoData.monto_descuento;
+            const precioBase = canchaSeleccionada.precio_actual || canchaSeleccionada.precio_hora;
+            const precioFinal = Math.max(0, precioBase - montoDescuento);
+            
+            // Guardar código de un solo uso para enviarlo al backend cuando se pague
+            window.codigoUnicoUso = codigo;
+            
+            // Aplicar descuento
+            descuentoAplicado = {
+                codigo: codigo,
+                tipo: 'unico_uso',
+                monto_descuento: montoDescuento,
+                monto_original: precioBase,
+                monto_final: precioFinal
+            };
+            precioOriginal = precioBase;
+            precioConDescuento = precioFinal;
+            
+            // Mostrar resumen de descuento
+            mostrarResumenDescuento({
+                codigo: codigo,
+                monto_original: precioBase,
+                monto_descuento: montoDescuento,
+                monto_final: precioFinal,
+                porcentaje_descuento: Math.round((montoDescuento / precioBase) * 100)
+            });
+            
+            mostrarMensajeDescuento(`¡Código de compensación aplicado! Descuento de $${montoDescuento.toLocaleString()}`, 'success');
+            actualizarResumenPrecio();
+            
+            aplicarBtn.innerHTML = '<i class="fas fa-check me-1"></i>Aplicar';
+            aplicarBtn.disabled = false;
+            return;
+        }
+        
+        // Si no es código de un solo uso, continuar con validación normal de descuento
         const url = `${apiBase}/discounts/validar`;
 
         console.log('🔗 URL de validación:', url);
@@ -5747,6 +5821,11 @@ async function validarCodigoDescuento() {
         } else {
             mostrarMensajeDescuento(data.error || 'Código de descuento no válido', 'error');
             limpiarDescuento();
+        }
+        
+        // Limpiar código de un solo uso si no se aplicó
+        if (!esCodigoUnicoUso) {
+            window.codigoUnicoUso = null;
         }
         
     } catch (error) {

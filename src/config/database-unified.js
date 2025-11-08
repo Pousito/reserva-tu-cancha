@@ -184,6 +184,36 @@ class DatabaseManager {
         )
       `);
 
+      // Crear tabla de códigos de un solo uso
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS codigos_unico_uso (
+          id SERIAL PRIMARY KEY,
+          codigo VARCHAR(50) UNIQUE NOT NULL,
+          email_cliente VARCHAR(255) NOT NULL,
+          monto_descuento INTEGER NOT NULL DEFAULT 0,
+          usado BOOLEAN DEFAULT FALSE,
+          usado_en TIMESTAMP,
+          bloqueo_id VARCHAR(50),
+          reserva_id INTEGER REFERENCES reservas(id),
+          creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          expira_en TIMESTAMP,
+          descripcion TEXT
+        )
+      `);
+
+      // Crear índices para búsquedas rápidas
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_codigo ON codigos_unico_uso(codigo)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_email ON codigos_unico_uso(email_cliente)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_usado ON codigos_unico_uso(usado)
+      `);
+
+      console.log('✅ Tabla codigos_unico_uso creada/verificada');
+
       // Crear tabla de respaldo para intentos de pago fallidos
       // Esta tabla guarda los datos del cliente incluso si el bloqueo temporal se elimina
       await client.query(`

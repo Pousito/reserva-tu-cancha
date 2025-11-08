@@ -745,6 +745,9 @@
                 // (ahora el reservationCode es igual al sessionId)
                 const sessionId = reservationData.code;
 
+                // Obtener código de un solo uso de sessionStorage si existe
+                const codigoUnicoUso = sessionStorage.getItem('codigoUnicoUso');
+                
                 // Iniciar transacción
                 const response = await fetch('/api/payments/init', {
                     method: 'POST',
@@ -754,7 +757,8 @@
                     body: JSON.stringify({
                         reservationCode: reservationData.code,
                         amount: reservationData.amount,
-                        sessionId: sessionId
+                        sessionId: sessionId,
+                        codigo_unico_uso: codigoUnicoUso || null
                     })
                 });
 
@@ -762,6 +766,12 @@
 
                 if (!result.success) {
                     throw new Error(result.error || 'Error iniciando pago');
+                }
+
+                // Limpiar código de un solo uso de sessionStorage después de enviarlo
+                if (codigoUnicoUso) {
+                    sessionStorage.removeItem('codigoUnicoUso');
+                    console.log('🗑️ Código de un solo uso eliminado de sessionStorage');
                 }
 
                 // Guardar token para confirmación

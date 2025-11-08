@@ -628,6 +628,11 @@ async function initializeDatabase() {
     setPaymentDatabase(db);
     console.log('✅ Base de datos configurada en router de pagos');
     
+    // Configurar base de datos en router de códigos de un solo uso
+    const { setDatabase: setCodigosUnicoUsoDatabase } = require('./src/routes/codigos-unico-uso');
+    setCodigosUnicoUsoDatabase(db);
+    console.log('✅ Base de datos configurada en router de códigos de un solo uso');
+    
     // Verificar y agregar campo visible a complejos
     await ensureVisibleFieldExists();
     
@@ -922,6 +927,11 @@ app.use('/api/availability', availabilityRoutes);
 const { router: paymentRoutes, setDatabase: setPaymentDatabase } = require('./src/routes/payments');
 setPaymentDatabase(db); // Pasar la instancia de la base de datos
 app.use('/api/payments', paymentRoutes);
+
+// ===== RUTAS DE CÓDIGOS DE UN SOLO USO =====
+const { router: codigosUnicoUsoRoutes, setDatabase: setCodigosUnicoUsoDatabase } = require('./src/routes/codigos-unico-uso');
+setCodigosUnicoUsoDatabase(db);
+app.use('/api/codigos-unico-uso', codigosUnicoUsoRoutes);
 
 // ===== RUTAS DE DESCUENTOS =====
 const { router: discountRoutes, setDatabase: setDiscountDatabase } = require('./src/routes/discounts');
