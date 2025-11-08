@@ -171,19 +171,33 @@ class PDFService {
                 fechaStr = fecha.split('T')[0];
             }
             
-            // Si es formato YYYY-MM-DD, agregar mediodía para evitar desfase
+            // Parsear fecha manualmente para evitar problemas de zona horaria
             if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-                const date = new Date(fechaStr + 'T12:00:00');
-                return date.toLocaleDateString('es-CL', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    timeZone: 'America/Santiago'
-                });
+                const [año, mes, dia] = fechaStr.split('-').map(Number);
+                
+                // Crear fecha usando Date.UTC para evitar problemas de zona horaria local
+                // Usar mediodía UTC para asegurar que siempre estemos en el día correcto
+                const fechaUTC = new Date(Date.UTC(año, mes - 1, dia, 12, 0, 0));
+                
+                // Nombres de días y meses en español
+                const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                              'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                
+                // Obtener día de la semana y mes usando UTC (sin conversión de zona horaria)
+                const diaSemana = fechaUTC.getUTCDay();
+                const mesNumero = fechaUTC.getUTCMonth();
+                
+                // Construir string de fecha directamente
+                return `${diasSemana[diaSemana]} ${dia} de ${meses[mesNumero]} de ${año}`;
             }
             
+            // Si no es formato YYYY-MM-DD, intentar parsear normalmente
             const date = new Date(fechaStr);
+            if (isNaN(date.getTime())) {
+                return fecha;
+            }
+            
             return date.toLocaleDateString('es-CL', {
                 weekday: 'long',
                 year: 'numeric',
@@ -192,6 +206,7 @@ class PDFService {
                 timeZone: 'America/Santiago'
             });
         } catch (error) {
+            console.error('Error formateando fecha:', error);
             return fecha;
         }
     }
