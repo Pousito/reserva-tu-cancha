@@ -183,6 +183,7 @@ class DatabaseManager {
           FOREIGN KEY (user_id) REFERENCES usuarios (id) ON DELETE CASCADE
         )
       `);
+      console.log('✅ Tabla password_reset_tokens verificada/creada');
 
       // Crear tabla de códigos de un solo uso
       console.log('🔧 Creando/verificando tabla codigos_unico_uso...');
