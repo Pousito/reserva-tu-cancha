@@ -222,11 +222,28 @@ router.post('/verificar', async (req, res) => {
 
     // Buscar el código
     console.log('🔍 Buscando código:', codigo.toUpperCase());
-    const codigoData = await db.get(`
-      SELECT * FROM codigos_unico_uso 
-      WHERE codigo = $1
-    `, [codigo.toUpperCase()]);
-    console.log('📦 Código encontrado:', codigoData ? 'Sí' : 'No');
+    console.log('🔍 Email cliente recibido:', email_cliente);
+    
+    let codigoData;
+    try {
+      codigoData = await db.get(`
+        SELECT * FROM codigos_unico_uso 
+        WHERE codigo = $1
+      `, [codigo.toUpperCase()]);
+      console.log('📦 Código encontrado:', codigoData ? 'Sí' : 'No');
+      if (codigoData) {
+        console.log('📦 Datos del código:', {
+          codigo: codigoData.codigo,
+          email_cliente: codigoData.email_cliente,
+          usado: codigoData.usado,
+          monto_descuento: codigoData.monto_descuento
+        });
+      }
+    } catch (dbError) {
+      console.error('❌ Error en consulta db.get():', dbError);
+      console.error('❌ Stack:', dbError.stack);
+      throw dbError;
+    }
 
     if (!codigoData) {
       return res.json({
