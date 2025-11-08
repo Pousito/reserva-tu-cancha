@@ -3160,75 +3160,67 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
 
 // Endpoint temporal para crear la tabla codigos_unico_uso
 app.post('/api/admin/crear-tabla-codigos-unico-uso', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
   try {
     console.log('🔧 Creando tabla codigos_unico_uso manualmente...');
     
-    const client = await db.pgPool.connect();
-    try {
-      await client.query('BEGIN');
-      
-      // Crear tabla sin foreign key primero (la agregaremos después si es necesario)
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS codigos_unico_uso (
-          id SERIAL PRIMARY KEY,
-          codigo VARCHAR(50) UNIQUE NOT NULL,
-          email_cliente VARCHAR(255) NOT NULL,
-          monto_descuento INTEGER NOT NULL DEFAULT 0,
-          usado BOOLEAN DEFAULT FALSE,
-          usado_en TIMESTAMP,
-          bloqueo_id VARCHAR(50),
-          reserva_id INTEGER,
-          creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          expira_en TIMESTAMP,
-          descripcion TEXT
-        )
-      `);
-      console.log('✅ Tabla codigos_unico_uso creada/verificada');
+    // Crear tabla sin foreign key primero
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS codigos_unico_uso (
+        id SERIAL PRIMARY KEY,
+        codigo VARCHAR(50) UNIQUE NOT NULL,
+        email_cliente VARCHAR(255) NOT NULL,
+        monto_descuento INTEGER NOT NULL DEFAULT 0,
+        usado BOOLEAN DEFAULT FALSE,
+        usado_en TIMESTAMP,
+        bloqueo_id VARCHAR(50),
+        reserva_id INTEGER,
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expira_en TIMESTAMP,
+        descripcion TEXT
+      )
+    `);
+    console.log('✅ Tabla codigos_unico_uso creada/verificada');
 
-      // Agregar foreign key si no existe
+    // Verificar si la foreign key ya existe antes de intentar agregarla
+    const fkExists = await client.query(`
+      SELECT 1 FROM pg_constraint 
+      WHERE conname = 'codigos_unico_uso_reserva_id_fkey'
+    `);
+    
+    if (fkExists.rows.length === 0) {
       try {
         await client.query(`
-          DO $$ 
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM pg_constraint 
-              WHERE conname = 'codigos_unico_uso_reserva_id_fkey'
-            ) THEN
-              ALTER TABLE codigos_unico_uso 
-              ADD CONSTRAINT codigos_unico_uso_reserva_id_fkey 
-              FOREIGN KEY (reserva_id) REFERENCES reservas(id);
-            END IF;
-          END $$;
+          ALTER TABLE codigos_unico_uso 
+          ADD CONSTRAINT codigos_unico_uso_reserva_id_fkey 
+          FOREIGN KEY (reserva_id) REFERENCES reservas(id)
         `);
-        console.log('✅ Foreign key agregada/verificada');
+        console.log('✅ Foreign key agregada');
       } catch (fkError) {
-        console.log('⚠️ No se pudo agregar foreign key (puede que ya exista o la tabla reservas no tenga PK):', fkError.message);
+        console.log('⚠️ No se pudo agregar foreign key:', fkError.message);
+        // Continuar sin la foreign key, no es crítico
       }
-
-      // Crear índices
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_codigo ON codigos_unico_uso(codigo)
-      `);
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_email ON codigos_unico_uso(email_cliente)
-      `);
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_usado ON codigos_unico_uso(usado)
-      `);
-      console.log('✅ Índices creados/verificados');
-      
-      await client.query('COMMIT');
-      
-      res.json({
-        success: true,
-        message: 'Tabla codigos_unico_uso creada exitosamente'
-      });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
+    } else {
+      console.log('✅ Foreign key ya existe');
     }
+
+    // Crear índices
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_codigo ON codigos_unico_uso(codigo)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_email ON codigos_unico_uso(email_cliente)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_codigos_unico_uso_usado ON codigos_unico_uso(usado)
+    `);
+    console.log('✅ Índices creados/verificados');
+    
+    res.json({
+      success: true,
+      message: 'Tabla codigos_unico_uso creada exitosamente'
+    });
   } catch (error) {
     console.error('❌ Error creando tabla codigos_unico_uso:', error);
     res.status(500).json({
@@ -3236,6 +3228,8 @@ app.post('/api/admin/crear-tabla-codigos-unico-uso', authenticateToken, requireR
       error: 'Error creando tabla',
       message: error.message
     });
+  } finally {
+    client.release();
   }
 });
 
