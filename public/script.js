@@ -5710,12 +5710,13 @@ async function validarCodigoDescuento() {
         });
 
         // Primero intentar validar como código de descuento normal
-        const apiBase = window.API_BASE || '/api';
+        const apiBase = API_BASE || '/api';
         let esCodigoUnicoUso = false;
         let codigoUnicoUsoData = null;
         
         // Verificar si es un código de un solo uso
         try {
+            console.log('🔍 Verificando si es código de un solo uso:', codigo);
             const verificarUnicoUsoResponse = await fetch(`${apiBase}/codigos-unico-uso/verificar`, {
                 method: 'POST',
                 headers: {
@@ -5727,16 +5728,21 @@ async function validarCodigoDescuento() {
                 })
             });
             
+            console.log('📡 Respuesta verificar código único uso:', verificarUnicoUsoResponse.status);
+            
             if (verificarUnicoUsoResponse.ok) {
                 const unicoUsoData = await verificarUnicoUsoResponse.json();
+                console.log('📦 Datos código único uso:', unicoUsoData);
                 if (unicoUsoData.success && unicoUsoData.valido) {
                     esCodigoUnicoUso = true;
                     codigoUnicoUsoData = unicoUsoData;
                     console.log('✅ Código de un solo uso detectado:', codigo);
                 }
+            } else if (verificarUnicoUsoResponse.status === 404) {
+                console.log('⚠️ Endpoint de códigos único uso no disponible (404), continuando con validación normal...');
             }
         } catch (error) {
-            console.log('No es código de un solo uso, continuando con validación normal...');
+            console.log('⚠️ Error verificando código único uso (continuando con validación normal):', error.message);
         }
         
         if (esCodigoUnicoUso) {
