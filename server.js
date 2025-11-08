@@ -2152,6 +2152,24 @@ app.get('/api/debug/bloqueos/:canchaId/:fecha', async (req, res) => {
 // Endpoints del panel de administrador
 app.get('/api/admin/estadisticas', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
+    // Agregar headers CORS explícitos
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+      'https://www.reservatuscanchas.cl',
+      'https://reservatuscanchas.cl',
+      'https://reserva-tu-cancha.onrender.com',
+      'https://reservatuscanchas.onrender.com'
+    ];
+    
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else if (!origin || process.env.NODE_ENV !== 'production') {
+      res.header('Access-Control-Allow-Origin', '*');
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    
     console.log('📊 Cargando estadísticas del panel de administrador...');
     console.log('👤 Usuario:', req.user.email, 'Rol:', req.user.rol);
     
