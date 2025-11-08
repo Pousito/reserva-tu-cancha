@@ -223,13 +223,21 @@ router.post('/verificar', async (req, res) => {
     // Buscar el código
     console.log('🔍 Buscando código:', codigo.toUpperCase());
     console.log('🔍 Email cliente recibido:', email_cliente);
+    console.log('🔍 db está configurado:', !!db);
+    console.log('🔍 db.pgPool está disponible:', db ? !!db.pgPool : false);
     
     let codigoData;
     try {
+      const codigoBuscado = codigo.toUpperCase();
+      console.log('🔍 Ejecutando consulta SQL con código:', codigoBuscado);
+      console.log('🔍 Tipo de código:', typeof codigoBuscado);
+      console.log('🔍 Longitud del código:', codigoBuscado.length);
+      
       codigoData = await db.get(`
         SELECT * FROM codigos_unico_uso 
         WHERE codigo = $1
-      `, [codigo.toUpperCase()]);
+      `, [codigoBuscado]);
+      
       console.log('📦 Código encontrado:', codigoData ? 'Sí' : 'No');
       if (codigoData) {
         console.log('📦 Datos del código:', {
@@ -238,6 +246,17 @@ router.post('/verificar', async (req, res) => {
           usado: codigoData.usado,
           monto_descuento: codigoData.monto_descuento
         });
+        console.log('📦 Tipo de código en BD:', typeof codigoData.codigo);
+        console.log('📦 Longitud código en BD:', codigoData.codigo ? codigoData.codigo.length : 'N/A');
+        console.log('📦 Códigos coinciden:', codigoData.codigo === codigoBuscado);
+      } else {
+        // Intentar buscar sin mayúsculas para debug
+        console.log('🔍 Intentando búsqueda alternativa (sin toUpperCase)...');
+        const resultadoAlternativo = await db.get(`
+          SELECT * FROM codigos_unico_uso 
+          WHERE codigo = $1
+        `, [codigo]);
+        console.log('📦 Resultado búsqueda alternativa:', resultadoAlternativo ? 'Encontrado' : 'No encontrado');
       }
     } catch (dbError) {
       console.error('❌ Error en consulta db.get():', dbError);
