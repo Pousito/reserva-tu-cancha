@@ -5319,7 +5319,16 @@ async function buscarReserva() {
         const data = await response.json();
         
         if (response.ok) {
-            mostrarResultadoReserva(data);
+            // Manejar diferentes formatos de respuesta
+            // Formato 1: { success: true, reserva: {...} }
+            // Formato 2: {...} (objeto reserva directamente)
+            const reserva = data.reserva || data;
+            
+            if (reserva && reserva.codigo_reserva) {
+                mostrarResultadoReserva(reserva);
+            } else {
+                mostrarNotificacion('Reserva no encontrada', 'danger');
+            }
         } else {
             // Si hay información sobre un pago encontrado, mostrarla
             if (data.pago_encontrado) {

@@ -543,24 +543,27 @@
         let reservationData = null;
         let paymentToken = null;
 
+        // Detectar si estamos en localhost
+        function isLocalhost() {
+            const hostname = window.location.hostname;
+            return hostname === 'localhost' || 
+                   hostname === '127.0.0.1' || 
+                   hostname === '0.0.0.0' ||
+                   hostname.startsWith('192.168.') ||
+                   hostname.startsWith('10.0.');
+        }
+
         // Inicializar página
         document.addEventListener('DOMContentLoaded', function() {
             loadReservationData();
             setupPaymentMethodSelection();
 
-            // Botón de simulación oculto por defecto
-            // Se puede habilitar manualmente si es necesario para testing
-            const showSimulationButton = false; // Ocultar el botón
-
-            if (showSimulationButton) {
+            // Mostrar botón de simulación solo en localhost
+            if (isLocalhost()) {
                 const devButton = document.getElementById('devPayButton');
                 if (devButton) {
                     devButton.style.display = 'inline-flex';
-                    if (isDevelopment) {
-                        console.log('🧪 Modo desarrollo detectado - Botón de simulación habilitado');
-                    } else {
-                        console.log('🧪 Botón de simulación habilitado en producción');
-                    }
+                    console.log('🧪 Modo desarrollo detectado - Botón de simulación habilitado');
                 }
             }
         });
