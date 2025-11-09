@@ -5326,17 +5326,34 @@ async function buscarReserva() {
             // Manejar diferentes formatos de respuesta
             // Formato 1: { success: true, reserva: {...} }
             // Formato 2: {...} (objeto reserva directamente)
-            const reserva = data.reserva || data;
+            let reserva = null;
+            
+            if (data.success && data.reserva) {
+                // Formato con success: true
+                reserva = data.reserva;
+            } else if (data.codigo_reserva) {
+                // Formato directo con codigo_reserva
+                reserva = data;
+            } else if (data.reserva) {
+                // Formato con reserva pero sin success
+                reserva = data.reserva;
+            } else {
+                // Intentar usar data directamente
+                reserva = data;
+            }
             
             console.log('🔍 Objeto reserva extraído:', reserva);
             console.log('🔍 Tiene codigo_reserva?', reserva?.codigo_reserva);
             console.log('🔍 Campos disponibles:', Object.keys(reserva || {}));
+            console.log('🔍 Tipo de reserva:', typeof reserva);
+            console.log('🔍 Es array?', Array.isArray(reserva));
             
             if (reserva && reserva.codigo_reserva) {
                 mostrarResultadoReserva(reserva);
             } else {
                 console.error('❌ Reserva no válida:', reserva);
-                mostrarNotificacion('Reserva no encontrada o datos incompletos', 'danger');
+                console.error('❌ Data completo:', data);
+                mostrarNotificacion('Reserva no encontrada o datos incompletos. Revisa la consola para más detalles.', 'danger');
             }
         } else {
             // Si hay información sobre un pago encontrado, mostrarla
