@@ -5318,16 +5318,25 @@ async function buscarReserva() {
         const response = await fetch(`${API_BASE}/reservas/${busqueda}`);
         const data = await response.json();
         
+        console.log('🔍 Respuesta del servidor:', data);
+        console.log('🔍 Response status:', response.status);
+        console.log('🔍 Response ok:', response.ok);
+        
         if (response.ok) {
             // Manejar diferentes formatos de respuesta
             // Formato 1: { success: true, reserva: {...} }
             // Formato 2: {...} (objeto reserva directamente)
             const reserva = data.reserva || data;
             
+            console.log('🔍 Objeto reserva extraído:', reserva);
+            console.log('🔍 Tiene codigo_reserva?', reserva?.codigo_reserva);
+            console.log('🔍 Campos disponibles:', Object.keys(reserva || {}));
+            
             if (reserva && reserva.codigo_reserva) {
                 mostrarResultadoReserva(reserva);
             } else {
-                mostrarNotificacion('Reserva no encontrada', 'danger');
+                console.error('❌ Reserva no válida:', reserva);
+                mostrarNotificacion('Reserva no encontrada o datos incompletos', 'danger');
             }
         } else {
             // Si hay información sobre un pago encontrado, mostrarla
@@ -5356,29 +5365,43 @@ async function buscarReserva() {
         }
     } catch (error) {
         console.error('Error buscando reserva:', error);
-        mostrarNotificacion('Error al buscar la reserva', 'danger');
+        mostrarNotificacion('Error al buscar la reserva: ' + error.message, 'danger');
     }
 }
 
 // Mostrar resultado de búsqueda
 function mostrarResultadoReserva(reserva) {
+    console.log('📋 Mostrando resultado de reserva:', reserva);
+    
     const resultadoDiv = document.getElementById('resultadoReserva');
+    
+    if (!reserva) {
+        console.error('❌ Reserva es null o undefined');
+        mostrarNotificacion('Error: Datos de reserva no válidos', 'danger');
+        return;
+    }
     
     // Corregir nombres de campos y valores undefined
     const complejo = reserva.complejo_nombre || reserva.nombre_complejo || 'No especificado';
     const cancha = reserva.cancha_nombre || reserva.nombre_cancha || 'No especificada';
     const tipo = reserva.tipo === 'futbol' ? 'Fútbol' : (reserva.tipo || 'No especificado');
-    const fecha = formatearFecha(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio));
-    const hora = formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin);
+    const fecha = reserva.fecha ? formatearFecha(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio)) : 'No especificada';
+    const hora = reserva.hora_inicio && reserva.hora_fin ? formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin) : 'No especificado';
     const estado = reserva.estado || 'No especificado';
     const precio = reserva.precio_total ? formatCurrencyChile(reserva.precio_total) : 'No especificado';
+    const codigo = reserva.codigo_reserva || 'N/A';
+    const cliente = reserva.nombre_cliente || 'No especificado';
+    
+    console.log('📋 Valores extraídos:', {
+        complejo, cancha, tipo, fecha, hora, estado, precio, codigo, cliente
+    });
     
     resultadoDiv.innerHTML = `
         <div class="card bg-light">
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="fas fa-ticket-alt me-2"></i>
-                    Reserva #${reserva.codigo_reserva}
+                    Reserva #${codigo}
                 </h5>
                 <div class="row">
                     <div class="col-md-6">
@@ -5397,7 +5420,7 @@ function mostrarResultadoReserva(reserva) {
                     </div>
                 </div>
                 <div class="mt-3">
-                    <p><strong>Cliente:</strong> ${reserva.nombre_cliente || 'No especificado'}</p>
+                    <p><strong>Cliente:</strong> ${cliente}</p>
                     <p><strong>Precio:</strong> $${precio}</p>
                 </div>
             </div>
