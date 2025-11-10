@@ -2501,10 +2501,25 @@ function configurarEventListeners() {
     if (buscarReservaBtn) {
         console.log('✅ Botón buscarReserva encontrado, añadiendo event listener');
         buscarReservaBtn.addEventListener('click', function(e) {
-            console.log('🔍 Botón buscarReserva clickeado');
+            console.log('🔍 === CLICK EN BOTÓN BUSCAR ===');
+            console.log('🔍 Event:', e);
             e.preventDefault();
+            e.stopPropagation();
+            console.log('🔍 Llamando a buscarReserva()...');
             buscarReserva();
         });
+        
+        // También añadir listener al Enter en el input
+        const codigoInput = document.getElementById('codigoReserva');
+        if (codigoInput) {
+            codigoInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    console.log('🔍 Enter presionado en input de código');
+                    e.preventDefault();
+                    buscarReserva();
+                }
+            });
+        }
     } else {
         console.error('❌ Botón buscarReserva NO encontrado en el DOM');
     }
@@ -5339,12 +5354,24 @@ async function buscarReserva() {
     console.log('🔍 Buscando reserva:', busqueda);
     
     try {
+        console.log('🔍 Haciendo fetch a:', `${apiBase}/reservas/${busqueda}`);
         const response = await fetch(`${apiBase}/reservas/${busqueda}`);
-        const data = await response.json();
         
-        console.log('🔍 Respuesta del servidor:', data);
+        console.log('🔍 Response recibida:', response);
         console.log('🔍 Response status:', response.status);
         console.log('🔍 Response ok:', response.ok);
+        console.log('🔍 Response headers:', response.headers);
+        
+        let data;
+        try {
+            data = await response.json();
+            console.log('🔍 Data parseado:', data);
+        } catch (parseError) {
+            console.error('❌ Error parseando JSON:', parseError);
+            const text = await response.text();
+            console.error('❌ Respuesta como texto:', text);
+            throw new Error('Error parseando respuesta del servidor: ' + parseError.message);
+        }
         
         if (response.ok) {
             // Manejar diferentes formatos de respuesta
