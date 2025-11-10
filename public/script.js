@@ -2495,7 +2495,17 @@ function configurarEventListeners() {
     });
 
     // Búsqueda de reserva
-    document.getElementById('buscarReserva').addEventListener('click', buscarReserva);
+    const buscarReservaBtn = document.getElementById('buscarReserva');
+    if (buscarReservaBtn) {
+        console.log('✅ Botón buscarReserva encontrado, añadiendo event listener');
+        buscarReservaBtn.addEventListener('click', function(e) {
+            console.log('🔍 Botón buscarReserva clickeado');
+            e.preventDefault();
+            buscarReserva();
+        });
+    } else {
+        console.error('❌ Botón buscarReserva NO encontrado en el DOM');
+    }
 
     // Confirmar reserva
     document.getElementById('confirmarReserva').addEventListener('click', confirmarReserva);
@@ -5308,8 +5318,13 @@ function mostrarConfirmacionReserva(codigo, transactionId) {
 
 // Buscar reserva
 async function buscarReserva() {
+    console.log('🔍 === FUNCIÓN buscarReserva() EJECUTADA ===');
+    
     const busqueda = document.getElementById('codigoReserva').value.trim();
+    console.log('🔍 Valor de búsqueda:', busqueda);
+    
     if (!busqueda) {
+        console.log('⚠️ Búsqueda vacía');
         mostrarNotificacion('Por favor ingresa tu código de reserva o nombre completo', 'warning');
         return;
     }
