@@ -5373,11 +5373,21 @@ async function buscarReserva() {
             console.log('🔍 Es array?', Array.isArray(reserva));
             
             if (reserva && reserva.codigo_reserva) {
+                console.log('✅ Reserva válida, llamando a mostrarResultadoReserva()');
                 mostrarResultadoReserva(reserva);
             } else {
                 console.error('❌ Reserva no válida:', reserva);
                 console.error('❌ Data completo:', data);
-                mostrarNotificacion('Reserva no encontrada o datos incompletos. Revisa la consola para más detalles.', 'danger');
+                console.error('❌ Response status:', response.status);
+                console.error('❌ Response ok:', response.ok);
+                
+                // Intentar mostrar lo que sea que venga en data
+                if (data && typeof data === 'object') {
+                    console.log('🔍 Intentando mostrar data directamente...');
+                    mostrarResultadoReserva(data);
+                } else {
+                    mostrarNotificacion('Reserva no encontrada o datos incompletos. Revisa la consola para más detalles.', 'danger');
+                }
             }
         } else {
             // Si hay información sobre un pago encontrado, mostrarla
@@ -5412,13 +5422,28 @@ async function buscarReserva() {
 
 // Mostrar resultado de búsqueda
 function mostrarResultadoReserva(reserva) {
-    console.log('📋 Mostrando resultado de reserva:', reserva);
+    console.log('📋 === mostrarResultadoReserva() EJECUTADA ===');
+    console.log('📋 Reserva recibida:', reserva);
+    console.log('📋 Tipo:', typeof reserva);
+    console.log('📋 Es null?', reserva === null);
+    console.log('📋 Es undefined?', reserva === undefined);
     
     const resultadoDiv = document.getElementById('resultadoReserva');
     
+    if (!resultadoDiv) {
+        console.error('❌ Elemento resultadoReserva no encontrado en el DOM');
+        return;
+    }
+    
     if (!reserva) {
         console.error('❌ Reserva es null o undefined');
-        mostrarNotificacion('Error: Datos de reserva no válidos', 'danger');
+        resultadoDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <h5>❌ Error</h5>
+                <p>No se pudieron obtener los datos de la reserva. Por favor, intenta nuevamente o contacta a soporte.</p>
+            </div>
+        `;
+        resultadoDiv.style.display = 'block';
         return;
     }
     
@@ -5468,6 +5493,7 @@ function mostrarResultadoReserva(reserva) {
         </div>
     `;
     resultadoDiv.style.display = 'block';
+    console.log('✅ Resultado mostrado en el DOM');
 }
 
 // Actualizar disponibilidad
