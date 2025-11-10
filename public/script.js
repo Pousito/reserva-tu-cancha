@@ -2013,6 +2013,8 @@ function asegurarValoresVisibles() {
 
 // Configurar event listeners
 function configurarEventListeners() {
+    console.log('🔧 === INICIANDO configurarEventListeners() ===');
+    
     // Configurar event listener para el botón RESERVAR AHORA como respaldo
     const reservarBtn = document.getElementById('reservarAhoraBtn');
     if (reservarBtn) {
@@ -2845,6 +2847,8 @@ function configurarEventListeners() {
             }
         });
     }
+    
+    console.log('✅ === configurarEventListeners() COMPLETADO ===');
 }
 
 // Funciones de navegación
