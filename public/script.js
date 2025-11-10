@@ -5380,16 +5380,20 @@ async function buscarReserva() {
             let reserva = null;
             
             if (data.success && data.reserva) {
-                // Formato con success: true
+                // Formato con success: true y reserva
+                console.log('✅ Formato detectado: { success: true, reserva: {...} }');
                 reserva = data.reserva;
             } else if (data.codigo_reserva) {
                 // Formato directo con codigo_reserva
+                console.log('✅ Formato detectado: objeto reserva directo');
                 reserva = data;
             } else if (data.reserva) {
                 // Formato con reserva pero sin success
+                console.log('✅ Formato detectado: { reserva: {...} }');
                 reserva = data.reserva;
             } else {
                 // Intentar usar data directamente
+                console.log('⚠️ Formato desconocido, usando data directamente');
                 reserva = data;
             }
             
@@ -5417,6 +5421,9 @@ async function buscarReserva() {
                 }
             }
         } else {
+            console.error('❌ Response no OK:', response.status);
+            console.error('❌ Data de error:', data);
+            
             // Si hay información sobre un pago encontrado, mostrarla
             if (data.pago_encontrado) {
                 mostrarNotificacion(data.mensaje || 'Se encontró un pago pero la reserva no se creó. Contacta a soporte.', 'warning');
