@@ -5314,8 +5314,13 @@ async function buscarReserva() {
         return;
     }
     
+    // Asegurar que API_BASE esté disponible
+    const apiBase = window.API_BASE || window.URL_CONFIG?.API_URL || '/api';
+    console.log('🔍 API_BASE usado:', apiBase);
+    console.log('🔍 Buscando reserva:', busqueda);
+    
     try {
-        const response = await fetch(`${API_BASE}/reservas/${busqueda}`);
+        const response = await fetch(`${apiBase}/reservas/${busqueda}`);
         const data = await response.json();
         
         console.log('🔍 Respuesta del servidor:', data);
