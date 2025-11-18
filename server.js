@@ -3504,6 +3504,32 @@ app.post('/api/admin/normalizar-metodos-pago-reservas-web', authenticateToken, r
   }
 });
 
+// DEBUG: Endpoint temporal para eliminar comisiones incorrectas
+app.post('/api/debug/ingresos/eliminar-comision-reserva', async (req, res) => {
+  try {
+    const { codigo_reserva } = req.body;
+    console.log('🗑️ DEBUG - Eliminando comisión incorrecta para reserva:', codigo_reserva);
+
+    // Eliminar registro de comisión
+    const result = await db.query(`
+      DELETE FROM gastos_ingresos
+      WHERE descripcion LIKE '%Comisión Reserva #' || $1 || '%'
+      AND tipo = 'gasto'
+      RETURNING *
+    `, [codigo_reserva]);
+
+    res.json({
+      success: true,
+      message: 'Comisión eliminada',
+      registros_eliminados: result.length,
+      registros: result
+    });
+  } catch (error) {
+    console.error('❌ Error eliminando comisión:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
   try {
     const { codigo_reserva } = req.body;
