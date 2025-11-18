@@ -2013,8 +2013,6 @@ function asegurarValoresVisibles() {
 
 // Configurar event listeners
 function configurarEventListeners() {
-    console.log('🔧 === INICIANDO configurarEventListeners() ===');
-    
     // Configurar event listener para el botón RESERVAR AHORA como respaldo
     const reservarBtn = document.getElementById('reservarAhoraBtn');
     if (reservarBtn) {
@@ -2497,32 +2495,7 @@ function configurarEventListeners() {
     });
 
     // Búsqueda de reserva
-    const buscarReservaBtn = document.getElementById('buscarReserva');
-    if (buscarReservaBtn) {
-        console.log('✅ Botón buscarReserva encontrado, añadiendo event listener');
-        buscarReservaBtn.addEventListener('click', function(e) {
-            console.log('🔍 === CLICK EN BOTÓN BUSCAR ===');
-            console.log('🔍 Event:', e);
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🔍 Llamando a buscarReserva()...');
-            buscarReserva();
-        });
-        
-        // También añadir listener al Enter en el input
-        const codigoInput = document.getElementById('codigoReserva');
-        if (codigoInput) {
-            codigoInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    console.log('🔍 Enter presionado en input de código');
-                    e.preventDefault();
-                    buscarReserva();
-                }
-            });
-        }
-    } else {
-        console.error('❌ Botón buscarReserva NO encontrado en el DOM');
-    }
+    document.getElementById('buscarReserva').addEventListener('click', buscarReserva);
 
     // Confirmar reserva
     document.getElementById('confirmarReserva').addEventListener('click', confirmarReserva);
@@ -2862,8 +2835,6 @@ function configurarEventListeners() {
             }
         });
     }
-    
-    console.log('✅ === configurarEventListeners() COMPLETADO ===');
 }
 
 // Funciones de navegación
@@ -3804,11 +3775,14 @@ async function renderizarCanchasConDisponibilidad() {
             galponContainer.setAttribute('data-complejo', tituloComplejo);
         }
 
-        // Crear calle (Monte Perdido, Don Victor o Ruta Q-575) - se agregará DESPUÉS del contenedor
+        // Crear calle (Monte Perdido, Don Victor o Ruta Q-575) - se agregará a la DERECHA del complejo (vertical)
         const calle = document.createElement('div');
         calle.className = 'calle-complejo';
         calle.setAttribute('data-calle', nombreCalle);
-        // NO agregamos la calle al galponContainer aquí
+        // Para Complejo En Desarrollo, la calle va a la derecha (vertical)
+        if (complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
+            calle.classList.add('calle-vertical-derecha');
+        }
 
         // Crear contenedor horizontal para las canchas
         const canchasHorizontales = document.createElement('div');
@@ -4201,13 +4175,103 @@ async function renderizarCanchasConDisponibilidad() {
             canchasHorizontales.appendChild(estacionamientos);
         }
         
-        galponContainer.appendChild(canchasHorizontales);
-        grid.appendChild(galponContainer);
+        // Para Complejo En Desarrollo: crear estructura especial con calle a la derecha, recepción y camarines
+        if (complejoSeleccionado.nombre === 'Complejo En Desarrollo') {
+            // Crear contenedor principal con grid layout
+            const complejoGrid = document.createElement('div');
+            complejoGrid.className = 'complejo-desarrollo-grid';
+            
+            // Agregar nombre del complejo y dirección al galpón
+            galponContainer.setAttribute('data-complejo-nombre', 'COMPLEJO EN DESARROLLO');
+            galponContainer.setAttribute('data-direccion', 'Monte Perdido 1685');
 
-        // Agregar la calle DESPUÉS del contenedor (fuera y abajo)
-        // EXCEPTO para Punto Soccer que usa ::after en CSS
-        if (!complejoSeleccionado.nombre || !complejoSeleccionado.nombre.includes('Punto Soccer')) {
-            grid.appendChild(calle);
+            // Agregar ícono de información PRIMERO (antes de cualquier contenido)
+            // para que se posicione correctamente con position: absolute
+            const infoIcon = document.createElement('div');
+            infoIcon.className = 'complejo-info-icon';
+            infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+            infoIcon.addEventListener('mouseenter', () => {
+                infoIcon.style.background = '#138496';
+                infoIcon.style.transform = 'translateX(calc(-50% + 75px)) scale(1.15)';
+                infoIcon.style.boxShadow = '0 2px 8px rgba(23, 162, 184, 0.4)';
+            });
+            infoIcon.addEventListener('mouseleave', () => {
+                infoIcon.style.background = '#17a2b8';
+                infoIcon.style.transform = 'translateX(calc(-50% + 75px)) scale(1)';
+                infoIcon.style.boxShadow = 'none';
+            });
+            infoIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('✅ Click en ícono de información detectado');
+                console.log('✅ Complejo seleccionado:', complejoSeleccionado);
+                try {
+                    mostrarModalInfoComplejo(complejoSeleccionado);
+                } catch (error) {
+                    console.error('❌ Error al mostrar modal:', error);
+                }
+            });
+            infoIcon.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            galponContainer.appendChild(infoIcon);
+
+            // Agregar canchas al galpón
+            galponContainer.appendChild(canchasHorizontales);
+            
+            // Crear recepción (abajo a la derecha)
+            const recepcion = document.createElement('div');
+            recepcion.className = 'recepcion-complejo';
+            recepcion.innerHTML = `
+                <div class="recepcion-icon">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div class="recepcion-label">Recepción</div>
+            `;
+            
+            // Crear camarines (abajo a la izquierda)
+            const camarines = document.createElement('div');
+            camarines.className = 'camarines-complejo';
+            camarines.innerHTML = `
+                <div class="camarines-icon">
+                    <i class="fas fa-tshirt"></i>
+                </div>
+                <div class="camarines-label">Camarines</div>
+            `;
+            
+            // Crear contenedor para servicios (camarines y recepción) DENTRO del galpón
+            const serviciosContainer = document.createElement('div');
+            serviciosContainer.className = 'complejo-desarrollo-servicios';
+            // Asegurar estilos inline para forzar el centrado
+            serviciosContainer.style.display = 'flex';
+            serviciosContainer.style.flexDirection = 'row';
+            serviciosContainer.style.justifyContent = 'center';
+            serviciosContainer.style.alignItems = 'center';
+            serviciosContainer.style.gap = '60px';
+            serviciosContainer.style.width = '100%';
+            serviciosContainer.style.margin = '0';
+            serviciosContainer.style.padding = '20px 0 10px 0';
+            serviciosContainer.appendChild(camarines);
+            serviciosContainer.appendChild(recepcion);
+            
+            // Agregar servicios DENTRO del galpón (no fuera)
+            galponContainer.appendChild(serviciosContainer);
+            
+            // Agregar elementos al grid: galpón (centro con servicios dentro), calle (derecha)
+            complejoGrid.appendChild(galponContainer); // Centro (con servicios dentro)
+            complejoGrid.appendChild(calle); // Derecha (vertical)
+
+            grid.appendChild(complejoGrid);
+        } else {
+            // Para otros complejos, mantener estructura original
+            galponContainer.appendChild(canchasHorizontales);
+            grid.appendChild(galponContainer);
+
+            // Agregar la calle DESPUÉS del contenedor (fuera y abajo)
+            // EXCEPTO para Punto Soccer que usa ::after en CSS
+            if (!complejoSeleccionado.nombre || !complejoSeleccionado.nombre.includes('Punto Soccer')) {
+                grid.appendChild(calle);
+            }
         }
     } else {
         // Para otros complejos, usar layout estándar
@@ -5023,6 +5087,107 @@ function cerrarModalEstacionamiento() {
     }
 }
 
+// Función para mostrar modal de información del complejo
+function mostrarModalInfoComplejo(complejo) {
+    // Crear el modal si no existe
+    let modal = document.getElementById('complejoInfoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'complejoInfoModal';
+        modal.className = 'complejo-info-modal';
+        document.body.appendChild(modal);
+    }
+    
+    // Información del complejo
+    const info = {
+        nombre: complejo?.nombre || 'Complejo En Desarrollo',
+        direccion: 'Monte Perdido 1685, Los Ángeles',
+        canchas: 2,
+        techadas: true,
+        camarines: true,
+        recepcion: true,
+        estacionamiento: 15
+    };
+    
+    modal.innerHTML = `
+        <div class="complejo-info-modal-content">
+            <div class="complejo-info-modal-header">
+                <h3 class="complejo-info-modal-title">
+                    <i class="fas fa-info-circle"></i>
+                    Información del Complejo
+                </h3>
+                <span class="complejo-info-modal-close" onclick="cerrarModalInfoComplejo()">&times;</span>
+            </div>
+            <div class="complejo-info-modal-body">
+                <div class="info-item">
+                    <i class="fas fa-map-marker-alt" style="color: #dc3545;"></i>
+                    <div>
+                        <strong>Ubicación:</strong>
+                        <p>${info.direccion}</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-futbol" style="color: #28a745;"></i>
+                    <div>
+                        <strong>Canchas:</strong>
+                        <p>${info.canchas} canchas de fútbol ${info.techadas ? 'techadas' : 'al aire libre'}</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-tshirt" style="color: #17a2b8;"></i>
+                    <div>
+                        <strong>Camarines:</strong>
+                        <p>Cuenta con camarines para cambiarse cómodamente</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-door-open" style="color: #28a745;"></i>
+                    <div>
+                        <strong>Recepción:</strong>
+                        <p>Local de recepción con bebestibles para hidratarse</p>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-parking" style="color: #ffc107;"></i>
+                    <div>
+                        <strong>Estacionamiento:</strong>
+                        <p>Estacionamiento disponible para aproximadamente ${info.estacionamiento} vehículos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Mostrar el modal
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+    
+    // Cerrar modal al hacer click fuera del contenido
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            cerrarModalInfoComplejo();
+        }
+    });
+    
+    // Cerrar modal con tecla Escape
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            cerrarModalInfoComplejo();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+// Función para cerrar el modal de información del complejo
+function cerrarModalInfoComplejo() {
+    const modal = document.getElementById('complejoInfoModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restaurar scroll del body
+    }
+}
+
 // Confirmar reserva
 async function confirmarReserva() {
     // Validar todos los campos del formulario
@@ -5337,93 +5502,19 @@ function mostrarConfirmacionReserva(codigo, transactionId) {
 
 // Buscar reserva
 async function buscarReserva() {
-    console.log('🔍 === FUNCIÓN buscarReserva() EJECUTADA ===');
-    
     const busqueda = document.getElementById('codigoReserva').value.trim();
-    console.log('🔍 Valor de búsqueda:', busqueda);
-    
     if (!busqueda) {
-        console.log('⚠️ Búsqueda vacía');
         mostrarNotificacion('Por favor ingresa tu código de reserva o nombre completo', 'warning');
         return;
     }
     
-    // Asegurar que API_BASE esté disponible
-    const apiBase = window.API_BASE || window.URL_CONFIG?.API_URL || '/api';
-    console.log('🔍 API_BASE usado:', apiBase);
-    console.log('🔍 Buscando reserva:', busqueda);
-    
     try {
-        console.log('🔍 Haciendo fetch a:', `${apiBase}/reservas/${busqueda}`);
-        const response = await fetch(`${apiBase}/reservas/${busqueda}`);
-        
-        console.log('🔍 Response recibida:', response);
-        console.log('🔍 Response status:', response.status);
-        console.log('🔍 Response ok:', response.ok);
-        console.log('🔍 Response headers:', response.headers);
-        
-        let data;
-        try {
-            data = await response.json();
-            console.log('🔍 Data parseado:', data);
-        } catch (parseError) {
-            console.error('❌ Error parseando JSON:', parseError);
-            const text = await response.text();
-            console.error('❌ Respuesta como texto:', text);
-            throw new Error('Error parseando respuesta del servidor: ' + parseError.message);
-        }
+        const response = await fetch(`${API_BASE}/reservas/${busqueda}`);
+        const data = await response.json();
         
         if (response.ok) {
-            // Manejar diferentes formatos de respuesta
-            // Formato 1: { success: true, reserva: {...} }
-            // Formato 2: {...} (objeto reserva directamente)
-            let reserva = null;
-            
-            if (data.success && data.reserva) {
-                // Formato con success: true y reserva
-                console.log('✅ Formato detectado: { success: true, reserva: {...} }');
-                reserva = data.reserva;
-            } else if (data.codigo_reserva) {
-                // Formato directo con codigo_reserva
-                console.log('✅ Formato detectado: objeto reserva directo');
-                reserva = data;
-            } else if (data.reserva) {
-                // Formato con reserva pero sin success
-                console.log('✅ Formato detectado: { reserva: {...} }');
-                reserva = data.reserva;
-            } else {
-                // Intentar usar data directamente
-                console.log('⚠️ Formato desconocido, usando data directamente');
-                reserva = data;
-            }
-            
-            console.log('🔍 Objeto reserva extraído:', reserva);
-            console.log('🔍 Tiene codigo_reserva?', reserva?.codigo_reserva);
-            console.log('🔍 Campos disponibles:', Object.keys(reserva || {}));
-            console.log('🔍 Tipo de reserva:', typeof reserva);
-            console.log('🔍 Es array?', Array.isArray(reserva));
-            
-            if (reserva && reserva.codigo_reserva) {
-                console.log('✅ Reserva válida, llamando a mostrarResultadoReserva()');
-                mostrarResultadoReserva(reserva);
-            } else {
-                console.error('❌ Reserva no válida:', reserva);
-                console.error('❌ Data completo:', data);
-                console.error('❌ Response status:', response.status);
-                console.error('❌ Response ok:', response.ok);
-                
-                // Intentar mostrar lo que sea que venga en data
-                if (data && typeof data === 'object') {
-                    console.log('🔍 Intentando mostrar data directamente...');
-                    mostrarResultadoReserva(data);
-                } else {
-                    mostrarNotificacion('Reserva no encontrada o datos incompletos. Revisa la consola para más detalles.', 'danger');
-                }
-            }
+            mostrarResultadoReserva(data);
         } else {
-            console.error('❌ Response no OK:', response.status);
-            console.error('❌ Data de error:', data);
-            
             // Si hay información sobre un pago encontrado, mostrarla
             if (data.pago_encontrado) {
                 mostrarNotificacion(data.mensaje || 'Se encontró un pago pero la reserva no se creó. Contacta a soporte.', 'warning');
@@ -5450,58 +5541,29 @@ async function buscarReserva() {
         }
     } catch (error) {
         console.error('Error buscando reserva:', error);
-        mostrarNotificacion('Error al buscar la reserva: ' + error.message, 'danger');
+        mostrarNotificacion('Error al buscar la reserva', 'danger');
     }
 }
 
 // Mostrar resultado de búsqueda
 function mostrarResultadoReserva(reserva) {
-    console.log('📋 === mostrarResultadoReserva() EJECUTADA ===');
-    console.log('📋 Reserva recibida:', reserva);
-    console.log('📋 Tipo:', typeof reserva);
-    console.log('📋 Es null?', reserva === null);
-    console.log('📋 Es undefined?', reserva === undefined);
-    
     const resultadoDiv = document.getElementById('resultadoReserva');
-    
-    if (!resultadoDiv) {
-        console.error('❌ Elemento resultadoReserva no encontrado en el DOM');
-        return;
-    }
-    
-    if (!reserva) {
-        console.error('❌ Reserva es null o undefined');
-        resultadoDiv.innerHTML = `
-            <div class="alert alert-danger">
-                <h5>❌ Error</h5>
-                <p>No se pudieron obtener los datos de la reserva. Por favor, intenta nuevamente o contacta a soporte.</p>
-            </div>
-        `;
-        resultadoDiv.style.display = 'block';
-        return;
-    }
     
     // Corregir nombres de campos y valores undefined
     const complejo = reserva.complejo_nombre || reserva.nombre_complejo || 'No especificado';
     const cancha = reserva.cancha_nombre || reserva.nombre_cancha || 'No especificada';
     const tipo = reserva.tipo === 'futbol' ? 'Fútbol' : (reserva.tipo || 'No especificado');
-    const fecha = reserva.fecha ? formatearFecha(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio)) : 'No especificada';
-    const hora = reserva.hora_inicio && reserva.hora_fin ? formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin) : 'No especificado';
+    const fecha = formatearFecha(ajustarFechaParaMedianoche(reserva.fecha, reserva.hora_inicio));
+    const hora = formatearRangoHoras(reserva.hora_inicio, reserva.hora_fin);
     const estado = reserva.estado || 'No especificado';
     const precio = reserva.precio_total ? formatCurrencyChile(reserva.precio_total) : 'No especificado';
-    const codigo = reserva.codigo_reserva || 'N/A';
-    const cliente = reserva.nombre_cliente || 'No especificado';
-    
-    console.log('📋 Valores extraídos:', {
-        complejo, cancha, tipo, fecha, hora, estado, precio, codigo, cliente
-    });
     
     resultadoDiv.innerHTML = `
         <div class="card bg-light">
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="fas fa-ticket-alt me-2"></i>
-                    Reserva #${codigo}
+                    Reserva #${reserva.codigo_reserva}
                 </h5>
                 <div class="row">
                     <div class="col-md-6">
@@ -5520,14 +5582,13 @@ function mostrarResultadoReserva(reserva) {
                     </div>
                 </div>
                 <div class="mt-3">
-                    <p><strong>Cliente:</strong> ${cliente}</p>
+                    <p><strong>Cliente:</strong> ${reserva.nombre_cliente || 'No especificado'}</p>
                     <p><strong>Precio:</strong> $${precio}</p>
                 </div>
             </div>
         </div>
     `;
     resultadoDiv.style.display = 'block';
-    console.log('✅ Resultado mostrado en el DOM');
 }
 
 // Actualizar disponibilidad
