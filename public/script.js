@@ -4192,12 +4192,12 @@ async function renderizarCanchasConDisponibilidad() {
             infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
             infoIcon.addEventListener('mouseenter', () => {
                 infoIcon.style.background = '#138496';
-                infoIcon.style.transform = 'translateX(calc(-50% + 75px)) scale(1.15)';
+                infoIcon.style.transform = 'translateX(105px) scale(1.15)';
                 infoIcon.style.boxShadow = '0 2px 8px rgba(23, 162, 184, 0.4)';
             });
             infoIcon.addEventListener('mouseleave', () => {
                 infoIcon.style.background = '#17a2b8';
-                infoIcon.style.transform = 'translateX(calc(-50% + 75px)) scale(1)';
+                infoIcon.style.transform = 'translateX(105px) scale(1)';
                 infoIcon.style.boxShadow = 'none';
             });
             infoIcon.addEventListener('click', (e) => {
