@@ -5021,6 +5021,116 @@ app.post('/api/admin/reservas/:codigoReserva/agregar-abono', authenticateToken, 
   }
 });
 
+// Endpoint para eliminar un abono específico
+app.delete('/api/admin/reservas/:codigoReserva/abonos/:abonoId', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  const { codigoReserva, abonoId } = req.params;
+  const abonoIdNum = parseInt(abonoId, 10);
+
+  if (!codigoReserva || Number.isNaN(abonoIdNum)) {
+    return res.status(400).json({ error: 'Parámetros inválidos' });
+  }
+
+  const user = req.user;
+  const client = await db.pgPool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const abonoResult = await client.query(`
+      SELECT 
+        ha.*,
+        r.id AS reserva_id,
+        r.codigo_reserva,
+        r.monto_abonado AS monto_abonado_total,
+        r.precio_total,
+        r.metodo_pago AS reserva_metodo_pago,
+        r.estado_pago,
+        r.tipo_reserva,
+        c.complejo_id,
+        c.nombre AS cancha_nombre
+      FROM historial_abonos_reservas ha
+      JOIN reservas r ON ha.codigo_reserva = r.codigo_reserva
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE ha.id = $1 AND ha.codigo_reserva = $2
+      FOR UPDATE
+    `, [abonoIdNum, codigoReserva]);
+
+    if (abonoResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Abono no encontrado' });
+    }
+
+    const abono = abonoResult.rows[0];
+
+    if ((user.rol === 'owner' || user.rol === 'manager') && user.complejo_id !== abono.complejo_id) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'No tienes acceso a esta reserva' });
+    }
+
+    const nuevoMontoAbonado = Math.max(0, (abono.monto_abonado_total || 0) - (abono.monto_abonado || 0));
+    const porcentajePagado = abono.precio_total > 0 ? Math.round((nuevoMontoAbonado / abono.precio_total) * 100) : 0;
+
+    let estadoPago = 'pendiente';
+    if (nuevoMontoAbonado >= (abono.precio_total || 0)) {
+      estadoPago = 'pagado';
+    } else if (nuevoMontoAbonado > 0) {
+      estadoPago = 'por_pagar';
+    }
+
+    let metodoPagoReserva = abono.reserva_metodo_pago || 'cliente_no_abona';
+    if (nuevoMontoAbonado === 0) {
+      metodoPagoReserva = 'cliente_no_abona';
+    }
+
+    await client.query('DELETE FROM historial_abonos_reservas WHERE id = $1', [abonoIdNum]);
+
+    const reservaActualizada = await client.query(`
+      UPDATE reservas
+      SET monto_abonado = $1,
+          porcentaje_pagado = $2,
+          estado_pago = $3,
+          metodo_pago = $4
+      WHERE codigo_reserva = $5
+      RETURNING *
+    `, [nuevoMontoAbonado, porcentajePagado, estadoPago, metodoPagoReserva, codigoReserva]);
+
+    await client.query(`
+      DELETE FROM gastos_ingresos
+      WHERE id = (
+        SELECT id FROM gastos_ingresos
+        WHERE tipo = 'ingreso'
+          AND complejo_id = $1
+          AND descripcion LIKE $2
+          AND monto = $3
+        ORDER BY creado_en DESC
+        LIMIT 1
+      )
+    `, [abono.complejo_id, `Abono adicional Reserva #${codigoReserva}%`, abono.monto_abonado]);
+
+    const historialActualizado = await client.query(`
+      SELECT id, reserva_id, codigo_reserva, monto_abonado, metodo_pago, fecha_abono, notas, usuario_id, created_at
+      FROM historial_abonos_reservas
+      WHERE reserva_id = $1 OR codigo_reserva = $2
+      ORDER BY fecha_abono DESC, created_at DESC
+    `, [abono.reserva_id, codigoReserva]);
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      mensaje: 'Abono eliminado exitosamente',
+      reserva: reservaActualizada.rows[0],
+      historial: historialActualizado.rows || []
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error eliminando abono:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    client.release();
+  }
+});
+
 app.put('/api/admin/reservas/:codigoReserva/pago', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
     const { codigoReserva } = req.params;

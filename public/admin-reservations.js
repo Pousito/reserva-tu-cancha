@@ -858,12 +858,13 @@ async function verDetalles(codigoReserva) {
                         <hr>
                         <h6><i class="fas fa-history me-2"></i>Historial de Abonos</h6>
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover">
+                            <table class="table table-sm table-hover align-middle">
                                 <thead>
                                     <tr>
                                         <th>Fecha</th>
                                         <th>Monto</th>
                                         <th>Método</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -872,6 +873,13 @@ async function verDetalles(codigoReserva) {
                                             <td>${new Date(abono.fecha_abono).toLocaleString('es-CL')}</td>
                                             <td><strong>$${formatCurrencyChile(abono.monto_abonado)}</strong></td>
                                             <td><span class="badge bg-secondary">${abono.metodo_pago || 'N/A'}</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        onclick="eliminarAbonoReserva('${codigoReserva}', ${abono.id}, ${abono.monto_abonado})"
+                                                        title="Eliminar abono">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -1225,6 +1233,57 @@ async function guardarNuevoAbono(codigoReserva) {
     } catch (error) {
         console.error('Error:', error);
         mostrarNotificacion('Error de conexión al agregar el abono', 'danger');
+    }
+}
+
+/**
+ * Eliminar abono del historial
+ */
+async function eliminarAbonoReserva(codigoReserva, abonoId, montoAbono) {
+    if (!codigoReserva || !abonoId) {
+        mostrarNotificacion('Abono no válido', 'danger');
+        return;
+    }
+
+    const montoLegible = montoAbono ? `$${formatCurrencyChile(montoAbono)}` : 'este abono';
+    if (!confirm(`¿Eliminar ${montoLegible} de la reserva ${codigoReserva}?`)) {
+        return;
+    }
+
+    try {
+        const token = AdminUtils.getAuthToken();
+        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/abonos/${abonoId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const resultado = await response.json();
+
+        if (response.ok) {
+            mostrarNotificacion(resultado.mensaje || 'Abono eliminado correctamente', 'success');
+
+            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
+            if (modalDetalles) {
+                modalDetalles.hide();
+            }
+
+            await cargarReservas();
+
+            if (vistaActual === 'calendario') {
+                await cargarCalendario();
+            }
+
+            setTimeout(() => {
+                verDetalles(codigoReserva);
+            }, 400);
+        } else {
+            mostrarNotificacion(resultado.error || 'Error al eliminar el abono', 'danger');
+        }
+    } catch (error) {
+        console.error('Error eliminando abono:', error);
+        mostrarNotificacion('Error de conexión al eliminar el abono', 'danger');
     }
 }
 
