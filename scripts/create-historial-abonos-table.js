@@ -35,7 +35,7 @@ async function createHistorialAbonosTable() {
         // Crear tabla historial_abonos_reservas
         console.log('📝 Creando tabla historial_abonos_reservas...');
         await client.query(`
-            CREATE TABLE IF NOT EXISTS historial_abonos_reservas (
+                CREATE TABLE IF NOT EXISTS historial_abonos_reservas (
                 id SERIAL PRIMARY KEY,
                 reserva_id INTEGER,
                 codigo_reserva VARCHAR(50) NOT NULL REFERENCES reservas(codigo_reserva) ON DELETE CASCADE,

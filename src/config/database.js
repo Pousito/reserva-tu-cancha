@@ -282,6 +282,8 @@ class DatabaseManager {
           estado VARCHAR(50) DEFAULT 'pendiente',
           estado_pago VARCHAR(50) DEFAULT 'pendiente',
           precio_total INTEGER,
+          transaction_id VARCHAR(255),
+          transbank_token VARCHAR(255),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
