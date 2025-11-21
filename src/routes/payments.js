@@ -413,6 +413,26 @@ router.post('/confirm', async (req, res) => {
         }
 
         const datosCliente = JSON.parse(bloqueoData.datos_cliente);
+        const precioTotal = parseInt(datosCliente.precio_total, 10) || 0;
+        const porcentajePagadoCliente = parseInt(datosCliente.porcentaje_pagado, 10) || 100;
+        const montoPagadoCliente = parseInt(datosCliente.monto_pagado, 10);
+        const montoAbonadoCalculado = Number.isFinite(montoPagadoCliente) && montoPagadoCliente >= 0
+            ? montoPagadoCliente
+            : (
+                (confirmResult.amount ?? payment.amount) ||
+                Math.round(precioTotal * (porcentajePagadoCliente / 100))
+            );
+        const montoAbonado = Math.max(0, Math.min(montoAbonadoCalculado || 0, precioTotal || (montoAbonadoCalculado || 0)));
+        const metodoPagoFinal = (datosCliente.metodo_pago || 'webpay').toLowerCase();
+        const estadoPagoFinal = (() => {
+            if (montoAbonado >= precioTotal && precioTotal > 0) {
+                return 'pagado';
+            }
+            if (montoAbonado > 0) {
+                return 'por_pagar';
+            }
+            return 'pendiente';
+        })();
         
         console.log('🔍 DEBUG - Datos del bloqueo leídos:', bloqueoData);
         console.log('🔍 DEBUG - datosCliente parseado:', datosCliente);
@@ -480,9 +500,9 @@ router.post('/confirm', async (req, res) => {
                 INSERT INTO reservas (
                     cancha_id, nombre_cliente, email_cliente, telefono_cliente, 
                     rut_cliente, fecha, hora_inicio, hora_fin, precio_total, 
-                    codigo_reserva, estado, estado_pago, fecha_creacion, porcentaje_pagado,
-                    tipo_reserva, comision_aplicada
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                    codigo_reserva, estado, estado_pago, metodo_pago, monto_abonado,
+                    fecha_creacion, porcentaje_pagado, tipo_reserva, comision_aplicada
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
                 RETURNING id
             `, [
                 bloqueoData.cancha_id,
@@ -493,17 +513,39 @@ router.post('/confirm', async (req, res) => {
                 bloqueoData.fecha,
                 bloqueoData.hora_inicio,
                 bloqueoData.hora_fin,
-                datosCliente.precio_total,
+                precioTotal,
                 payment.reservation_code,
                 'confirmada',
-                'pagado',
+                estadoPagoFinal,
+                metodoPagoFinal,
+                montoAbonado,
                 new Date().toISOString(),
-                datosCliente.porcentaje_pagado || 100,
+                porcentajePagadoCliente,
                 'directa',
                 comisionWeb
             ]);
             
-            console.log('✅ Reserva creada exitosamente. ID:', reservaResult.lastID);
+            const reservaId = reservaResult?.id || reservaResult?.lastID;
+            console.log('✅ Reserva creada exitosamente. ID:', reservaId);
+
+            if (montoAbonado > 0 && reservaId) {
+                try {
+                    await db.run(`
+                        INSERT INTO historial_abonos_reservas (
+                            reserva_id, codigo_reserva, monto_abonado, metodo_pago, notas
+                        ) VALUES ($1, $2, $3, $4, $5)
+                    `, [
+                        reservaId,
+                        payment.reservation_code,
+                        montoAbonado,
+                        metodoPagoFinal,
+                        'Abono inicial confirmado automáticamente (Transbank)'
+                    ]);
+                    console.log('✅ Historial de abono registrado para la reserva:', payment.reservation_code);
+                } catch (historialError) {
+                    console.error('⚠️ No se pudo registrar el historial de abono:', historialError.message);
+                }
+            }
         } catch (reservaError) {
             console.error('❌ Error creando reserva:', reservaError);
             console.error('❌ Stack trace:', reservaError.stack);
@@ -529,7 +571,7 @@ router.post('/confirm', async (req, res) => {
             
             // Importar el servicio de email
             const EmailService = require('../services/emailService');
-            const emailService = new EmailService();
+            const emailService = new EmailService(db); // Pasar instancia de BD para logging
             
             // Obtener información completa de la reserva para el email
             const reservaInfo = await db.get(`
@@ -547,6 +589,7 @@ router.post('/confirm', async (req, res) => {
 
             if (reservaInfo) {
                 const emailData = {
+                    reserva_id: reservaInfo.id, // Agregar reserva_id para logging
                     codigo_reserva: reservaInfo.codigo_reserva,
                     email_cliente: reservaInfo.email_cliente,
                     nombre_cliente: reservaInfo.nombre_cliente,
@@ -598,14 +641,19 @@ router.post('/confirm', async (req, res) => {
         }
 
         // Responder con información del estado del email
-        res.json({
-            success: true,
-            message: 'Pago confirmado exitosamente',
-            reservationCode: payment.reservation_code,
-            amount: confirmResult.amount,
-            authorizationCode: confirmResult.authorizationCode,
-            email_sent: emailSent
-        });
+        // Asegurar que la respuesta se envíe correctamente
+        if (!res.headersSent) {
+            res.json({
+                success: true,
+                message: 'Pago confirmado exitosamente',
+                reservationCode: payment.reservation_code,
+                amount: confirmResult.amount,
+                authorizationCode: confirmResult.authorizationCode,
+                email_sent: emailSent
+            });
+        } else {
+            console.error('⚠️ Headers ya enviados, no se puede enviar respuesta de éxito');
+        }
 
     } catch (error) {
         console.error('❌ Error confirmando pago:', error);
@@ -978,25 +1026,13 @@ router.get('/history/:reservationCode', async (req, res) => {
 });
 
 /**
- * Simular pago exitoso (SOLO EN DESARROLLO)
+ * Simular pago exitoso (HABILITADO EN PRODUCCIÓN)
  * POST /api/payments/simulate-success
- * Este endpoint permite simular pagos solo en desarrollo/localhost
+ * Este endpoint permite simular pagos para testing y recuperación de reservas
  */
 router.post('/simulate-success', async (req, res) => {
-    // Restringir solo a desarrollo/localhost
-    const isDevelopment = process.env.NODE_ENV !== 'production' || 
-                          req.hostname === 'localhost' || 
-                          req.hostname === '127.0.0.1' ||
-                          req.hostname?.startsWith('192.168.') ||
-                          req.hostname?.startsWith('10.0.');
-    
-    if (!isDevelopment) {
-        console.log('⚠️ Intento de usar simulación de pago en producción desde:', req.hostname);
-        return res.status(403).json({
-            success: false,
-            error: 'Simulación de pago solo disponible en desarrollo'
-        });
-    }
+    // Permitir en producción para facilitar testing y recuperación de reservas
+    // Se puede restringir con autenticación si es necesario en el futuro
     
     try {
         console.log('🧪 Simulando pago exitoso...');

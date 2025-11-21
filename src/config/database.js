@@ -287,6 +287,33 @@ class DatabaseManager {
         )
       `);
 
+      // Crear tabla historial de abonos
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS historial_abonos_reservas (
+          id SERIAL PRIMARY KEY,
+          reserva_id INTEGER REFERENCES reservas(id) ON DELETE CASCADE,
+          codigo_reserva VARCHAR(50) NOT NULL,
+          monto_abonado INTEGER NOT NULL,
+          metodo_pago VARCHAR(50) NOT NULL,
+          fecha_abono TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          notas TEXT,
+          usuario_id INTEGER REFERENCES usuarios(id),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_historial_abonos_reserva_id
+        ON historial_abonos_reservas(reserva_id)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_historial_abonos_codigo_reserva
+        ON historial_abonos_reservas(codigo_reserva)
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_historial_abonos_fecha
+        ON historial_abonos_reservas(fecha_abono)
+      `);
+
       // Crear tabla pagos
       await client.query(`
         CREATE TABLE IF NOT EXISTS pagos (
