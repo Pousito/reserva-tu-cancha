@@ -134,8 +134,8 @@ class DatabaseManager {
       await client.query(`
         CREATE TABLE IF NOT EXISTS historial_abonos_reservas (
           id SERIAL PRIMARY KEY,
-          reserva_id INTEGER REFERENCES reservas(id) ON DELETE CASCADE,
-          codigo_reserva VARCHAR(50) NOT NULL,
+          reserva_id INTEGER,
+          codigo_reserva VARCHAR(50) NOT NULL REFERENCES reservas(codigo_reserva) ON DELETE CASCADE,
           monto_abonado INTEGER NOT NULL,
           metodo_pago VARCHAR(50) NOT NULL,
           fecha_abono TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
