@@ -2,6 +2,33 @@
 let reservas = [];
 let reservasFiltradas = [];
 const historialAbonosCache = {};
+
+async function obtenerHistorialAbonosReserva(codigoReserva, forceReload = false) {
+    if (!forceReload && Array.isArray(historialAbonosCache[codigoReserva])) {
+        return historialAbonosCache[codigoReserva];
+    }
+
+    try {
+        const token = AdminUtils.getAuthToken();
+        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/historial-abonos`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            historialAbonosCache[codigoReserva] = data.historial || [];
+        } else {
+            historialAbonosCache[codigoReserva] = [];
+        }
+    } catch (error) {
+        console.error('Error cargando historial de abonos:', error);
+        historialAbonosCache[codigoReserva] = [];
+    }
+
+    return historialAbonosCache[codigoReserva];
+}
 let complejos = [];
 let busquedaActual = '';
 let filtrosActivos = {};
@@ -761,21 +788,7 @@ async function verDetalles(codigoReserva) {
     const estadoPago = reserva.estado_pago || 'pendiente';
     
     // Cargar historial de abonos
-    let historialAbonos = [];
-    try {
-        const token = AdminUtils.getAuthToken();
-        const response = await fetch(`${API_BASE}/admin/reservas/${codigoReserva}/historial-abonos`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        if (response.ok) {
-            const data = await response.json();
-            historialAbonos = data.historial || [];
-        }
-    } catch (error) {
-        console.error('Error cargando historial de abonos:', error);
-    }
+    const historialAbonos = await obtenerHistorialAbonosReserva(codigoReserva, true);
     
     // Mapear valores de método de pago a nombres legibles
     const metodoPagoNames = {
@@ -902,7 +915,8 @@ async function verDetalles(codigoReserva) {
         </div>
     `;
     
-    const modal = new bootstrap.Modal(document.getElementById('reservationModal'));
+    const modalElement = document.getElementById('reservationModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     modal.show();
 }
 
@@ -1082,24 +1096,7 @@ async function guardarNuevoAbono(codigoReserva) {
                 modalAgregar.hide();
             }
             
-            // Cerrar y actualizar modal de detalles
-            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
-            if (modalDetalles) {
-                modalDetalles.hide();
-            }
-            
-            // Recargar reservas
-            await cargarReservas();
-            
-            // Recargar calendario si estamos en vista calendario
-            if (vistaActual === 'calendario') {
-                await cargarCalendario();
-            }
-            
-            // Reabrir detalles con datos actualizados
-            setTimeout(() => {
-                verDetalles(codigoReserva);
-            }, 500);
+            await refrescarReservaEnModal(codigoReserva);
             
         } else {
             mostrarNotificacion(resultado.error || 'Error al agregar el abono', 'danger');
@@ -1113,9 +1110,18 @@ async function guardarNuevoAbono(codigoReserva) {
 /**
  * Abrir modal para editar un abono del historial
  */
-function abrirEditarAbono(codigoReserva, abonoId) {
-    const historial = historialAbonosCache[codigoReserva] || [];
-    const abono = historial.find(item => item.id === abonoId);
+async function abrirEditarAbono(codigoReserva, abonoId) {
+    let historial = historialAbonosCache[codigoReserva];
+    if (!Array.isArray(historial) || historial.length === 0) {
+        historial = await obtenerHistorialAbonosReserva(codigoReserva, false);
+    }
+
+    let abono = (historial || []).find(item => item.id === abonoId);
+    if (!abono) {
+        historial = await obtenerHistorialAbonosReserva(codigoReserva, true);
+        abono = (historial || []).find(item => item.id === abonoId);
+    }
+
     if (!abono) {
         mostrarNotificacion('Abono no encontrado en el historial', 'danger');
         return;
@@ -1275,19 +1281,7 @@ async function guardarEdicionAbono(codigoReserva, abonoId, maximoPermitido = 0) 
                 modalEditar.hide();
             }
 
-            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
-            if (modalDetalles) {
-                modalDetalles.hide();
-            }
-
-            await cargarReservas();
-            if (vistaActual === 'calendario') {
-                await cargarCalendario();
-            }
-
-            setTimeout(() => {
-                verDetalles(codigoReserva);
-            }, 400);
+            await refrescarReservaEnModal(codigoReserva);
         } else {
             mostrarNotificacion(resultado.error || 'Error al actualizar el abono', 'danger');
         }
@@ -1325,20 +1319,7 @@ async function eliminarAbonoReserva(codigoReserva, abonoId, montoAbono) {
         if (response.ok) {
             mostrarNotificacion(resultado.mensaje || 'Abono eliminado correctamente', 'success');
 
-            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
-            if (modalDetalles) {
-                modalDetalles.hide();
-            }
-
-            await cargarReservas();
-
-            if (vistaActual === 'calendario') {
-                await cargarCalendario();
-            }
-
-            setTimeout(() => {
-                verDetalles(codigoReserva);
-            }, 400);
+            await refrescarReservaEnModal(codigoReserva);
         } else {
             mostrarNotificacion(resultado.error || 'Error al eliminar el abono', 'danger');
         }
@@ -1395,24 +1376,7 @@ async function marcarPagoCompleto(codigoReserva) {
         if (response.ok) {
             mostrarNotificacion(`Pago completado exitosamente. Se agregó un abono de $${formatCurrencyChile(restante)}`, 'success');
             
-            // Cerrar modal de detalles si está abierto
-            const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
-            if (modalDetalles) {
-                modalDetalles.hide();
-            }
-            
-            // Recargar reservas
-            await cargarReservas();
-            
-            // Recargar calendario si estamos en vista calendario
-            if (vistaActual === 'calendario') {
-                await cargarCalendario();
-            }
-            
-            // Reabrir detalles con datos actualizados
-            setTimeout(() => {
-                verDetalles(codigoReserva);
-            }, 500);
+            await refrescarReservaEnModal(codigoReserva);
             
         } else {
             mostrarNotificacion(resultado.error || 'Error al marcar el pago como completo', 'danger');
@@ -1421,6 +1385,15 @@ async function marcarPagoCompleto(codigoReserva) {
         console.error('Error:', error);
         mostrarNotificacion('Error de conexión al marcar el pago como completo', 'danger');
     }
+}
+
+async function refrescarReservaEnModal(codigoReserva) {
+    delete historialAbonosCache[codigoReserva];
+    await cargarReservas();
+    if (vistaActual === 'calendario') {
+        await cargarCalendario();
+    }
+    await verDetalles(codigoReserva);
 }
 
 async function confirmarReserva(codigoReserva) {
