@@ -5021,6 +5021,139 @@ app.post('/api/admin/reservas/:codigoReserva/agregar-abono', authenticateToken, 
   }
 });
 
+// Endpoint para editar un abono específico
+app.put('/api/admin/reservas/:codigoReserva/abonos/:abonoId', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  const { codigoReserva, abonoId } = req.params;
+  const { monto_abonado: nuevoMonto, metodo_pago: nuevoMetodo, notas } = req.body || {};
+  const abonoIdNum = parseInt(abonoId, 10);
+
+  if (!codigoReserva || Number.isNaN(abonoIdNum)) {
+    return res.status(400).json({ error: 'Parámetros inválidos' });
+  }
+
+  if (!nuevoMetodo) {
+    return res.status(400).json({ error: 'Debes especificar el método de pago' });
+  }
+
+  if (nuevoMonto === undefined || nuevoMonto <= 0) {
+    return res.status(400).json({ error: 'El monto del abono debe ser mayor a 0' });
+  }
+
+  const user = req.user;
+  const client = await db.pgPool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const abonoResult = await client.query(`
+      SELECT 
+        ha.*,
+        r.id AS reserva_id,
+        r.codigo_reserva,
+        r.monto_abonado AS monto_abonado_total,
+        r.precio_total,
+        r.metodo_pago AS reserva_metodo_pago,
+        r.estado_pago,
+        r.tipo_reserva,
+        c.complejo_id,
+        c.nombre AS cancha_nombre
+      FROM historial_abonos_reservas ha
+      JOIN reservas r ON ha.codigo_reserva = r.codigo_reserva
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE ha.id = $1 AND ha.codigo_reserva = $2
+      FOR UPDATE
+    `, [abonoIdNum, codigoReserva]);
+
+    if (abonoResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Abono no encontrado' });
+    }
+
+    const abono = abonoResult.rows[0];
+
+    if ((user.rol === 'owner' || user.rol === 'manager') && user.complejo_id !== abono.complejo_id) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'No tienes acceso a esta reserva' });
+    }
+
+    const nuevoMontoTotal = (abono.monto_abonado_total || 0) - (abono.monto_abonado || 0) + nuevoMonto;
+    if (nuevoMontoTotal > (abono.precio_total || 0)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: `El monto total abonado no puede superar el precio total ($${abono.precio_total})`
+      });
+    }
+
+    await client.query(`
+      UPDATE historial_abonos_reservas
+      SET monto_abonado = $1,
+          metodo_pago = $2,
+          notas = $3,
+          fecha_abono = NOW()
+      WHERE id = $4
+    `, [nuevoMonto, nuevoMetodo, notas || null, abonoIdNum]);
+
+    const porcentajePagado = abono.precio_total > 0 ? Math.round((nuevoMontoTotal / abono.precio_total) * 100) : 0;
+    let estadoPago = 'pendiente';
+    if (nuevoMontoTotal >= (abono.precio_total || 0)) {
+      estadoPago = 'pagado';
+    } else if (nuevoMontoTotal > 0) {
+      estadoPago = 'por_pagar';
+    }
+
+    const metodoPagoReserva = nuevoMontoTotal === 0 ? 'cliente_no_abona' : (abono.reserva_metodo_pago || nuevoMetodo);
+
+    const reservaActualizada = await client.query(`
+      UPDATE reservas
+      SET monto_abonado = $1,
+          porcentaje_pagado = $2,
+          estado_pago = $3,
+          metodo_pago = $4
+      WHERE codigo_reserva = $5
+      RETURNING *
+    `, [nuevoMontoTotal, porcentajePagado, estadoPago, metodoPagoReserva, codigoReserva]);
+
+    const descripcionAbono = `Abono adicional Reserva #${codigoReserva} - ${abono.cancha_nombre || 'Cancha'}`;
+    await client.query(`
+      UPDATE gastos_ingresos
+      SET monto = $1,
+          metodo_pago = $2,
+          descripcion = $3
+      WHERE id = (
+        SELECT id FROM gastos_ingresos
+        WHERE tipo = 'ingreso'
+          AND complejo_id = $4
+          AND descripcion LIKE $5
+          AND monto = $6
+        ORDER BY creado_en DESC
+        LIMIT 1
+      )
+    `, [nuevoMonto, nuevoMetodo, descripcionAbono, abono.complejo_id, `Abono adicional Reserva #${codigoReserva}%`, abono.monto_abonado]);
+
+    const historialActualizado = await client.query(`
+      SELECT id, reserva_id, codigo_reserva, monto_abonado, metodo_pago, fecha_abono, notas, usuario_id, created_at
+      FROM historial_abonos_reservas
+      WHERE reserva_id = $1 OR codigo_reserva = $2
+      ORDER BY fecha_abono DESC, created_at DESC
+    `, [abono.reserva_id, codigoReserva]);
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      mensaje: 'Abono actualizado correctamente',
+      reserva: reservaActualizada.rows[0],
+      historial: historialActualizado.rows || []
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error actualizando abono:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    client.release();
+  }
+});
+
 // Endpoint para eliminar un abono específico
 app.delete('/api/admin/reservas/:codigoReserva/abonos/:abonoId', authenticateToken, requireComplexAccess, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   const { codigoReserva, abonoId } = req.params;
