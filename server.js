@@ -3646,19 +3646,8 @@ app.post('/api/debug/ingresos/crear-trigger-y-registro', async (req, res) => {
 
                         RAISE NOTICE 'Ingreso registrado: $% (Reserva #%, Abono %)', monto_ingreso, NEW.codigo_reserva, NEW.porcentaje_pagado;
                     ELSE
-                        -- Si el ingreso ya existe, actualizar método de pago si cambió
-                        UPDATE gastos_ingresos
-                        SET metodo_pago = CASE 
-                                WHEN NEW.tipo_reserva = 'directa' THEN 'webpay'
-                                ELSE COALESCE(NEW.metodo_pago, 'por_definir')
-                            END,
-                            monto = monto_ingreso,
-                            descripcion = 'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id) || ' (Abono ' || NEW.porcentaje_pagado || '%)',
-                            actualizado_en = NOW()
-                        WHERE descripcion LIKE 'Reserva #' || NEW.codigo_reserva || '%'
-                        AND tipo = 'ingreso';
-                        
-                        RAISE NOTICE 'Ingreso actualizado: $% (Reserva #%, Método: %)', monto_ingreso, NEW.codigo_reserva, COALESCE(NEW.metodo_pago, 'por_definir');
+                        -- Mantener ingreso original sin modificar para permitir movimientos adicionales separados
+                        RAISE NOTICE 'Ingreso ya existente para Reserva #%, no se actualiza monto principal', NEW.codigo_reserva;
                     END IF;
 
                     -- Gestionar gasto de comisión:
@@ -4931,15 +4920,18 @@ app.post('/api/admin/reservas/:codigoReserva/agregar-abono', authenticateToken, 
       }
       
       // 3. Crear ingreso adicional por el abono (solo el monto del nuevo abono)
-      // Buscar categoría de ingresos para este complejo
+      // Buscar categoría de ingresos para este complejo (según tipo de reserva)
       const categoriaIngresoQuery = `
         SELECT id FROM categorias_gastos
         WHERE complejo_id = $1
         AND tipo = 'ingreso'
-        AND nombre = 'Reservas Web'
+        AND nombre = CASE 
+          WHEN $2 = 'administrativa' THEN 'Reservas Administrativas'
+          ELSE 'Reservas Web'
+        END
         LIMIT 1
       `;
-      const categoriaIngresoResult = await client.query(categoriaIngresoQuery, [reserva.complejo_id]);
+      const categoriaIngresoResult = await client.query(categoriaIngresoQuery, [reserva.complejo_id, reserva.tipo_reserva]);
       
       if (categoriaIngresoResult.rows.length > 0) {
         const categoriaIngresoId = categoriaIngresoResult.rows[0].id;

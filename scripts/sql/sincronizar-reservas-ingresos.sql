@@ -17,13 +17,20 @@ RETURNS TRIGGER AS $$
 DECLARE
     categoria_ingreso_id INTEGER;
     categoria_comision_id INTEGER;
-    precio_total DECIMAL(10,2);
+    monto_ingreso DECIMAL(10,2);
     comision_monto DECIMAL(10,2);
     tipo_reserva_texto TEXT;
     complejo_id_reserva INTEGER;
 BEGIN
-    -- Solo procesar cuando el estado cambia a 'confirmada'
-    IF NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada') THEN
+    -- Procesar cuando:
+    -- 1. El estado cambia a 'confirmada'
+    -- 2. O cuando sigue confirmada pero cambia el monto abonado/comisión
+    IF (NEW.estado = 'confirmada' AND (OLD.estado IS NULL OR OLD.estado != 'confirmada'))
+       OR (NEW.estado = 'confirmada' AND OLD.estado = 'confirmada' 
+           AND (
+             COALESCE(NEW.monto_abonado, 0) != COALESCE(OLD.monto_abonado, 0) OR
+             COALESCE(NEW.comision_aplicada, 0) != COALESCE(OLD.comision_aplicada, 0)
+           )) THEN
         
         -- Obtener complejo_id a partir de la cancha
         SELECT complejo_id INTO complejo_id_reserva
@@ -35,12 +42,15 @@ BEGIN
             RETURN NEW;
         END IF;
         
-        -- Buscar categoría de ingresos para este complejo
+        -- Buscar categoría de ingresos para este complejo según el tipo de reserva
         SELECT id INTO categoria_ingreso_id
         FROM categorias_gastos
         WHERE complejo_id = complejo_id_reserva
         AND tipo = 'ingreso'
-        AND nombre = 'Reservas Web'
+        AND nombre = CASE 
+            WHEN NEW.tipo_reserva = 'administrativa' THEN 'Reservas Administrativas'
+            ELSE 'Reservas Web'
+        END
         LIMIT 1;
         
         -- Buscar categoría de comisión para este complejo
@@ -57,9 +67,9 @@ BEGIN
             RETURN NEW;
         END IF;
         
-        -- Obtener precio total y comisión REAL ya calculada en la reserva
-        precio_total := COALESCE(NEW.precio_total, 0);
-        comision_monto := COALESCE(NEW.comision_aplicada, 0); -- Usar comisión ya calculada
+        -- CAMBIO: usar monto abonado real (abonos web pueden llegar después)
+        monto_ingreso := COALESCE(NEW.monto_abonado, 0);
+        comision_monto := COALESCE(NEW.comision_aplicada, 0);
         
         -- Determinar tipo de reserva para descripción
         tipo_reserva_texto := CASE 
@@ -68,8 +78,8 @@ BEGIN
             ELSE 'Reserva'
         END;
         
-        -- Solo crear registros si hay un precio válido
-        IF precio_total > 0 THEN
+        -- Solo crear/actualizar registros si hay un abono válido
+        IF monto_ingreso > 0 THEN
             
             -- Verificar si ya existe un ingreso para esta reserva
             IF NOT EXISTS (
@@ -78,7 +88,7 @@ BEGIN
                 AND tipo = 'ingreso'
             ) THEN
                 
-                -- 1. Registrar INGRESO por la reserva
+                -- 1. Registrar INGRESO por el monto abonado
                 INSERT INTO gastos_ingresos (
                     complejo_id,
                     categoria_id,
@@ -92,47 +102,65 @@ BEGIN
                     complejo_id_reserva,
                     categoria_ingreso_id,
                     'ingreso',
-                    precio_total,
+                    monto_ingreso,
                     NEW.fecha::DATE,
-                    'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id),
-                    'automatico',
+                    'Reserva #' || NEW.codigo_reserva || ' - ' || (SELECT nombre FROM canchas WHERE id = NEW.cancha_id) || ' (Abono ' || NEW.porcentaje_pagado || '%)',
+                    CASE 
+                        WHEN NEW.tipo_reserva = 'directa' THEN 'webpay'
+                        ELSE COALESCE(NEW.metodo_pago, 'por_definir')
+                    END,
                     NULL
                 );
                 
-                RAISE NOTICE 'Ingreso registrado: $% (Reserva #%)', precio_total, NEW.codigo_reserva;
+                RAISE NOTICE 'Ingreso registrado: $% (Reserva #%, Abono %)', monto_ingreso, NEW.codigo_reserva, NEW.porcentaje_pagado;
+            ELSE
+                -- Mantener ingreso original sin modificar para permitir movimientos adicionales separados
+                RAISE NOTICE 'Ingreso ya existente para Reserva #%, no se actualiza monto principal', NEW.codigo_reserva;
             END IF;
+        END IF;
+        
+        -- Gestionar gasto de comisión
+        IF comision_monto = 0 THEN
+            DELETE FROM gastos_ingresos
+            WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
+            AND tipo = 'gasto';
             
-            -- Verificar si ya existe un gasto de comisión para esta reserva
+            RAISE NOTICE 'Egreso de comisión eliminado (Reserva #% - Exento)', NEW.codigo_reserva;
+        ELSE
             IF NOT EXISTS (
                 SELECT 1 FROM gastos_ingresos 
                 WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
                 AND tipo = 'gasto'
             ) THEN
+                INSERT INTO gastos_ingresos (
+                    complejo_id,
+                    categoria_id,
+                    tipo,
+                    monto,
+                    fecha,
+                    descripcion,
+                    metodo_pago,
+                    usuario_id
+                ) VALUES (
+                    complejo_id_reserva,
+                    categoria_comision_id,
+                    'gasto',
+                    comision_monto,
+                    NEW.fecha::DATE,
+                    'Comisión Reserva #' || NEW.codigo_reserva || ' - ' || tipo_reserva_texto,
+                    'automatico',
+                    NULL
+                );
                 
-                -- 2. Registrar GASTO por comisión (solo si hay comisión > 0)
-                IF comision_monto > 0 THEN
-                    INSERT INTO gastos_ingresos (
-                        complejo_id,
-                        categoria_id,
-                        tipo,
-                        monto,
-                        fecha,
-                        descripcion,
-                        metodo_pago,
-                        usuario_id
-                    ) VALUES (
-                        complejo_id_reserva,
-                        categoria_comision_id,
-                        'gasto',
-                        comision_monto,
-                        NEW.fecha::DATE,
-                        'Comisión Reserva #' || NEW.codigo_reserva || ' - ' || tipo_reserva_texto,
-                        'automatico',
-                        NULL
-                    );
-                    
-                    RAISE NOTICE 'Comisión registrada: $% (Reserva #% - %)', comision_monto, NEW.codigo_reserva, tipo_reserva_texto;
-                END IF;
+                RAISE NOTICE 'Comisión registrada: $% (Reserva #% - %)', comision_monto, NEW.codigo_reserva, tipo_reserva_texto;
+            ELSE
+                UPDATE gastos_ingresos
+                SET monto = comision_monto,
+                    descripcion = 'Comisión Reserva #' || NEW.codigo_reserva || ' - ' || tipo_reserva_texto
+                WHERE descripcion LIKE 'Comisión Reserva #' || NEW.codigo_reserva || '%'
+                AND tipo = 'gasto';
+                
+                RAISE NOTICE 'Egreso de comisión actualizado: $% (Reserva #%)', comision_monto, NEW.codigo_reserva;
             END IF;
         END IF;
     END IF;
@@ -148,7 +176,7 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trigger_sincronizar_reserva_ingresos ON reservas;
 
 CREATE TRIGGER trigger_sincronizar_reserva_ingresos
-    AFTER INSERT OR UPDATE OF estado, precio_total
+    AFTER INSERT OR UPDATE OF estado, precio_total, monto_abonado, comision_aplicada
     ON reservas
     FOR EACH ROW
     EXECUTE FUNCTION sincronizar_reserva_ingresos();
