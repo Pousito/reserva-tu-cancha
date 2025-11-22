@@ -207,12 +207,148 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         
         canchasQuery += ` ORDER BY c.nombre`;
         
-        const canchas = await db.query(canchasQuery, canchasParams);
+        let canchas = await db.query(canchasQuery, canchasParams);
         
         // Validar que la consulta de canchas se ejecutó correctamente
         if (!canchas) {
             console.warn('⚠️ Consulta de canchas devolvió null/undefined');
             canchas = [];
+        }
+
+        // Construir lista de fechas de la semana para evaluar bloqueos permanentes
+        const fechasSemana = [];
+        for (let i = 0; i < 7; i++) {
+            const dia = new Date(startOfWeek);
+            dia.setDate(startOfWeek.getDate() + i);
+            fechasSemana.push({
+                date: dia,
+                fechaStr: `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`,
+                diaSemana: dia.toLocaleDateString('es-CL', { weekday: 'long' })
+            });
+        }
+
+        const bloqueoPermanenteHelper = {
+            normalizarFecha(valor) {
+                if (!valor) return null;
+                if (typeof valor === 'string') {
+                    return valor.split('T')[0];
+                }
+                if (valor instanceof Date) {
+                    return `${valor.getFullYear()}-${String(valor.getMonth() + 1).padStart(2, '0')}-${String(valor.getDate()).padStart(2, '0')}`;
+                }
+                if (valor.toISOString) {
+                    return valor.toISOString().split('T')[0];
+                }
+                return valor;
+            },
+            obtenerDiasSemana(bloqueo) {
+                let dias = [];
+                if (!bloqueo.dias_semana) return dias;
+                try {
+                    if (Array.isArray(bloqueo.dias_semana)) {
+                        dias = bloqueo.dias_semana;
+                    } else if (typeof bloqueo.dias_semana === 'string') {
+                        const contenido = bloqueo.dias_semana.trim();
+                        if (contenido.startsWith('{') && contenido.endsWith('}')) {
+                            dias = contenido.slice(1, -1).split(',').map(d => d.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+                        } else {
+                            dias = JSON.parse(contenido);
+                        }
+                    }
+                } catch (err) {
+                    console.error('⚠️ Error parseando dias_semana:', err.message);
+                }
+                return dias;
+            },
+            formatoBloqueo(bloqueo) {
+                if (bloqueo.tipo_horario === 'todo_el_dia') {
+                    return {
+                        tipo: 'permanente',
+                        tipo_horario: 'todo_el_dia',
+                        hora_inicio: '00:00',
+                        hora_fin: '23:59',
+                        motivo: bloqueo.motivo,
+                        descripcion: bloqueo.descripcion
+                    };
+                }
+                if (bloqueo.tipo_horario === 'especifico' && bloqueo.hora_especifica) {
+                    const horaStr = typeof bloqueo.hora_especifica === 'string'
+                        ? bloqueo.hora_especifica.substring(0, 5)
+                        : bloqueo.hora_especifica;
+                    const [hora, minuto] = horaStr.split(':').map(Number);
+                    const siguienteHora = (hora + 1) % 24;
+                    return {
+                        tipo: 'permanente',
+                        tipo_horario: 'especifico',
+                        hora_inicio: `${String(hora).padStart(2, '0')}:${String(minuto || 0).padStart(2, '0')}`,
+                        hora_fin: `${String(siguienteHora).padStart(2, '0')}:${String(minuto || 0).padStart(2, '0')}`,
+                        motivo: bloqueo.motivo,
+                        descripcion: bloqueo.descripcion
+                    };
+                }
+                if (bloqueo.tipo_horario === 'rango' && bloqueo.hora_inicio && bloqueo.hora_fin) {
+                    const inicio = typeof bloqueo.hora_inicio === 'string' ? bloqueo.hora_inicio.substring(0, 5) : bloqueo.hora_inicio;
+                    const fin = typeof bloqueo.hora_fin === 'string' ? bloqueo.hora_fin.substring(0, 5) : bloqueo.hora_fin;
+                    return {
+                        tipo: 'permanente',
+                        tipo_horario: 'rango',
+                        hora_inicio: inicio,
+                        hora_fin: fin,
+                        motivo: bloqueo.motivo,
+                        descripcion: bloqueo.descripcion
+                    };
+                }
+                return null;
+            },
+            aplicaEnFecha(bloqueo, fechaInfo) {
+                if (!bloqueo.tipo_fecha) return false;
+                const fechaSolicitud = fechaInfo.fechaStr;
+                if (bloqueo.tipo_fecha === 'especifico' && bloqueo.fecha_especifica) {
+                    return this.normalizarFecha(bloqueo.fecha_especifica) === fechaSolicitud;
+                }
+                if (bloqueo.tipo_fecha === 'rango' && bloqueo.fecha_inicio && bloqueo.fecha_fin) {
+                    const inicio = this.normalizarFecha(bloqueo.fecha_inicio);
+                    const fin = this.normalizarFecha(bloqueo.fecha_fin);
+                    return fechaSolicitud >= inicio && fechaSolicitud <= fin;
+                }
+                if (bloqueo.tipo_fecha === 'recurrente_semanal' && bloqueo.dias_semana) {
+                    const dias = this.obtenerDiasSemana(bloqueo);
+                    return dias.includes(fechaInfo.diaSemana);
+                }
+                return false;
+            }
+        };
+
+        const bloqueosPermanentesSemana = {};
+
+        if (canchas && canchas.length > 0) {
+            for (const cancha of canchas) {
+                try {
+                    const bloqueosCancha = await db.query(
+                        'SELECT * FROM bloqueos_canchas WHERE cancha_id = $1 AND activo = true',
+                        [cancha.id]
+                    );
+
+                    (bloqueosCancha || []).forEach(bloqueo => {
+                        fechasSemana.forEach(fechaInfo => {
+                            if (bloqueoPermanenteHelper.aplicaEnFecha(bloqueo, fechaInfo)) {
+                                const formatted = bloqueoPermanenteHelper.formatoBloqueo(bloqueo);
+                                if (!formatted) return;
+
+                                if (!bloqueosPermanentesSemana[fechaInfo.fechaStr]) {
+                                    bloqueosPermanentesSemana[fechaInfo.fechaStr] = {};
+                                }
+                                if (!bloqueosPermanentesSemana[fechaInfo.fechaStr][cancha.id]) {
+                                    bloqueosPermanentesSemana[fechaInfo.fechaStr][cancha.id] = [];
+                                }
+                                bloqueosPermanentesSemana[fechaInfo.fechaStr][cancha.id].push(formatted);
+                            }
+                        });
+                    });
+                } catch (bloqueoError) {
+                    console.error(`⚠️ Error obteniendo bloqueos permanentes para cancha ${cancha.id}:`, bloqueoError.message);
+                }
+            }
         }
         
         // Obtener bloqueos temporales
@@ -413,7 +549,8 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                     directa: 0.035,
                     administrativa: 0.0175
                 }
-            }
+            },
+            bloqueosPermanentesPorFecha: bloqueosPermanentesSemana
         };
         
         console.log(`✅ Datos del calendario obtenidos: ${(reservations || []).length} reservas, ${(bloqueos || []).length} bloqueos, ${(canchas || []).length} canchas`);

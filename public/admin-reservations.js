@@ -1940,17 +1940,16 @@ async function cargarCalendario() {
             calendarioData = data.calendario || {};
             canchas = data.canchas || [];
             
-            // Cargar bloqueos permanentes minimizando solicitudes para móviles
+            // Cargar bloqueos permanentes desde el backend (sin peticiones extra)
             bloqueosPermanentesCache = {};
-            const fechasSemana = generarFechasEntre(fechaInicio, fechaFin);
-            let bloqueosPrecargados = false;
-
-            if (complejoId) {
-                bloqueosPrecargados = await precargarBloqueosPermanentesSemana(complejoId, fechasSemana);
-            }
-
-            if (!bloqueosPrecargados && canchas && canchas.length > 0) {
-                await precargarBloqueosPorCancha(canchas, fechasSemana);
+            if (data.bloqueosPermanentesPorFecha) {
+                cargarBloqueosPermanentesDesdeBackend(data.bloqueosPermanentesPorFecha);
+            } else {
+                // Fallback legacy (no debería ocurrir)
+                const fechasSemana = generarFechasEntre(fechaInicio, fechaFin);
+                if (canchas && canchas.length > 0) {
+                    await precargarBloqueosPorCancha(canchas, fechasSemana);
+                }
             }
             
             console.log(`✅ Bloqueos permanentes cacheados: ${Object.keys(bloqueosPermanentesCache).length}`);
@@ -2033,6 +2032,19 @@ async function cargarCalendario() {
                 </div>
             `;
         }
+    }
+}
+
+function cargarBloqueosPermanentesDesdeBackend(bloqueosPorFecha = {}) {
+    try {
+        Object.entries(bloqueosPorFecha).forEach(([fecha, canchasBloqueos]) => {
+            Object.entries(canchasBloqueos || {}).forEach(([canchaId, bloqueos]) => {
+                const cacheKey = `${canchaId}_${fecha}`;
+                bloqueosPermanentesCache[cacheKey] = Array.isArray(bloqueos) ? bloqueos : [];
+            });
+        });
+    } catch (error) {
+        console.error('❌ Error cargando bloqueos permanentes desde backend:', error);
     }
 }
 
