@@ -1,6 +1,10 @@
 const nodemailer = require('nodemailer');
 const { formatDateForChile } = require('../utils/dateUtils');
 
+// Lista de emails que NO deben recibir emails automáticos (dueños/administradores)
+// Vacía por defecto - agregar emails aquí si se necesita bloquear en el futuro
+const EMAILS_BLOQUEADOS_AUTOMATICOS = [];
+
 // Función para formatear hora (quitar segundos si existen)
 const formatearHora = (hora) => {
   if (typeof hora === 'string') {
@@ -46,10 +50,94 @@ const ajustarFechaParaMedianoche = (fecha, hora) => {
 };
 
 class EmailService {
-  constructor() {
+  constructor(database = null) {
     this.transporter = null;
     this.isConfigured = false;
+    this.db = database; // Instancia de base de datos para logging
     this.initializeTransporter();
+  }
+
+  // Método para establecer la instancia de base de datos
+  setDatabase(database) {
+    this.db = database;
+  }
+
+  // Registrar intento de envío de email en BD
+  async logEmailAttempt(reservaId, codigoReserva, destinatario, tipo, estado, error = null, messageId = null) {
+    if (!this.db) {
+      console.log('⚠️ Base de datos no disponible para logging de email');
+      return;
+    }
+
+    try {
+      await this.db.query(`
+        INSERT INTO email_logs (
+          reserva_id, codigo_reserva, destinatario, tipo, estado, error, message_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        reservaId || null,
+        codigoReserva || null,
+        destinatario,
+        tipo,
+        estado,
+        error,
+        messageId
+      ]);
+      console.log(`📝 Email log registrado: ${tipo} -> ${destinatario} (${estado})`);
+    } catch (logError) {
+      console.error('❌ Error registrando log de email:', logError.message);
+      // No fallar si el logging falla
+    }
+  }
+
+  // Actualizar campos de email en tabla reservas
+  async updateReservaEmailStatus(reservaId, codigoReserva, tipo, estado, error = null, messageId = null) {
+    if (!this.db) {
+      return;
+    }
+
+    try {
+      if (tipo === 'cliente') {
+        await this.db.query(`
+          UPDATE reservas 
+          SET 
+            email_cliente_enviado = $1,
+            email_cliente_enviado_en = CASE WHEN $1 THEN CURRENT_TIMESTAMP ELSE NULL END,
+            email_cliente_error = $2
+          WHERE id = $3 OR codigo_reserva = $4
+        `, [
+          estado === 'enviado',
+          error,
+          reservaId,
+          codigoReserva
+        ]);
+      } else if (tipo === 'admin_complejo' || tipo === 'super_admin') {
+        await this.db.query(`
+          UPDATE reservas 
+          SET 
+            email_admin_enviado = $1,
+            email_admin_enviado_en = CASE WHEN $1 THEN CURRENT_TIMESTAMP ELSE NULL END,
+            email_admin_error = $2
+          WHERE id = $3 OR codigo_reserva = $4
+        `, [
+          estado === 'enviado',
+          error,
+          reservaId,
+          codigoReserva
+        ]);
+      }
+    } catch (updateError) {
+      console.error('❌ Error actualizando estado de email en reserva:', updateError.message);
+    }
+  }
+
+  // Verificar si un email está bloqueado para envío automático
+  isEmailBlocked(email) {
+    if (!email) return true;
+    const emailLower = email.toLowerCase().trim();
+    return EMAILS_BLOQUEADOS_AUTOMATICOS.some(blocked => 
+      blocked.toLowerCase() === emailLower
+    );
   }
 
   initializeTransporter() {
@@ -382,16 +470,22 @@ class EmailService {
 
   // Enviar email de confirmación de reserva al cliente
   async sendReservationConfirmation(reservaData) {
+    const reservaId = reservaData.reserva_id || null;
+    const codigoReserva = reservaData.codigo_reserva;
+    const emailCliente = reservaData.email_cliente;
+
+    // Verificar si el email está bloqueado
+    if (this.isEmailBlocked(emailCliente)) {
+      console.log(`🚫 Email bloqueado para envío automático: ${emailCliente}`);
+      await this.logEmailAttempt(reservaId, codigoReserva, emailCliente, 'cliente', 'omitido', 'Email en lista de bloqueados automáticos');
+      await this.updateReservaEmailStatus(reservaId, codigoReserva, 'cliente', 'omitido', 'Email en lista de bloqueados automáticos');
+      return { success: false, error: 'Email bloqueado para envío automático', blocked: true };
+    }
+
     if (!this.isConfigured) {
       console.log('📧 Email no configurado - simulando envío de confirmación al cliente');
-      console.log('📧 Datos que se habrían enviado:', {
-        from: 'reservas@reservatuscanchas.cl',
-        to: reservaData.email_cliente,
-        subject: `Confirmación de Reserva - ${reservaData.codigo_reserva}`,
-        complejo: reservaData.complejo,
-        cancha: reservaData.cancha,
-        fecha: reservaData.fecha
-      });
+      await this.logEmailAttempt(reservaId, codigoReserva, emailCliente, 'cliente', 'simulado', 'Email service no configurado');
+      await this.updateReservaEmailStatus(reservaId, codigoReserva, 'cliente', 'simulado', 'Email service no configurado');
       return { success: true, simulated: true };
     }
 
@@ -401,8 +495,8 @@ class EmailService {
       
       const mailOptions = {
         from: `"ReservaTusCanchas" <reservas@reservatuscanchas.cl>`,
-        to: reservaData.email_cliente,
-        subject: `✅ Confirmación de Reserva - ${reservaData.codigo_reserva}`,
+        to: emailCliente,
+        subject: `✅ Confirmación de Reserva - ${codigoReserva}`,
         html: this.generateReservationEmailHTML(reservaData),
         text: `
 Confirmación de Reserva - Reserva Tu Cancha
@@ -411,7 +505,7 @@ Confirmación de Reserva - Reserva Tu Cancha
 
 Tu reserva ha sido confirmada exitosamente.
 
-Código de Reserva: ${reservaData.codigo_reserva}
+Código de Reserva: ${codigoReserva}
 
 Detalles:
 - Complejo: ${reservaData.complejo}
@@ -437,10 +531,20 @@ Gracias por elegir Reserva Tu Cancha!
 
       const result = await reservasTransporter.sendMail(mailOptions);
       console.log('✅ Email de confirmación enviado al cliente:', result.messageId);
+      
+      // Registrar éxito
+      await this.logEmailAttempt(reservaId, codigoReserva, emailCliente, 'cliente', 'enviado', null, result.messageId);
+      await this.updateReservaEmailStatus(reservaId, codigoReserva, 'cliente', 'enviado', null, result.messageId);
+      
       return { success: true, messageId: result.messageId };
 
     } catch (error) {
       console.error('❌ Error enviando email de confirmación al cliente:', error.message);
+      
+      // Registrar error
+      await this.logEmailAttempt(reservaId, codigoReserva, emailCliente, 'cliente', 'error', error.message);
+      await this.updateReservaEmailStatus(reservaId, codigoReserva, 'cliente', 'error', error.message);
+      
       return { success: false, error: error.message };
     }
   }
@@ -473,8 +577,17 @@ Gracias por elegir Reserva Tu Cancha!
 
   // Enviar notificaciones a administradores
   async sendAdminNotifications(reservaData) {
+    const reservaId = reservaData.reserva_id || null;
+    const codigoReserva = reservaData.codigo_reserva;
+
     if (!this.isConfigured) {
       console.log('📧 Email no configurado - simulando notificaciones a administradores');
+      // Registrar simulación para todos los admins
+      const complexAdminEmails = this.getComplexAdminEmails(reservaData.complejo);
+      for (const adminEmail of complexAdminEmails) {
+        await this.logEmailAttempt(reservaId, codigoReserva, adminEmail, 'admin_complejo', 'simulado', 'Email service no configurado');
+      }
+      await this.logEmailAttempt(reservaId, codigoReserva, 'admin@reservatuscanchas.cl', 'super_admin', 'simulado', 'Email service no configurado');
       return { success: true, simulated: true };
     }
 
@@ -485,25 +598,44 @@ Gracias por elegir Reserva Tu Cancha!
       const complexAdminEmails = this.getComplexAdminEmails(reservaData.complejo);
       
       for (const adminEmail of complexAdminEmails) {
+        // Verificar si el email está bloqueado
+        if (this.isEmailBlocked(adminEmail)) {
+          console.log(`🚫 Email bloqueado para notificación automática: ${adminEmail}`);
+          await this.logEmailAttempt(reservaId, codigoReserva, adminEmail, 'admin_complejo', 'omitido', 'Email en lista de bloqueados automáticos');
+          results.push({ type: 'complex_admin', email: adminEmail, result: { success: false, blocked: true } });
+          continue;
+        }
+
         const complexAdminResult = await this.sendComplexAdminNotification(reservaData, adminEmail);
         results.push({ type: 'complex_admin', email: adminEmail, result: complexAdminResult });
       }
 
       // 2. Notificación al super admin (dueño de la plataforma)
+      // NO bloquear admin@reservatuscanchas.cl ya que es el dueño de la plataforma
       const superAdminResult = await this.sendSuperAdminNotification(reservaData);
       results.push({ type: 'super_admin', email: 'admin@reservatuscanchas.cl', result: superAdminResult });
 
-      console.log('✅ Notificaciones a administradores enviadas:', results);
+      // Actualizar estado de email admin en reserva si al menos uno se envió
+      const algunEnviado = results.some(r => r.result.success && !r.result.blocked);
+      if (algunEnviado) {
+        await this.updateReservaEmailStatus(reservaId, codigoReserva, 'admin_complejo', 'enviado');
+      }
+
+      console.log('✅ Notificaciones a administradores procesadas:', results);
       return { success: true, results: results };
 
     } catch (error) {
       console.error('❌ Error enviando notificaciones a administradores:', error.message);
+      await this.updateReservaEmailStatus(reservaId, codigoReserva, 'admin_complejo', 'error', error.message);
       return { success: false, error: error.message, results: results };
     }
   }
 
   // Notificación al administrador del complejo
   async sendComplexAdminNotification(reservaData, adminEmail) {
+    const reservaId = reservaData.reserva_id || null;
+    const codigoReserva = reservaData.codigo_reserva;
+
     try {
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
@@ -514,14 +646,14 @@ Gracias por elegir Reserva Tu Cancha!
       const mailOptions = {
         from: `"ReservaTusCanchas" <reservas@reservatuscanchas.cl>`,
         to: adminEmail,
-        subject: `🔔 Nueva Reserva en ${reservaData.complejo} - ${reservaData.codigo_reserva}${pagoMitad ? ' (Pago Parcial 50%)' : ''}`,
+        subject: `🔔 Nueva Reserva en ${reservaData.complejo} - ${codigoReserva}${pagoMitad ? ' (Pago Parcial 50%)' : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #007bff;">🔔 Nueva Reserva en tu Complejo</h2>
             ${pagoMitad ? '<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; margin: 15px 0;"><strong>⚠️ Pago Parcial:</strong> El cliente pagó solo el 50% online. Debe pagar el 50% restante en el complejo.</div>' : ''}
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #495057; margin-top: 0;">Detalles de la Reserva</h3>
-              <p><strong>Código:</strong> <span style="background-color: #007bff; color: white; padding: 4px 8px; border-radius: 4px;">${reservaData.codigo_reserva}</span></p>
+              <p><strong>Código:</strong> <span style="background-color: #007bff; color: white; padding: 4px 8px; border-radius: 4px;">${codigoReserva}</span></p>
               <p><strong>Cliente:</strong> ${reservaData.nombre_cliente}</p>
               <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
@@ -545,7 +677,7 @@ Gracias por elegir Reserva Tu Cancha!
         text: `
 Nueva Reserva en tu Complejo - Reserva Tu Cancha
 
-Código: ${reservaData.codigo_reserva}
+Código: ${codigoReserva}
 Cliente: ${reservaData.nombre_cliente}
 Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
@@ -565,16 +697,28 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
 
       const result = await reservasTransporter.sendMail(mailOptions);
       console.log(`✅ Notificación enviada al admin del complejo (${adminEmail}):`, result.messageId);
+      
+      // Registrar éxito
+      await this.logEmailAttempt(reservaId, codigoReserva, adminEmail, 'admin_complejo', 'enviado', null, result.messageId);
+      
       return { success: true, messageId: result.messageId };
 
     } catch (error) {
       console.error(`❌ Error enviando notificación al admin del complejo (${adminEmail}):`, error.message);
+      
+      // Registrar error
+      await this.logEmailAttempt(reservaId, codigoReserva, adminEmail, 'admin_complejo', 'error', error.message);
+      
       return { success: false, error: error.message };
     }
   }
 
   // Notificación al super admin
   async sendSuperAdminNotification(reservaData) {
+    const reservaId = reservaData.reserva_id || null;
+    const codigoReserva = reservaData.codigo_reserva;
+    const superAdminEmail = 'admin@reservatuscanchas.cl';
+
     try {
       // Crear transporter específico para reservas
       const reservasTransporter = this.createReservasTransporter();
@@ -584,15 +728,15 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
       
       const mailOptions = {
         from: `"ReservaTusCanchas" <reservas@reservatuscanchas.cl>`,
-        to: 'admin@reservatuscanchas.cl',
-        subject: `📊 Nueva Reserva - ${reservaData.codigo_reserva}${pagoMitad ? ' (Pago 50%)' : ''}`,
+        to: superAdminEmail,
+        subject: `📊 Nueva Reserva - ${codigoReserva}${pagoMitad ? ' (Pago 50%)' : ''}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #28a745;">📊 Nueva Reserva - Control General</h2>
             ${pagoMitad ? '<div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; margin: 15px 0;"><strong>⚠️ Pago Parcial:</strong> El cliente pagó solo el 50% online.</div>' : ''}
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #495057; margin-top: 0;">Detalles de la Reserva</h3>
-              <p><strong>Código:</strong> <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px;">${reservaData.codigo_reserva}</span></p>
+              <p><strong>Código:</strong> <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px;">${codigoReserva}</span></p>
               <p><strong>Cliente:</strong> ${reservaData.nombre_cliente}</p>
               <p><strong>Email:</strong> ${reservaData.email_cliente}</p>
               <p><strong>Complejo:</strong> ${reservaData.complejo}</p>
@@ -615,7 +759,7 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
         text: `
 Nueva Reserva - Control General - Reserva Tu Cancha
 
-Código: ${reservaData.codigo_reserva}
+Código: ${codigoReserva}
 Cliente: ${reservaData.nombre_cliente}
 Email: ${reservaData.email_cliente}
 Complejo: ${reservaData.complejo}
@@ -635,10 +779,18 @@ Este email fue generado automáticamente por el sistema Reserva Tu Cancha
 
       const result = await reservasTransporter.sendMail(mailOptions);
       console.log('✅ Notificación enviada al super admin:', result.messageId);
+      
+      // Registrar éxito
+      await this.logEmailAttempt(reservaId, codigoReserva, superAdminEmail, 'super_admin', 'enviado', null, result.messageId);
+      
       return { success: true, messageId: result.messageId };
 
     } catch (error) {
       console.error('❌ Error enviando notificación al super admin:', error.message);
+      
+      // Registrar error
+      await this.logEmailAttempt(reservaId, codigoReserva, superAdminEmail, 'super_admin', 'error', error.message);
+      
       return { success: false, error: error.message };
     }
   }

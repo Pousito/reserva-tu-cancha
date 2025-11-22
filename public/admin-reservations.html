@@ -145,6 +145,16 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-width: 960px;
+        }
+        .calendar-scroll-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
+        }
+        .mobile-scroll-hint {
+            font-size: 0.85rem;
+            color: #6c757d;
         }
         
         .calendar-header {
@@ -512,7 +522,8 @@
         /* Responsive */
         @media (max-width: 768px) {
             .calendar-grid {
-                grid-template-columns: 80px repeat(7, 1fr);
+                grid-template-columns: 100px repeat(7, minmax(110px, 1fr));
+                min-width: 900px;
                 font-size: 0.8rem;
             }
             
@@ -533,7 +544,18 @@
             }
             
             .calendar-slot {
-                min-height: 35px;
+                min-height: 45px;
+            }
+        }
+        @media (max-width: 576px) {
+            .calendar-grid {
+                min-width: 960px;
+            }
+            .calendar-slot {
+                min-height: 56px;
+            }
+            .calendar-time-slot {
+                min-height: 45px;
             }
         }
     </style>
@@ -783,8 +805,13 @@
                                 </div>
 
                                 <!-- Calendario -->
-                                <div class="calendar-grid" id="calendarGrid">
-                                    <!-- Se generará dinámicamente -->
+                                <div class="mobile-scroll-hint d-md-none text-center mb-2">
+                                    Desliza horizontalmente para revisar todos los días de la semana
+                                </div>
+                                <div class="calendar-scroll-wrapper">
+                                    <div class="calendar-grid" id="calendarGrid">
+                                        <!-- Se generará dinámicamente -->
+                                    </div>
                                 </div>
                             </div>
                         </div>

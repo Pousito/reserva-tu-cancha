@@ -613,6 +613,14 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             console.log(`🎁 Complejo ${complejo_id}: Aplicando comisión 0% (exento hasta fecha de inicio)`);
         }
 
+        // Validar que user.id esté disponible para admin_id
+        if (!user || !user.id) {
+            console.error('❌ Error: user.id no disponible para crear reserva administrativa');
+            return res.status(401).json({ 
+                error: 'Usuario no autenticado correctamente. No se puede crear reserva administrativa sin admin_id.' 
+            });
+        }
+
         const reservationData = {
             cancha_id,
             fecha,
@@ -624,13 +632,20 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             rut_cliente,
             precio_total: precioFinal,
             tipo_reserva: 'administrativa',
-            admin_id: user.id,
+            admin_id: user.id, // Asegurar que admin_id se pase correctamente
             bloqueo_id: req.body.bloqueo_id || null, // ID del bloqueo temporal del admin actual
             metodo_pago: metodo_pago || null, // Método de pago seleccionado
             estado_pago: estado_pago || 'pendiente', // Estado de pago (pagado, por_pagar, pendiente)
             monto_abonado: montoAbonadoFinal, // Monto abonado por el cliente
             porcentaje_pagado: porcentajeFinal // Porcentaje pagado recalculado (no confiar en frontend)
         };
+
+        console.log('🔍 Datos de reserva administrativa:', {
+            admin_id: reservationData.admin_id,
+            user_id: user.id,
+            user_email: user.email,
+            tipo_reserva: reservationData.tipo_reserva
+        });
 
         const options = {
             skipAvailabilityCheck: false, // Siempre verificar disponibilidad
@@ -674,9 +689,10 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
         // Enviar emails de confirmación ANTES de responder
         try {
           const EmailService = require('../services/emailService');
-          const emailService = new EmailService();
+          const emailService = new EmailService(db); // Pasar instancia de BD para logging
           
           const emailData = {
+            reserva_id: nuevaReserva.id, // Agregar reserva_id para logging
             codigo_reserva: nuevaReserva.codigo_reserva,
             nombre_cliente: nombre_cliente,
             email_cliente: email_cliente,
@@ -685,7 +701,8 @@ router.post('/reservation', authenticateToken, requireRolePermission(['super_adm
             fecha: fecha,
             hora_inicio: hora_inicio,
             hora_fin: hora_fin,
-            precio_total: result.precio.final
+            precio_total: result.precio.final,
+            porcentaje_pagado: nuevaReserva.porcentaje_pagado || porcentajeFinal
           };
           
           console.log('📧 Enviando emails de confirmación para reserva administrativa:', nuevaReserva.codigo_reserva);
@@ -785,10 +802,28 @@ router.post('/check-blocking', authenticateToken, requireRolePermission(['super_
  */
 router.post('/create-blocking', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
     try {
-        const { fecha, hora_inicio, hora_fin, session_id, tipo } = req.body;
+        const { fecha, hora_inicio, hora_fin, session_id, tipo, complejo_id } = req.body;
         const user = req.user;
         
-        console.log('🔒 Creando bloqueo temporal administrativo:', { fecha, hora_inicio, hora_fin, session_id, tipo, user: user.email });
+        const bodyComplejoId = complejo_id || req.body?.complejoId || null;
+        const complejoObjetivo = (user.rol === 'super_admin') ? bodyComplejoId : user.complejo_id;
+        
+        if (!complejoObjetivo) {
+            return res.status(400).json({
+                success: false,
+                error: 'Debe seleccionar un complejo para crear bloqueos administrativos'
+            });
+        }
+        
+        console.log('🔒 Creando bloqueo temporal administrativo:', { 
+            fecha, 
+            hora_inicio, 
+            hora_fin, 
+            session_id, 
+            tipo, 
+            user: user.email,
+            complejoObjetivo
+        });
 
         // Validar formato de fecha y hora
         let fechaHoraReserva;
@@ -826,17 +861,15 @@ router.post('/create-blocking', authenticateToken, requireRolePermission(['super
         let canchasParams = [];
         
         if (user.rol === 'super_admin') {
-            // Super admin puede crear bloqueos en cualquier complejo
-            // Obtener todas las canchas del primer complejo disponible
+            // Super admin puede crear bloqueos en el complejo seleccionado
             canchasQuery = `
                 SELECT c.id, c.nombre, c.tipo
                 FROM canchas c
                 JOIN complejos comp ON c.complejo_id = comp.id
-                WHERE comp.id = (
-                    SELECT MIN(id) FROM complejos
-                )
+                WHERE comp.id = $1
                 ORDER BY c.id
             `;
+            canchasParams = [complejoObjetivo];
         } else {
             // Owner y manager solo pueden crear bloqueos en su complejo
             canchasQuery = `

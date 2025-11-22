@@ -3766,11 +3766,14 @@ async function renderizarCanchasConDisponibilidad() {
         // Crear contenedor (galpón para Complejo En Desarrollo, complejo-abierto para Fundación Gunnen y Espacio Deportivo Borde Río)
         const galponContainer = document.createElement('div');
         galponContainer.className = esTechado ? 'galpon-container' : 'complejo-abierto-container';
-        
+
         // Agregar nombre del complejo como atributo data para CSS dinámico
-        if (!esTechado) {
-            // Evitar duplicar la palabra "COMPLEJO" si ya está en el nombre
-            const nombreComplejo = complejoSeleccionado.nombre.toUpperCase();
+        const nombreComplejo = complejoSeleccionado.nombre.toUpperCase();
+        if (esTechado) {
+            // Para techados, usar data-complejo-nombre (usado por ::before)
+            galponContainer.setAttribute('data-complejo-nombre', nombreComplejo);
+        } else {
+            // Para no techados, usar data-complejo
             const tituloComplejo = nombreComplejo.startsWith('COMPLEJO ') ? nombreComplejo : `COMPLEJO ${nombreComplejo}`;
             galponContainer.setAttribute('data-complejo', tituloComplejo);
         }
@@ -4180,41 +4183,6 @@ async function renderizarCanchasConDisponibilidad() {
             // Crear contenedor principal con grid layout
             const complejoGrid = document.createElement('div');
             complejoGrid.className = 'complejo-desarrollo-grid';
-            
-            // Agregar nombre del complejo y dirección al galpón
-            galponContainer.setAttribute('data-complejo-nombre', 'COMPLEJO EN DESARROLLO');
-            galponContainer.setAttribute('data-direccion', 'Monte Perdido 1685');
-
-            // Agregar ícono de información PRIMERO (antes de cualquier contenido)
-            // para que se posicione correctamente con position: absolute
-            const infoIcon = document.createElement('div');
-            infoIcon.className = 'complejo-info-icon';
-            infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-            infoIcon.addEventListener('mouseenter', () => {
-                infoIcon.style.background = '#138496';
-                infoIcon.style.transform = 'translateX(105px) scale(1.15)';
-                infoIcon.style.boxShadow = '0 2px 8px rgba(23, 162, 184, 0.4)';
-            });
-            infoIcon.addEventListener('mouseleave', () => {
-                infoIcon.style.background = '#17a2b8';
-                infoIcon.style.transform = 'translateX(105px) scale(1)';
-                infoIcon.style.boxShadow = 'none';
-            });
-            infoIcon.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                console.log('✅ Click en ícono de información detectado');
-                console.log('✅ Complejo seleccionado:', complejoSeleccionado);
-                try {
-                    mostrarModalInfoComplejo(complejoSeleccionado);
-                } catch (error) {
-                    console.error('❌ Error al mostrar modal:', error);
-                }
-            });
-            infoIcon.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-            });
-            galponContainer.appendChild(infoIcon);
 
             // Agregar canchas al galpón
             galponContainer.appendChild(canchasHorizontales);
@@ -5158,20 +5126,24 @@ function mostrarModalInfoComplejo(complejo) {
         </div>
     `;
     
+    // Remover event listeners previos para evitar duplicados
+    modal.replaceWith(modal.cloneNode(true));
+    modal = document.getElementById('complejoInfoModal');
+
     // Mostrar el modal
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden'; // Prevenir scroll del body
-    
+
     // Cerrar modal al hacer click fuera del contenido
-    modal.addEventListener('click', function(e) {
+    modal.onclick = function(e) {
         if (e.target === modal) {
             cerrarModalInfoComplejo();
         }
-    });
-    
+    };
+
     // Cerrar modal con tecla Escape
     const escapeHandler = function(e) {
-        if (e.key === 'Escape' && modal.style.display === 'block') {
+        if (e.key === 'Escape') {
             cerrarModalInfoComplejo();
             document.removeEventListener('keydown', escapeHandler);
         }

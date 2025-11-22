@@ -1,5 +1,4 @@
 const { jsPDF } = require('jspdf');
-const { formatDateForChile } = require('../utils/dateUtils');
 
 /**
  * Servicio para generar comprobantes de reserva en PDF
@@ -172,11 +171,27 @@ class PDFService {
                 fechaStr = fecha.split('T')[0];
             }
             
-            // Usar la función formatDateForChile que usa el algoritmo de Zeller
-            // para calcular correctamente el día de la semana sin problemas de zona horaria
-            return formatDateForChile(fechaStr);
+            // Si es formato YYYY-MM-DD, agregar mediodía para evitar desfase
+            if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+                const date = new Date(fechaStr + 'T12:00:00');
+                return date.toLocaleDateString('es-CL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'America/Santiago'
+                });
+            }
+            
+            const date = new Date(fechaStr);
+            return date.toLocaleDateString('es-CL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'America/Santiago'
+            });
         } catch (error) {
-            console.error('Error formateando fecha:', error);
             return fecha;
         }
     }

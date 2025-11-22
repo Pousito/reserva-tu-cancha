@@ -34,6 +34,49 @@ let busquedaActual = '';
 let filtrosActivos = {};
 let bloqueosPermanentesCache = {}; // Cache de bloqueos permanentes por cancha y fecha
 
+function obtenerComplejoActualParaCalendario() {
+    const user = AdminUtils.getCurrentUser();
+    if (user && (user.rol === 'owner' || user.rol === 'manager')) {
+        return user.complejo_id || '';
+    }
+    
+    const selectorComplejo = document.getElementById('complejoCalendario');
+    if (selectorComplejo && selectorComplejo.value) {
+        return selectorComplejo.value;
+    }
+    
+    if (user && user.complejo_id) {
+        return user.complejo_id;
+    }
+    
+    return '';
+}
+
+function generarFechasEntre(fechaInicio, fechaFin) {
+    const fechas = [];
+    if (!fechaInicio || !fechaFin) {
+        return fechas;
+    }
+    
+    const inicio = new Date(`${fechaInicio}T00:00:00`);
+    const fin = new Date(`${fechaFin}T00:00:00`);
+    
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+        return fechas;
+    }
+    
+    const cursor = new Date(inicio);
+    while (cursor <= fin) {
+        const year = cursor.getFullYear();
+        const month = String(cursor.getMonth() + 1).padStart(2, '0');
+        const day = String(cursor.getDate()).padStart(2, '0');
+        fechas.push(`${year}-${month}-${day}`);
+        cursor.setDate(cursor.getDate() + 1);
+    }
+    
+    return fechas;
+}
+
 // Función para formatear moneda chilena (punto como separador de miles)
 function formatCurrencyChile(amount) {
     if (amount === null || amount === undefined || isNaN(amount)) {
@@ -1897,40 +1940,20 @@ async function cargarCalendario() {
             calendarioData = data.calendario || {};
             canchas = data.canchas || [];
             
-            // Cargar bloqueos permanentes para todas las fechas y canchas de la semana
+            // Cargar bloqueos permanentes minimizando solicitudes para móviles
             bloqueosPermanentesCache = {};
-            if (canchas && canchas.length > 0) {
-                // Generar todas las fechas de la semana
-                const fechaObj = new Date(fechaInicio);
-                const fechas = [];
-                while (fechaObj <= new Date(fechaFin)) {
-                    fechas.push(`${fechaObj.getFullYear()}-${String(fechaObj.getMonth() + 1).padStart(2, '0')}-${String(fechaObj.getDate()).padStart(2, '0')}`);
-                    fechaObj.setDate(fechaObj.getDate() + 1);
-                }
-                
-                // Cargar bloqueos para cada cancha y fecha
-                for (const cancha of canchas) {
-                    for (const fecha of fechas) {
-                        try {
-                            const dispResponse = await fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}?t=${Date.now()}`, {
-                                headers: {
-                                    'Authorization': `Bearer ${AdminUtils.getAuthToken()}`
-                                }
-                            });
-                            if (dispResponse.ok) {
-                                const dispData = await dispResponse.json();
-                                if (dispData.bloqueos_permanentes && dispData.bloqueos_permanentes.length > 0) {
-                                    const cacheKey = `${cancha.id}_${fecha}`;
-                                    bloqueosPermanentesCache[cacheKey] = dispData.bloqueos_permanentes;
-                                }
-                            }
-                        } catch (error) {
-                            console.error(`Error cargando bloqueos permanentes para cancha ${cancha.id}, fecha ${fecha}:`, error);
-                        }
-                    }
-                }
-                console.log(`✅ Bloqueos permanentes cargados para ${Object.keys(bloqueosPermanentesCache).length} combinaciones cancha/fecha`);
+            const fechasSemana = generarFechasEntre(fechaInicio, fechaFin);
+            let bloqueosPrecargados = false;
+
+            if (complejoId) {
+                bloqueosPrecargados = await precargarBloqueosPermanentesSemana(complejoId, fechasSemana);
             }
+
+            if (!bloqueosPrecargados && canchas && canchas.length > 0) {
+                await precargarBloqueosPorCancha(canchas, fechasSemana);
+            }
+            
+            console.log(`✅ Bloqueos permanentes cacheados: ${Object.keys(bloqueosPermanentesCache).length}`);
             
             // Debug: Mostrar datos del calendario
             console.log('📅 Datos del calendario recibidos:', calendarioData);
@@ -2011,6 +2034,88 @@ async function cargarCalendario() {
             `;
         }
     }
+}
+
+async function precargarBloqueosPermanentesSemana(complejoId, fechasSemana = []) {
+    if (!complejoId || !Array.isArray(fechasSemana) || fechasSemana.length === 0) {
+        return false;
+    }
+    
+    try {
+        const peticiones = fechasSemana.map(fecha => {
+            return fetch(`${API_BASE}/disponibilidad-completa/${complejoId}/${fecha}?t=${Date.now()}`, {
+                headers: {
+                    'Authorization': `Bearer ${AdminUtils.getAuthToken()}`
+                }
+            }).then(async response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status} al cargar bloqueos para ${fecha}`);
+                }
+                const data = await response.json();
+                if (data) {
+                    const canchasData = Array.isArray(data) ? data : Object.values(data);
+                    canchasData.forEach(canchaData => {
+                        if (canchaData?.cancha_id) {
+                            guardarBloqueosPermanentesEnCache(
+                                canchaData.cancha_id,
+                                fecha,
+                                canchaData.bloqueos_permanentes || []
+                            );
+                        }
+                    });
+                }
+                return true;
+            }).catch(error => {
+                console.warn(`⚠️ Error cargando bloqueos del complejo ${complejoId} para ${fecha}:`, error);
+                return false;
+            });
+        });
+        
+        const resultados = await Promise.allSettled(peticiones);
+        const huboExito = resultados.some(resultado => resultado.status === 'fulfilled' && resultado.value === true);
+        console.log('📦 Precarga de bloqueos por complejo completada. Éxito:', huboExito);
+        return huboExito;
+    } catch (error) {
+        console.error('❌ Error precargando bloqueos permanentes por complejo:', error);
+        return false;
+    }
+}
+
+async function precargarBloqueosPorCancha(canchasDisponibles = [], fechasSemana = []) {
+    if (!Array.isArray(canchasDisponibles) || canchasDisponibles.length === 0 || fechasSemana.length === 0) {
+        return false;
+    }
+    
+    let huboExito = false;
+    
+    for (const fecha of fechasSemana) {
+        const peticionesDia = canchasDisponibles.map(cancha => {
+            return fetch(`${API_BASE}/disponibilidad/${cancha.id}/${fecha}?t=${Date.now()}`, {
+                headers: {
+                    'Authorization': `Bearer ${AdminUtils.getAuthToken()}`
+                }
+            }).then(async response => {
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}`);
+                }
+                const dispData = await response.json();
+                guardarBloqueosPermanentesEnCache(cancha.id, fecha, dispData.bloqueos_permanentes || []);
+                huboExito = true;
+            }).catch(error => {
+                console.warn(`⚠️ Error cargando bloqueos para cancha ${cancha.id}, fecha ${fecha}:`, error);
+            });
+        });
+        
+        await Promise.allSettled(peticionesDia);
+    }
+    
+    return huboExito;
+}
+
+function guardarBloqueosPermanentesEnCache(canchaId, fecha, bloqueos = []) {
+    if (!canchaId || !fecha) return;
+    const cacheKey = `${canchaId}_${fecha}`;
+    bloqueosPermanentesCache[cacheKey] = bloqueos;
 }
 
 /**
@@ -2991,6 +3096,12 @@ async function seleccionarSlot(fecha, hora) {
     horaFin.setHours(h + 1, m, 0, 0);
     const horaFinStr = `${horaFin.getHours().toString().padStart(2, '0')}:${horaFin.getMinutes().toString().padStart(2, '0')}`;
     
+    const complejoActual = obtenerComplejoActualParaCalendario();
+    if (!complejoActual) {
+        mostrarNotificacion('Selecciona un complejo antes de crear reservas administrativas.', 'warning', 6000);
+        return;
+    }
+
     // Verificar si hay bloqueos temporales activos en este horario
     const bloqueosActivos = await verificarBloqueosTemporales(fecha, hora, horaFinStr);
     
@@ -3036,7 +3147,7 @@ async function seleccionarSlot(fecha, hora) {
     }
     
     // Crear bloqueo temporal administrativo
-    const bloqueoAdmin = await crearBloqueoTemporalAdmin(fecha, hora, horaFinStr);
+    const bloqueoAdmin = await crearBloqueoTemporalAdmin(fecha, hora, horaFinStr, complejoActual);
     
     if (!bloqueoAdmin.success) {
         console.error('❌ Error creando bloqueo temporal administrativo:', bloqueoAdmin.error);
@@ -3071,7 +3182,8 @@ async function seleccionarSlot(fecha, hora) {
         horaInicio: hora,
         horaFin: horaFinStr,
         bloqueoId: bloqueoAdmin.bloqueo.id,
-        bloqueosPorCancha: bloqueoAdmin.bloqueos || [] // Guardar todos los bloqueos para poder encontrar el correcto
+        bloqueosPorCancha: bloqueoAdmin.bloqueos || [], // Guardar todos los bloqueos para poder encontrar el correcto
+        complejoId: complejoActual
     };
     
     abrirModalReserva(true); // Ocultar selector de complejo cuando se abre desde calendario
@@ -4464,12 +4576,16 @@ async function verificarBloqueosTemporales(fecha, horaInicio, horaFin) {
 /**
  * Crear bloqueo temporal administrativo
  */
-async function crearBloqueoTemporalAdmin(fecha, horaInicio, horaFin) {
+async function crearBloqueoTemporalAdmin(fecha, horaInicio, horaFin, complejoId) {
     try {
-        console.log('🔒 Creando bloqueo temporal administrativo:', { fecha, horaInicio, horaFin });
+        console.log('🔒 Creando bloqueo temporal administrativo:', { fecha, horaInicio, horaFin, complejoId });
         
         const user = AdminUtils.getCurrentUser();
         const sessionId = `admin_${user.id}_${Date.now()}`;
+        
+        if (user?.rol === 'super_admin' && !complejoId) {
+            throw new Error('Debe seleccionar un complejo para crear bloqueos administrativos');
+        }
         
         const response = await fetch(`${API_BASE}/admin/calendar/create-blocking`, {
             method: 'POST',
@@ -4482,7 +4598,8 @@ async function crearBloqueoTemporalAdmin(fecha, horaInicio, horaFin) {
                 hora_inicio: horaInicio,
                 hora_fin: horaFin,
                 session_id: sessionId,
-                tipo: 'administrativo'
+                tipo: 'administrativo',
+                complejo_id: complejoId || user?.complejo_id || null
             })
         });
         
@@ -4500,7 +4617,8 @@ async function crearBloqueoTemporalAdmin(fecha, horaInicio, horaFin) {
             sessionId: sessionId,
             fecha: fecha,
             horaInicio: horaInicio,
-            horaFin: horaFin
+            horaFin: horaFin,
+            complejoId: complejoId || user?.complejo_id || null
         };
         
         // Configurar limpieza automática después de 2 minutos

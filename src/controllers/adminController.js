@@ -30,6 +30,10 @@ async function getEstadisticas(req, res) {
       params = [complexFilter];
     }
     
+    const { dateFrom, dateTo } = req.query || {};
+    const startDate = dateFrom ? dateFrom.trim() : null;
+    const endDate = dateTo ? dateTo.trim() : null;
+    
     // Obtener estadísticas
     const totalReservas = await db.get(`
       SELECT COUNT(*) as total 
@@ -58,26 +62,35 @@ async function getEstadisticas(req, res) {
     `, userRole === 'super_admin' ? [] : [complexFilter]);
     
     // Obtener reservas por día (últimos 7 días) - IMPORTANTE: Devolver fecha como string
-    const reservasPorDiaQuery = userRole === 'super_admin' ?
-      `SELECT TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha, COUNT(*) as cantidad 
-       FROM reservas r
-       WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
-       AND r.estado != 'cancelada'
-       GROUP BY r.fecha::date
-       ORDER BY r.fecha::date` :
-      `SELECT TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha, COUNT(*) as cantidad 
-       FROM reservas r
-       JOIN canchas c ON r.cancha_id = c.id
-       WHERE r.fecha >= CURRENT_DATE - INTERVAL '7 days'
-       AND r.estado != 'cancelada'
-       AND c.complejo_id = $1
-       GROUP BY r.fecha::date
-       ORDER BY r.fecha::date`;
+    const isSuperAdmin = userRole === 'super_admin';
+    const reservasWhere = [`r.estado != 'cancelada'`];
+    const reservasParams = [];
     
-    const reservasPorDia = await db.query(
-      reservasPorDiaQuery,
-      userRole === 'super_admin' ? [] : [complexFilter]
-    );
+    if (!isSuperAdmin) {
+      reservasWhere.push(`c.complejo_id = $${reservasParams.length + 1}`);
+      reservasParams.push(complexFilter);
+    }
+    
+    if (startDate) {
+      reservasWhere.push(`r.fecha >= $${reservasParams.length + 1}`);
+      reservasParams.push(startDate);
+    }
+    
+    if (endDate) {
+      reservasWhere.push(`r.fecha <= $${reservasParams.length + 1}`);
+      reservasParams.push(endDate);
+    }
+    
+    const reservasPorDiaQuery = `
+      SELECT TO_CHAR(r.fecha, 'YYYY-MM-DD') as fecha, COUNT(*) as cantidad 
+      FROM reservas r
+      ${isSuperAdmin ? '' : 'JOIN canchas c ON r.cancha_id = c.id'}
+      WHERE ${reservasWhere.join(' AND ')}
+      GROUP BY r.fecha::date
+      ORDER BY r.fecha::date
+    `;
+    
+    const reservasPorDia = await db.query(reservasPorDiaQuery, reservasParams);
     
     res.json({
       totalReservas: totalReservas.total || 0,
