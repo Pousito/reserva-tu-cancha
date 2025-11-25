@@ -74,20 +74,20 @@ class ReportService {
                 COUNT(*) as total_reservas,
                 COUNT(CASE WHEN estado = 'confirmada' THEN 1 END) as reservas_confirmadas,
                 COUNT(CASE WHEN estado = 'cancelada' THEN 1 END) as reservas_canceladas,
-                COALESCE(SUM(CASE WHEN estado = 'confirmada' THEN precio_total ELSE 0 END), 0) as ingresos_brutos,
+                COALESCE(SUM(CASE WHEN estado = 'confirmada' THEN COALESCE(monto_abonado, 0) ELSE 0 END), 0) as ingresos_brutos,
                 COALESCE(SUM(CASE 
-                    WHEN estado = 'confirmada' AND tipo_reserva = 'directa' THEN (precio_total * 0.035)
-                    WHEN estado = 'confirmada' AND tipo_reserva = 'administrativa' THEN (precio_total * 0.0175)
-                    WHEN estado = 'confirmada' AND tipo_reserva IS NULL THEN (precio_total * 0.035)
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'directa' THEN (COALESCE(monto_abonado, 0) * 0.035)
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'administrativa' THEN (COALESCE(monto_abonado, 0) * 0.0175)
+                    WHEN estado = 'confirmada' AND tipo_reserva IS NULL THEN (COALESCE(monto_abonado, 0) * 0.035)
                     ELSE 0 
                 END), 0) as comision_plataforma,
                 COALESCE(SUM(CASE 
-                    WHEN estado = 'confirmada' AND tipo_reserva = 'directa' THEN (precio_total * 0.965)
-                    WHEN estado = 'confirmada' AND tipo_reserva = 'administrativa' THEN (precio_total * 0.9825)
-                    WHEN estado = 'confirmada' AND tipo_reserva IS NULL THEN (precio_total * 0.965)
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'directa' THEN (COALESCE(monto_abonado, 0) * 0.965)
+                    WHEN estado = 'confirmada' AND tipo_reserva = 'administrativa' THEN (COALESCE(monto_abonado, 0) * 0.9825)
+                    WHEN estado = 'confirmada' AND tipo_reserva IS NULL THEN (COALESCE(monto_abonado, 0) * 0.965)
                     ELSE 0 
                 END), 0) as ingresos_netos,
-                COALESCE(AVG(CASE WHEN estado = 'confirmada' THEN precio_total END), 0) as ticket_promedio
+                COALESCE(AVG(CASE WHEN estado = 'confirmada' THEN COALESCE(monto_abonado, 0) END), 0) as ticket_promedio
             FROM reservas r
             JOIN canchas c ON r.cancha_id = c.id
             WHERE c.complejo_id = $1 
@@ -106,17 +106,17 @@ class ReportService {
                 r.fecha::date as fecha,
                 COUNT(*) as total_reservas,
                 COUNT(CASE WHEN r.estado = 'confirmada' THEN 1 END) as reservas_confirmadas,
-                COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN r.precio_total ELSE 0 END), 0) as ingresos_brutos,
+                COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN COALESCE(r.monto_abonado, 0) ELSE 0 END), 0) as ingresos_brutos,
                 COALESCE(SUM(CASE 
-                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'directa' THEN (r.precio_total * 0.035)
-                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'administrativa' THEN (r.precio_total * 0.0175)
-                    WHEN r.estado = 'confirmada' AND r.tipo_reserva IS NULL THEN (r.precio_total * 0.035)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'directa' THEN (COALESCE(r.monto_abonado, 0) * 0.035)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'administrativa' THEN (COALESCE(r.monto_abonado, 0) * 0.0175)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva IS NULL THEN (COALESCE(r.monto_abonado, 0) * 0.035)
                     ELSE 0 
                 END), 0) as comision_plataforma,
                 COALESCE(SUM(CASE 
-                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'directa' THEN (r.precio_total * 0.965)
-                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'administrativa' THEN (r.precio_total * 0.9825)
-                    WHEN r.estado = 'confirmada' AND r.tipo_reserva IS NULL THEN (r.precio_total * 0.965)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'directa' THEN (COALESCE(r.monto_abonado, 0) * 0.965)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva = 'administrativa' THEN (COALESCE(r.monto_abonado, 0) * 0.9825)
+                    WHEN r.estado = 'confirmada' AND r.tipo_reserva IS NULL THEN (COALESCE(r.monto_abonado, 0) * 0.965)
                     ELSE 0 
                 END), 0) as ingresos_netos
             FROM reservas r
@@ -148,8 +148,8 @@ class ReportService {
                 r.estado,
                 r.estado_pago,
                 r.created_at,
-                CASE WHEN r.estado = 'confirmada' THEN (r.precio_total * 0.05) ELSE 0 END as comision_plataforma,
-                CASE WHEN r.estado = 'confirmada' THEN (r.precio_total * 0.95) ELSE 0 END as ingreso_neto
+                CASE WHEN r.estado = 'confirmada' THEN (COALESCE(r.monto_abonado, 0) * 0.05) ELSE 0 END as comision_plataforma,
+                CASE WHEN r.estado = 'confirmada' THEN (COALESCE(r.monto_abonado, 0) * 0.95) ELSE 0 END as ingreso_neto
             FROM reservas r
             JOIN canchas c ON r.cancha_id = c.id
             WHERE c.complejo_id = $1 

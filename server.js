@@ -5424,8 +5424,9 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
       ${whereClause}
     `, params);
     
+    // CORRECCIÓN: Usar monto_abonado en lugar de precio_total para coincidir con control financiero
     const ingresosTotales = await db.get(`
-      SELECT COALESCE(SUM(precio_total), 0) as total 
+      SELECT COALESCE(SUM(COALESCE(r.monto_abonado, 0)), 0) as total 
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -5451,7 +5452,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     
     // Reservas por día (solo confirmadas) - obteniendo datos individuales para agrupar correctamente
     const reservasPorDiaRaw = await db.query(`
-      SELECT r.fecha, r.precio_total
+      SELECT r.fecha, COALESCE(r.monto_abonado, 0) as monto_abonado
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -5472,7 +5473,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
         };
       }
       reservasPorDia[fechaStr].cantidad += 1;
-      reservasPorDia[fechaStr].ingresos += row.precio_total;
+      reservasPorDia[fechaStr].ingresos += row.monto_abonado;
     });
     
     const reservasPorDiaArray = Object.values(reservasPorDia).sort((a, b) => {
@@ -5488,7 +5489,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
         co.id as complejo_id,
         co.nombre as complejo,
         COUNT(*) as cantidad,
-        COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN r.precio_total ELSE 0 END), 0) as ingresos,
+        COALESCE(SUM(CASE WHEN r.estado = 'confirmada' THEN COALESCE(r.monto_abonado, 0) ELSE 0 END), 0) as ingresos,
         COUNT(DISTINCT c.id) as canchas_count
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
@@ -5619,7 +5620,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     
     // Reservas por tipo de cancha (solo confirmadas)
     const reservasPorTipo = await db.query(`
-      SELECT c.tipo, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      SELECT c.tipo, COUNT(*) as cantidad, COALESCE(SUM(COALESCE(r.monto_abonado, 0)), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -5630,7 +5631,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     
     // Top canchas más reservadas (solo confirmadas)
     const topCanchas = await db.query(`
-      SELECT c.nombre as cancha, co.nombre as complejo, COUNT(*) as reservas, COALESCE(SUM(r.precio_total), 0) as ingresos
+      SELECT c.nombre as cancha, co.nombre as complejo, COUNT(*) as reservas, COALESCE(SUM(COALESCE(r.monto_abonado, 0)), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
@@ -5642,7 +5643,7 @@ app.post('/api/admin/reports', authenticateToken, requireComplexAccess, requireR
     
     // Horarios más populares (solo confirmadas)
     const horariosPopulares = await db.query(`
-      SELECT r.hora_inicio as hora, COUNT(*) as cantidad, COALESCE(SUM(r.precio_total), 0) as ingresos
+      SELECT r.hora_inicio as hora, COUNT(*) as cantidad, COALESCE(SUM(COALESCE(r.monto_abonado, 0)), 0) as ingresos
       FROM reservas r
       JOIN canchas c ON r.cancha_id = c.id
       JOIN complejos co ON c.complejo_id = co.id
