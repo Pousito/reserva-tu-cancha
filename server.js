@@ -3372,6 +3372,168 @@ app.post('/api/admin/sincronizar-reservas-complejo', authenticateToken, requireR
   }
 });
 
+// Endpoint para diagnosticar discrepancia entre reportes y control financiero
+app.get('/api/admin/diagnosticar-ingresos', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  try {
+    const user = req.user;
+    const { complejo_id, fecha_desde, fecha_hasta } = req.query;
+    
+    // Determinar complejo_id según el rol
+    let complejoId = complejo_id ? parseInt(complejo_id) : null;
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      complejoId = user.complejo_id;
+    }
+    
+    if (!complejoId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'complejo_id es requerido' 
+      });
+    }
+    
+    if (!fecha_desde || !fecha_hasta) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'fecha_desde y fecha_hasta son requeridos' 
+      });
+    }
+    
+    // 1. Obtener ingresos de REPORTES (monto_abonado de reservas)
+    const ReportService = require('./src/services/reportService');
+    const reportService = new ReportService(db);
+    const reportesData = await reportService.getIncomeData(complejoId, fecha_desde, fecha_hasta);
+    
+    // 2. Obtener todos los ingresos del CONTROL FINANCIERO
+    const controlTodos = await db.query(`
+      SELECT 
+        SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
+        COUNT(*) as total_movimientos
+      FROM gastos_ingresos
+      WHERE complejo_id = $1
+      AND fecha >= $2 AND fecha <= $3
+    `, [complejoId, fecha_desde, fecha_hasta]);
+    
+    // 3. Obtener solo ingresos de reservas del control financiero
+    const ingresosReservas = await db.query(`
+      SELECT 
+        gi.id,
+        gi.monto,
+        gi.fecha,
+        gi.descripcion,
+        cat.nombre as categoria_nombre
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+      WHERE gi.complejo_id = $1
+      AND gi.tipo = 'ingreso'
+      AND gi.fecha >= $2 AND gi.fecha <= $3
+      AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
+    `, [complejoId, fecha_desde, fecha_hasta]);
+    
+    const totalIngresosReservas = ingresosReservas.reduce((sum, ing) => 
+      sum + parseFloat(ing.monto || 0), 0
+    );
+    
+    // 4. Obtener otros ingresos (no de reservas)
+    const otrosIngresos = await db.query(`
+      SELECT 
+        gi.id,
+        gi.monto,
+        gi.fecha,
+        gi.descripcion,
+        cat.nombre as categoria_nombre
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+      WHERE gi.complejo_id = $1
+      AND gi.tipo = 'ingreso'
+      AND gi.fecha >= $2 AND gi.fecha <= $3
+      AND cat.nombre != 'Reservas Web'
+      AND cat.nombre != 'Reservas Administrativas'
+    `, [complejoId, fecha_desde, fecha_hasta]);
+    
+    const totalOtrosIngresos = otrosIngresos.reduce((sum, ing) => 
+      sum + parseFloat(ing.monto || 0), 0
+    );
+    
+    // 5. Verificar duplicados
+    const codigosReserva = ingresosReservas
+      .map(ing => {
+        const match = ing.descripcion?.match(/Reserva #([A-Z0-9]+)/);
+        return match ? match[1] : null;
+      })
+      .filter(c => c);
+    
+    const duplicados = {};
+    codigosReserva.forEach(codigo => {
+      if (!duplicados[codigo]) {
+        duplicados[codigo] = [];
+      }
+      duplicados[codigo].push(...ingresosReservas.filter(ing => 
+        ing.descripcion?.includes(`Reserva #${codigo}`)
+      ));
+    });
+    
+    const codigosDuplicados = Object.entries(duplicados)
+      .filter(([_, ingresos]) => ingresos.length > 1)
+      .map(([codigo, ingresos]) => ({
+        codigo,
+        cantidad: ingresos.length,
+        total: ingresos.reduce((sum, ing) => sum + parseFloat(ing.monto || 0), 0),
+        detalles: ingresos.map(ing => ({
+          id: ing.id,
+          monto: ing.monto,
+          fecha: ing.fecha,
+          descripcion: ing.descripcion
+        }))
+      }));
+    
+    // 6. Agrupar otros ingresos por categoría
+    const otrosPorCategoria = {};
+    otrosIngresos.forEach(ing => {
+      if (!otrosPorCategoria[ing.categoria_nombre]) {
+        otrosPorCategoria[ing.categoria_nombre] = 0;
+      }
+      otrosPorCategoria[ing.categoria_nombre] += parseFloat(ing.monto || 0);
+    });
+    
+    res.json({
+      success: true,
+      periodo: { fecha_desde, fecha_hasta },
+      complejo_id: complejoId,
+      reportes: {
+        total_reservas: reportesData.total_reservas,
+        reservas_confirmadas: reportesData.reservas_confirmadas,
+        ingresos_brutos: parseFloat(reportesData.ingresos_brutos || 0)
+      },
+      control_financiero: {
+        total_ingresos: parseFloat(controlTodos[0]?.total_ingresos || 0),
+        total_movimientos: parseInt(controlTodos[0]?.total_movimientos || 0),
+        ingresos_reservas: totalIngresosReservas,
+        cantidad_ingresos_reservas: ingresosReservas.length,
+        otros_ingresos: totalOtrosIngresos,
+        cantidad_otros_ingresos: otrosIngresos.length,
+        otros_por_categoria: otrosPorCategoria
+      },
+      duplicados: {
+        cantidad: codigosDuplicados.length,
+        total_duplicado: codigosDuplicados.reduce((sum, dup) => sum + dup.total, 0),
+        detalles: codigosDuplicados
+      },
+      diferencias: {
+        control_vs_reportes: parseFloat(controlTodos[0]?.total_ingresos || 0) - parseFloat(reportesData.ingresos_brutos || 0),
+        reservas_vs_reportes: totalIngresosReservas - parseFloat(reportesData.ingresos_brutos || 0),
+        otros_ingresos: totalOtrosIngresos
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en diagnóstico:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Endpoint temporal para crear código BASTIANCABRERA5MIL en producción
 app.post('/api/admin/crear-codigo-bastian', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   const client = await db.pgPool.connect();
