@@ -3444,12 +3444,12 @@ app.post('/api/admin/eliminar-ingresos-duplicados', authenticateToken, requireRo
         ingresos: ingresos
       }));
     
-    console.log(`🔧 Encontrados ${ingresosDuplicados.rows.length} reservas con ingresos duplicados`);
+    console.log(`🔧 Encontrados ${ingresosDuplicados.length} reservas con ingresos duplicados`);
     
     let eliminados = 0;
     const detalles = [];
     
-    for (const dup of ingresosDuplicados.rows) {
+    for (const dup of ingresosDuplicados) {
       try {
         // Obtener la reserva para verificar monto_abonado
         const reserva = await client.query(`
@@ -3523,11 +3523,11 @@ app.post('/api/admin/eliminar-ingresos-duplicados', authenticateToken, requireRo
     
     console.log(`✅ Eliminación de duplicados completada: ${eliminados} ingresos eliminados`);
     
-    res.json({
+      res.json({
       success: true,
       message: 'Duplicados eliminados',
       resumen: {
-        reservas_con_duplicados: ingresosDuplicados.rows.length,
+        reservas_con_duplicados: ingresosDuplicados.length,
         ingresos_eliminados: eliminados
       },
       detalles
