@@ -3162,6 +3162,216 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
   }
 });
 
+// Endpoint para sincronizar todas las reservas faltantes de un complejo
+app.post('/api/admin/sincronizar-reservas-complejo', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const user = req.user;
+    const { complejo_id, fecha_desde, fecha_hasta } = req.body;
+    
+    // Determinar complejo_id según el rol
+    let complejoId = complejo_id;
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      complejoId = user.complejo_id;
+    }
+    
+    if (!complejoId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'complejo_id es requerido' 
+      });
+    }
+    
+    // Construir filtro de fechas
+    let fechaFilter = '';
+    const params = [complejoId];
+    let paramIndex = 2;
+    
+    if (fecha_desde) {
+      fechaFilter += ` AND r.fecha >= $${paramIndex}`;
+      params.push(fecha_desde);
+      paramIndex++;
+    }
+    
+    if (fecha_hasta) {
+      fechaFilter += ` AND r.fecha <= $${paramIndex}`;
+      params.push(fecha_hasta);
+      paramIndex++;
+    }
+    
+    // Buscar todas las reservas confirmadas con monto_abonado > 0 que no tienen ingreso
+    const reservasSinIngreso = await client.query(`
+      SELECT 
+        r.id,
+        r.codigo_reserva,
+        r.monto_abonado,
+        r.precio_total,
+        r.porcentaje_pagado,
+        r.tipo_reserva,
+        r.metodo_pago,
+        r.comision_aplicada,
+        r.fecha,
+        c.complejo_id,
+        c.nombre as cancha_nombre
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE c.complejo_id = $1
+      AND r.estado = 'confirmada'
+      AND COALESCE(r.monto_abonado, 0) > 0
+      AND NOT EXISTS (
+        SELECT 1 FROM gastos_ingresos gi
+        WHERE gi.descripcion LIKE '%Reserva #' || r.codigo_reserva || '%'
+        AND gi.tipo = 'ingreso'
+      )
+      ${fechaFilter}
+      ORDER BY r.fecha DESC, r.codigo_reserva
+    `, params);
+    
+    console.log(`🔄 Encontradas ${reservasSinIngreso.rows.length} reservas sin sincronizar para complejo ${complejoId}`);
+    
+    let sincronizadas = 0;
+    let errores = 0;
+    const detalles = [];
+    
+    for (const reserva of reservasSinIngreso.rows) {
+      try {
+        // Buscar categoría de ingresos según el tipo de reserva
+        const categoriaIngreso = await client.query(`
+          SELECT id FROM categorias_gastos
+          WHERE complejo_id = $1
+          AND tipo = 'ingreso'
+          AND nombre = CASE 
+            WHEN $2 = 'administrativa' THEN 'Reservas Administrativas'
+            ELSE 'Reservas Web'
+          END
+          LIMIT 1
+        `, [reserva.complejo_id, reserva.tipo_reserva || 'directa']);
+        
+        if (!categoriaIngreso.rows || categoriaIngreso.rows.length === 0) {
+          console.warn(`⚠️ Categoría de ingresos no encontrada para reserva ${reserva.codigo_reserva}`);
+          errores++;
+          detalles.push({
+            codigo: reserva.codigo_reserva,
+            estado: 'error',
+            mensaje: 'Categoría de ingresos no encontrada'
+          });
+          continue;
+        }
+        
+        const montoIngreso = reserva.monto_abonado || reserva.precio_total || 0;
+        
+        // Crear ingreso
+        await client.query(`
+          INSERT INTO gastos_ingresos (
+            complejo_id,
+            categoria_id,
+            tipo,
+            monto,
+            fecha,
+            descripcion,
+            metodo_pago,
+            usuario_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+          reserva.complejo_id,
+          categoriaIngreso.rows[0].id,
+          'ingreso',
+          montoIngreso,
+          reserva.fecha,
+          `Reserva #${reserva.codigo_reserva} - ${reserva.cancha_nombre}${reserva.porcentaje_pagado ? ` (Abono ${reserva.porcentaje_pagado}%)` : ''}`,
+          reserva.tipo_reserva === 'directa' ? 'webpay' : (reserva.metodo_pago || 'por_definir'),
+          null
+        ]);
+        
+        // Crear comisión si existe
+        if (reserva.comision_aplicada && reserva.comision_aplicada > 0) {
+          const categoriaComision = await client.query(`
+            SELECT id FROM categorias_gastos
+            WHERE complejo_id = $1
+            AND tipo = 'gasto'
+            AND nombre = 'Comisión Plataforma'
+            LIMIT 1
+          `, [reserva.complejo_id]);
+          
+          if (categoriaComision.rows && categoriaComision.rows.length > 0) {
+            const tipoReservaTexto = reserva.tipo_reserva === 'directa' 
+              ? 'Web (3.5% + IVA)' 
+              : reserva.tipo_reserva === 'administrativa' 
+                ? 'Admin (1.75% + IVA)' 
+                : 'Reserva';
+            
+            await client.query(`
+              INSERT INTO gastos_ingresos (
+                complejo_id,
+                categoria_id,
+                tipo,
+                monto,
+                fecha,
+                descripcion,
+                metodo_pago,
+                usuario_id
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `, [
+              reserva.complejo_id,
+              categoriaComision.rows[0].id,
+              'gasto',
+              reserva.comision_aplicada,
+              reserva.fecha,
+              `Comisión Reserva #${reserva.codigo_reserva} - ${tipoReservaTexto}`,
+              'automatico',
+              null
+            ]);
+          }
+        }
+        
+        sincronizadas++;
+        detalles.push({
+          codigo: reserva.codigo_reserva,
+          estado: 'sincronizada',
+          monto: montoIngreso
+        });
+        
+      } catch (error) {
+        console.error(`❌ Error sincronizando reserva ${reserva.codigo_reserva}:`, error);
+        errores++;
+        detalles.push({
+          codigo: reserva.codigo_reserva,
+          estado: 'error',
+          mensaje: error.message
+        });
+      }
+    }
+    
+    await client.query('COMMIT');
+    
+    console.log(`✅ Sincronización completada: ${sincronizadas} reservas sincronizadas, ${errores} errores`);
+    
+    res.json({
+      success: true,
+      message: `Sincronización completada`,
+      resumen: {
+        total_encontradas: reservasSinIngreso.rows.length,
+        sincronizadas,
+        errores
+      },
+      detalles: detalles.slice(0, 50) // Limitar a 50 para no sobrecargar la respuesta
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error en sincronización masiva:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Endpoint temporal para crear código BASTIANCABRERA5MIL en producción
 app.post('/api/admin/crear-codigo-bastian', authenticateToken, requireRolePermission(['super_admin']), async (req, res) => {
   const client = await db.pgPool.connect();
