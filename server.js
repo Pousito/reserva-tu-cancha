@@ -3496,6 +3496,177 @@ app.post('/api/admin/corregir-ingresos-reservas', authenticateToken, requireRole
   }
 });
 
+// Endpoint para comparar detalladamente reservas vs ingresos
+app.get('/api/admin/comparar-reservas-ingresos', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  try {
+    const user = req.user;
+    const { complejo_id, fecha_desde, fecha_hasta } = req.query;
+    
+    let complejoId = complejo_id ? parseInt(complejo_id) : null;
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      complejoId = user.complejo_id;
+    }
+    
+    if (!complejoId || !fecha_desde || !fecha_hasta) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'complejo_id, fecha_desde y fecha_hasta son requeridos' 
+      });
+    }
+    
+    // Obtener todas las reservas confirmadas con monto_abonado
+    const reservas = await db.query(`
+      SELECT 
+        r.id,
+        r.codigo_reserva,
+        r.monto_abonado,
+        r.precio_total,
+        r.fecha,
+        r.estado,
+        r.tipo_reserva
+      FROM reservas r
+      JOIN canchas c ON r.cancha_id = c.id
+      WHERE c.complejo_id = $1
+      AND r.estado = 'confirmada'
+      AND r.fecha::date BETWEEN $2 AND $3
+      AND COALESCE(r.monto_abonado, 0) > 0
+      ORDER BY r.fecha, r.codigo_reserva
+    `, [complejoId, fecha_desde, fecha_hasta]);
+    
+    // Obtener todos los ingresos de reservas
+    const ingresos = await db.query(`
+      SELECT 
+        gi.id,
+        gi.monto,
+        gi.fecha,
+        gi.descripcion,
+        cat.nombre as categoria_nombre
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+      WHERE gi.complejo_id = $1
+      AND gi.tipo = 'ingreso'
+      AND gi.fecha >= $2 AND gi.fecha <= $3
+      AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
+      ORDER BY gi.fecha, gi.descripcion
+    `, [complejoId, fecha_desde, fecha_hasta]);
+    
+    // Crear mapa de ingresos por código de reserva
+    const ingresosPorReserva = {};
+    ingresos.forEach(ing => {
+      const match = ing.descripcion?.match(/Reserva #([A-Z0-9]+)/);
+      if (match) {
+        const codigo = match[1];
+        if (!ingresosPorReserva[codigo]) {
+          ingresosPorReserva[codigo] = [];
+        }
+        ingresosPorReserva[codigo].push(ing);
+      }
+    });
+    
+    // Comparar reserva por reserva
+    const comparacion = [];
+    let totalReservas = 0;
+    let totalIngresosReservas = 0;
+    let totalIngresosControl = 0;
+    const problemas = [];
+    
+    reservas.forEach(reserva => {
+      const codigo = reserva.codigo_reserva;
+      const ingresosReserva = ingresosPorReserva[codigo] || [];
+      const sumaIngresos = ingresosReserva.reduce((sum, ing) => sum + parseFloat(ing.monto || 0), 0);
+      
+      totalReservas += parseFloat(reserva.monto_abonado || 0);
+      totalIngresosControl += sumaIngresos;
+      
+      if (ingresosReserva.length === 0) {
+        problemas.push({
+          tipo: 'sin_ingreso',
+          codigo,
+          monto_abonado: reserva.monto_abonado
+        });
+      } else if (Math.abs(sumaIngresos - reserva.monto_abonado) > 0.01) {
+        problemas.push({
+          tipo: 'monto_diferente',
+          codigo,
+          monto_abonado: reserva.monto_abonado,
+          monto_ingresos: sumaIngresos,
+          diferencia: sumaIngresos - reserva.monto_abonado,
+          ingresos: ingresosReserva.map(ing => ({
+            id: ing.id,
+            monto: ing.monto,
+            descripcion: ing.descripcion
+          }))
+        });
+      } else if (ingresosReserva.length > 1) {
+        problemas.push({
+          tipo: 'multiples_ingresos',
+          codigo,
+          cantidad: ingresosReserva.length,
+          monto_total: sumaIngresos,
+          monto_abonado: reserva.monto_abonado
+        });
+      }
+      
+      comparacion.push({
+        codigo,
+        monto_abonado: reserva.monto_abonado,
+        precio_total: reserva.precio_total,
+        suma_ingresos: sumaIngresos,
+        diferencia: sumaIngresos - reserva.monto_abonado,
+        cantidad_ingresos: ingresosReserva.length
+      });
+    });
+    
+    // Buscar ingresos sin reserva correspondiente
+    const ingresosSinReserva = ingresos.filter(ing => {
+      const match = ing.descripcion?.match(/Reserva #([A-Z0-9]+)/);
+      if (!match) return true;
+      const codigo = match[1];
+      return !reservas.find(r => r.codigo_reserva === codigo);
+    });
+    
+    const totalIngresosSinReserva = ingresosSinReserva.reduce((sum, ing) => 
+      sum + parseFloat(ing.monto || 0), 0
+    );
+    
+    res.json({
+      success: true,
+      periodo: { fecha_desde, fecha_hasta },
+      complejo_id: complejoId,
+      resumen: {
+        total_reservas: reservas.length,
+        total_ingresos_control: ingresos.length,
+        total_monto_reservas: totalReservas,
+        total_monto_ingresos: totalIngresosControl,
+        diferencia: totalIngresosControl - totalReservas,
+        ingresos_sin_reserva: ingresosSinReserva.length,
+        total_ingresos_sin_reserva: totalIngresosSinReserva
+      },
+      problemas: {
+        cantidad: problemas.length,
+        sin_ingreso: problemas.filter(p => p.tipo === 'sin_ingreso').length,
+        monto_diferente: problemas.filter(p => p.tipo === 'monto_diferente').length,
+        multiples_ingresos: problemas.filter(p => p.tipo === 'multiples_ingresos').length,
+        detalles: problemas
+      },
+      ingresos_sin_reserva: ingresosSinReserva.map(ing => ({
+        id: ing.id,
+        monto: ing.monto,
+        fecha: ing.fecha,
+        descripcion: ing.descripcion
+      })),
+      comparacion: comparacion.slice(0, 100) // Limitar a 100 para no sobrecargar
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en comparación:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Endpoint para diagnosticar discrepancia entre reportes y control financiero
 app.get('/api/admin/diagnosticar-ingresos', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   try {
