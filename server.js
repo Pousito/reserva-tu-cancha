@@ -3398,44 +3398,51 @@ app.post('/api/admin/eliminar-ingresos-duplicados', authenticateToken, requireRo
       });
     }
     
-    // Buscar ingresos duplicados por código de reserva
-    const ingresosDuplicados = await client.query(`
-      WITH ingresos_con_codigo AS (
-        SELECT 
-          gi.id,
-          gi.monto,
-          gi.fecha,
-          gi.descripcion,
-          gi.creado_en,
-          CASE 
-            WHEN gi.descripcion ~ 'Reserva\s*#?([A-Z0-9]+)' THEN 
-              (regexp_match(gi.descripcion, 'Reserva\s*#?([A-Z0-9]+)'))[1]
-            ELSE NULL
-          END as codigo_reserva
-        FROM gastos_ingresos gi
-        JOIN categorias_gastos cat ON gi.categoria_id = cat.id
-        WHERE gi.complejo_id = $1
-        AND gi.tipo = 'ingreso'
-        AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
-        ${fecha_desde ? `AND gi.fecha >= $2` : ''}
-        ${fecha_hasta ? `AND gi.fecha <= $${fecha_desde ? '3' : '2'}` : ''}
-      ),
-      duplicados AS (
-        SELECT 
-          codigo_reserva,
-          COUNT(*) as cantidad,
-          array_agg(id ORDER BY creado_en) as ids,
-          array_agg(monto ORDER BY creado_en) as montos
-        FROM ingresos_con_codigo
-        WHERE codigo_reserva IS NOT NULL
-        GROUP BY codigo_reserva
-        HAVING COUNT(*) > 1
-      )
-      SELECT * FROM duplicados
+    // Buscar todos los ingresos de reservas
+    const todosIngresos = await client.query(`
+      SELECT 
+        gi.id,
+        gi.monto,
+        gi.fecha,
+        gi.descripcion,
+        gi.creado_en,
+        cat.nombre as categoria_nombre
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+      WHERE gi.complejo_id = $1
+      AND gi.tipo = 'ingreso'
+      AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
+      ${fecha_desde ? `AND gi.fecha >= $2` : ''}
+      ${fecha_hasta ? `AND gi.fecha <= $${fecha_desde ? '3' : '2'}` : ''}
+      ORDER BY gi.descripcion, gi.creado_en
     `, fecha_desde && fecha_hasta ? [complejoId, fecha_desde, fecha_hasta] : 
        fecha_desde ? [complejoId, fecha_desde] : 
        fecha_hasta ? [complejoId, fecha_hasta] : 
        [complejoId]);
+    
+    // Agrupar por código de reserva manualmente
+    const ingresosPorCodigo = {};
+    todosIngresos.rows.forEach(ing => {
+      const match = ing.descripcion?.match(/Reserva\s*#?([A-Z0-9]+)/);
+      if (match) {
+        const codigo = match[1];
+        if (!ingresosPorCodigo[codigo]) {
+          ingresosPorCodigo[codigo] = [];
+        }
+        ingresosPorCodigo[codigo].push(ing);
+      }
+    });
+    
+    // Filtrar solo los que tienen duplicados
+    const ingresosDuplicados = Object.entries(ingresosPorCodigo)
+      .filter(([_, ingresos]) => ingresos.length > 1)
+      .map(([codigo, ingresos]) => ({
+        codigo_reserva: codigo,
+        cantidad: ingresos.length,
+        ids: ingresos.map(i => i.id),
+        montos: ingresos.map(i => parseFloat(i.monto)),
+        ingresos: ingresos
+      }));
     
     console.log(`🔧 Encontrados ${ingresosDuplicados.rows.length} reservas con ingresos duplicados`);
     
