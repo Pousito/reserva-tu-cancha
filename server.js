@@ -3376,6 +3376,176 @@ app.post('/api/admin/sincronizar-reservas-complejo', authenticateToken, requireR
   }
 });
 
+// Endpoint para corregir ingresos con formato de descripción incorrecto
+app.post('/api/admin/corregir-descripciones-ingresos', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const user = req.user;
+    const { complejo_id, fecha_desde, fecha_hasta } = req.body;
+    
+    let complejoId = complejo_id ? parseInt(complejo_id) : null;
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      complejoId = user.complejo_id;
+    }
+    
+    if (!complejoId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'complejo_id es requerido' 
+      });
+    }
+    
+    // Buscar ingresos con formato incorrecto (sin # en el código)
+    const ingresosIncorrectos = await client.query(`
+      SELECT 
+        gi.id,
+        gi.monto,
+        gi.descripcion,
+        gi.fecha,
+        cat.nombre as categoria_nombre
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+      WHERE gi.complejo_id = $1
+      AND gi.tipo = 'ingreso'
+      AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
+      AND gi.descripcion LIKE 'Reserva %'
+      AND gi.descripcion NOT LIKE 'Reserva #%'
+      ${fecha_desde ? `AND gi.fecha >= $2` : ''}
+      ${fecha_hasta ? `AND gi.fecha <= $${fecha_desde ? '3' : '2'}` : ''}
+    `, fecha_desde && fecha_hasta ? [complejoId, fecha_desde, fecha_hasta] : 
+       fecha_desde ? [complejoId, fecha_desde] : 
+       fecha_hasta ? [complejoId, fecha_hasta] : 
+       [complejoId]);
+    
+    console.log(`🔧 Encontrados ${ingresosIncorrectos.rows.length} ingresos con formato incorrecto`);
+    
+    let corregidos = 0;
+    let eliminados = 0;
+    const detalles = [];
+    
+    for (const ingreso of ingresosIncorrectos.rows) {
+      try {
+        // Extraer código de reserva (formato: "Reserva BQNI8W" o "Reserva BQNI8W - Cancha 1")
+        const match = ingreso.descripcion.match(/Reserva\s+([A-Z0-9]+)/);
+        if (!match) {
+          console.warn(`⚠️ No se pudo extraer código de reserva de: ${ingreso.descripcion}`);
+          continue;
+        }
+        
+        const codigoReserva = match[1];
+        
+        // Buscar la reserva en la base de datos
+        const reserva = await client.query(`
+          SELECT 
+            r.id,
+            r.codigo_reserva,
+            r.monto_abonado,
+            r.precio_total,
+            r.estado,
+            r.fecha,
+            c.nombre as cancha_nombre,
+            r.porcentaje_pagado
+          FROM reservas r
+          JOIN canchas c ON r.cancha_id = c.id
+          WHERE r.codigo_reserva = $1
+          AND c.complejo_id = $2
+        `, [codigoReserva, complejoId]);
+        
+        if (!reserva.rows || reserva.rows.length === 0) {
+          // Reserva no existe, eliminar el ingreso
+          await client.query('DELETE FROM gastos_ingresos WHERE id = $1', [ingreso.id]);
+          eliminados++;
+          detalles.push({
+            codigo: codigoReserva,
+            accion: 'eliminado',
+            motivo: 'Reserva no encontrada',
+            monto: ingreso.monto
+          });
+        } else {
+          const r = reserva.rows[0];
+          
+          if (r.estado !== 'confirmada') {
+            // Reserva no confirmada, eliminar el ingreso
+            await client.query('DELETE FROM gastos_ingresos WHERE id = $1', [ingreso.id]);
+            eliminados++;
+            detalles.push({
+              codigo: codigoReserva,
+              accion: 'eliminado',
+              motivo: `Reserva en estado: ${r.estado}`,
+              monto: ingreso.monto
+            });
+          } else if (Math.abs(parseFloat(ingreso.monto) - parseFloat(r.monto_abonado || 0)) > 0.01) {
+            // Monto diferente, actualizar descripción y monto
+            const nuevaDescripcion = `Reserva #${codigoReserva} - ${r.cancha_nombre}${r.porcentaje_pagado ? ` (Abono ${r.porcentaje_pagado}%)` : ''}`;
+            await client.query(
+              'UPDATE gastos_ingresos SET monto = $1, descripcion = $2 WHERE id = $3',
+              [r.monto_abonado || 0, nuevaDescripcion, ingreso.id]
+            );
+            corregidos++;
+            detalles.push({
+              codigo: codigoReserva,
+              accion: 'corregido',
+              monto_anterior: ingreso.monto,
+              monto_nuevo: r.monto_abonado,
+              descripcion_anterior: ingreso.descripcion,
+              descripcion_nueva: nuevaDescripcion
+            });
+          } else {
+            // Solo corregir descripción
+            const nuevaDescripcion = `Reserva #${codigoReserva} - ${r.cancha_nombre}${r.porcentaje_pagado ? ` (Abono ${r.porcentaje_pagado}%)` : ''}`;
+            await client.query(
+              'UPDATE gastos_ingresos SET descripcion = $1 WHERE id = $2',
+              [nuevaDescripcion, ingreso.id]
+            );
+            corregidos++;
+            detalles.push({
+              codigo: codigoReserva,
+              accion: 'descripcion_corregida',
+              descripcion_anterior: ingreso.descripcion,
+              descripcion_nueva: nuevaDescripcion
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error corrigiendo ingreso ${ingreso.id}:`, error);
+        detalles.push({
+          id: ingreso.id,
+          accion: 'error',
+          mensaje: error.message
+        });
+      }
+    }
+    
+    await client.query('COMMIT');
+    
+    console.log(`✅ Corrección completada: ${corregidos} corregidos, ${eliminados} eliminados`);
+    
+    res.json({
+      success: true,
+      message: 'Corrección completada',
+      resumen: {
+        encontrados: ingresosIncorrectos.rows.length,
+        corregidos,
+        eliminados
+      },
+      detalles
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error en corrección:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Endpoint para corregir ingresos que usan precio_total en lugar de monto_abonado
 app.post('/api/admin/corregir-ingresos-reservas', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   const client = await db.pgPool.connect();
