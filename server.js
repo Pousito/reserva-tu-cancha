@@ -3110,12 +3110,14 @@ app.post('/api/admin/reservas/:codigo/sincronizar-ingreso', authenticateToken, a
       });
     }
     
-    const montoIngreso = reserva.monto_abonado || reserva.precio_total || 0;
+    // IMPORTANTE: Usar solo monto_abonado para coincidir con reportes
+    // No usar precio_total como fallback porque los reportes solo suman monto_abonado
+    const montoIngreso = reserva.monto_abonado || 0;
     
     if (montoIngreso <= 0) {
       return res.status(400).json({ 
         success: false, 
-        error: 'La reserva no tiene monto válido' 
+        error: 'La reserva no tiene monto_abonado válido. Solo se sincronizan reservas con monto abonado > 0.' 
       });
     }
     
@@ -3261,7 +3263,9 @@ app.post('/api/admin/sincronizar-reservas-complejo', authenticateToken, requireR
           continue;
         }
         
-        const montoIngreso = reserva.monto_abonado || reserva.precio_total || 0;
+        // IMPORTANTE: Usar solo monto_abonado para coincidir con reportes
+        // No usar precio_total como fallback porque los reportes solo suman monto_abonado
+        const montoIngreso = reserva.monto_abonado || 0;
         
         // Crear ingreso
         await client.query(`
@@ -3363,6 +3367,126 @@ app.post('/api/admin/sincronizar-reservas-complejo', authenticateToken, requireR
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('❌ Error en sincronización masiva:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+});
+
+// Endpoint para corregir ingresos que usan precio_total en lugar de monto_abonado
+app.post('/api/admin/corregir-ingresos-reservas', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const user = req.user;
+    const { complejo_id, fecha_desde, fecha_hasta } = req.body;
+    
+    // Determinar complejo_id según el rol
+    let complejoId = complejo_id ? parseInt(complejo_id) : null;
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      complejoId = user.complejo_id;
+    }
+    
+    if (!complejoId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'complejo_id es requerido' 
+      });
+    }
+    
+    // Buscar ingresos de reservas que no coinciden con monto_abonado
+    const ingresosReservas = await client.query(`
+      SELECT 
+        gi.id,
+        gi.monto as monto_ingreso,
+        gi.descripcion,
+        gi.fecha,
+        r.codigo_reserva,
+        r.monto_abonado,
+        r.precio_total,
+        r.estado
+      FROM gastos_ingresos gi
+      JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+      LEFT JOIN reservas r ON gi.descripcion LIKE '%Reserva #' || r.codigo_reserva || '%'
+      WHERE gi.complejo_id = $1
+      AND gi.tipo = 'ingreso'
+      AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
+      AND r.estado = 'confirmada'
+      AND gi.monto != COALESCE(r.monto_abonado, 0)
+      ${fecha_desde ? `AND gi.fecha >= $2` : ''}
+      ${fecha_hasta ? `AND gi.fecha <= $${fecha_desde ? '3' : '2'}` : ''}
+    `, fecha_desde && fecha_hasta ? [complejoId, fecha_desde, fecha_hasta] : 
+       fecha_desde ? [complejoId, fecha_desde] : 
+       fecha_hasta ? [complejoId, fecha_hasta] : 
+       [complejoId]);
+    
+    console.log(`🔧 Encontrados ${ingresosReservas.rows.length} ingresos a corregir`);
+    
+    let corregidos = 0;
+    let eliminados = 0;
+    const detalles = [];
+    
+    for (const ingreso of ingresosReservas.rows) {
+      try {
+        const montoCorrecto = ingreso.monto_abonado || 0;
+        
+        if (montoCorrecto === 0) {
+          // Si monto_abonado es 0, eliminar el ingreso (no debería existir)
+          await client.query('DELETE FROM gastos_ingresos WHERE id = $1', [ingreso.id]);
+          eliminados++;
+          detalles.push({
+            codigo: ingreso.codigo_reserva,
+            accion: 'eliminado',
+            motivo: 'monto_abonado es 0',
+            monto_anterior: ingreso.monto_ingreso
+          });
+        } else {
+          // Actualizar el monto al monto_abonado correcto
+          await client.query(
+            'UPDATE gastos_ingresos SET monto = $1 WHERE id = $2',
+            [montoCorrecto, ingreso.id]
+          );
+          corregidos++;
+          detalles.push({
+            codigo: ingreso.codigo_reserva,
+            accion: 'corregido',
+            monto_anterior: ingreso.monto_ingreso,
+            monto_nuevo: montoCorrecto
+          });
+        }
+      } catch (error) {
+        console.error(`❌ Error corrigiendo ingreso ${ingreso.id}:`, error);
+        detalles.push({
+          codigo: ingreso.codigo_reserva,
+          accion: 'error',
+          mensaje: error.message
+        });
+      }
+    }
+    
+    await client.query('COMMIT');
+    
+    console.log(`✅ Corrección completada: ${corregidos} corregidos, ${eliminados} eliminados`);
+    
+    res.json({
+      success: true,
+      message: 'Corrección completada',
+      resumen: {
+        encontrados: ingresosReservas.rows.length,
+        corregidos,
+        eliminados
+      },
+      detalles: detalles.slice(0, 50)
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error en corrección:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
