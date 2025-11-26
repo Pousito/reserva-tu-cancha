@@ -34,7 +34,7 @@ const getCurrentTimestampFunction = () => {
 };
 
 // Middleware de autenticación
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -42,11 +42,74 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ success: false, error: 'Token de acceso requerido' });
     }
 
+    // Verificar si es un token dinámico del login (admin-token-{id}-{timestamp})
+    if (token.startsWith('admin-token-')) {
+        // Extraer el ID del usuario del token
+        const tokenParts = token.split('-');
+        if (tokenParts.length >= 3) {
+            const userId = parseInt(tokenParts[2]);
+            
+            console.log('🔍 Verificando usuario con ID (token dinámico):', userId);
+            
+            try {
+                // Buscar el usuario en la base de datos para obtener su información
+                const usuario = await db.query(
+                    "SELECT id, email, nombre, rol, complejo_id FROM usuarios WHERE id = $1 AND activo = true",
+                    [userId]
+                );
+                
+                if (!usuario || usuario.length === 0) {
+                    console.log('❌ Usuario no encontrado o inactivo para ID:', userId);
+                    return res.status(401).json({ error: 'Usuario no encontrado o inactivo' });
+                }
+                
+                const userData = usuario[0];
+                console.log('✅ Usuario encontrado (token dinámico):', userData);
+                
+                // Normalizar el objeto user para que siempre tenga 'id'
+                req.user = {
+                    id: userData.id,
+                    userId: userData.id, // También incluir userId para compatibilidad
+                    email: userData.email,
+                    nombre: userData.nombre,
+                    rol: userData.rol,
+                    complejo_id: userData.complejo_id || null
+                };
+                
+                console.log('✅ Usuario autenticado - Rol:', req.user.rol, 'Complejo ID:', req.user.complejo_id);
+                return next();
+            } catch (err) {
+                console.error('❌ Error verificando usuario:', err);
+                return res.status(500).json({ 
+                    error: 'Error de conexión', 
+                    details: err.message
+                });
+            }
+        }
+    }
+
+    // Si no es token dinámico, verificar como JWT
     jwt.verify(token, process.env.JWT_SECRET || 'tu_secreto_jwt', (err, user) => {
         if (err) {
             return res.status(403).json({ success: false, error: 'Token inválido' });
         }
+        
+        // Normalizar el objeto user: si tiene userId pero no id, mapear userId a id
+        if (user.userId && !user.id) {
+            user.id = user.userId;
+        }
+        
+        // Asegurar que siempre tenga id
+        if (!user.id && !user.userId) {
+            return res.status(403).json({ success: false, error: 'Token inválido: falta información de usuario' });
+        }
+        
+        if (!user.id) {
+            user.id = user.userId;
+        }
+        
         req.user = user;
+        console.log('✅ Usuario autenticado (JWT) - ID:', req.user.id, 'Rol:', req.user.rol);
         next();
     });
 };
@@ -322,12 +385,24 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
         const bloqueosPermanentesSemana = {};
 
         if (canchas && canchas.length > 0) {
-            for (const cancha of canchas) {
+            const canchaIds = canchas.map(cancha => cancha.id).filter(Boolean);
+            if (canchaIds.length > 0) {
                 try {
-                    const bloqueosCancha = await db.query(
-                        'SELECT * FROM bloqueos_canchas WHERE cancha_id = $1 AND activo = true',
-                        [cancha.id]
-                    );
+                    let bloqueosCancha = [];
+                    const dbInfo = db.getDatabaseInfo();
+                    
+                    if (dbInfo.type === 'PostgreSQL') {
+                        bloqueosCancha = await db.query(
+                            'SELECT * FROM bloqueos_canchas WHERE cancha_id = ANY($1::int[]) AND activo = true',
+                            [canchaIds]
+                        );
+                    } else {
+                        const placeholders = canchaIds.map((_, idx) => `$${idx + 1}`).join(',');
+                        bloqueosCancha = await db.query(
+                            `SELECT * FROM bloqueos_canchas WHERE cancha_id IN (${placeholders}) AND activo = true`,
+                            canchaIds
+                        );
+                    }
 
                     (bloqueosCancha || []).forEach(bloqueo => {
                         fechasSemana.forEach(fechaInfo => {
@@ -338,15 +413,15 @@ router.get('/week', authenticateToken, requireRolePermission(['super_admin', 'ow
                                 if (!bloqueosPermanentesSemana[fechaInfo.fechaStr]) {
                                     bloqueosPermanentesSemana[fechaInfo.fechaStr] = {};
                                 }
-                                if (!bloqueosPermanentesSemana[fechaInfo.fechaStr][cancha.id]) {
-                                    bloqueosPermanentesSemana[fechaInfo.fechaStr][cancha.id] = [];
+                                if (!bloqueosPermanentesSemana[fechaInfo.fechaStr][bloqueo.cancha_id]) {
+                                    bloqueosPermanentesSemana[fechaInfo.fechaStr][bloqueo.cancha_id] = [];
                                 }
-                                bloqueosPermanentesSemana[fechaInfo.fechaStr][cancha.id].push(formatted);
+                                bloqueosPermanentesSemana[fechaInfo.fechaStr][bloqueo.cancha_id].push(formatted);
                             }
                         });
                     });
                 } catch (bloqueoError) {
-                    console.error(`⚠️ Error obteniendo bloqueos permanentes para cancha ${cancha.id}:`, bloqueoError.message);
+                    console.error('⚠️ Error obteniendo bloqueos permanentes en lote:', bloqueoError.message);
                 }
             }
         }
