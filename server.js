@@ -3376,6 +3376,168 @@ app.post('/api/admin/sincronizar-reservas-complejo', authenticateToken, requireR
   }
 });
 
+// Endpoint para eliminar ingresos duplicados
+app.post('/api/admin/eliminar-ingresos-duplicados', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
+  const client = await db.pgPool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const user = req.user;
+    const { complejo_id, fecha_desde, fecha_hasta } = req.body;
+    
+    let complejoId = complejo_id ? parseInt(complejo_id) : null;
+    if (user.rol === 'owner' || user.rol === 'manager') {
+      complejoId = user.complejo_id;
+    }
+    
+    if (!complejoId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'complejo_id es requerido' 
+      });
+    }
+    
+    // Buscar ingresos duplicados por código de reserva
+    const ingresosDuplicados = await client.query(`
+      WITH ingresos_con_codigo AS (
+        SELECT 
+          gi.id,
+          gi.monto,
+          gi.fecha,
+          gi.descripcion,
+          gi.creado_en,
+          CASE 
+            WHEN gi.descripcion ~ 'Reserva\s*#?([A-Z0-9]+)' THEN 
+              (regexp_match(gi.descripcion, 'Reserva\s*#?([A-Z0-9]+)'))[1]
+            ELSE NULL
+          END as codigo_reserva
+        FROM gastos_ingresos gi
+        JOIN categorias_gastos cat ON gi.categoria_id = cat.id
+        WHERE gi.complejo_id = $1
+        AND gi.tipo = 'ingreso'
+        AND (cat.nombre = 'Reservas Web' OR cat.nombre = 'Reservas Administrativas')
+        ${fecha_desde ? `AND gi.fecha >= $2` : ''}
+        ${fecha_hasta ? `AND gi.fecha <= $${fecha_desde ? '3' : '2'}` : ''}
+      ),
+      duplicados AS (
+        SELECT 
+          codigo_reserva,
+          COUNT(*) as cantidad,
+          array_agg(id ORDER BY creado_en) as ids,
+          array_agg(monto ORDER BY creado_en) as montos
+        FROM ingresos_con_codigo
+        WHERE codigo_reserva IS NOT NULL
+        GROUP BY codigo_reserva
+        HAVING COUNT(*) > 1
+      )
+      SELECT * FROM duplicados
+    `, fecha_desde && fecha_hasta ? [complejoId, fecha_desde, fecha_hasta] : 
+       fecha_desde ? [complejoId, fecha_desde] : 
+       fecha_hasta ? [complejoId, fecha_hasta] : 
+       [complejoId]);
+    
+    console.log(`🔧 Encontrados ${ingresosDuplicados.rows.length} reservas con ingresos duplicados`);
+    
+    let eliminados = 0;
+    const detalles = [];
+    
+    for (const dup of ingresosDuplicados.rows) {
+      try {
+        // Obtener la reserva para verificar monto_abonado
+        const reserva = await client.query(`
+          SELECT 
+            r.monto_abonado,
+            r.estado
+          FROM reservas r
+          JOIN canchas c ON r.cancha_id = c.id
+          WHERE r.codigo_reserva = $1
+          AND c.complejo_id = $2
+        `, [dup.codigo_reserva, complejoId]);
+        
+        if (!reserva.rows || reserva.rows.length === 0) {
+          // Si no hay reserva, eliminar todos menos el primero
+          const idsAEliminar = dup.ids.slice(1);
+          for (const id of idsAEliminar) {
+            await client.query('DELETE FROM gastos_ingresos WHERE id = $1', [id]);
+            eliminados++;
+          }
+          detalles.push({
+            codigo: dup.codigo_reserva,
+            accion: 'eliminados',
+            cantidad: idsAEliminar.length,
+            motivo: 'Reserva no encontrada'
+          });
+          continue;
+        }
+        
+        const montoAbonado = parseFloat(reserva.rows[0].monto_abonado || 0);
+        
+        // Buscar el ingreso que coincide con monto_abonado
+        let ingresoCorrecto = null;
+        for (let i = 0; i < dup.ids.length; i++) {
+          if (Math.abs(parseFloat(dup.montos[i]) - montoAbonado) < 0.01) {
+            ingresoCorrecto = dup.ids[i];
+            break;
+          }
+        }
+        
+        // Si no hay coincidencia exacta, mantener el más reciente
+        if (!ingresoCorrecto) {
+          ingresoCorrecto = dup.ids[dup.ids.length - 1];
+        }
+        
+        // Eliminar todos los demás
+        const idsAEliminar = dup.ids.filter(id => id !== ingresoCorrecto);
+        for (const id of idsAEliminar) {
+          await client.query('DELETE FROM gastos_ingresos WHERE id = $1', [id]);
+          eliminados++;
+        }
+        
+        detalles.push({
+          codigo: dup.codigo_reserva,
+          accion: 'duplicados_eliminados',
+          cantidad: idsAEliminar.length,
+          mantenido: ingresoCorrecto,
+          monto_abonado: montoAbonado
+        });
+        
+      } catch (error) {
+        console.error(`❌ Error procesando duplicados para ${dup.codigo_reserva}:`, error);
+        detalles.push({
+          codigo: dup.codigo_reserva,
+          accion: 'error',
+          mensaje: error.message
+        });
+      }
+    }
+    
+    await client.query('COMMIT');
+    
+    console.log(`✅ Eliminación de duplicados completada: ${eliminados} ingresos eliminados`);
+    
+    res.json({
+      success: true,
+      message: 'Duplicados eliminados',
+      resumen: {
+        reservas_con_duplicados: ingresosDuplicados.rows.length,
+        ingresos_eliminados: eliminados
+      },
+      detalles
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error eliminando duplicados:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  } finally {
+    client.release();
+  }
+});
+
 // Endpoint para corregir ingresos con formato de descripción incorrecto
 app.post('/api/admin/corregir-descripciones-ingresos', authenticateToken, requireRolePermission(['super_admin', 'owner', 'manager']), async (req, res) => {
   const client = await db.pgPool.connect();
