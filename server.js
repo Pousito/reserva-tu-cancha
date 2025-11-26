@@ -3742,7 +3742,11 @@ app.get('/api/admin/comparar-reservas-ingresos', authenticateToken, requireRoleP
     
     reservas.forEach(reserva => {
       const codigo = reserva.codigo_reserva;
-      const ingresosReserva = ingresosPorReserva[codigo] || [];
+      // Buscar ingresos que coincidan con el código (con o sin #)
+      const ingresosReserva = ingresos.filter(ing => {
+        const match = ing.descripcion?.match(/Reserva\s*#?([A-Z0-9]+)/);
+        return match && match[1] === codigo;
+      });
       const sumaIngresos = ingresosReserva.reduce((sum, ing) => sum + parseFloat(ing.monto || 0), 0);
       
       totalReservas += parseFloat(reserva.monto_abonado || 0);
@@ -3787,9 +3791,9 @@ app.get('/api/admin/comparar-reservas-ingresos', authenticateToken, requireRoleP
       });
     });
     
-    // Buscar ingresos sin reserva correspondiente
+    // Buscar ingresos sin reserva correspondiente (buscar con o sin #)
     const ingresosSinReserva = ingresos.filter(ing => {
-      const match = ing.descripcion?.match(/Reserva #([A-Z0-9]+)/);
+      const match = ing.descripcion?.match(/Reserva\s*#?([A-Z0-9]+)/);
       if (!match) return true;
       const codigo = match[1];
       return !reservas.find(r => r.codigo_reserva === codigo);
