@@ -17,6 +17,14 @@ function validarAnticipacionMinima(tipoFecha, fechaEspecifica, fechaInicio) {
     const minimoAnticipacion = new Date(hoy);
     minimoAnticipacion.setDate(minimoAnticipacion.getDate() + 0); // Sin anticipación requerida
     
+    console.log('🔍 DEBUG validarAnticipacionMinima:', {
+        tipoFecha,
+        fechaEspecifica,
+        fechaInicio,
+        hoy: hoy.toISOString(),
+        minimoAnticipacion: minimoAnticipacion.toISOString()
+    });
+    
     if (tipoFecha === 'recurrente_semanal') {
         // Para recurrentes, debe comenzar al menos la próxima semana (lunes siguiente)
         const proximoLunes = new Date(hoy);
@@ -35,17 +43,48 @@ function validarAnticipacionMinima(tipoFecha, fechaEspecifica, fechaInicio) {
     }
     
     // Para fechas específicas o rangos
-    const fechaAValidar = tipoFecha === 'especifico' ? new Date(fechaEspecifica) : new Date(fechaInicio);
+    // Parsear la fecha correctamente para evitar problemas de zona horaria
+    // Si viene como string "YYYY-MM-DD", parsearlo en zona horaria local
+    let fechaAValidar;
+    if (tipoFecha === 'especifico') {
+        if (typeof fechaEspecifica === 'string') {
+            // Parsear "YYYY-MM-DD" en zona horaria local
+            const [year, month, day] = fechaEspecifica.split('-').map(Number);
+            fechaAValidar = new Date(year, month - 1, day);
+        } else {
+            fechaAValidar = new Date(fechaEspecifica);
+        }
+    } else {
+        if (typeof fechaInicio === 'string') {
+            // Parsear "YYYY-MM-DD" en zona horaria local
+            const [year, month, day] = fechaInicio.split('-').map(Number);
+            fechaAValidar = new Date(year, month - 1, day);
+        } else {
+            fechaAValidar = new Date(fechaInicio);
+        }
+    }
     // Normalizar la fecha a validar a las 00:00:00 en zona horaria local para comparación correcta
     fechaAValidar.setHours(0, 0, 0, 0);
     
-    if (fechaAValidar < minimoAnticipacion) {
+    console.log('🔍 DEBUG validarAnticipacionMinima - Comparación:', {
+        fechaAValidar: fechaAValidar.toISOString(),
+        minimoAnticipacion: minimoAnticipacion.toISOString(),
+        fechaAValidarTime: fechaAValidar.getTime(),
+        minimoAnticipacionTime: minimoAnticipacion.getTime(),
+        esMenor: fechaAValidar.getTime() < minimoAnticipacion.getTime()
+    });
+    
+    // Comparar solo las fechas (sin hora)
+    if (fechaAValidar.getTime() < minimoAnticipacion.getTime()) {
+        console.log('❌ Validación fallida: fecha es menor que mínimo');
         return {
             valido: false,
             mensaje: `La fecha seleccionada ya pasó. La fecha más temprana permitida es: ${minimoAnticipacion.toLocaleDateString('es-CL')}`,
             fechaMinimaPermitida: minimoAnticipacion
         };
     }
+    
+    console.log('✅ Validación exitosa: fecha es válida');
     
     return {
         valido: true,
