@@ -36,6 +36,8 @@ function validarAnticipacionMinima(tipoFecha, fechaEspecifica, fechaInicio) {
     
     // Para fechas específicas o rangos
     const fechaAValidar = tipoFecha === 'especifico' ? new Date(fechaEspecifica) : new Date(fechaInicio);
+    // Normalizar la fecha a validar a las 00:00:00 en zona horaria local para comparación correcta
+    fechaAValidar.setHours(0, 0, 0, 0);
     
     if (fechaAValidar < minimoAnticipacion) {
         return {

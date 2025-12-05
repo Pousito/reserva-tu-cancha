@@ -1112,9 +1112,8 @@ function openPromocionForm() {
     document.getElementById('precioNormalLabel').textContent = 
         `(Normal: $${formatCurrencyChile(currentCanchaPrecio)})`;
     
-    // Configurar fecha mínima (7 días de anticipación)
+    // Configurar fecha mínima (permitir mismo día - sin restricción de anticipación)
     const minDate = new Date();
-    minDate.setDate(minDate.getDate() + 7);
     const minDateStr = minDate.toISOString().split('T')[0];
     document.getElementById('fechaEspecifica').min = minDateStr;
     document.getElementById('fechaInicio').min = minDateStr;
