@@ -1113,8 +1113,12 @@ function openPromocionForm() {
         `(Normal: $${formatCurrencyChile(currentCanchaPrecio)})`;
     
     // Configurar fecha mínima (permitir mismo día - sin restricción de anticipación)
+    // Usar zona horaria local para evitar problemas con UTC
     const minDate = new Date();
-    const minDateStr = minDate.toISOString().split('T')[0];
+    const year = minDate.getFullYear();
+    const month = String(minDate.getMonth() + 1).padStart(2, '0');
+    const day = String(minDate.getDate()).padStart(2, '0');
+    const minDateStr = `${year}-${month}-${day}`;
     document.getElementById('fechaEspecifica').min = minDateStr;
     document.getElementById('fechaInicio').min = minDateStr;
     document.getElementById('fechaFin').min = minDateStr;
@@ -1417,6 +1421,17 @@ async function editPromocion(promocionId) {
         
         // Actualizar campos visibles
         updatePromocionFields();
+        
+        // Configurar fecha mínima (permitir mismo día - sin restricción de anticipación)
+        // Usar zona horaria local para evitar problemas con UTC
+        const minDate = new Date();
+        const year = minDate.getFullYear();
+        const month = String(minDate.getMonth() + 1).padStart(2, '0');
+        const day = String(minDate.getDate()).padStart(2, '0');
+        const minDateStr = `${year}-${month}-${day}`;
+        document.getElementById('fechaEspecifica').min = minDateStr;
+        document.getElementById('fechaInicio').min = minDateStr;
+        document.getElementById('fechaFin').min = minDateStr;
         
         // Actualizar título
         document.getElementById('promocionFormTitle').innerHTML = 
